@@ -35,8 +35,8 @@ pub struct AgentCore {
     pub settings: crate::settings::Settings,
 }
 
-#[derive(Debug, Clone)]
 /// Commmon data needed for a single agent channel
+#[derive(Debug, Clone)]
 pub struct ChannelBase {
     /// Home
     pub home: Arc<CachingHome>,
