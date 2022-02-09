@@ -18,19 +18,19 @@ pub struct MerkleTestCase {
 
 /// Find a vector file assuming that a git checkout exists
 // TODO: look instead for the workspace `Cargo.toml`? use a cargo env var?
-pub fn find_vector(final_component: &str) -> PathBuf {
+pub fn find_test_fixtures(final_component: &str) -> PathBuf {
     let cwd = std::env::current_dir().expect("no cwd?");
     let git_dir = cwd
         .ancestors() // . ; ../ ; ../../ ; ...
         .find(|d| d.join(".git").is_dir())
         .expect("could not find .git somewhere! confused about workspace layout");
 
-    git_dir.join("vectors").join(final_component)
+    git_dir.join("fixtures").join(final_component)
 }
 
 /// Reads merkle test case json file and returns a vector of `MerkleTestCase`s
 pub fn load_merkle_test_json() -> Vec<MerkleTestCase> {
-    let mut file = File::open(find_vector("merkle.json")).unwrap();
+    let mut file = File::open(find_test_fixtures("merkle.json")).unwrap();
     let mut data = String::new();
     file.read_to_string(&mut data).unwrap();
     serde_json::from_str(&data).unwrap()
