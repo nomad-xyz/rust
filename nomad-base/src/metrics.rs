@@ -105,23 +105,29 @@ impl CoreMetrics {
 
         Ok(metrics)
     }
+    /// Register an int gauge
+    pub fn new_int_gauge(&self, metric_name: &str, help: &str) -> Result<prometheus::IntGauge> {
+        let gauge = IntGauge::new(metric_name, help)?;
+        self.registry.register(Box::new(gauge.clone()))?;
+        Ok(gauge)
+    }
 
-    /// Register an int gauge.
-    pub fn new_int_gauge(
+    /// Register an int gauge vec
+    pub fn new_int_gauge_vec(
         &self,
         metric_name: &str,
         help: &str,
         labels: &[&str],
     ) -> Result<prometheus::IntGaugeVec> {
-        let gauge = IntGaugeVec::new(
+        let gauge_vec = IntGaugeVec::new(
             Opts::new(metric_name, help)
                 .namespace("nomad")
                 .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             labels,
         )?;
-        self.registry.register(Box::new(gauge.clone()))?;
+        self.registry.register(Box::new(gauge_vec.clone()))?;
 
-        Ok(gauge)
+        Ok(gauge_vec)
     }
 
     /// Register an int counter.
