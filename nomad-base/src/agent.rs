@@ -2,8 +2,7 @@ use crate::{
     cancel_task,
     metrics::CoreMetrics,
     settings::{IndexSettings, Settings},
-    BaseError, CachingHome, CachingReplica, ChannelBase, ContractSyncMetrics, IndexDataTypes,
-    NomadDB,
+    BaseError, CachingHome, CachingReplica, ContractSyncMetrics, IndexDataTypes, NomadDB,
 };
 use async_trait::async_trait;
 use color_eyre::{eyre::WrapErr, Result};
