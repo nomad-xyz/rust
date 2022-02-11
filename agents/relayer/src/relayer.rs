@@ -178,4 +178,149 @@ impl NomadAgent for Relayer {
 }
 
 #[cfg(test)]
-mod test {}
+mod test {
+
+    use ethers::prelude::ProviderError;
+    use ethers::types::H256;
+    use nomad_base::trace::TracingConfig;
+    use nomad_base::{ChainConf, SignerConf};
+    use nomad_base::{
+        ChainSetup, CommonIndexers, CoreMetrics, HomeIndexers, HomeVariants, IndexSettings,
+        NomadDB, ReplicaVariants, Replicas,
+    };
+    use nomad_core::utils::HexString;
+    use nomad_core::ChainCommunicationError;
+    use nomad_test::mocks::{MockHomeContract, MockIndexer, MockReplicaContract};
+    use nomad_test::test_utils;
+    use std::collections::HashMap;
+    use std::str::FromStr;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn it_isolates_faulty_channels() {
+        test_utils::run_test_db(|db| async move {
+            println!("kek");
+
+            let mut h: HashMap<String, ChainSetup> = HashMap::new();
+            h.insert(
+                "moonbeam".to_string(),
+                ChainSetup {
+                    name: "moonbeam".to_string(),
+                    domain: "2".to_string(),
+                    address: "kek".to_string(),
+                    timelag: 3,
+                    chain: ChainConf::default(),
+                    disabled: None,
+                },
+            );
+
+            let mut h1: HashMap<String, SignerConf> = HashMap::new();
+            h1.insert(
+                "moonbeam".to_string(),
+                SignerConf::HexKey {
+                    key: HexString::from_str(
+                        "1234567812345678123456781234567812345678123456781234567812345678",
+                    )
+                    .unwrap(),
+                },
+            );
+            let settings = nomad_base::Settings {
+                db: "...".to_string(),
+                metrics: None,
+                index: IndexSettings::default(),
+                use_timelag: false,
+                home: ChainSetup {
+                    name: "ethereum".to_string(),
+                    domain: "1".to_string(),
+                    address: "kek".to_string(),
+                    timelag: 3,
+                    chain: ChainConf::default(),
+                    disabled: None,
+                },
+                replicas: h,
+                tracing: TracingConfig::default(),
+                signers: h1,
+            };
+
+            println!("kek");
+
+            // let db = NomadDB::new("replica_1", db);
+            let metrics = Arc::new(
+                CoreMetrics::new(
+                    "contract_sync_test",
+                    None,
+                    Arc::new(prometheus::Registry::new()),
+                )
+                .expect("could not make metrics"),
+            );
+            // maybe mock settings?
+
+            let home_indexer = Arc::new(MockIndexer::new().into());
+            let replica_indexer = Arc::new(MockIndexer::new().into());
+            let home_db = NomadDB::new("home_1", db.clone());
+
+            let mut home = MockHomeContract::new();
+
+            {
+                home.expect__name().return_const("home_1".to_owned());
+            }
+
+            let home = CachingHome::new(home.into(), home_db.clone(), home_indexer).into();
+            let mut replica = MockReplicaContract::new();
+            {
+                // replica
+                //     .expect__committed_root()
+                //     .return_once(|| Ok(H256::zero()));
+                replica
+                    .expect__committed_root()
+                    .times(1..1000)
+                    .returning(|| {
+                        Err(ChainCommunicationError::ProviderError(
+                            ProviderError::CustomError("KEK".to_string()),
+                        ))
+                    });
+            }
+
+            // let replicas = settings.try_caching_replicas(db).await.unwrap();
+            let mut replicas: HashMap<String, Arc<CachingReplica>> = HashMap::new();
+
+            replicas.insert(
+                "moonbeam".to_string(),
+                Arc::new(CachingReplica::new(
+                    replica.into(),
+                    home_db,
+                    replica_indexer,
+                )),
+            );
+
+            let core = AgentCore {
+                home,     //Arc<CachingHome>,
+                replicas, //HashMap<String, Arc<CachingReplica>>,
+                db,
+                metrics,
+                /// The height at which to start indexing the Home
+                indexer: IndexSettings::default(),
+                /// Settings this agent was created with
+                settings,
+            };
+
+            let agent = Relayer::new(5, core);
+
+            match agent.run_many(&["moonbeam"]).await {
+                Ok(ok) => match ok {
+                    Err(e) => {
+                        println!("ACTUAL EEEEE: {}", e);
+                    }
+                    _ => {
+                        println!("ok...");
+                    }
+                },
+                Err(e) => {
+                    println!("JOIN EEEEEE: {}", e);
+                }
+            }
+        })
+        .await
+    }
+}
