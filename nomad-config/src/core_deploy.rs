@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::{
     agent::AgentConfig,
-    common::{NomadIdentifier, NumberOrDecimalString},
+    common::{NomadIdentifier, NumberOrNumberString},
     contracts::CoreContracts,
 };
 
@@ -10,21 +10,21 @@ use crate::{
 #[serde(rename_all = "camelCase")]
 pub struct Governor {
     pub address: NomadIdentifier,
-    pub domain: NumberOrDecimalString,
+    pub domain: NumberOrNumberString,
 }
 
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Governance {
     pub recovery_manager: NomadIdentifier,
-    pub recovery_timelock: NumberOrDecimalString,
+    pub recovery_timelock: NumberOrNumberString,
 }
 
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CoreNetwork {
     pub name: String,
-    pub domain: NumberOrDecimalString,
+    pub domain: NumberOrNumberString,
     pub connections: HashSet<String>,
     pub contracts: CoreContracts,
     pub governance: Governance,

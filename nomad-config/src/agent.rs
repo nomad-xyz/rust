@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::common::NumberOrDecimalString;
+use crate::common::NumberOrNumberString;
 
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -70,22 +70,22 @@ pub struct LogConfig {
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct IndexConfig {
-    from: NumberOrDecimalString,
-    chunk: NumberOrDecimalString,
+    from: NumberOrNumberString,
+    chunk: NumberOrNumberString,
 }
 
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BaseAgentConfig {
     enabled: bool,
-    interval: NumberOrDecimalString,
+    interval: NumberOrNumberString,
 }
 
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AgentConfig {
     rpc_style: RpcStyles,
-    timelag: NumberOrDecimalString,
+    timelag: NumberOrNumberString,
     db: PathBuf,
     logging: LogConfig,
     index: IndexConfig,

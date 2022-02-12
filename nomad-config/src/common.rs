@@ -68,9 +68,9 @@ impl PartialEq for NomadIdentifier {
 impl Eq for NomadIdentifier {}
 
 #[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct NumberOrDecimalString(u64);
+pub struct NumberOrNumberString(u64);
 
-impl serde::Serialize for NumberOrDecimalString {
+impl serde::Serialize for NumberOrNumberString {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -79,23 +79,23 @@ impl serde::Serialize for NumberOrDecimalString {
     }
 }
 
-impl<'de> serde::Deserialize<'de> for NumberOrDecimalString {
+impl<'de> serde::Deserialize<'de> for NumberOrNumberString {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
-        let number = deserializer.deserialize_any(DeserializeNumberOrDecimalStringVisitor)?;
-        Ok(NumberOrDecimalString(number))
+        let number = deserializer.deserialize_any(NumberOrNumberStringVisitor)?;
+        Ok(NumberOrNumberString(number))
     }
 }
 
-struct DeserializeNumberOrDecimalStringVisitor;
+struct NumberOrNumberStringVisitor;
 
-impl<'de> de::Visitor<'de> for DeserializeNumberOrDecimalStringVisitor {
+impl<'de> de::Visitor<'de> for NumberOrNumberStringVisitor {
     type Value = u64;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("an integer or a string")
+        formatter.write_str("an integer, a decimal string, or a 0x-prepended hexadecimal string")
     }
 
     fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
@@ -110,10 +110,19 @@ impl<'de> de::Visitor<'de> for DeserializeNumberOrDecimalStringVisitor {
         E: de::Error,
     {
         if let Ok(res) = v.parse() {
-            Ok(res)
-        } else {
-            Err(E::invalid_value(de::Unexpected::Str(v), &self))
+            return Ok(res);
         }
+
+        if v.starts_with("0x") {
+            if v.len() == 2 {
+                return Ok(0);
+            }
+            if let Ok(res) = u64::from_str_radix(&v[2..], 16) {
+                return Ok(res);
+            }
+        }
+
+        Err(E::invalid_value(de::Unexpected::Str(v), &self))
     }
 }
 
@@ -123,7 +132,7 @@ mod test {
 
     use crate::common::NomadIdentifier;
 
-    use super::NumberOrDecimalString;
+    use super::NumberOrNumberString;
 
     #[test]
     fn it_sers_and_desers_identifiers() {
@@ -141,16 +150,20 @@ mod test {
 
     #[test]
     fn it_sers_and_desers_numbers() {
-        let five = NumberOrDecimalString(5);
+        let five = NumberOrNumberString(5);
         let serialized = serde_json::to_value(&five).unwrap();
 
         let val = json! { 5 };
         assert_eq!(serialized, val);
-        let n: NumberOrDecimalString = serde_json::from_value(val).unwrap();
+        let n: NumberOrNumberString = serde_json::from_value(val).unwrap();
         assert_eq!(n, five);
 
         let val = json! { "5" };
-        let n: NumberOrDecimalString = serde_json::from_value(val).unwrap();
+        let n: NumberOrNumberString = serde_json::from_value(val).unwrap();
+        assert_eq!(n, five);
+
+        let val = json! { "0x5" };
+        let n: NumberOrNumberString = serde_json::from_value(val).unwrap();
         assert_eq!(n, five);
     }
 }
