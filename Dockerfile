@@ -1,5 +1,6 @@
 FROM ubuntu:20.04
 
+ENV TARGET_DIR='target'
 WORKDIR /app
 
 RUN apt-get update \
@@ -8,14 +9,17 @@ RUN apt-get update \
     && mkdir /usr/share/nomad \
     && chmod 1000 /usr/share/nomad
 
-COPY target/release/updater \
-     target/release/relayer \
-     target/release/watcher \
-     target/release/processor \
-     target/release/kathy \
-     target/release/kms-cli \
-     target/release/nomad-cli ./
+COPY ${TARGET_DIR}/release/updater \
+     ${TARGET_DIR}/release/relayer \
+     ${TARGET_DIR}/release/watcher \
+     ${TARGET_DIR}/release/processor \
+     ${TARGET_DIR}/release/kathy \
+     ${TARGET_DIR}/release/kms-cli \
+     ${TARGET_DIR}/release/nomad-cli ./
+
 COPY config ./config
+
+
 
 USER 1000
 CMD ["./watcher"]
