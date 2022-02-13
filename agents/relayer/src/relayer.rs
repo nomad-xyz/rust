@@ -194,6 +194,12 @@ mod test {
     use nomad_test::test_utils;
     use std::collections::HashMap;
     use std::str::FromStr;
+    use tokio::{
+        select,
+        sync::{mpsc, RwLock},
+        task::JoinHandle,
+        time::sleep,
+    };
 
     use super::*;
 
@@ -202,29 +208,30 @@ mod test {
         test_utils::run_test_db(|db| async move {
             println!("kek");
 
-            let mut h: HashMap<String, ChainSetup> = HashMap::new();
-            h.insert(
-                "moonbeam".to_string(),
+            let channel_name = "moonbeam";
+
+            let replicas: HashMap<String, ChainSetup> = HashMap::from([(
+                channel_name.to_string(),
                 ChainSetup {
-                    name: "moonbeam".to_string(),
+                    name: channel_name.to_string(),
                     domain: "2".to_string(),
-                    address: "kek".to_string(),
+                    address: ".".to_string(),
                     timelag: 3,
                     chain: ChainConf::default(),
                     disabled: None,
                 },
-            );
+            )]);
 
-            let mut h1: HashMap<String, SignerConf> = HashMap::new();
-            h1.insert(
-                "moonbeam".to_string(),
+            let signers: HashMap<String, SignerConf> = HashMap::from([(
+                channel_name.to_string(),
                 SignerConf::HexKey {
                     key: HexString::from_str(
                         "1234567812345678123456781234567812345678123456781234567812345678",
                     )
                     .unwrap(),
                 },
-            );
+            )]);
+
             let settings = nomad_base::Settings {
                 db: "...".to_string(),
                 metrics: None,
@@ -233,19 +240,16 @@ mod test {
                 home: ChainSetup {
                     name: "ethereum".to_string(),
                     domain: "1".to_string(),
-                    address: "kek".to_string(),
+                    address: ".".to_string(),
                     timelag: 3,
                     chain: ChainConf::default(),
                     disabled: None,
                 },
-                replicas: h,
+                replicas,
                 tracing: TracingConfig::default(),
-                signers: h1,
+                signers,
             };
 
-            println!("kek");
-
-            // let db = NomadDB::new("replica_1", db);
             let metrics = Arc::new(
                 CoreMetrics::new(
                     "contract_sync_test",
@@ -254,72 +258,84 @@ mod test {
                 )
                 .expect("could not make metrics"),
             );
-            // maybe mock settings?
 
+            // Setting home
             let home_indexer = Arc::new(MockIndexer::new().into());
-            let replica_indexer = Arc::new(MockIndexer::new().into());
             let home_db = NomadDB::new("home_1", db.clone());
-
             let mut home = MockHomeContract::new();
-
             {
                 home.expect__name().return_const("home_1".to_owned());
             }
 
             let home = CachingHome::new(home.into(), home_db.clone(), home_indexer).into();
+
+            // Setting replica
             let mut replica = MockReplicaContract::new();
             {
-                // replica
-                //     .expect__committed_root()
-                //     .return_once(|| Ok(H256::zero()));
-                replica
-                    .expect__committed_root()
-                    .times(1..1000)
-                    .returning(|| {
-                        Err(ChainCommunicationError::ProviderError(
-                            ProviderError::CustomError("KEK".to_string()),
-                        ))
-                    });
+                replica.expect__committed_root().times(..).returning(|| {
+                    Err(ChainCommunicationError::ProviderError(
+                        ProviderError::CustomError(
+                            "I am replica and I always throw an error".to_string(),
+                        ),
+                    ))
+                });
             }
 
-            // let replicas = settings.try_caching_replicas(db).await.unwrap();
-            let mut replicas: HashMap<String, Arc<CachingReplica>> = HashMap::new();
-
-            replicas.insert(
-                "moonbeam".to_string(),
+            let replica_indexer = Arc::new(MockIndexer::new().into());
+            let replica_db = NomadDB::new("replica_1", db.clone());
+            let replicas: HashMap<String, Arc<CachingReplica>> = HashMap::from([(
+                channel_name.to_string(),
                 Arc::new(CachingReplica::new(
                     replica.into(),
-                    home_db,
+                    replica_db,
                     replica_indexer,
                 )),
-            );
+            )]);
+
+            // Setting agent
 
             let core = AgentCore {
-                home,     //Arc<CachingHome>,
-                replicas, //HashMap<String, Arc<CachingReplica>>,
+                home,
+                replicas,
                 db,
                 metrics,
-                /// The height at which to start indexing the Home
                 indexer: IndexSettings::default(),
-                /// Settings this agent was created with
                 settings,
             };
 
             let agent = Relayer::new(5, core);
+            let sleep_task = tokio::spawn(async {
+                sleep(Duration::from_secs(5)).await;
+            })
+            .in_current_span();
 
-            match agent.run_many(&["moonbeam"]).await {
-                Ok(ok) => match ok {
-                    Err(e) => {
-                        println!("ACTUAL EEEEE: {}", e);
-                    }
-                    _ => {
-                        println!("ok...");
-                    }
+            let run_many_task = agent.run_many(&[channel_name]);
+
+            select! {
+                _ = sleep_task => {
+                    info!("Syncing tasks finished early!");
+                    // self.shutdown().await;
                 },
-                Err(e) => {
-                    println!("JOIN EEEEEE: {}", e);
-                }
-            }
+                double_res = run_many_task => {
+                    println!("KEEEK! {:?}", double_res)
+                },
+
+            };
+            // agent.run_many(&[channel_name]).await
+
+            // match agent.run_many(&[channel_name]).await {
+            //     Ok(ok) => match ok {
+            //         Err(e) => {
+            //             println!("ACTUAL EEEEE: {}", e);
+            //         }
+            //         _ => {
+            //             println!("ok...");
+            //         }
+            //     },
+            //     Err(e) => {
+            //         println!("JOIN EEEEEE: {}", e);
+            //     }
+            // }
         })
         .await
     }
