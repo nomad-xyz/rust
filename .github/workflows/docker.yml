@@ -1,0 +1,58 @@
+# Documentation
+# https://github.com/docker/metadata-action
+# https://github.com/docker/login-action#google-container-registry-gcr
+# https://github.com/docker/build-push-action
+name: Build Docker container
+on: 
+  push:
+    branches:
+      - 'main'
+    tags:
+      - 'v*'
+
+jobs:
+  build-docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@v1
+        with:
+          # Add a key to prevent rust cache collision with rust.yml workflows
+          key: 'release'
+      
+      - name: Build agents (release)
+        run: cargo build --release
+      
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          # list of Docker images to use as base name for tags
+          images: gcr.io/nomad-xyz/nomad-agent
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha
+
+      - name: Login to Docker repository
+        uses: docker/login-action@v1
+        with:
+          registry: gcr.io
+          username: _json_key
+          password: ${{ secrets.GCLOUD_SERVICE_KEY }}
+
+      - name: Build and push container
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
