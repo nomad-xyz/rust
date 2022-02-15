@@ -181,7 +181,6 @@ impl NomadAgent for Relayer {
 mod test {
 
     use ethers::prelude::ProviderError;
-    use log::error;
     use nomad_base::trace::TracingConfig;
     use nomad_base::{ChainConf, SignerConf};
     use nomad_base::{ChainSetup, CoreMetrics, IndexSettings, NomadDB};
@@ -192,6 +191,7 @@ mod test {
     use std::collections::HashMap;
     use std::str::FromStr;
     use tokio::{select, time::sleep};
+    use tokio_test::assert_err;
 
     use super::*;
 
@@ -298,6 +298,14 @@ mod test {
             };
 
             let agent = Relayer::new(2, core);
+
+            // Sanity check that we indeed throw an error
+            let run_result =
+                <Relayer as nomad_base::NomadAgent>::run(agent.build_channel("moonbeam"))
+                    .await
+                    .expect("Couldn't join relayer's run task");
+            assert_err!(run_result, "Must have returned error");
+
             let sleep_task = tokio::spawn(async {
                 sleep(Duration::from_secs(1)).await;
             })
