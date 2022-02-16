@@ -698,6 +698,7 @@ dependencies = [
  "affix",
  "ethers",
  "eyre",
+ "js-sys",
  "serde 1.0.136",
  "serde_json",
  "wasm-bindgen",
