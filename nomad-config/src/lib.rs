@@ -28,6 +28,13 @@ impl NomadConfig {
         self.core.resolve_domain(domain)
     }
 
+    /// Syntactcially validate the config, consuming and returning self
+    pub fn chained_validate(self) -> eyre::Result<Self> {
+        self.validate()?;
+        Ok(self)
+    }
+
+    /// Syntactically validate the config
     pub fn validate(&self) -> eyre::Result<()> {
         // check core and bridge exist for all listed networks
         for network in self.networks.iter() {

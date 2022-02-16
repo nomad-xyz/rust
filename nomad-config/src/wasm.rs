@@ -18,10 +18,25 @@ macro_rules! deser {
 
 macro_rules! deser_config {
     ($val:ident) => {{
-        let config = deser!($val, crate::NomadConfig);
-        config.validate().map_err(format_errs)?;
+        let config = deser!($val, NomadConfig)
+            .chained_validate()
+            .map_err(format_errs)?;
         config
     }};
+}
+
+macro_rules! to_js_val {
+    ($item:expr) => {
+        JsValue::from_serde(&$item)
+            .wrap_err("Error serializing value for return to Javascript")
+            .map_err(format_errs)
+    };
+}
+
+macro_rules! ret_config {
+    ($config:expr) => {
+        to_js_val!($config.chained_validate().map_err(format_errs)?)
+    };
 }
 
 type JsResult<T> = std::result::Result<T, wasm_bindgen::prelude::JsValue>;
@@ -38,16 +53,17 @@ pub fn validate_config(val: &JsValue) -> JsResult<()> {
 }
 
 #[wasm_bindgen(js_name = blankConfig)]
-pub fn new_config() -> JsValue {
-    JsValue::from_serde(&NomadConfig::default()).unwrap()
+pub fn blank_config() -> JsValue {
+    to_js_val!(NomadConfig::default()).unwrap()
 }
 
-#[wasm_bindgen(js_name = fromString)]
-pub fn from_string(s: &str) -> JsResult<JsValue> {
-    serde_json::from_str::<crate::NomadConfig>(s)
+#[wasm_bindgen(js_name = configFromString)]
+pub fn config_from_string(s: &str) -> JsResult<JsValue> {
+    let config = serde_json::from_str::<crate::NomadConfig>(s)
         .wrap_err("Unable to deserialize config from string")
-        .map_err(format_errs)
-        .map(|v| JsValue::from_serde(&v).map_err(format_errs))?
+        .map_err(format_errs)?;
+
+    ret_config!(config)
 }
 
 #[wasm_bindgen(js_name = addNetwork)]
@@ -60,7 +76,5 @@ pub fn add_network(config: &JsValue, network: &JsValue) -> JsResult<JsValue> {
         .core
         .networks
         .insert(network.name.to_owned(), network);
-
-    config.validate().map_err(format_errs)?;
-    todo!()
+    ret_config!(config)
 }
