@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::common::NomadIdentifier;
 
-#[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Default, Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Proxy {
     pub implementation: NomadIdentifier,
@@ -39,6 +39,12 @@ impl CoreContracts {
             CoreContracts::Evm(contracts) => contracts.replicas.contains_key(name),
         }
     }
+
+    pub fn replica_of(&self, home_network: &str) -> Option<NomadIdentifier> {
+        match self {
+            CoreContracts::Evm(contracts) => contracts.replicas.get(home_network).map(|n| n.proxy),
+        }
+    }
 }
 
 impl Default for CoreContracts {
@@ -53,6 +59,7 @@ pub struct EvmBridgeContracts {
     pub bridge_router: Proxy,
     pub token_registry: Proxy,
     pub bridge_token: Proxy,
+    #[serde(default)]
     pub eth_helper: Option<NomadIdentifier>,
 }
 

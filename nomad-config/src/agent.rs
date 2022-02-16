@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::common::NumberOrNumberString;
+use crate::common::deser_nomad_number;
 
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -60,41 +60,45 @@ impl Default for LogLevel {
     }
 }
 
-#[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Default, Debug, Copy, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LogConfig {
-    fmt: LogStyle,
-    level: LogLevel,
+    pub fmt: LogStyle,
+    pub level: LogLevel,
 }
 
-#[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Default, Debug, Copy, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct IndexConfig {
-    from: NumberOrNumberString,
-    chunk: NumberOrNumberString,
+    #[serde(deserialize_with = "deser_nomad_number")]
+    pub from: u64,
+    #[serde(deserialize_with = "deser_nomad_number")]
+    pub chunk: u64,
 }
 
-#[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Default, Debug, Copy, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BaseAgentConfig {
-    enabled: bool,
-    interval: NumberOrNumberString,
+    pub enabled: bool,
+    #[serde(deserialize_with = "deser_nomad_number")]
+    pub interval: u64,
 }
 
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AgentConfig {
-    rpc_style: RpcStyles,
-    timelag: NumberOrNumberString,
-    db: PathBuf,
-    logging: LogConfig,
-    index: IndexConfig,
+    pub rpc_style: RpcStyles,
+    #[serde(deserialize_with = "deser_nomad_number")]
+    pub timelag: u64,
+    pub db: PathBuf,
+    pub logging: LogConfig,
+    pub index: IndexConfig,
 
-    updater: BaseAgentConfig,
-    relayer: BaseAgentConfig,
-    processor: BaseAgentConfig,
-    watcher: BaseAgentConfig,
-    kathy: BaseAgentConfig,
+    pub updater: BaseAgentConfig,
+    pub relayer: BaseAgentConfig,
+    pub processor: BaseAgentConfig,
+    pub watcher: BaseAgentConfig,
+    pub kathy: BaseAgentConfig,
 }
 
 #[cfg(test)]

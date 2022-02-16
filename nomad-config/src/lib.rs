@@ -5,6 +5,7 @@ pub mod common;
 pub mod contracts;
 pub mod core_deploy;
 
+use common::{NameOrDomain, NomadIdentifier};
 use contracts::BridgeContracts;
 use core_deploy::CoreDeploy;
 
@@ -22,6 +23,11 @@ pub struct NomadConfig {
 }
 
 impl NomadConfig {
+    /// Resolve a name or domain
+    pub fn resolve_domain(&self, domain: NameOrDomain) -> Option<String> {
+        self.core.resolve_domain(domain)
+    }
+
     pub fn validate(&self) -> eyre::Result<()> {
         // check core and bridge exist for all listed networks
         for network in self.networks.iter() {
@@ -80,6 +86,34 @@ impl NomadConfig {
         }
 
         Ok(())
+    }
+
+    /// Returns a config containing ONLY the networks directly connected to the
+    /// specified network. This should be used for agent bootup
+    pub fn trim_to_network(&self, network: impl AsRef<str>) -> eyre::Result<NomadConfig> {
+        let network = network.as_ref();
+        let mut trimmed = self.clone();
+        trimmed.core = trimmed.core.trim_for_network(network)?;
+        trimmed.networks = trimmed.core.networks();
+        trimmed.bridge = trimmed
+            .bridge
+            .into_iter()
+            .filter(|(k, _)| trimmed.networks.contains(k))
+            .collect();
+
+        Ok(trimmed)
+    }
+
+    /// Find the replica of home_network on target_network
+    pub fn locate_replica_of(
+        &self,
+        home_network: NameOrDomain,
+        target_network: NameOrDomain,
+    ) -> Option<NomadIdentifier> {
+        let home_network = self.resolve_domain(home_network)?;
+        self.core
+            .get_network(target_network)
+            .and_then(|n| n.replica_of(&home_network))
     }
 }
 
