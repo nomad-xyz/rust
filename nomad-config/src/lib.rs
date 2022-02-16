@@ -15,6 +15,7 @@ use common::{NameOrDomain, NomadIdentifier};
 use contracts::BridgeContracts;
 use core_deploy::{CoreDeploy, CoreNetwork};
 
+/// Wasm bindings for common operations
 #[cfg(target_arch = "wasm32")]
 pub mod wasm;
 

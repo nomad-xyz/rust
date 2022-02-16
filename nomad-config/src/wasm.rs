@@ -46,17 +46,20 @@ fn format_errs(e: impl std::fmt::Display) -> wasm_bindgen::prelude::JsValue {
     format!("{}", e).into()
 }
 
+/// Syntactically validate a config. Throw an error if invalid
 #[wasm_bindgen(js_name = validateConfig)]
 pub fn validate_config(val: &JsValue) -> JsResult<()> {
     deser_config!(val);
     Ok(())
 }
 
+/// Make a new blank config
 #[wasm_bindgen(js_name = blankConfig)]
 pub fn blank_config() -> JsValue {
     to_js_val!(NomadConfig::default()).unwrap()
 }
 
+/// Parse a json string into a config
 #[wasm_bindgen(js_name = configFromString)]
 pub fn config_from_string(s: &str) -> JsResult<JsValue> {
     let config = serde_json::from_str::<crate::NomadConfig>(s)
@@ -66,10 +69,20 @@ pub fn config_from_string(s: &str) -> JsResult<JsValue> {
     ret_config!(config)
 }
 
+/// Add a network to the config
 #[wasm_bindgen(js_name = addNetwork)]
 pub fn add_network(config: &JsValue, network: &JsValue) -> JsResult<JsValue> {
     let mut config = deser_config!(config);
     let network = deser!(network, crate::core_deploy::CoreNetwork);
-    config.add_network(network)?;
+    config.add_network(network).map_err(format_errs)?;
+    ret_config!(config)
+}
+
+/// Add a bridge to a config
+#[wasm_bindgen(js_name = addBridge)]
+pub fn add_bridge(config: &JsValue, name: &str, bridge: &JsValue) -> JsResult<JsValue> {
+    let mut config = deser_config!(config);
+    let bridge = deser!(bridge, crate::contracts::BridgeContracts);
+    config.add_bridge(name, bridge).map_err(format_errs)?;
     ret_config!(config)
 }
