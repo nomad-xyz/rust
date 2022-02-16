@@ -1,5 +1,4 @@
 use crate::{agent, common, contracts, core_deploy};
-use std::path;
 use wasm_bindgen::prelude::*;
 
 macro_rules! basic_impl {
@@ -90,8 +89,8 @@ macro_rules! decl_getter {
 
 
                 #[wasm_bindgen::prelude::wasm_bindgen(method, getter = [<$prop:camel>])]
-                pub fn [<get_ $prop>](&self) -> $type {
-                    self.0.$prop.clone().into()
+                pub fn [<get_ $prop>](&self) -> &$type {
+                    self.0.$prop
                 }
             }
         }
@@ -132,8 +131,6 @@ pub(crate) mod wasm_utils {
     }
 }
 
-wrap_struct!(path::PathBuf + Default);
-
 wrap_struct!(
     /// NomadIdentifier
     common::NomadIdentifier
@@ -162,7 +159,6 @@ wrap_struct!(
     agent::RpcStyles
         + Default
 );
-
 wrap_struct!(
     /// LogStyle
     agent::LogStyle
@@ -203,7 +199,7 @@ impl_prop_access!(
     AgentConfig,
     rpc_style: RpcStyles,
     timelag: u64,
-    db: PathBuf,
+    // db: PathBuf,
     logging: LogConfig,
     index: IndexConfig,
     updater: BaseAgentConfig,
@@ -212,6 +208,19 @@ impl_prop_access!(
     watcher: BaseAgentConfig,
     kathy: BaseAgentConfig,
 );
+
+#[wasm_bindgen]
+impl AgentConfig {
+    #[wasm_bindgen(method, getter)]
+    pub fn db(&self) -> String {
+        self.0.db.display().to_string()
+    }
+
+    #[wasm_bindgen(method, setter = db)]
+    pub fn set_db(&mut self, s: &str) {
+        self.0.db = s.parse().unwrap();
+    }
+}
 
 wrap_struct!(
     /// Proxy
@@ -292,13 +301,40 @@ impl_prop_access!(
     CoreNetwork,
     name: String,
     domain: u64,
-    // connections: Vec<String>,
     contracts: CoreContracts,
     governance: Governance,
     // updaters: Vec<NomadIdentifier>,
     // watchers: Vec<NomadIdentifier>,
     agents: AgentConfig,
 );
+
+#[wasm_bindgen]
+impl CoreNetwork {
+    #[wasm_bindgen(method, getter)]
+    pub fn connections(&self) -> JsValue {
+        JsValue::from_serde(&self.0.connections).unwrap()
+    }
+
+    #[wasm_bindgen(method, getter)]
+    pub fn updaters(&self) -> Vec<JsValue> {
+        self.0
+            .updaters
+            .iter()
+            .map(NomadIdentifier::from)
+            .map(JsValue::from)
+            .collect()
+    }
+
+    #[wasm_bindgen(method, getter)]
+    pub fn watchers(&self) -> Vec<JsValue> {
+        self.0
+            .watchers
+            .iter()
+            .map(NomadIdentifier::from)
+            .map(JsValue::from)
+            .collect()
+    }
+}
 
 wrap_struct!(
     /// CoreDeploy
@@ -316,7 +352,6 @@ wrap_struct!(
     crate::NomadConfig
         + Default
 );
-
 impl_prop_access!(
     NomadConfig,
     environment: String,
