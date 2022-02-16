@@ -3,26 +3,28 @@ use wasm_bindgen::prelude::*;
 use crate::NomadConfig;
 use eyre::WrapErr;
 
-type JsResult<T> = std::result::Result<T, wasm_bindgen::prelude::JsValue>;
-
 macro_rules! deser {
     ($val:ident, $expected:ty) => {{
-        $val.into_serde::<$expected>()
+        let val = $val
+            .into_serde::<$expected>()
             .wrap_err(format!(
                 "Error while deserializing Javascript object to {}",
                 stringify!($expected)
             ))
-            .map_err(format_errs)
+            .map_err(format_errs)?;
+        val
     }};
 }
 
 macro_rules! deser_config {
-    ($val:ident) => {
-        deser!($val, crate::NomadConfig)?
-            .validate()
-            .map_err(format_errs)?
-    };
+    ($val:ident) => {{
+        let config = deser!($val, crate::NomadConfig);
+        config.validate().map_err(format_errs)?;
+        config
+    }};
 }
+
+type JsResult<T> = std::result::Result<T, wasm_bindgen::prelude::JsValue>;
 
 /// Convert any display type into a string for javascript errors
 fn format_errs(e: impl std::fmt::Display) -> wasm_bindgen::prelude::JsValue {
@@ -31,7 +33,8 @@ fn format_errs(e: impl std::fmt::Display) -> wasm_bindgen::prelude::JsValue {
 
 #[wasm_bindgen(js_name = validateConfig)]
 pub fn validate_config(val: &JsValue) -> JsResult<()> {
-    Ok(deser_config!(val))
+    deser_config!(val);
+    Ok(())
 }
 
 #[wasm_bindgen(js_name = blankConfig)]
@@ -49,7 +52,15 @@ pub fn from_string(s: &str) -> JsResult<JsValue> {
 
 #[wasm_bindgen(js_name = addNetwork)]
 pub fn add_network(config: &JsValue, network: &JsValue) -> JsResult<JsValue> {
-    let config = deser_config!(config);
+    let mut config = deser_config!(config);
+    let network = deser!(network, crate::core_deploy::CoreNetwork);
 
+    config.networks.insert(network.name.to_owned());
+    config
+        .core
+        .networks
+        .insert(network.name.to_owned(), network);
+
+    config.validate().map_err(format_errs)?;
     todo!()
 }
