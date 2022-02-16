@@ -1,8 +1,11 @@
-use std::fmt;
+//! Common Nomad configuration datastructures
+
+use std::{fmt, ops::DerefMut};
 
 use ethers::prelude::{Address, H256};
 use serde::{de, Deserializer};
 
+/// A 32-byte network-agnostic identifier
 #[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, serde::Serialize, Default, Hash)]
 pub struct NomadIdentifier(H256);
 
@@ -15,6 +18,20 @@ impl<'de> serde::Deserialize<'de> for NomadIdentifier {
     }
 }
 
+impl std::ops::Deref for NomadIdentifier {
+    type Target = H256;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for NomadIdentifier {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl From<H256> for NomadIdentifier {
     fn from(h: H256) -> Self {
         Self(h)
@@ -24,6 +41,19 @@ impl From<H256> for NomadIdentifier {
 impl From<Address> for NomadIdentifier {
     fn from(h: Address) -> Self {
         Self(h.into())
+    }
+}
+
+impl NomadIdentifier {
+    /// Convert to an address. Return `None` if the conversion would drop non-0
+    /// bytes
+    pub fn as_address(&self) -> Option<Address> {
+        let buf = self.as_fixed_bytes();
+        if buf.starts_with(&[0u8; 12]) {
+            Some(Address::from_slice(&buf[12..]))
+        } else {
+            None
+        }
     }
 }
 
@@ -51,6 +81,8 @@ impl<'de> de::Visitor<'de> for NomadIdentifierVisitor {
     }
 }
 
+/// Permissive deserialization of numbers. Allows numbers, hex strings, and
+/// decimal strings
 pub fn deser_nomad_number<'de, D>(deserializer: D) -> Result<u64, D::Error>
 where
     D: Deserializer<'de>,
@@ -96,10 +128,13 @@ where
     deserializer.deserialize_any(NumberOrNumberStringVisitor)
 }
 
+/// An abstraction for allowing domains to be referenced by name or number
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
 pub enum NameOrDomain {
+    /// Domain name
     Name(String),
+    /// Domain number
     Domain(u32),
 }
 
@@ -113,6 +148,18 @@ impl From<u32> for NameOrDomain {
     fn from(t: u32) -> Self {
         Self::Domain(t.into())
     }
+}
+
+/// Domain/Address pair
+#[derive(
+    Default, Debug, Clone, Copy, Hash, Eq, PartialEq, serde::Serialize, serde::Deserialize,
+)]
+#[serde(rename_all = "camelCase")]
+pub struct NomadLocator {
+    /// The domain
+    pub domain: u32,
+    /// The identifier on that domain
+    pub id: NomadIdentifier,
 }
 
 #[cfg(test)]
@@ -137,6 +184,7 @@ mod test {
 
     #[test]
     fn it_sers_and_desers_numbers() {
+        // should serialize as a number, but have permissive deser
         let five: u64 = 5;
         let serialized = serde_json::to_value(&five).unwrap();
 

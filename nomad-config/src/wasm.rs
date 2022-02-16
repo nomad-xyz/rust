@@ -70,11 +70,6 @@ pub fn config_from_string(s: &str) -> JsResult<JsValue> {
 pub fn add_network(config: &JsValue, network: &JsValue) -> JsResult<JsValue> {
     let mut config = deser_config!(config);
     let network = deser!(network, crate::core_deploy::CoreNetwork);
-
-    config.networks.insert(network.name.to_owned());
-    config
-        .core
-        .networks
-        .insert(network.name.to_owned(), network);
+    config.add_network(network)?;
     ret_config!(config)
 }
