@@ -15,7 +15,7 @@ metrics-exporter-prometheus = "0"
 serde_json = "1"
 serde = "1"
 color-eyre = "0"
-clap = "3.0.0-beta.4"
+clap = { version = "3.1", features =  ["derive", "cargo"] }
 human-panic = "1"
 
 nomad-base = { path = "../../nomad-base" }
