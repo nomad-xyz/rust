@@ -112,11 +112,11 @@ where
                 return Ok(res);
             }
 
-            if v.starts_with("0x") {
-                if v.len() == 2 {
+            if let Some(stripped) = v.strip_prefix("0x") {
+                if stripped.is_empty() {
                     return Ok(0);
                 }
-                if let Ok(res) = u64::from_str_radix(&v[2..], 16) {
+                if let Ok(res) = u64::from_str_radix(stripped, 16) {
                     return Ok(res);
                 }
             }
@@ -146,7 +146,7 @@ impl From<String> for NameOrDomain {
 
 impl From<u32> for NameOrDomain {
     fn from(t: u32) -> Self {
-        Self::Domain(t.into())
+        Self::Domain(t)
     }
 }
 

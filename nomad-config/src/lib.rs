@@ -119,7 +119,7 @@ impl NomadConfig {
 
         let name = network.name.clone();
         self.networks.insert(name.clone());
-        let held = self.core.networks.insert(name.clone(), network);
+        let held = self.core.networks.insert(name, network);
 
         let valid = self.validate();
         // rewind
