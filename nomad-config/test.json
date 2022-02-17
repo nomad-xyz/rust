@@ -7,7 +7,7 @@
   },
   "core": {
     "governor": {
-      "address": "0x93277b8f5939975b9e6694d5fd2837143afbf68a",
+      "id": "0x93277b8f5939975b9e6694d5fd2837143afbf68a",
       "domain": 6648936
     },
     "networks": {

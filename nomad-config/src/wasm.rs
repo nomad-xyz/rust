@@ -43,7 +43,7 @@ type JsResult<T> = std::result::Result<T, wasm_bindgen::prelude::JsValue>;
 
 /// Convert any display type into a string for javascript errors
 fn format_errs(e: impl std::fmt::Display) -> wasm_bindgen::prelude::JsValue {
-    format!("{}", e).into()
+    format!("{:#}", e).into()
 }
 
 /// Syntactically validate a config. Throw an error if invalid
