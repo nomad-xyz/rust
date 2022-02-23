@@ -1,8 +1,5 @@
 use async_trait::async_trait;
-use color_eyre::{
-    eyre::{bail, eyre},
-    Result,
-};
+use color_eyre::{eyre::bail, Result};
 use ethers::prelude::H256;
 use futures_util::future::select_all;
 use std::{
@@ -14,8 +11,8 @@ use tokio::{sync::RwLock, task::JoinHandle, time::sleep};
 use tracing::{debug, error, info, info_span, instrument, instrument::Instrumented, Instrument};
 
 use nomad_base::{
-    cancel_task, decl_agent, AgentCore, CachingHome, CachingReplica, ContractSyncMetrics,
-    IndexDataTypes, NomadAgent, NomadDB, ProcessorError,
+    cancel_task, decl_agent, decl_channel, AgentCore, CachingHome, CachingReplica,
+    ContractSyncMetrics, IndexDataTypes, NomadAgent, NomadDB, ProcessorError,
 };
 use nomad_core::{
     accumulator::merkle::Proof, CommittedMessage, Common, Home, HomeEvents, MessageStatus,
@@ -45,7 +42,7 @@ pub(crate) struct Replica {
     db: NomadDB,
     allowed: Option<Arc<HashSet<H256>>>,
     denied: Option<Arc<HashSet<H256>>>,
-    next_message_nonce: Arc<prometheus::IntGaugeVec>,
+    next_message_nonce: prometheus::IntGauge,
 }
 
 impl std::fmt::Display for Replica {
@@ -81,9 +78,7 @@ impl Replica {
                     .map(|n: u32| n + 1)
                     .unwrap_or_default();
 
-                self.next_message_nonce
-                    .with_label_values(&[self.home.name(), self.replica.name(), AGENT_NAME])
-                    .set(next_message_nonce as i64);
+                self.next_message_nonce.set(next_message_nonce as i64);
 
                 info!(
                     replica_domain,
@@ -114,13 +109,7 @@ impl Replica {
                             .store_keyed_encodable(CURRENT_NONCE, &replica_domain, &next_message_nonce)?;
 
                             next_message_nonce += 1;
-                            self.next_message_nonce
-                                .with_label_values(&[
-                                    self.home.name(),
-                                    self.replica.name(),
-                                    AGENT_NAME,
-                                ])
-                                .set(next_message_nonce as i64);
+                            self.next_message_nonce.set(next_message_nonce as i64);
                         }
                         Ok(Flow::Repeat) => {
                             // there was some fault, let's wait and then try again later when state may have moved
@@ -305,7 +294,7 @@ decl_agent!(
         allowed: Option<Arc<HashSet<H256>>>,
         denied: Option<Arc<HashSet<H256>>>,
         index_only: bool,
-        next_message_nonce: Arc<prometheus::IntGaugeVec>,
+        next_message_nonces: prometheus::IntGaugeVec,
         config: Option<S3Config>,
     }
 );
@@ -320,15 +309,14 @@ impl Processor {
         index_only: bool,
         config: Option<S3Config>,
     ) -> Self {
-        let next_message_nonce = Arc::new(
-            core.metrics
-                .new_int_gauge(
-                    "next_message_nonce",
-                    "Index of the next message to inspect",
-                    &["home", "replica", "agent"],
-                )
-                .expect("processor metric already registered -- should have be a singleton"),
-        );
+        let next_message_nonces = core
+            .metrics
+            .new_int_gauge(
+                "next_message_nonce",
+                "Index of the next message to inspect",
+                &["home", "replica", "agent"],
+            )
+            .expect("processor metric already registered -- should have be a singleton");
 
         Self {
             interval,
@@ -336,12 +324,19 @@ impl Processor {
             replica_tasks: Default::default(),
             allowed: allowed.map(Arc::new),
             denied: denied.map(Arc::new),
-            next_message_nonce,
+            next_message_nonces,
             index_only,
             config,
         }
     }
 }
+
+decl_channel!(Processor {
+    next_message_nonce: prometheus::IntGauge,
+    allowed: Option<Arc<HashSet<H256>>>,
+    denied: Option<Arc<HashSet<H256>>>,
+    interval: u64,
+});
 
 #[async_trait]
 #[allow(clippy::unit_arg)]
@@ -349,6 +344,8 @@ impl NomadAgent for Processor {
     const AGENT_NAME: &'static str = AGENT_NAME;
 
     type Settings = Settings;
+
+    type Channel = ProcessorChannel;
 
     async fn from_settings(settings: Self::Settings) -> Result<Self>
     where
@@ -364,29 +361,30 @@ impl NomadAgent for Processor {
         ))
     }
 
-    fn run(&self, name: &str) -> Instrumented<JoinHandle<Result<()>>> {
-        let home = self.home();
-        let next_message_nonce = self.next_message_nonce.clone();
-        let interval = self.interval;
-        let db = NomadDB::new(home.name(), self.db());
-
-        let replica_opt = self.replica_by_name(name);
-        let name = name.to_owned();
-
-        let allowed = self.allowed.clone();
-        let denied = self.denied.clone();
-
-        tokio::spawn(async move {
-            let replica = replica_opt.ok_or_else(|| eyre!("No replica named {}", name))?;
-
-            Replica {
-                interval,
+    fn build_channel(&self, replica: &str) -> Self::Channel {
+        Self::Channel {
+            base: self.channel_base(replica),
+            next_message_nonce: self.next_message_nonces.with_label_values(&[
+                self.home().name(),
                 replica,
-                home,
-                db,
-                allowed,
-                denied,
-                next_message_nonce,
+                Self::AGENT_NAME,
+            ]),
+            allowed: self.allowed.clone(),
+            denied: self.denied.clone(),
+            interval: self.interval,
+        }
+    }
+
+    fn run(channel: Self::Channel) -> Instrumented<JoinHandle<Result<()>>> {
+        tokio::spawn(async move {
+            Replica {
+                interval: channel.interval,
+                replica: channel.replica(),
+                home: channel.home(),
+                db: channel.db(),
+                allowed: channel.allowed,
+                denied: channel.denied,
+                next_message_nonce: channel.next_message_nonce,
             }
             .main()
             .await?
