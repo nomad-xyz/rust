@@ -16,8 +16,6 @@ pub struct CoreMetrics {
     channel_faults: Box<IntGaugeVec>,
     rpc_latencies: Box<HistogramVec>,
     span_durations: Box<HistogramVec>,
-    home_failure_checks: Box<IntGauge>,
-    home_failure_observations: Box<IntGauge>,
     listen_port: Option<u16>,
     /// Metrics registry for adding new metrics and gathering reports
     registry: Arc<Registry>,
@@ -77,14 +75,6 @@ impl CoreMetrics {
                 .const_label("VERSION", env!("CARGO_PKG_VERSION")),
                 &["span_name", "target"],
             )?),
-            home_failure_checks: Box::new(IntGauge::new(
-                "home_failure_checks",
-                "Number of times agent has checked home for failed state",
-            )?),
-            home_failure_observations: Box::new(IntGauge::new(
-                "home_failure_observations",
-                "Number of times agent has seen the home failed (anything > 0 is major red flag!)",
-            )?),
             registry,
             listen_port,
         };
@@ -95,39 +85,26 @@ impl CoreMetrics {
         metrics.registry.register(metrics.wallet_balance.clone())?;
         metrics.registry.register(metrics.rpc_latencies.clone())?;
         metrics.registry.register(metrics.span_durations.clone())?;
-        metrics.registry.register(metrics.channel_faults.clone())?;
-        metrics
-            .registry
-            .register(metrics.home_failure_checks.clone())?;
-        metrics
-            .registry
-            .register(metrics.home_failure_observations.clone())?;
 
         Ok(metrics)
     }
-    /// Register an int gauge
-    pub fn new_int_gauge(&self, metric_name: &str, help: &str) -> Result<prometheus::IntGauge> {
-        let gauge = IntGauge::new(metric_name, help)?;
-        self.registry.register(Box::new(gauge.clone()))?;
-        Ok(gauge)
-    }
 
-    /// Register an int gauge vec
-    pub fn new_int_gauge_vec(
+    /// Register an int gauge.
+    pub fn new_int_gauge(
         &self,
         metric_name: &str,
         help: &str,
         labels: &[&str],
     ) -> Result<prometheus::IntGaugeVec> {
-        let gauge_vec = IntGaugeVec::new(
+        let gauge = IntGaugeVec::new(
             Opts::new(metric_name, help)
                 .namespace("nomad")
                 .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             labels,
         )?;
-        self.registry.register(Box::new(gauge_vec.clone()))?;
+        self.registry.register(Box::new(gauge.clone()))?;
 
-        Ok(gauge_vec)
+        Ok(gauge)
     }
 
     /// Register an int counter.
@@ -183,19 +160,9 @@ impl CoreMetrics {
     }
 
     /// Return single gauge for one home <> replica channel
-    pub fn channel_faults_gauge(&self, home: &str, replica: &str) -> IntGauge {
+    pub fn channel_specific_gauge(&self, home: &str, replica: &str) -> IntGauge {
         self.channel_faults
             .with_label_values(&[home, replica, &self.agent_name])
-    }
-
-    /// Return home failure checks gauge
-    pub fn home_failure_checks(&self) -> Box<IntGauge> {
-        self.home_failure_checks.clone()
-    }
-
-    /// Return home failure observations gauge
-    pub fn home_failure_observations(&self) -> Box<IntGauge> {
-        self.home_failure_observations.clone()
     }
 
     /// Call with RPC duration after it is complete

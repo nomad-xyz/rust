@@ -21,7 +21,7 @@ impl ContractSyncMetrics {
     /// Instantiate a new ContractSyncMetrics object.
     pub fn new(metrics: Arc<CoreMetrics>) -> Self {
         let indexed_height = metrics
-            .new_int_gauge_vec(
+            .new_int_gauge(
                 "contract_sync_block_height",
                 "Height of a recently observed block",
                 &["data_type", "contract_name", "agent"],
@@ -40,7 +40,7 @@ impl ContractSyncMetrics {
             .expect("failed to register store_event_latency metric");
 
         let stored_events = metrics
-            .new_int_gauge_vec(
+            .new_int_gauge(
                 "contract_sync_stored_events",
                 "Number of events stored into db",
                 &["data_type", "contract_name", "agent"],
@@ -48,7 +48,7 @@ impl ContractSyncMetrics {
             .expect("failed to register stored_events metric");
 
         let missed_events = metrics
-            .new_int_gauge_vec(
+            .new_int_gauge(
                 "contract_sync_missed_events",
                 "Number of unique occasions when agent missed an event",
                 &["data_type", "contract_name", "agent"],

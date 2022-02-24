@@ -311,7 +311,7 @@ impl Processor {
     ) -> Self {
         let next_message_nonces = core
             .metrics
-            .new_int_gauge_vec(
+            .new_int_gauge(
                 "next_message_nonce",
                 "Index of the next message to inspect",
                 &["home", "replica", "agent"],

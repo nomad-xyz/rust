@@ -4,7 +4,6 @@ use thiserror::Error;
 
 use ethers::core::types::H256;
 use futures_util::future::{join, join_all, select_all};
-use prometheus::{IntGauge, IntGaugeVec};
 use std::{collections::HashMap, fmt::Display, sync::Arc, time::Duration};
 use tokio::{
     select,
@@ -42,7 +41,6 @@ where
     committed_root: H256,
     tx: mpsc::Sender<SignedUpdate>,
     contract: Arc<C>,
-    updates_inspected_for_double: IntGauge,
 }
 
 impl<C> Display for ContractWatcher<C>
@@ -68,14 +66,12 @@ where
         from: H256,
         tx: mpsc::Sender<SignedUpdate>,
         contract: Arc<C>,
-        updates_inspected_for_double: IntGauge,
     ) -> Self {
         Self {
             interval,
             committed_root: from,
             tx,
             contract,
-            updates_inspected_for_double,
         }
     }
 
@@ -102,10 +98,7 @@ where
             &new_update,
             self.contract.name()
         );
-
         self.tx.send(new_update).await?;
-        self.updates_inspected_for_double.inc();
-
         Ok(())
     }
 
@@ -288,8 +281,6 @@ pub struct Watcher {
     watch_tasks: TaskMap,
     connection_managers: Vec<Arc<ConnectionManagers>>,
     core: AgentCore,
-    double_updates_observed: IntGauge,
-    updates_inspected_for_double: IntGaugeVec,
 }
 
 impl AsRef<AgentCore> for Watcher {
@@ -307,23 +298,6 @@ impl Watcher {
         connection_managers: Vec<Arc<ConnectionManagers>>,
         core: AgentCore,
     ) -> Self {
-        let double_updates_observed = core
-            .metrics
-            .new_int_gauge(
-                "double_updates_observed",
-                "Number of times a double update has been observed (anything > 0 is major red flag!)",
-            )
-            .expect("failed to register watcher metric");
-
-        let updates_inspected_for_double = core
-            .metrics
-            .new_int_gauge_vec(
-                "updates_inspected_for_double",
-                "Number of updates inspected for double update per channel",
-                &["contract", "agent"],
-            )
-            .expect("failed to register watcher metric");
-
         Self {
             signer: Arc::new(signer),
             interval_seconds,
@@ -331,8 +305,6 @@ impl Watcher {
             watch_tasks: Default::default(),
             connection_managers,
             core,
-            double_updates_observed,
-            updates_inspected_for_double,
         }
     }
 
@@ -347,7 +319,6 @@ impl Watcher {
         let interval_seconds = self.interval_seconds;
         let sync_tasks = self.sync_tasks.clone();
         let watch_tasks = self.watch_tasks.clone();
-        let updates_inspected_for_double = self.updates_inspected_for_double.clone();
 
         tokio::spawn(async move {
             // Spawn update handler
@@ -362,16 +333,9 @@ impl Watcher {
 
                 watch_tasks.write().await.insert(
                     (*name).to_owned(),
-                    ContractWatcher::new(
-                        interval_seconds,
-                        from,
-                        tx.clone(),
-                        replica.clone(),
-                        updates_inspected_for_double
-                            .with_label_values(&[replica.name(), Self::AGENT_NAME]),
-                    )
-                    .spawn()
-                    .in_current_span(),
+                    ContractWatcher::new(interval_seconds, from, tx.clone(), replica.clone())
+                        .spawn()
+                        .in_current_span(),
                 );
                 sync_tasks.write().await.insert(
                     (*name).to_owned(),
@@ -384,15 +348,10 @@ impl Watcher {
             // Spawn polling and history syncing tasks for home
             info!("Starting watch and sync tasks for home {}.", home.name());
             let from = home.committed_root().await?;
-            let home_watcher = ContractWatcher::new(
-                interval_seconds,
-                from,
-                tx.clone(),
-                home.clone(),
-                updates_inspected_for_double.with_label_values(&[home.name(), Self::AGENT_NAME]),
-            )
-            .spawn()
-            .in_current_span();
+            let home_watcher =
+                ContractWatcher::new(interval_seconds, from, tx.clone(), home.clone())
+                    .spawn()
+                    .in_current_span();
             let home_sync = HistorySync::new(interval_seconds, from, tx.clone(), home)
                 .spawn()
                 .in_current_span();
@@ -592,7 +551,6 @@ impl NomadAgent for Watcher {
                             "Double update detected! Notifying all contracts and unenrolling replicas! Double update: {:?}",
                             double
                         );
-                        self.double_updates_observed.inc();
 
                         self.handle_double_update_failure(&double)
                             .await
@@ -698,20 +656,9 @@ mod test {
             let home: Arc<CachingHome> =
                 CachingHome::new(mock_home.into(), nomad_db.clone(), mock_home_indexer).into();
 
-            let updates_inspected_for_double = IntGauge::new(
-                "updates_inspected_for_double",
-                "Number of updates inspected for double",
-            )
-            .unwrap();
-
             let (tx, mut rx) = mpsc::channel(200);
-            let mut contract_watcher = ContractWatcher::new(
-                3,
-                first_root,
-                tx.clone(),
-                home.clone(),
-                updates_inspected_for_double,
-            );
+            let mut contract_watcher =
+                ContractWatcher::new(3, first_root, tx.clone(), home.clone());
 
             contract_watcher
                 .poll_and_send_update()

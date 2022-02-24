@@ -115,7 +115,7 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
         let channel = self.build_channel(&replica);
         let channel_faults_gauge = self
             .metrics()
-            .channel_faults_gauge(self.home().name(), &replica);
+            .channel_specific_gauge(self.home().name(), &replica);
 
         tokio::spawn(async move {
             let mut exponential = 0;
@@ -231,18 +231,13 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
     fn watch_home_fail(&self, interval: u64) -> Instrumented<JoinHandle<Result<()>>> {
         let span = info_span!("home_watch");
         let home = self.home();
-        let home_failure_checks = self.metrics().home_failure_checks();
-        let home_failure_observations = self.metrics().home_failure_observations();
-
         tokio::spawn(async move {
             let home = home.clone();
             loop {
                 if home.state().await? == nomad_core::State::Failed {
-                    home_failure_observations.inc();
                     return Err(BaseError::FailedHome.into());
                 }
 
-                home_failure_checks.inc();
                 sleep(Duration::from_secs(interval)).await;
             }
         })
