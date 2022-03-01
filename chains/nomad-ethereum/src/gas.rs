@@ -88,6 +88,7 @@ where
         &self.inner
     }
 
+    #[allow(mutable_borrow_reservation_conflict)]
     async fn fill_transaction(
         &self,
         tx: &mut TypedTransaction,
@@ -98,10 +99,14 @@ where
             .await
             .map_err(FromErr::from)?;
 
-        let adjusted_gas = self.estimate_gas(tx).await?;
-        let adjusted_price = self.get_gas_price().await?;
+        // Triple gas estimate
+        match tx.gas() {
+            None => tx.set_gas(self.estimate_gas(tx).await?),
+            Some(gas) => tx.set_gas(gas * 3),
+        }
 
-        tx.set_gas(adjusted_gas);
+        // Increase gas price
+        let adjusted_price = self.get_gas_price().await?;
         tx.set_gas_price(adjusted_price);
 
         Ok(())
