@@ -88,6 +88,7 @@ where
         &self.inner
     }
 
+    #[allow(mutable_borrow_reservation_conflict)]
     async fn fill_transaction(
         &self,
         tx: &mut TypedTransaction,
