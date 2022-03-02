@@ -256,7 +256,7 @@ where
             .contract
             .process(message.to_vec().into())
             .gas(1_500_000);
-            
+
         Ok(report_tx!(tx, &self.provider).into())
     }
 
