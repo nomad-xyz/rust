@@ -252,7 +252,11 @@ where
 
     #[tracing::instrument(err)]
     async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self.contract.process(message.to_vec().into());
+        let tx = self
+            .contract
+            .process(message.to_vec().into())
+            .gas(1_500_000);
+
         Ok(report_tx!(tx, &self.provider).into())
     }
 
@@ -268,9 +272,11 @@ where
             .enumerate()
             .for_each(|(i, elem)| *elem = proof.path[i].to_fixed_bytes());
 
-        let tx =
-            self.contract
-                .prove_and_process(message.to_vec().into(), sol_proof, proof.index.into());
+        let tx = self
+            .contract
+            .prove_and_process(message.to_vec().into(), sol_proof, proof.index.into())
+            .gas(1_800_000);
+
         Ok(report_tx!(tx, &self.provider).into())
     }
 
