@@ -99,12 +99,6 @@ where
             .await
             .map_err(FromErr::from)?;
 
-        // Triple gas estimate
-        match tx.gas() {
-            None => tx.set_gas(self.estimate_gas(tx).await?),
-            Some(gas) => tx.set_gas(gas * 3),
-        }
-
         // Increase gas price
         let adjusted_price = self.get_gas_price().await?;
         tx.set_gas_price(adjusted_price);
