@@ -402,7 +402,7 @@ impl Watcher {
             let double_update_res = handler.await?;
 
             // Cancel running tasks
-            info!("Update handler has resolved. Cancelling all other tasks");
+            tracing::info!("Update handler has resolved. Cancelling all other tasks");
             cancel_task!(home_watcher);
             cancel_task!(home_sync);
 
@@ -520,7 +520,7 @@ impl NomadAgent for Watcher {
         // Report any invalid ConnectionManager chain setups
         errors.into_iter().for_each(|e| {
             let err = e.unwrap_err();
-            error!("{:?}", err)
+            tracing::error!("{:?}", err)
         });
 
         let connection_managers: Vec<_> = connection_managers
@@ -585,10 +585,9 @@ impl NomadAgent for Watcher {
                     self.shutdown().await;
                 },
                 double_res = double_update_watch_task => {
-                    info!("Double update watch task completed");
                     let opt_double = double_res??;
                     if let Some(double) = opt_double {
-                        error!(
+                        tracing::error!(
                             double_update = ?double,
                             "Double update detected! Notifying all contracts and unenrolling replicas! Double update: {:?}",
                             double
@@ -598,7 +597,7 @@ impl NomadAgent for Watcher {
                         self.handle_double_update_failure(&double)
                             .await
                             .iter()
-                            .for_each(|res| info!("{:#?}", res));
+                            .for_each(|res| tracing::info!("{:#?}", res));
 
                         bail!(
                             r#"
@@ -608,24 +607,22 @@ impl NomadAgent for Watcher {
                             Watcher has been shut down!
                         "#
                         )
-                    } else {
-                        info!("watch_double_update task finished with None DoubleUpdate");
-                        self.shutdown().await;
                     }
+
+                    self.shutdown().await;
                 },
                 improper_res = improper_update_watch_task => {
-                    info!("Improper update watch task completed");
                     if let Err(e) = improper_res? {
                         let some_base_error = e.downcast::<BaseError>()?;
                         if let BaseError::FailedHome = some_base_error {
-                            error!(
+                            tracing::error!(
                                 "Improper update detected! Notifying all contracts and unenrolling replicas!",
                             );
 
                             self.handle_improper_update_failure()
                                 .await
                                 .iter()
-                                .for_each(|res| info!("{:#?}", res));
+                                .for_each(|res| tracing::info!("{:#?}", res));
 
                             bail!(
                                 r#"

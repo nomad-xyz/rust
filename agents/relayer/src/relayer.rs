@@ -179,6 +179,7 @@ impl NomadAgent for Relayer {
 
 #[cfg(test)]
 mod test {
+
     use ethers::prelude::ProviderError;
     use nomad_base::trace::TracingConfig;
     use nomad_base::{ChainConf, SignerConf};
