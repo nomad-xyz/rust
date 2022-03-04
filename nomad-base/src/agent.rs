@@ -9,7 +9,7 @@ use color_eyre::{eyre::WrapErr, Result};
 use futures_util::future::select_all;
 use nomad_core::{db::DB, Common};
 use tracing::instrument::Instrumented;
-use tracing::{error, info, info_span, Instrument};
+use tracing::{error, info_span, warn, Instrument};
 
 use std::{
     collections::HashMap,
@@ -17,6 +17,8 @@ use std::{
     time::{Duration, SystemTime},
 };
 use tokio::{task::JoinHandle, time::sleep};
+
+const MAX_EXPONENTIAL: u32 = 7; // 2^7 = 128 second timeout
 
 /// Properties shared across all agents
 #[derive(Debug, Clone)]
@@ -140,12 +142,12 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
                         // unrelated to previous
                         if running_time.elapsed().unwrap().as_secs() >= 300 {
                             exponential = 0;
-                        } else {
+                        } else if exponential < MAX_EXPONENTIAL {
                             exponential += 1;
                         }
 
                         let sleep_time = 2u64.pow(exponential);
-                        info!(
+                        warn!(
                             "Restarting channel to {} in {} seconds",
                             &replica, sleep_time
                         );
