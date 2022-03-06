@@ -308,18 +308,20 @@ impl Watcher {
     ) -> Self {
         let double_updates_observed = core
             .metrics
-            .new_int_gauge(
+            .new_int_gauge_vec(
                 "double_updates_observed",
                 "Number of times a double update has been observed (anything > 0 is major red flag!)",
+                &["home", "agent"],
             )
-            .expect("failed to register watcher metric");
+            .expect("failed to register watcher metric")
+            .with_label_values(&[core.home.name(), Self::AGENT_NAME]);
 
         let updates_inspected_for_double = core
             .metrics
             .new_int_gauge_vec(
                 "updates_inspected_for_double",
                 "Number of updates inspected for double update per channel",
-                &["contract", "agent"],
+                &["home", "checked", "agent"],
             )
             .expect("failed to register watcher metric");
 
@@ -366,8 +368,11 @@ impl Watcher {
                         from,
                         tx.clone(),
                         replica.clone(),
-                        updates_inspected_for_double
-                            .with_label_values(&[replica.name(), Self::AGENT_NAME]),
+                        updates_inspected_for_double.with_label_values(&[
+                            home.name(),
+                            replica.name(),
+                            Self::AGENT_NAME,
+                        ]),
                     )
                     .spawn()
                     .in_current_span(),
@@ -388,7 +393,11 @@ impl Watcher {
                 from,
                 tx.clone(),
                 home.clone(),
-                updates_inspected_for_double.with_label_values(&[home.name(), Self::AGENT_NAME]),
+                updates_inspected_for_double.with_label_values(&[
+                    home.name(),
+                    home.name(),
+                    Self::AGENT_NAME,
+                ]),
             )
             .spawn()
             .in_current_span();

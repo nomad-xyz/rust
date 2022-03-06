@@ -228,8 +228,8 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
     fn watch_home_fail(&self, interval: u64) -> Instrumented<JoinHandle<Result<()>>> {
         let span = info_span!("home_watch");
         let home = self.home();
-        let home_failure_checks = self.metrics().home_failure_checks();
-        let home_failure_observations = self.metrics().home_failure_observations();
+        let home_failure_checks = self.metrics().home_failure_checks(home.name());
+        let home_failure_observations = self.metrics().home_failure_observations(home.name());
 
         tokio::spawn(async move {
             let home = home.clone();
