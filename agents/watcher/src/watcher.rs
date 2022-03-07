@@ -502,11 +502,7 @@ impl NomadAgent for Watcher {
         let mut connection_managers = vec![];
         for chain_setup in settings.managers.values() {
             let signer = settings.base.get_signer(&chain_setup.name).await;
-            let xapp_timelag = if settings.base.use_timelag {
-                Some(chain_setup.timelag)
-            } else {
-                None
-            };
+            let xapp_timelag = None;
 
             let manager = chain_setup
                 .try_into_connection_manager(signer, xapp_timelag)

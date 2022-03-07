@@ -227,7 +227,6 @@ mod test {
                 db: "...".to_string(),
                 metrics: None,
                 index: IndexSettings::default(),
-                use_timelag: false,
                 home: ChainSetup {
                     name: "ethereum".to_string(),
                     domain: "1".to_string(),

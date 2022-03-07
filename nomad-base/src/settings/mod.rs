@@ -76,6 +76,27 @@ pub enum AgentType {
     Watcher,
 }
 
+/// Index data types and timelag settings
+#[derive(serde::Deserialize, Debug, PartialEq, Clone)]
+pub enum IndexMode {
+    /// Uninitialized
+    Uninitialized,
+    /// Updates with timelag
+    Updates,
+    /// Messages with timelag
+    Messages,
+    /// Updates and messages with timelag
+    UpdatesAndMessages,
+    /// Updates at the tip with timelag to catch missed
+    FastUpdates,
+}
+
+impl Default for IndexMode {
+    fn default() -> Self {
+        Self::Uninitialized
+    }
+}
+
 /// Ethereum signer types
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
@@ -137,6 +158,9 @@ pub struct IndexSettings {
     from: Option<String>,
     /// The number of blocks to query at once at which to start indexing the Home contract
     chunk: Option<String>,
+    #[serde(default)]
+    /// Data types and timelag setting
+    mode: IndexMode,
 }
 
 impl IndexSettings {
@@ -154,6 +178,11 @@ impl IndexSettings {
             .as_ref()
             .and_then(|s| s.parse::<u32>().ok())
             .unwrap_or(1999)
+    }
+
+    /// Get IndexMode
+    pub fn mode(&self) -> IndexMode {
+        self.mode.clone()
     }
 }
 
@@ -191,9 +220,6 @@ pub struct Settings {
     /// Settings for the home indexer
     #[serde(default)]
     pub index: IndexSettings,
-    /// Whether or not agent should use timelag
-    #[serde(default)]
-    pub use_timelag: bool,
     /// The home configuration
     pub home: ChainSetup,
     /// The replica configurations
@@ -211,7 +237,6 @@ impl Settings {
             db: self.db.clone(),
             metrics: self.metrics.clone(),
             index: self.index.clone(),
-            use_timelag: self.use_timelag,
             home: self.home.clone(),
             replicas: self.replicas.clone(),
             tracing: self.tracing.clone(),
@@ -226,27 +251,27 @@ impl Settings {
         self.signers.get(name)?.try_into_signer().await.ok()
     }
 
-    /// Set timelag on/off
-    pub fn use_timelag_for_indexing(&mut self, use_lag: bool) {
-        self.use_timelag = use_lag;
+    /// Set agent-specific index mode
+    pub fn set_index_mode(&mut self, mode: IndexMode) {
+        self.index.mode = mode;
     }
 
     /// Get optional indexing timelag enum for home
     pub fn home_indexing_timelag(&self) -> Option<u8> {
-        if self.use_timelag {
-            Some(self.home.timelag)
-        } else {
+        if self.index.mode == IndexMode::FastUpdates {
             None
+        } else {
+            Some(self.home.timelag)
         }
     }
 
     /// Get optional indexing timelag for a replica
     pub fn replica_indexing_timelag(&self, replica_name: &str) -> Option<u8> {
-        if self.use_timelag {
+        if self.index.mode == IndexMode::FastUpdates {
+            None
+        } else {
             let replica_timelag = self.replicas.get(replica_name).expect("!replica").timelag;
             Some(replica_timelag)
-        } else {
-            None
         }
     }
 

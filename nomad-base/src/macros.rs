@@ -179,11 +179,11 @@ macro_rules! decl_settings {
 
                     /// Kludge, use proc macro to match on enum later
                     match std::stringify!($name) {
-                        "Kathy" => settings.base.use_timelag_for_indexing(false),
-                        "Updater" => settings.base.use_timelag_for_indexing(true),
-                        "Relayer" => settings.base.use_timelag_for_indexing(true),
-                        "Processor" => settings.base.use_timelag_for_indexing(true),
-                        "Watcher" => settings.base.use_timelag_for_indexing(false),
+                        "Kathy" => settings.base.set_index_mode(nomad_base::settings::IndexMode::Updates),
+                        "Updater" => settings.base.set_index_mode(nomad_base::settings::IndexMode::Updates),
+                        "Relayer" => settings.base.set_index_mode(nomad_base::settings::IndexMode::FastUpdates),
+                        "Processor" => settings.base.set_index_mode(nomad_base::settings::IndexMode::UpdatesAndMessages),
+                        "Watcher" => settings.base.set_index_mode(nomad_base::settings::IndexMode::FastUpdates),
                         _ => std::panic!("Invalid agent-specific settings name!"),
                     };
 
