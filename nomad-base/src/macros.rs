@@ -181,7 +181,7 @@ macro_rules! decl_settings {
                     match std::stringify!($name) {
                         "Kathy" => settings.base.use_timelag_for_indexing(false),
                         "Updater" => settings.base.use_timelag_for_indexing(true),
-                        "Relayer" => settings.base.use_timelag_for_indexing(false),
+                        "Relayer" => settings.base.use_timelag_for_indexing(true),
                         "Processor" => settings.base.use_timelag_for_indexing(true),
                         "Watcher" => settings.base.use_timelag_for_indexing(false),
                         _ => std::panic!("Invalid agent-specific settings name!"),
