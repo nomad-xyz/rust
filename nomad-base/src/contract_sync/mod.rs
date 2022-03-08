@@ -24,7 +24,7 @@ pub enum UpdatesSyncMode {
     Fast {
         /// Chain finality (handled in contract sync since indexer indexes at
         /// tip not timelag)
-        finality_blocks: u8,
+        finality: u8,
     },
     /// Index timelag blocks behind tip (lag handled by indexer)
     Slow,
@@ -127,10 +127,10 @@ where
                 let size = to - from;
 
                 let start = match updates_sync_mode {
-                    UpdatesSyncMode::Fast { finality_blocks } => {
+                    UpdatesSyncMode::Fast { finality } => {
                         // Range includes size blocks behind last final block to
                         // catch missing
-                        let last_final_block = tip - finality_blocks as u32;
+                        let last_final_block = tip - finality as u32;
                         if to >= last_final_block {
                             info!(
                                 size = size,

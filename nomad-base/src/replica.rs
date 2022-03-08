@@ -27,7 +27,7 @@ pub struct CachingReplica {
     replica: Replicas,
     db: NomadDB,
     indexer: Arc<CommonIndexers>,
-    finality_blocks: u8,
+    finality: u8,
     index_mode: IndexMode,
 }
 
@@ -43,14 +43,14 @@ impl CachingReplica {
         replica: Replicas,
         db: NomadDB,
         indexer: Arc<CommonIndexers>,
-        finality_blocks: u8,
+        finality: u8,
         index_mode: IndexMode,
     ) -> Self {
         Self {
             replica,
             db,
             indexer,
-            finality_blocks,
+            finality,
             index_mode,
         }
     }
@@ -60,11 +60,11 @@ impl CachingReplica {
         let replica_setup = settings.replicas.get(replica_name).expect("!replica");
         let signer = settings.get_signer(replica_name).await;
         let opt_replica_timelag = settings.replica_indexing_timelag(replica_name);
-        let replica_finality_blocks = settings
+        let replica_finality = settings
             .replicas
             .get(replica_name)
             .expect("!replica")
-            .finality_blocks;
+            .finality;
         let index_mode = settings.index.mode();
 
         let replica = replica_setup
@@ -80,7 +80,7 @@ impl CachingReplica {
             replica,
             nomad_db,
             indexer,
-            replica_finality_blocks,
+            replica_finality,
             index_mode,
         ))
     }
@@ -106,7 +106,7 @@ impl CachingReplica {
     ) -> Instrumented<JoinHandle<Result<()>>> {
         let span = info_span!("ReplicaContractSync", self = %self);
         let index_mode = self.index_mode.clone();
-        let finality_blocks = self.finality_blocks;
+        let finality = self.finality;
         let sync = ContractSync::new(
             agent_name,
             String::from_str(self.replica.name()).expect("!string"),
@@ -122,7 +122,7 @@ impl CachingReplica {
                 IndexMode::Updates => sync.sync_updates(UpdatesSyncMode::Slow).await?,
                 IndexMode::UpdatesAndMessages => sync.sync_updates(UpdatesSyncMode::Slow).await?,
                 IndexMode::FastUpdates => {
-                    sync.sync_updates(UpdatesSyncMode::Fast { finality_blocks })
+                    sync.sync_updates(UpdatesSyncMode::Fast { finality })
                         .await?
                 }
             }

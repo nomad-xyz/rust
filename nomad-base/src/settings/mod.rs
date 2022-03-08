@@ -257,7 +257,7 @@ impl Settings {
         if self.index.mode == IndexMode::FastUpdates {
             None
         } else {
-            Some(self.home.finality_blocks)
+            Some(self.home.finality)
         }
     }
 
@@ -266,12 +266,12 @@ impl Settings {
         if self.index.mode == IndexMode::FastUpdates {
             None
         } else {
-            let replica_finality_blocks = self
+            let replica_finality = self
                 .replicas
                 .get(replica_name)
                 .expect("!replica")
-                .finality_blocks;
-            Some(replica_finality_blocks)
+                .finality;
+            Some(replica_finality)
         }
     }
 

@@ -25,7 +25,7 @@ pub struct CachingHome {
     home: Homes,
     db: NomadDB,
     indexer: Arc<HomeIndexers>,
-    finality_blocks: u8,
+    finality: u8,
     index_mode: IndexMode,
 }
 
@@ -41,14 +41,14 @@ impl CachingHome {
         home: Homes,
         db: NomadDB,
         indexer: Arc<HomeIndexers>,
-        finality_blocks: u8,
+        finality: u8,
         index_mode: IndexMode,
     ) -> Self {
         Self {
             home,
             db,
             indexer,
-            finality_blocks,
+            finality,
             index_mode,
         }
     }
@@ -57,7 +57,7 @@ impl CachingHome {
     pub async fn from_settings(settings: &Settings) -> Result<Self> {
         let signer = settings.get_signer(&settings.home.name).await;
         let opt_home_timelag = settings.home_indexing_timelag();
-        let home_finality_blocks = settings.home.finality_blocks;
+        let home_finality = settings.home.finality;
         let index_mode = settings.index.mode();
 
         let home = settings
@@ -70,7 +70,7 @@ impl CachingHome {
             home,
             nomad_db,
             indexer,
-            home_finality_blocks,
+            home_finality,
             index_mode,
         ))
     }
@@ -96,7 +96,7 @@ impl CachingHome {
     ) -> Instrumented<JoinHandle<Result<()>>> {
         let span = info_span!("HomeContractSync", self = %self);
         let index_mode = self.index_mode.clone();
-        let finality_blocks = self.finality_blocks;
+        let finality = self.finality;
         let sync = ContractSync::new(
             agent_name,
             String::from_str(self.home.name()).expect("!string"),
@@ -115,7 +115,7 @@ impl CachingHome {
                     sync.sync_messages(),
                 ],
                 IndexMode::FastUpdates => {
-                    vec![sync.sync_updates(UpdatesSyncMode::Fast { finality_blocks })]
+                    vec![sync.sync_updates(UpdatesSyncMode::Fast { finality })]
                 }
             };
 

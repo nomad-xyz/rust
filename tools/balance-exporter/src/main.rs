@@ -142,7 +142,7 @@ async fn mainnet_works() {
             contracts: vec![ChainSetup {
                 name: "ethereum".into(),
                 domain: "6648936".into(),
-                finality_blocks: 5,
+                finality: 5,
                 // i would love for this to just be ChainConf::ethereum()
                 chain: nomad_base::chains::ChainConf::Ethereum(nomad_ethereum::Connection::Ws {
                     url: "wss://main-light.eth.linkpool.io/ws".into(),
