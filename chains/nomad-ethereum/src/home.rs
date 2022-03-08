@@ -6,9 +6,9 @@ use color_eyre::Result;
 use ethers::core::types::{Signature, H256};
 use futures_util::future::join_all;
 use nomad_core::{
-    ChainCommunicationError, Common, CommonIndexer, ContractLocator, DoubleUpdate, Home,
-    HomeIndexer, Message, RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State,
-    TxOutcome, Update, UpdateMeta,
+    ChainCommunicationError, CheckedTxOutcome, Common, CommonIndexer, ContractLocator,
+    DoubleUpdate, Home, HomeIndexer, Message, RawCommittedMessage, SignedUpdate,
+    SignedUpdateWithMeta, State, TxOutcome, Update, UpdateMeta,
 };
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
 use tracing::instrument;
@@ -197,15 +197,21 @@ where
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
-        let receipt_opt = self
-            .contract
+    async fn status(
+        &self,
+        txid: H256,
+    ) -> Result<Option<CheckedTxOutcome>, ChainCommunicationError> {
+        self.contract
             .client()
             .get_transaction_receipt(txid)
             .await
-            .map_err(|e| Box::new(e) as Box<dyn StdError + Send + Sync>)?;
-
-        Ok(receipt_opt.map(Into::into))
+            .map_err(|e| Box::new(e) as Box<dyn StdError + Send + Sync>)?
+            .map(|tr| {
+                let t: TxOutcome = tr.into();
+                let t: Result<CheckedTxOutcome, ChainCommunicationError> = t.into();
+                t
+            })
+            .transpose()
     }
 
     #[tracing::instrument(err, skip(self))]
@@ -230,21 +236,25 @@ where
     }
 
     #[tracing::instrument(err, skip(self, update), fields(update = %update))]
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn update(
+        &self,
+        update: &SignedUpdate,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         let tx = self.contract.update(
             update.update.previous_root.to_fixed_bytes(),
             update.update.new_root.to_fixed_bytes(),
             update.signature.to_vec().into(),
         );
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let t: TxOutcome = report_tx!(tx, &self.provider).into();
+        t.into()
     }
 
     #[tracing::instrument(err, skip(self, double), fields(double = %double))]
     async fn double_update(
         &self,
         double: &DoubleUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         let tx = self.contract.double_update(
             double.0.update.previous_root.to_fixed_bytes(),
             [
@@ -255,8 +265,8 @@ where
             double.1.signature.to_vec().into(),
         );
         let response = report_tx!(tx, &self.provider);
-
-        Ok(response.into())
+        let t: TxOutcome = response.into();
+        t.into()
     }
 }
 
@@ -275,14 +285,18 @@ where
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn dispatch(
+        &self,
+        message: &Message,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         let tx = self.contract.dispatch(
             message.destination,
             message.recipient.to_fixed_bytes(),
             message.body.clone().into(),
         );
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let t: TxOutcome = report_tx!(tx, &self.provider).into();
+        t.into()
     }
 
     async fn queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError> {
@@ -293,14 +307,15 @@ where
     async fn improper_update(
         &self,
         update: &SignedUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         let tx = self.contract.improper_update(
             update.update.previous_root.to_fixed_bytes(),
             update.update.new_root.to_fixed_bytes(),
             update.signature.to_vec().into(),
         );
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let t: TxOutcome = report_tx!(tx, &self.provider).into();
+        t.into()
     }
 
     #[tracing::instrument(err, skip(self))]

@@ -21,26 +21,26 @@ mock! {
             &self,
             replica: NomadIdentifier,
             domain: u32,
-        ) -> Result<TxOutcome, ChainCommunicationError> {}
+        ) -> Result<CheckedTxOutcome, ChainCommunicationError> {}
 
         pub fn _owner_unenroll_replica(
             &self,
             replica: NomadIdentifier,
-        ) -> Result<TxOutcome, ChainCommunicationError> {}
+        ) -> Result<CheckedTxOutcome, ChainCommunicationError> {}
 
-        pub fn _set_home(&self, home: NomadIdentifier) -> Result<TxOutcome, ChainCommunicationError> {}
+        pub fn _set_home(&self, home: NomadIdentifier) -> Result<CheckedTxOutcome, ChainCommunicationError> {}
 
         pub fn _set_watcher_permission(
             &self,
             watcher: NomadIdentifier,
             domain: u32,
             access: bool,
-        ) -> Result<TxOutcome, ChainCommunicationError> {}
+        ) -> Result<CheckedTxOutcome, ChainCommunicationError> {}
 
         pub fn _unenroll_replica(
             &self,
             signed_failure: &SignedFailureNotification,
-        ) -> Result<TxOutcome, ChainCommunicationError> {}
+        ) -> Result<CheckedTxOutcome, ChainCommunicationError> {}
     }
 }
 
@@ -72,18 +72,21 @@ impl ConnectionManager for MockConnectionManagerContract {
         &self,
         replica: NomadIdentifier,
         domain: u32,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self._owner_enroll_replica(replica, domain)
     }
 
     async fn owner_unenroll_replica(
         &self,
         replica: NomadIdentifier,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self._owner_unenroll_replica(replica)
     }
 
-    async fn set_home(&self, home: NomadIdentifier) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn set_home(
+        &self,
+        home: NomadIdentifier,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self._set_home(home)
     }
 
@@ -92,14 +95,14 @@ impl ConnectionManager for MockConnectionManagerContract {
         watcher: NomadIdentifier,
         domain: u32,
         access: bool,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self._set_watcher_permission(watcher, domain, access)
     }
 
     async fn unenroll_replica(
         &self,
         signed_failure: &SignedFailureNotification,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self._unenroll_replica(signed_failure)
     }
 }

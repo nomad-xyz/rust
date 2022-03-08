@@ -4,7 +4,7 @@ use ethers::core::types::H256;
 
 use crate::{
     accumulator::merkle::Proof,
-    traits::{ChainCommunicationError, Common, TxOutcome},
+    traits::{ChainCommunicationError, CheckedTxOutcome, Common},
     NomadMessage,
 };
 
@@ -29,17 +29,20 @@ pub trait Replica: Common + Send + Sync + std::fmt::Debug {
     async fn remote_domain(&self) -> Result<u32, ChainCommunicationError>;
 
     /// Dispatch a transaction to prove inclusion of some leaf in the replica.
-    async fn prove(&self, proof: &Proof) -> Result<TxOutcome, ChainCommunicationError>;
+    async fn prove(&self, proof: &Proof) -> Result<CheckedTxOutcome, ChainCommunicationError>;
 
     /// Trigger processing of a message
-    async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError>;
+    async fn process(
+        &self,
+        message: &NomadMessage,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError>;
 
     /// Prove a leaf in the replica and then process its message
     async fn prove_and_process(
         &self,
         message: &NomadMessage,
         proof: &Proof,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self.prove(proof).await?;
 
         Ok(self.process(message).await?)

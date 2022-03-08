@@ -64,6 +64,24 @@ impl From<TransactionReceipt> for TxOutcome {
     }
 }
 
+/// The checked result of a transaction
+#[derive(Debug, Clone, Copy)]
+pub struct CheckedTxOutcome {
+    /// The txid
+    pub txid: H256,
+    // TODO: more? What can be abstracted across all chains?
+}
+
+impl From<TxOutcome> for Result<CheckedTxOutcome, ChainCommunicationError> {
+    fn from(t: TxOutcome) -> Self {
+        if !t.executed {
+            Err(ChainCommunicationError::NotExecuted(t.txid))
+        } else {
+            Ok(CheckedTxOutcome { txid: t.txid })
+        }
+    }
+}
+
 /// ChainCommunicationError contains errors returned when attempting to
 /// call a chain or dispatch a transaction
 #[derive(Debug, thiserror::Error)]
@@ -80,6 +98,9 @@ pub enum ChainCommunicationError {
     /// A transaction was dropped from the mempool
     #[error("Transaction dropped from mempool {0:?}")]
     DroppedError(H256),
+    /// Transaction hasn't been executed
+    #[error("Transaction hasn't been executed: {0:?}")]
+    NotExecuted(H256),
     /// Any other error
     #[error("{0}")]
     CustomError(#[from] Box<dyn StdError + Send + Sync>),
@@ -102,7 +123,8 @@ pub trait Common: Sync + Send + std::fmt::Debug {
     fn name(&self) -> &str;
 
     /// Get the status of a transaction.
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError>;
+    async fn status(&self, txid: H256)
+        -> Result<Option<CheckedTxOutcome>, ChainCommunicationError>;
 
     /// Fetch the current updater value
     async fn updater(&self) -> Result<H256, ChainCommunicationError>;
@@ -114,13 +136,16 @@ pub trait Common: Sync + Send + std::fmt::Debug {
     async fn committed_root(&self) -> Result<H256, ChainCommunicationError>;
 
     /// Submit a signed update for inclusion
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError>;
+    async fn update(
+        &self,
+        update: &SignedUpdate,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError>;
 
     /// Submit a double update for slashing
     async fn double_update(
         &self,
         double: &DoubleUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError>;
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError>;
 }
 
 /// Interface for retrieving event data emitted by both the home and replica

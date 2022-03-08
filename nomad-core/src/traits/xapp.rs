@@ -1,5 +1,5 @@
 use crate::{
-    traits::{ChainCommunicationError, TxOutcome},
+    traits::{ChainCommunicationError, CheckedTxOutcome},
     NomadIdentifier, SignedFailureNotification,
 };
 use async_trait::async_trait;
@@ -25,16 +25,19 @@ pub trait ConnectionManager: Send + Sync + std::fmt::Debug {
         &self,
         replica: NomadIdentifier,
         domain: u32,
-    ) -> Result<TxOutcome, ChainCommunicationError>;
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError>;
 
     /// onlyOwner function. Unenrolls replica.
     async fn owner_unenroll_replica(
         &self,
         replica: NomadIdentifier,
-    ) -> Result<TxOutcome, ChainCommunicationError>;
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError>;
 
     /// onlyOwner function. Sets contract's home to provided home.
-    async fn set_home(&self, home: NomadIdentifier) -> Result<TxOutcome, ChainCommunicationError>;
+    async fn set_home(
+        &self,
+        home: NomadIdentifier,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError>;
 
     /// onlyOwner function. Sets permission for watcher at given domain.
     async fn set_watcher_permission(
@@ -42,12 +45,12 @@ pub trait ConnectionManager: Send + Sync + std::fmt::Debug {
         watcher: NomadIdentifier,
         domain: u32,
         access: bool,
-    ) -> Result<TxOutcome, ChainCommunicationError>;
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError>;
 
     /// Unenroll the replica at the given domain provided an updater address
     /// and `SignedFailureNotification` from a watcher
     async fn unenroll_replica(
         &self,
         signed_failure: &SignedFailureNotification,
-    ) -> Result<TxOutcome, ChainCommunicationError>;
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError>;
 }

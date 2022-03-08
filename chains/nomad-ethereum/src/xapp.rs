@@ -81,31 +81,37 @@ where
         &self,
         replica: NomadIdentifier,
         domain: u32,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         let tx = self
             .contract
             .owner_enroll_replica(replica.as_ethereum_address(), domain);
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let t: TxOutcome = report_tx!(tx, &self.provider).into();
+        t.into()
     }
 
     #[tracing::instrument(err)]
     async fn owner_unenroll_replica(
         &self,
         replica: NomadIdentifier,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         let tx = self
             .contract
             .owner_unenroll_replica(replica.as_ethereum_address());
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let t: TxOutcome = report_tx!(tx, &self.provider).into();
+        t.into()
     }
 
     #[tracing::instrument(err)]
-    async fn set_home(&self, home: NomadIdentifier) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn set_home(
+        &self,
+        home: NomadIdentifier,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         let tx = self.contract.set_home(home.as_ethereum_address());
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let t: TxOutcome = report_tx!(tx, &self.provider).into();
+        t.into()
     }
 
     #[tracing::instrument(err)]
@@ -114,25 +120,27 @@ where
         watcher: NomadIdentifier,
         domain: u32,
         access: bool,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         let tx =
             self.contract
                 .set_watcher_permission(watcher.as_ethereum_address(), domain, access);
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let t: TxOutcome = report_tx!(tx, &self.provider).into();
+        t.into()
     }
 
     #[tracing::instrument(err)]
     async fn unenroll_replica(
         &self,
         signed_failure: &SignedFailureNotification,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         let tx = self.contract.unenroll_replica(
             signed_failure.notification.home_domain,
             signed_failure.notification.updater.into(),
             signed_failure.signature.to_vec().into(),
         );
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let t: TxOutcome = report_tx!(tx, &self.provider).into();
+        t.into()
     }
 }

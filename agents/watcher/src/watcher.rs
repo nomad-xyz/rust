@@ -19,8 +19,8 @@ use nomad_base::{
     IndexDataTypes, NomadAgent, NomadDB,
 };
 use nomad_core::{
-    ChainCommunicationError, Common, CommonEvents, ConnectionManager, DoubleUpdate,
-    FailureNotification, Home, SignedFailureNotification, SignedUpdate, Signers, TxOutcome,
+    ChainCommunicationError, CheckedTxOutcome, Common, CommonEvents, ConnectionManager,
+    DoubleUpdate, FailureNotification, Home, SignedFailureNotification, SignedUpdate, Signers,
 };
 
 use crate::settings::WatcherSettings as Settings;
@@ -430,7 +430,7 @@ impl Watcher {
     async fn handle_double_update_failure(
         &self,
         double: &DoubleUpdate,
-    ) -> Vec<Result<TxOutcome, ChainCommunicationError>> {
+    ) -> Vec<Result<CheckedTxOutcome, ChainCommunicationError>> {
         // Create vector of double update futures
         let mut double_update_futs: Vec<_> = self
             .core
@@ -465,7 +465,7 @@ impl Watcher {
     #[tracing::instrument]
     async fn handle_improper_update_failure(
         &self,
-    ) -> Vec<Result<TxOutcome, ChainCommunicationError>> {
+    ) -> Vec<Result<CheckedTxOutcome, ChainCommunicationError>> {
         let signed_failure = self.create_signed_failure().await;
         let mut unenroll_futs = Vec::new();
         for connection_manager in self.connection_managers.iter() {
@@ -942,9 +942,8 @@ mod test {
                     .withf(move |d: &DoubleUpdate| *d == double)
                     .times(1)
                     .return_once(move |_| {
-                        Ok(TxOutcome {
+                        Ok(CheckedTxOutcome {
                             txid: H256::default(),
-                            executed: true,
                         })
                     });
             }
@@ -960,9 +959,8 @@ mod test {
                     .withf(move |d: &DoubleUpdate| *d == double)
                     .times(1)
                     .return_once(move |_| {
-                        Ok(TxOutcome {
+                        Ok(CheckedTxOutcome {
                             txid: H256::default(),
-                            executed: true,
                         })
                     });
             }
@@ -978,9 +976,8 @@ mod test {
                     .withf(move |d: &DoubleUpdate| *d == double)
                     .times(1)
                     .return_once(move |_| {
-                        Ok(TxOutcome {
+                        Ok(CheckedTxOutcome {
                             txid: H256::default(),
-                            executed: true,
                         })
                     });
             }
@@ -994,9 +991,8 @@ mod test {
                     .withf(move |f: &SignedFailureNotification| *f == signed_failure)
                     .times(1)
                     .return_once(move |_| {
-                        Ok(TxOutcome {
+                        Ok(CheckedTxOutcome {
                             txid: H256::default(),
-                            executed: true,
                         })
                     });
             }
@@ -1008,9 +1004,8 @@ mod test {
                     .withf(move |f: &SignedFailureNotification| *f == signed_failure)
                     .times(1)
                     .return_once(move |_| {
-                        Ok(TxOutcome {
+                        Ok(CheckedTxOutcome {
                             txid: H256::default(),
-                            executed: true,
                         })
                     });
             }
@@ -1148,9 +1143,8 @@ mod test {
                     .withf(move |f: &SignedFailureNotification| *f == signed_failure)
                     .times(1)
                     .return_once(move |_| {
-                        Ok(TxOutcome {
+                        Ok(CheckedTxOutcome {
                             txid: H256::default(),
-                            executed: true,
                         })
                     });
             }
@@ -1162,9 +1156,8 @@ mod test {
                     .withf(move |f: &SignedFailureNotification| *f == signed_failure)
                     .times(1)
                     .return_once(move |_| {
-                        Ok(TxOutcome {
+                        Ok(CheckedTxOutcome {
                             txid: H256::default(),
-                            executed: true,
                         })
                     });
             }

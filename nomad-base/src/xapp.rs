@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use nomad_core::{
-    ChainCommunicationError, ConnectionManager, NomadIdentifier, SignedFailureNotification,
-    TxOutcome,
+    ChainCommunicationError, CheckedTxOutcome, ConnectionManager, NomadIdentifier,
+    SignedFailureNotification,
 };
 
 use nomad_ethereum::EthereumConnectionManager;
@@ -98,7 +98,7 @@ impl ConnectionManager for ConnectionManagers {
         &self,
         replica: NomadIdentifier,
         domain: u32,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         match self {
             ConnectionManagers::Ethereum(connection_manager) => {
                 connection_manager
@@ -121,7 +121,7 @@ impl ConnectionManager for ConnectionManagers {
     async fn owner_unenroll_replica(
         &self,
         replica: NomadIdentifier,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         match self {
             ConnectionManagers::Ethereum(connection_manager) => {
                 connection_manager.owner_unenroll_replica(replica).await
@@ -135,7 +135,10 @@ impl ConnectionManager for ConnectionManagers {
         }
     }
 
-    async fn set_home(&self, home: NomadIdentifier) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn set_home(
+        &self,
+        home: NomadIdentifier,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         match self {
             ConnectionManagers::Ethereum(connection_manager) => {
                 connection_manager.set_home(home).await
@@ -152,7 +155,7 @@ impl ConnectionManager for ConnectionManagers {
         watcher: NomadIdentifier,
         domain: u32,
         access: bool,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         match self {
             ConnectionManagers::Ethereum(connection_manager) => {
                 connection_manager
@@ -175,7 +178,7 @@ impl ConnectionManager for ConnectionManagers {
     async fn unenroll_replica(
         &self,
         signed_failure: &SignedFailureNotification,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         match self {
             ConnectionManagers::Ethereum(connection_manager) => {
                 connection_manager.unenroll_replica(signed_failure).await

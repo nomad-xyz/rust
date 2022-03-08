@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 
 use crate::{
     db::DbError,
-    traits::{ChainCommunicationError, Common, TxOutcome},
+    traits::{ChainCommunicationError, CheckedTxOutcome, Common},
     utils::home_domain_hash,
     Decode, Encode, Message, NomadError, NomadMessage, SignedUpdate, Update,
 };
@@ -119,7 +119,10 @@ pub trait Home: Common + Send + Sync + std::fmt::Debug {
     async fn nonces(&self, destination: u32) -> Result<u32, ChainCommunicationError>;
 
     /// Dispatch a message.
-    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError>;
+    async fn dispatch(
+        &self,
+        message: &Message,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError>;
 
     /// Check if queue contains root.
     async fn queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError>;
@@ -128,7 +131,7 @@ pub trait Home: Common + Send + Sync + std::fmt::Debug {
     async fn improper_update(
         &self,
         update: &SignedUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError>;
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError>;
 
     /// Create a valid update based on the chain's current state.
     /// This merely suggests an update. It does NOT ensure that no other valid

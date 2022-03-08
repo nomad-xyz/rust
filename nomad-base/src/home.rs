@@ -4,8 +4,8 @@ use color_eyre::eyre::Result;
 use ethers::core::types::H256;
 use futures_util::future::select_all;
 use nomad_core::{
-    db::DbError, ChainCommunicationError, Common, CommonEvents, DoubleUpdate, Home, HomeEvents,
-    Message, RawCommittedMessage, SignedUpdate, State, TxOutcome, Update,
+    db::DbError, ChainCommunicationError, CheckedTxOutcome, Common, CommonEvents, DoubleUpdate,
+    Home, HomeEvents, Message, RawCommittedMessage, SignedUpdate, State, Update,
 };
 use nomad_ethereum::EthereumHome;
 use nomad_test::mocks::MockHomeContract;
@@ -111,7 +111,10 @@ impl Home for CachingHome {
         self.home.nonces(destination).await
     }
 
-    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn dispatch(
+        &self,
+        message: &Message,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self.home.dispatch(message).await
     }
 
@@ -122,7 +125,7 @@ impl Home for CachingHome {
     async fn improper_update(
         &self,
         update: &SignedUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self.home.improper_update(update).await
     }
 
@@ -176,7 +179,10 @@ impl Common for CachingHome {
         self.home.name()
     }
 
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+    async fn status(
+        &self,
+        txid: H256,
+    ) -> Result<Option<CheckedTxOutcome>, ChainCommunicationError> {
         self.home.status(txid).await
     }
 
@@ -192,14 +198,17 @@ impl Common for CachingHome {
         self.home.committed_root().await
     }
 
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn update(
+        &self,
+        update: &SignedUpdate,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self.home.update(update).await
     }
 
     async fn double_update(
         &self,
         double: &DoubleUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self.home.double_update(double).await
     }
 }
@@ -330,7 +339,10 @@ impl Home for HomeVariants {
     }
 
     #[instrument(level = "trace", err)]
-    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn dispatch(
+        &self,
+        message: &Message,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => home.dispatch(message).await,
             HomeVariants::Mock(mock_home) => mock_home.dispatch(message).await,
@@ -349,7 +361,7 @@ impl Home for HomeVariants {
     async fn improper_update(
         &self,
         update: &SignedUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => home.improper_update(update).await,
             HomeVariants::Mock(mock_home) => mock_home.improper_update(update).await,
@@ -377,7 +389,10 @@ impl Common for HomeVariants {
         }
     }
 
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+    async fn status(
+        &self,
+        txid: H256,
+    ) -> Result<Option<CheckedTxOutcome>, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => home.status(txid).await,
             HomeVariants::Mock(mock_home) => mock_home.status(txid).await,
@@ -409,7 +424,10 @@ impl Common for HomeVariants {
         }
     }
 
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn update(
+        &self,
+        update: &SignedUpdate,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => home.update(update).await,
             HomeVariants::Mock(mock_home) => mock_home.update(update).await,
@@ -420,7 +438,7 @@ impl Common for HomeVariants {
     async fn double_update(
         &self,
         double: &DoubleUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => home.double_update(double).await,
             HomeVariants::Mock(mock_home) => mock_home.double_update(double).await,

@@ -14,32 +14,32 @@ mock! {
 
         pub fn _remote_domain(&self) -> Result<u32, ChainCommunicationError> {}
 
-        pub fn _prove(&self, proof: &Proof) -> Result<TxOutcome, ChainCommunicationError> {}
+        pub fn _prove(&self, proof: &Proof) -> Result<CheckedTxOutcome, ChainCommunicationError> {}
 
-        pub fn _process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError> {}
+        pub fn _process(&self, message: &NomadMessage) -> Result<CheckedTxOutcome, ChainCommunicationError> {}
 
         pub fn _prove_and_process(
             &self,
             message: &NomadMessage,
             proof: &Proof,
-        ) -> Result<TxOutcome, ChainCommunicationError> {}
+        ) -> Result<CheckedTxOutcome, ChainCommunicationError> {}
 
         // Common
         pub fn _name(&self) -> &str {}
 
-        pub fn _status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {}
+        pub fn _status(&self, txid: H256) -> Result<Option<CheckedTxOutcome>, ChainCommunicationError> {}
 
         pub fn _updater(&self) -> Result<H256, ChainCommunicationError> {}
 
         pub fn _state(&self) -> Result<State, ChainCommunicationError> {}
 
         pub fn _committed_root(&self) -> Result<H256, ChainCommunicationError> {}
-        pub fn _update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {}
+        pub fn _update(&self, update: &SignedUpdate) -> Result<CheckedTxOutcome, ChainCommunicationError> {}
 
         pub fn _double_update(
             &self,
             double: &DoubleUpdate,
-        ) -> Result<TxOutcome, ChainCommunicationError> {}
+        ) -> Result<CheckedTxOutcome, ChainCommunicationError> {}
 
         pub fn _message_status(&self, leaf: H256) -> Result<MessageStatus, ChainCommunicationError> {}
 
@@ -63,11 +63,14 @@ impl Replica for MockReplicaContract {
         self._remote_domain()
     }
 
-    async fn prove(&self, proof: &Proof) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn prove(&self, proof: &Proof) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self._prove(proof)
     }
 
-    async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn process(
+        &self,
+        message: &NomadMessage,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self._process(message)
     }
 
@@ -75,7 +78,7 @@ impl Replica for MockReplicaContract {
         &self,
         message: &NomadMessage,
         proof: &Proof,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self._prove_and_process(message, proof)
     }
 
@@ -94,7 +97,10 @@ impl Common for MockReplicaContract {
         self._name()
     }
 
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+    async fn status(
+        &self,
+        txid: H256,
+    ) -> Result<Option<CheckedTxOutcome>, ChainCommunicationError> {
         self._status(txid)
     }
 
@@ -110,14 +116,17 @@ impl Common for MockReplicaContract {
         self._committed_root()
     }
 
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn update(
+        &self,
+        update: &SignedUpdate,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self._update(update)
     }
 
     async fn double_update(
         &self,
         double: &DoubleUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self._double_update(double)
     }
 }

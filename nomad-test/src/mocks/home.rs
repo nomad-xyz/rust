@@ -33,21 +33,21 @@ mock! {
 
         pub fn _nonces(&self, destination: u32) -> Result<u32, ChainCommunicationError> {}
 
-        pub fn _dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {}
+        pub fn _dispatch(&self, message: &Message) -> Result<CheckedTxOutcome, ChainCommunicationError> {}
 
         pub fn _queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError> {}
 
         pub fn _improper_update(
             &self,
             update: &SignedUpdate,
-        ) -> Result<TxOutcome, ChainCommunicationError> {}
+        ) -> Result<CheckedTxOutcome, ChainCommunicationError> {}
 
         pub fn _produce_update(&self) -> Result<Option<Update>, ChainCommunicationError> {}
 
         // Common
         pub fn _name(&self) -> &str {}
 
-        pub fn _status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {}
+        pub fn _status(&self, txid: H256) -> Result<Option<CheckedTxOutcome>, ChainCommunicationError> {}
 
         pub fn _updater(&self) -> Result<H256, ChainCommunicationError> {}
 
@@ -55,12 +55,12 @@ mock! {
 
         pub fn _committed_root(&self) -> Result<H256, ChainCommunicationError> {}
 
-        pub fn _update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {}
+        pub fn _update(&self, update: &SignedUpdate) -> Result<CheckedTxOutcome, ChainCommunicationError> {}
 
         pub fn _double_update(
             &self,
             double: &DoubleUpdate,
-        ) -> Result<TxOutcome, ChainCommunicationError> {}
+        ) -> Result<CheckedTxOutcome, ChainCommunicationError> {}
     }
 }
 
@@ -84,7 +84,10 @@ impl Home for MockHomeContract {
         self._nonces(destination)
     }
 
-    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn dispatch(
+        &self,
+        message: &Message,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self._dispatch(message)
     }
 
@@ -95,7 +98,7 @@ impl Home for MockHomeContract {
     async fn improper_update(
         &self,
         update: &SignedUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self._improper_update(update)
     }
 
@@ -110,7 +113,10 @@ impl Common for MockHomeContract {
         self._name()
     }
 
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+    async fn status(
+        &self,
+        txid: H256,
+    ) -> Result<Option<CheckedTxOutcome>, ChainCommunicationError> {
         self._status(txid)
     }
 
@@ -126,14 +132,17 @@ impl Common for MockHomeContract {
         self._committed_root()
     }
 
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn update(
+        &self,
+        update: &SignedUpdate,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self._update(update)
     }
 
     async fn double_update(
         &self,
         double: &DoubleUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self._double_update(double)
     }
 }

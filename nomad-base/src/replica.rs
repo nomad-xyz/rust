@@ -2,8 +2,8 @@ use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use ethers::core::types::H256;
 use nomad_core::{
-    accumulator::merkle::Proof, db::DbError, ChainCommunicationError, Common, CommonEvents,
-    DoubleUpdate, MessageStatus, NomadMessage, Replica, SignedUpdate, State, TxOutcome,
+    accumulator::merkle::Proof, db::DbError, ChainCommunicationError, CheckedTxOutcome, Common,
+    CommonEvents, DoubleUpdate, MessageStatus, NomadMessage, Replica, SignedUpdate, State,
 };
 
 use crate::NomadDB;
@@ -88,11 +88,14 @@ impl Replica for CachingReplica {
         self.replica.remote_domain().await
     }
 
-    async fn prove(&self, proof: &Proof) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn prove(&self, proof: &Proof) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self.replica.prove(proof).await
     }
 
-    async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn process(
+        &self,
+        message: &NomadMessage,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self.replica.process(message).await
     }
 
@@ -111,7 +114,10 @@ impl Common for CachingReplica {
         self.replica.name()
     }
 
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+    async fn status(
+        &self,
+        txid: H256,
+    ) -> Result<Option<CheckedTxOutcome>, ChainCommunicationError> {
         self.replica.status(txid).await
     }
 
@@ -127,14 +133,17 @@ impl Common for CachingReplica {
         self.replica.committed_root().await
     }
 
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn update(
+        &self,
+        update: &SignedUpdate,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self.replica.update(update).await
     }
 
     async fn double_update(
         &self,
         double: &DoubleUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         self.replica.double_update(double).await
     }
 }
@@ -255,7 +264,7 @@ impl Replica for ReplicaVariants {
         }
     }
 
-    async fn prove(&self, proof: &Proof) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn prove(&self, proof: &Proof) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         match self {
             ReplicaVariants::Ethereum(replica) => replica.prove(proof).await,
             ReplicaVariants::Mock(mock_replica) => mock_replica.prove(proof).await,
@@ -263,7 +272,10 @@ impl Replica for ReplicaVariants {
         }
     }
 
-    async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn process(
+        &self,
+        message: &NomadMessage,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         match self {
             ReplicaVariants::Ethereum(replica) => replica.process(message).await,
             ReplicaVariants::Mock(mock_replica) => mock_replica.process(message).await,
@@ -283,7 +295,7 @@ impl Replica for ReplicaVariants {
         &self,
         message: &NomadMessage,
         proof: &Proof,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         match self {
             ReplicaVariants::Ethereum(replica) => replica.prove_and_process(message, proof).await,
             ReplicaVariants::Mock(mock_replica) => {
@@ -312,7 +324,10 @@ impl Common for ReplicaVariants {
         }
     }
 
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+    async fn status(
+        &self,
+        txid: H256,
+    ) -> Result<Option<CheckedTxOutcome>, ChainCommunicationError> {
         match self {
             ReplicaVariants::Ethereum(replica) => replica.status(txid).await,
             ReplicaVariants::Mock(mock_replica) => mock_replica.status(txid).await,
@@ -345,7 +360,10 @@ impl Common for ReplicaVariants {
     }
 
     #[instrument(fields(update = %update.update))]
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn update(
+        &self,
+        update: &SignedUpdate,
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         match self {
             ReplicaVariants::Ethereum(replica) => replica.update(update).await,
             ReplicaVariants::Mock(mock_replica) => mock_replica.update(update).await,
@@ -356,7 +374,7 @@ impl Common for ReplicaVariants {
     async fn double_update(
         &self,
         double: &DoubleUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<CheckedTxOutcome, ChainCommunicationError> {
         match self {
             ReplicaVariants::Ethereum(replica) => replica.double_update(double).await,
             ReplicaVariants::Mock(mock_replica) => mock_replica.double_update(double).await,
