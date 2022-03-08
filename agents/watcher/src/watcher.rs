@@ -653,7 +653,7 @@ mod test {
     use ethers::core::types::H256;
     use ethers::signers::{LocalWallet, Signer};
 
-    use nomad_base::{CachingReplica, CommonIndexers, HomeIndexers, Homes, Replicas};
+    use nomad_base::{CachingReplica, CommonIndexers, HomeIndexers, Homes, IndexMode, Replicas};
     use nomad_core::{DoubleUpdate, SignedFailureNotification, State, Update};
     use nomad_test::mocks::{MockConnectionManagerContract, MockHomeContract, MockReplicaContract};
     use nomad_test::test_utils;
@@ -691,8 +691,14 @@ mod test {
             }
 
             let mock_home_indexer = Arc::new(MockIndexer::new().into());
-            let home: Arc<CachingHome> =
-                CachingHome::new(mock_home.into(), nomad_db.clone(), mock_home_indexer).into();
+            let home: Arc<CachingHome> = CachingHome::new(
+                mock_home.into(),
+                nomad_db.clone(),
+                mock_home_indexer,
+                5,
+                IndexMode::FastUpdates,
+            )
+            .into();
 
             let updates_inspected_for_double = IntGauge::new(
                 "updates_inspected_for_double",
@@ -764,8 +770,14 @@ mod test {
             }
 
             let mock_home_indexer = Arc::new(MockIndexer::new().into());
-            let home: Arc<CachingHome> =
-                CachingHome::new(mock_home.into(), nomad_db.clone(), mock_home_indexer).into();
+            let home: Arc<CachingHome> = CachingHome::new(
+                mock_home.into(),
+                nomad_db.clone(),
+                mock_home_indexer,
+                5,
+                IndexMode::FastUpdates,
+            )
+            .into();
 
             let (tx, mut rx) = mpsc::channel(200);
             let mut history_sync = HistorySync::new(3, second_root, tx.clone(), home.clone());
@@ -837,8 +849,14 @@ mod test {
 
             let nomad_db = NomadDB::new("home_1_watcher", db);
             let mock_home_indexer = Arc::new(MockIndexer::new().into());
-            let home: Arc<CachingHome> =
-                CachingHome::new(mock_home.into(), nomad_db.clone(), mock_home_indexer).into();
+            let home: Arc<CachingHome> = CachingHome::new(
+                mock_home.into(),
+                nomad_db.clone(),
+                mock_home_indexer,
+                5,
+                IndexMode::FastUpdates,
+            )
+            .into();
 
             let (_tx, rx) = mpsc::channel(200);
             let mut handler = UpdateHandler {
@@ -1027,18 +1045,24 @@ mod test {
                     mock_home.clone(),
                     home_db.clone(),
                     mock_home_indexer.clone(),
+                    5,
+                    IndexMode::FastUpdates,
                 )
                 .into();
                 let replica_1: Arc<CachingReplica> = CachingReplica::new(
                     mock_replica_1.clone(),
                     replica_1_db.clone(),
                     mock_indexer.clone(),
+                    5,
+                    IndexMode::FastUpdates,
                 )
                 .into();
                 let replica_2: Arc<CachingReplica> = CachingReplica::new(
                     mock_replica_2.clone(),
                     replica_2_db.clone(),
                     mock_indexer.clone(),
+                    5,
+                    IndexMode::FastUpdates,
                 )
                 .into();
 
@@ -1179,18 +1203,24 @@ mod test {
                     mock_home.clone(),
                     home_db.clone(),
                     mock_home_indexer.clone(),
+                    5,
+                    IndexMode::FastUpdates,
                 )
                 .into();
                 let replica_1: Arc<CachingReplica> = CachingReplica::new(
                     mock_replica_1.clone(),
                     replica_1_db.clone(),
                     mock_indexer.clone(),
+                    5,
+                    IndexMode::FastUpdates,
                 )
                 .into();
                 let replica_2: Arc<CachingReplica> = CachingReplica::new(
                     mock_replica_2.clone(),
                     replica_2_db.clone(),
                     mock_indexer.clone(),
+                    5,
+                    IndexMode::FastUpdates,
                 )
                 .into();
 

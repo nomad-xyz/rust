@@ -183,14 +183,14 @@ mod test {
     use ethers::prelude::ProviderError;
     use nomad_base::trace::TracingConfig;
     use nomad_base::{ChainConf, SignerConf};
-    use nomad_base::{ChainSetup, CoreMetrics, IndexSettings, NomadDB};
+    use nomad_base::{ChainSetup, CoreMetrics, IndexMode, IndexSettings, NomadDB};
     use nomad_core::utils::HexString;
     use nomad_core::ChainCommunicationError;
     use nomad_test::mocks::{MockHomeContract, MockIndexer, MockReplicaContract};
     use nomad_test::test_utils;
     use std::collections::HashMap;
     use std::str::FromStr;
-    use tokio::{select, time::sleep};
+    use tokio::time::{sleep, Duration};
     use tokio_test::assert_err;
 
     use super::*;
@@ -257,8 +257,14 @@ mod test {
                 home_mock.expect__name().return_const("home_1".to_owned());
             }
 
-            let home_mock =
-                CachingHome::new(home_mock.into(), home_db.clone(), home_indexer).into();
+            let home_mock = CachingHome::new(
+                home_mock.into(),
+                home_db.clone(),
+                home_indexer,
+                5,
+                IndexMode::FastUpdates,
+            )
+            .into();
 
             // Setting replica
             let mut replica_mock = MockReplicaContract::new();
@@ -283,6 +289,8 @@ mod test {
                     replica_mock.into(),
                     replica_db,
                     replica_indexer,
+                    5,
+                    IndexMode::FastUpdates,
                 )),
             )]);
 
@@ -298,33 +306,25 @@ mod test {
 
             let agent = Relayer::new(2, core);
 
-            // Sanity check that we indeed throw an error
+            // Sanity check that we indeed throw an error when calling run
             let run_result =
                 <Relayer as nomad_base::NomadAgent>::run(agent.build_channel("moonbeam"))
                     .await
                     .expect("Couldn't join relayer's run task");
             assert_err!(run_result, "Must have returned error");
 
-            let sleep_task = tokio::spawn(async {
-                sleep(Duration::from_secs(1)).await;
-            })
-            .in_current_span();
+            let run_report_error_task = agent
+                .run_report_error(channel_name.to_string())
+                .into_inner();
 
-            let run_report_error_task = agent.run_report_error(channel_name.to_string());
+            sleep(Duration::from_secs(3)).await;
 
-            // Sleep task waits 1 second which is enough to throw an error do all the necessary things.
-            let finished_after_timeout = select! {
-                _ = sleep_task => {
-                    // If the timeout comes first it means that the agent is still running.
-                    true
-                },
-                _ = run_report_error_task => {
-                    // Else, if the aggent returned, it means that the retry mechanics didn't work
-                    false
-                },
-            };
-
-            assert!(finished_after_timeout, "Agent finished early");
+            // Awaiting task will return error if abort cancelled task and Ok if
+            // it already finished before abort. We throw error if task returned
+            // Ok instead of error, as it means run task finished early. We also
+            // check it was cancelled.
+            run_report_error_task.abort();
+            assert!(run_report_error_task.await.unwrap_err().is_cancelled());
         })
         .await
     }
