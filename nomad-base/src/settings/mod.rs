@@ -242,6 +242,35 @@ impl Settings {
 }
 
 impl Settings {
+    /// Validate invariants that should hold for Settings block
+    pub fn validate(&self) -> Result<(), Report> {
+        // If running syncing in IndexMode::FastUpdates, timelag must be OFF.
+        // If running syncing in slow modes, timelag must be ON.
+        if self.index.mode == IndexMode::FastUpdates {
+            if self.home_indexing_timelag().is_some() {
+                bail!("FastUpdates syncing must be run with timelag OFF!",);
+            }
+
+            for (name, _) in self.replicas.iter() {
+                if self.replica_indexing_timelag(name).is_some() {
+                    bail!("FastUpdates syncing must be run with timelag OFF!",);
+                }
+            }
+        } else {
+            if self.home_indexing_timelag().is_none() {
+                bail!("Slow syncing must be run with timelag ON!");
+            }
+
+            for (name, _) in self.replicas.iter() {
+                if self.replica_indexing_timelag(name).is_none() {
+                    bail!("Slow syncing must be run with timelag ON!");
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     /// Try to get a signer instance by name
     pub async fn get_signer(&self, name: &str) -> Option<Signers> {
         self.signers.get(name)?.try_into_signer().await.ok()
@@ -266,11 +295,7 @@ impl Settings {
         if self.index.mode == IndexMode::FastUpdates {
             None
         } else {
-            let replica_finality = self
-                .replicas
-                .get(replica_name)
-                .expect("!replica")
-                .finality;
+            let replica_finality = self.replicas.get(replica_name).expect("!replica").finality;
             Some(replica_finality)
         }
     }

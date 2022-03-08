@@ -55,6 +55,7 @@ impl CachingHome {
 
     /// Instantiate caching home from nomad-base Settings
     pub async fn from_settings(settings: &Settings) -> Result<Self> {
+        settings.validate()?;
         let signer = settings.get_signer(&settings.home.name).await;
         let opt_home_timelag = settings.home_indexing_timelag();
         let home_finality = settings.home.finality;
