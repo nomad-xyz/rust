@@ -289,7 +289,7 @@ impl Settings {
                 );
             }
 
-            let caching_replica = CachingReplica::from_settings(&self, k).await?;
+            let caching_replica = CachingReplica::from_settings(self, k).await?;
             result.insert(v.name.clone(), Arc::new(caching_replica));
         }
         Ok(result)
@@ -356,7 +356,7 @@ impl Settings {
         )?);
 
         let db = DB::from_path(&self.db)?;
-        let home = Arc::new(CachingHome::from_settings(&self).await?);
+        let home = Arc::new(CachingHome::from_settings(self).await?);
         let replicas = self.try_caching_replicas().await?;
 
         Ok(AgentCore {
