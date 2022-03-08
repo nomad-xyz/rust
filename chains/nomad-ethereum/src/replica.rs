@@ -168,7 +168,13 @@ where
             .await
             .map_err(|e| Box::new(e) as Box<dyn StdError + Send + Sync>)?;
 
-        Ok(receipt_opt.map(Into::into))
+        if let Some(receipt) = receipt_opt {
+            let tx: TxOutcome = receipt.into();
+            tx.check()?;
+            Ok(Some(tx))
+        } else {
+            Ok(None)
+        }
     }
 
     #[tracing::instrument(err)]
@@ -200,7 +206,10 @@ where
             update.signature.to_vec().into(),
         );
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
+        tx.check()?;
+
+        Ok(tx)
     }
 
     #[tracing::instrument(err)]
@@ -218,7 +227,10 @@ where
             double.1.signature.to_vec().into(),
         );
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
+        tx.check()?;
+
+        Ok(tx)
     }
 }
 
@@ -247,7 +259,10 @@ where
             .contract
             .prove(proof.leaf.into(), sol_proof, proof.index.into());
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
+        tx.check()?;
+
+        Ok(tx)
     }
 
     #[tracing::instrument(err)]
@@ -257,7 +272,10 @@ where
             .process(message.to_vec().into())
             .gas(1_500_000);
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
+        tx.check()?;
+
+        Ok(tx)
     }
 
     #[tracing::instrument(err)]
@@ -277,7 +295,10 @@ where
             .prove_and_process(message.to_vec().into(), sol_proof, proof.index.into())
             .gas(1_800_000);
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
+        tx.check()?;
+
+        Ok(tx)
     }
 
     #[tracing::instrument(err)]

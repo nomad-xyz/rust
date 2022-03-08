@@ -64,6 +64,18 @@ impl From<TransactionReceipt> for TxOutcome {
     }
 }
 
+impl TxOutcome {
+    /// Kludge method to check if a transaction was executed successfully
+    /// and return relevant error otherwise
+    pub fn check(&self) -> Result<(), ChainCommunicationError> {
+        if self.executed {
+            Ok(())
+        } else {
+            Err(ChainCommunicationError::NotExecuted(self.txid))
+        }
+    }
+}
+
 /// ChainCommunicationError contains errors returned when attempting to
 /// call a chain or dispatch a transaction
 #[derive(Debug, thiserror::Error)]
@@ -80,6 +92,9 @@ pub enum ChainCommunicationError {
     /// A transaction was dropped from the mempool
     #[error("Transaction dropped from mempool {0:?}")]
     DroppedError(H256),
+    /// A transaction was not executed successfully
+    #[error("Transaction was not executed successfully {0:?}")]
+    NotExecuted(H256),
     /// Any other error
     #[error("{0}")]
     CustomError(#[from] Box<dyn StdError + Send + Sync>),

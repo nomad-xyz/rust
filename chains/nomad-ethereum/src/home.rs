@@ -205,7 +205,13 @@ where
             .await
             .map_err(|e| Box::new(e) as Box<dyn StdError + Send + Sync>)?;
 
-        Ok(receipt_opt.map(Into::into))
+        if let Some(receipt) = receipt_opt {
+            let tx: TxOutcome = receipt.into();
+            tx.check()?;
+            Ok(Some(tx))
+        } else {
+            Ok(None)
+        }
     }
 
     #[tracing::instrument(err, skip(self))]
@@ -237,7 +243,10 @@ where
             update.signature.to_vec().into(),
         );
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
+        tx.check()?;
+
+        Ok(tx)
     }
 
     #[tracing::instrument(err, skip(self, double), fields(double = %double))]
@@ -254,9 +263,10 @@ where
             double.0.signature.to_vec().into(),
             double.1.signature.to_vec().into(),
         );
-        let response = report_tx!(tx, &self.provider);
+        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
+        tx.check()?;
 
-        Ok(response.into())
+        Ok(tx)
     }
 }
 
@@ -282,7 +292,10 @@ where
             message.body.clone().into(),
         );
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
+        tx.check()?;
+
+        Ok(tx)
     }
 
     async fn queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError> {
@@ -300,7 +313,10 @@ where
             update.signature.to_vec().into(),
         );
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
+        tx.check()?;
+
+        Ok(tx)
     }
 
     #[tracing::instrument(err, skip(self))]

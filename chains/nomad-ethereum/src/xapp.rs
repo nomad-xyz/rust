@@ -86,7 +86,10 @@ where
             .contract
             .owner_enroll_replica(replica.as_ethereum_address(), domain);
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
+        tx.check()?;
+
+        Ok(tx)
     }
 
     #[tracing::instrument(err)]
@@ -98,14 +101,20 @@ where
             .contract
             .owner_unenroll_replica(replica.as_ethereum_address());
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
+        tx.check()?;
+
+        Ok(tx)
     }
 
     #[tracing::instrument(err)]
     async fn set_home(&self, home: NomadIdentifier) -> Result<TxOutcome, ChainCommunicationError> {
         let tx = self.contract.set_home(home.as_ethereum_address());
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
+        tx.check()?;
+
+        Ok(tx)
     }
 
     #[tracing::instrument(err)]
@@ -119,7 +128,10 @@ where
             self.contract
                 .set_watcher_permission(watcher.as_ethereum_address(), domain, access);
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
+        tx.check()?;
+
+        Ok(tx)
     }
 
     #[tracing::instrument(err)]
@@ -133,6 +145,9 @@ where
             signed_failure.signature.to_vec().into(),
         );
 
-        Ok(report_tx!(tx, &self.provider).into())
+        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
+        tx.check()?;
+
+        Ok(tx)
     }
 }
