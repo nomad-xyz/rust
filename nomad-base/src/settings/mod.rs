@@ -36,11 +36,11 @@
 //!    intended to be used by a specific agent.
 //!    E.g. `export OPT_KATHY_CHAT_TYPE="static message"`
 
-use crate::{agent::AgentCore, CachingHome, CachingReplica, CommonIndexers, HomeIndexers, NomadDB};
+use crate::{agent::AgentCore, CachingHome, CachingReplica, CommonIndexers, HomeIndexers};
 use color_eyre::{eyre::bail, Report};
 use config::{Config, ConfigError, Environment, File};
 use ethers::prelude::AwsSigner;
-use nomad_core::{db::DB, utils::HexString, Common, ContractLocator, Signers};
+use nomad_core::{db::DB, utils::HexString, ContractLocator, Signers};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
 use rusoto_core::{credential::EnvironmentProvider, HttpClient};
 use rusoto_kms::KmsClient;
@@ -278,7 +278,6 @@ impl Settings {
     /// Try to get all replicas from this settings object
     pub async fn try_caching_replicas(
         &self,
-        db: DB,
     ) -> Result<HashMap<String, Arc<CachingReplica>>, Report> {
         let mut result = HashMap::default();
         for (k, v) in self.replicas.iter().filter(|(_, v)| v.disabled.is_none()) {
@@ -358,7 +357,7 @@ impl Settings {
 
         let db = DB::from_path(&self.db)?;
         let home = Arc::new(CachingHome::from_settings(&self).await?);
-        let replicas = self.try_caching_replicas(db.clone()).await?;
+        let replicas = self.try_caching_replicas().await?;
 
         Ok(AgentCore {
             home,

@@ -9,6 +9,7 @@
 #![warn(missing_docs)]
 #![warn(unused_extern_crates)]
 
+/// Settings for building agent
 pub mod settings;
 pub use settings::*;
 

@@ -1,28 +1,32 @@
 use crate::NomadDB;
-use nomad_core::{CommonIndexer, HomeIndexer, ListValidity};
+use nomad_core::{CommonIndexer, HomeIndexer};
 
 use tokio::time::sleep;
-use tracing::{info, info_span, warn};
+use tracing::{info, info_span};
 use tracing::{instrument::Instrumented, Instrument};
 
 use std::cmp::min;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-mod last_message;
-mod last_update;
 mod metrics;
 mod schema;
 
-use last_message::OptLatestLeafIndex;
 pub use metrics::ContractSyncMetrics;
 use schema::{CommonContractSyncDB, HomeContractSyncDB};
 
 const UPDATES_LABEL: &str = "updates";
 const MESSAGES_LABEL: &str = "messages";
 
+/// Fast indexing with catching timelag vs. slow timelag indexing
 pub enum UpdatesSyncMode {
-    Fast { finality_blocks: u8 },
+    /// Index at tip with timelag to catch missed updates
+    Fast {
+        /// Chain finality (handled in contract sync since indexer indexes at
+        /// tip not timelag)
+        finality_blocks: u8,
+    },
+    /// Index timelag blocks behind tip (lag handled by indexer)
     Slow,
 }
 
@@ -70,7 +74,9 @@ where
     I: CommonIndexer + 'static,
 {
     /// Spawn task that continuously looks for new on-chain updates and stores
-    /// them in db
+    /// them in db. If run in UpdatesSyncMode::Fast mode, will index at the tip
+    /// but use a timelag to catch any missed updates. In Slow mode, update
+    /// syncing will be run timelag blocks behind the tip.
     pub fn sync_updates(
         &self,
         updates_sync_mode: UpdatesSyncMode,
@@ -189,7 +195,10 @@ where
     I: HomeIndexer + 'static,
 {
     /// Spawn task that continuously looks for new on-chain messages and stores
-    /// them in db
+    /// them in db. Indexing messages should ALWAYS be done with a timelag, as
+    /// ordering of messages is not guaranteed like it is for updates. Running
+    /// without a timelag could cause messages with the incorrectly ordered
+    /// index to be stored.
     pub fn sync_messages(&self) -> Instrumented<tokio::task::JoinHandle<color_eyre::Result<()>>> {
         let span = info_span!("MessageContractSync");
 
@@ -207,12 +216,6 @@ where
             &self.agent_name,
         ]);
 
-        let missed_messages = self.metrics.missed_events.clone().with_label_values(&[
-            MESSAGES_LABEL,
-            &self.contract_name,
-            &self.agent_name,
-        ]);
-
         let config_from = self.from_height;
         let chunk_size = self.chunk_size;
 
@@ -221,32 +224,10 @@ where
                 .retrieve_message_latest_block_end()
                 .map_or_else(|| config_from, |h| h + 1);
 
-            let mut finding_missing = false;
-            let mut realized_missing_start_block = 0;
-            let mut realized_missing_end_block = 0;
-            let mut exponential = 0;
-
             info!(from = from, "[Messages]: resuming indexer from {}", from);
 
             loop {
                 indexed_height.set(from as i64);
-
-                // If we were searching for missing message and have reached 
-                // original missing start block, turn off finding_missing and
-                // TRY to resume normal indexing
-                if finding_missing && from >= realized_missing_start_block {
-                    finding_missing = false;
-                }
-
-                // If we have passed the end block of the missing message, we 
-                // have found the message and can reset variables
-                if from > realized_missing_end_block && realized_missing_end_block != 0 {
-                    missed_messages.inc();
-
-                    exponential = 0;
-                    realized_missing_start_block = 0;
-                    realized_missing_end_block = 0;
-                }
 
                 let tip = indexer.get_block_number().await?;
                 if tip <= from {
@@ -276,46 +257,15 @@ where
                     continue;
                 }
 
-                // If messages found, check that list is valid
-                let last_leaf_index: OptLatestLeafIndex = db.retrieve_latest_leaf_index()?.into();
-                match &last_leaf_index.valid_continuation(&sorted_messages) {
-                    ListValidity::Valid => {
-                        // Store messages
-                        db.store_messages(&sorted_messages)?;
+                // Store messages
+                db.store_messages(&sorted_messages)?;
 
-                        // Report amount of messages stored into db
-                        stored_messages.add(sorted_messages.len().try_into()?);
+                // Report amount of messages stored into db
+                stored_messages.add(sorted_messages.len().try_into()?);
 
-                        // Move forward next height
-                        db.store_message_latest_block_end(to)?;
-                        from = to + 1;
-                    }
-                    ListValidity::Invalid => {
-                        if finding_missing {
-                            db.store_messages(&sorted_messages)?;
-                            from = to + 1;
-                        } else {
-                            warn!(
-                                last_leaf_index = ?last_leaf_index,
-                                start_block = from,
-                                end_block = to,
-                                "[Messages]: RPC failed to find message(s) between blocks {}...{}. Last seen leaf index: {:?}. Activating finding_missing mode.",
-                                from,
-                                to,
-                                last_leaf_index,
-                            );
-
-                            // Turn on finding_missing mode
-                            finding_missing = true;
-                            realized_missing_start_block = from;
-                            realized_missing_end_block = to;
-
-                            from = realized_missing_start_block - (chunk_size * 2u32.pow(exponential as u32));
-                            exponential += 1;
-                        }
-                    }
-                    ListValidity::Empty => unreachable!("Tried to validate empty list of messages"),
-                };
+                // Move forward next height
+                db.store_message_latest_block_end(to)?;
+                from = to + 1;
             }
         })
         .instrument(span)

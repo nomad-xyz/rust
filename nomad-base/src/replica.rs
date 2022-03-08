@@ -55,6 +55,7 @@ impl CachingReplica {
         }
     }
 
+    /// Instantiate caching replica from nomad-base Settings
     pub async fn from_settings(settings: &Settings, replica_name: &str) -> Result<Self> {
         let replica_setup = settings.replicas.get(replica_name).expect("!replica");
         let signer = settings.get_signer(&replica_name).await;
