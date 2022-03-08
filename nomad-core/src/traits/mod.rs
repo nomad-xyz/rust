@@ -50,28 +50,19 @@ impl Display for DoubleUpdate {
 pub struct TxOutcome {
     /// The txid
     pub txid: H256,
-    /// True if executed, false otherwise (reverted, etc.)
-    pub executed: bool,
     // TODO: more? What can be abstracted across all chains?
 }
 
-impl From<TransactionReceipt> for TxOutcome {
-    fn from(t: TransactionReceipt) -> Self {
-        Self {
-            txid: t.transaction_hash,
-            executed: t.status.unwrap().low_u32() == 1,
-        }
-    }
-}
+impl TryFrom<TransactionReceipt> for TxOutcome {
+    type Error = ChainCommunicationError;
 
-impl TxOutcome {
-    /// Kludge method to check if a transaction was executed successfully
-    /// and return relevant error otherwise
-    pub fn check(&self) -> Result<(), ChainCommunicationError> {
-        if self.executed {
-            Ok(())
+    fn try_from(t: TransactionReceipt) -> Result<Self, Self::Error> {
+        if t.status.unwrap().low_u32() == 1 {
+            Ok(Self {
+                txid: t.transaction_hash,
+            })
         } else {
-            Err(ChainCommunicationError::NotExecuted(self.txid))
+            Err(ChainCommunicationError::NotExecuted(t.transaction_hash))
         }
     }
 }

@@ -161,20 +161,13 @@ where
 
     #[tracing::instrument(err)]
     async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
-        let receipt_opt = self
-            .contract
+        self.contract
             .client()
             .get_transaction_receipt(txid)
             .await
-            .map_err(|e| Box::new(e) as Box<dyn StdError + Send + Sync>)?;
-
-        if let Some(receipt) = receipt_opt {
-            let tx: TxOutcome = receipt.into();
-            tx.check()?;
-            Ok(Some(tx))
-        } else {
-            Ok(None)
-        }
+            .map_err(|e| Box::new(e) as Box<dyn StdError + Send + Sync>)?
+            .map(|receipt| receipt.try_into())
+            .transpose()
     }
 
     #[tracing::instrument(err)]
@@ -206,10 +199,7 @@ where
             update.signature.to_vec().into(),
         );
 
-        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
-        tx.check()?;
-
-        Ok(tx)
+        report_tx!(tx, &self.provider).try_into()
     }
 
     #[tracing::instrument(err)]
@@ -227,10 +217,7 @@ where
             double.1.signature.to_vec().into(),
         );
 
-        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
-        tx.check()?;
-
-        Ok(tx)
+        report_tx!(tx, &self.provider).try_into()
     }
 }
 
@@ -259,10 +246,7 @@ where
             .contract
             .prove(proof.leaf.into(), sol_proof, proof.index.into());
 
-        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
-        tx.check()?;
-
-        Ok(tx)
+        report_tx!(tx, &self.provider).try_into()
     }
 
     #[tracing::instrument(err)]
@@ -272,10 +256,7 @@ where
             .process(message.to_vec().into())
             .gas(1_500_000);
 
-        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
-        tx.check()?;
-
-        Ok(tx)
+        report_tx!(tx, &self.provider).try_into()
     }
 
     #[tracing::instrument(err)]
@@ -295,10 +276,7 @@ where
             .prove_and_process(message.to_vec().into(), sol_proof, proof.index.into())
             .gas(1_800_000);
 
-        let tx: TxOutcome = report_tx!(tx, &self.provider).into();
-        tx.check()?;
-
-        Ok(tx)
+        report_tx!(tx, &self.provider).try_into()
     }
 
     #[tracing::instrument(err)]

@@ -944,7 +944,6 @@ mod test {
                     .return_once(move |_| {
                         Ok(TxOutcome {
                             txid: H256::default(),
-                            executed: true,
                         })
                     });
             }
@@ -962,7 +961,6 @@ mod test {
                     .return_once(move |_| {
                         Ok(TxOutcome {
                             txid: H256::default(),
-                            executed: true,
                         })
                     });
             }
@@ -980,7 +978,6 @@ mod test {
                     .return_once(move |_| {
                         Ok(TxOutcome {
                             txid: H256::default(),
-                            executed: true,
                         })
                     });
             }
@@ -996,7 +993,6 @@ mod test {
                     .return_once(move |_| {
                         Ok(TxOutcome {
                             txid: H256::default(),
-                            executed: true,
                         })
                     });
             }
@@ -1010,7 +1006,6 @@ mod test {
                     .return_once(move |_| {
                         Ok(TxOutcome {
                             txid: H256::default(),
-                            executed: true,
                         })
                     });
             }
@@ -1150,7 +1145,6 @@ mod test {
                     .return_once(move |_| {
                         Ok(TxOutcome {
                             txid: H256::default(),
-                            executed: true,
                         })
                     });
             }
@@ -1164,7 +1158,6 @@ mod test {
                     .return_once(move |_| {
                         Ok(TxOutcome {
                             txid: H256::default(),
-                            executed: true,
                         })
                     });
             }
