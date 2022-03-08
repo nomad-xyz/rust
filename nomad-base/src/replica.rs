@@ -2,11 +2,13 @@ use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use ethers::core::types::H256;
 use nomad_core::{
-    accumulator::merkle::Proof, db::DbError, ChainCommunicationError, Common, CommonEvents,
-    DoubleUpdate, MessageStatus, NomadMessage, Replica, SignedUpdate, State, TxOutcome,
+    accumulator::merkle::Proof,
+    db::{DbError, DB},
+    ChainCommunicationError, Common, CommonEvents, DoubleUpdate, MessageStatus, NomadMessage,
+    Replica, SignedUpdate, State, TxOutcome,
 };
 
-use crate::NomadDB;
+use crate::{IndexMode, NomadDB, Settings};
 
 use nomad_ethereum::EthereumReplica;
 use nomad_test::mocks::MockReplicaContract;
@@ -17,7 +19,7 @@ use tokio::time::{sleep, Duration};
 use tracing::{info_span, Instrument};
 use tracing::{instrument, instrument::Instrumented};
 
-use crate::{CommonIndexers, ContractSync, ContractSyncMetrics};
+use crate::{CommonIndexers, ContractSync, ContractSyncMetrics, UpdatesSyncMode};
 
 /// Caching replica type
 #[derive(Debug)]
@@ -25,6 +27,8 @@ pub struct CachingReplica {
     replica: Replicas,
     db: NomadDB,
     indexer: Arc<CommonIndexers>,
+    finality_blocks: u8,
+    index_mode: IndexMode,
 }
 
 impl std::fmt::Display for CachingReplica {
@@ -35,15 +39,52 @@ impl std::fmt::Display for CachingReplica {
 
 impl CachingReplica {
     /// Instantiate new CachingReplica
-    pub fn new(replica: Replicas, db: NomadDB, indexer: Arc<CommonIndexers>) -> Self {
+    pub fn new(
+        replica: Replicas,
+        db: NomadDB,
+        indexer: Arc<CommonIndexers>,
+        finality_blocks: u8,
+        index_mode: IndexMode,
+    ) -> Self {
         Self {
             replica,
             db,
             indexer,
+            finality_blocks,
+            index_mode,
         }
     }
 
-    /// Return handle on home object
+    pub async fn from_settings(settings: &Settings, replica_name: &str) -> Result<Self> {
+        let replica_setup = settings.replicas.get(replica_name).expect("!replica");
+        let signer = settings.get_signer(&replica_name).await;
+        let opt_replica_timelag = settings.replica_indexing_timelag(replica_name);
+        let replica_finality_blocks = settings
+            .replicas
+            .get(replica_name)
+            .expect("!replica")
+            .finality_blocks;
+        let index_mode = settings.index.mode();
+
+        let replica = replica_setup
+            .try_into_replica(signer, opt_replica_timelag)
+            .await?;
+        let indexer = Arc::new(
+            settings
+                .try_replica_indexer(replica_setup, opt_replica_timelag)
+                .await?,
+        );
+        let nomad_db = NomadDB::new(replica.name(), DB::from_path(&settings.db)?);
+        Ok(CachingReplica::new(
+            replica,
+            nomad_db,
+            indexer,
+            replica_finality_blocks,
+            index_mode,
+        ))
+    }
+
+    /// Return handle on replica object
     pub fn replica(&self) -> Replicas {
         self.replica.clone()
     }
@@ -63,7 +104,8 @@ impl CachingReplica {
         metrics: ContractSyncMetrics,
     ) -> Instrumented<JoinHandle<Result<()>>> {
         let span = info_span!("ReplicaContractSync", self = %self);
-
+        let index_mode = self.index_mode.clone();
+        let finality_blocks = self.finality_blocks;
         let sync = ContractSync::new(
             agent_name,
             String::from_str(self.replica.name()).expect("!string"),
@@ -74,7 +116,17 @@ impl CachingReplica {
             metrics,
         );
 
-        tokio::spawn(async move { sync.sync_updates().await? }).instrument(span)
+        tokio::spawn(async move {
+            match index_mode {
+                IndexMode::Updates => sync.sync_updates(UpdatesSyncMode::Slow).await?,
+                IndexMode::UpdatesAndMessages => sync.sync_updates(UpdatesSyncMode::Slow).await?,
+                IndexMode::FastUpdates => {
+                    sync.sync_updates(UpdatesSyncMode::Fast { finality_blocks })
+                        .await?
+                }
+            }
+        })
+        .instrument(span)
     }
 }
 
@@ -173,8 +225,8 @@ impl CommonEvents for CachingReplica {
 pub struct Replicas(Arc<ReplicaVariants>);
 
 impl From<ReplicaVariants> for Replicas {
-    fn from(homes: ReplicaVariants) -> Self {
-        Self(Arc::new(homes))
+    fn from(replicas: ReplicaVariants) -> Self {
+        Self(Arc::new(replicas))
     }
 }
 

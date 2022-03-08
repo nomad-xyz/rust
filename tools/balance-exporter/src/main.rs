@@ -111,7 +111,6 @@ async fn main() -> color_eyre::Result<()> {
             let ChainSetup {
                 name: network,
                 address,
-                timelag: _,
                 ..
             } = &setup.contracts[ix];
             match res {
@@ -143,7 +142,7 @@ async fn mainnet_works() {
             contracts: vec![ChainSetup {
                 name: "ethereum".into(),
                 domain: "6648936".into(),
-                timelag: 5,
+                finality_blocks: 5,
                 // i would love for this to just be ChainConf::ethereum()
                 chain: nomad_base::chains::ChainConf::Ethereum(nomad_ethereum::Connection::Ws {
                     url: "wss://main-light.eth.linkpool.io/ws".into(),

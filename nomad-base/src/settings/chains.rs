@@ -35,8 +35,8 @@ pub struct ChainSetup {
     pub domain: String,
     /// Address of contract on the chain
     pub address: String,
-    /// Network specific timelag
-    pub timelag: u8,
+    /// Network specific finality
+    pub finality_blocks: u8,
     /// The chain connection details
     #[serde(flatten)]
     pub chain: ChainConf,

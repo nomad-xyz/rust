@@ -12,7 +12,7 @@ use tracing::{debug, error, info, info_span, instrument, instrument::Instrumente
 
 use nomad_base::{
     cancel_task, decl_agent, decl_channel, AgentCore, CachingHome, CachingReplica,
-    ContractSyncMetrics, IndexDataTypes, NomadAgent, NomadDB, ProcessorError,
+    ContractSyncMetrics, NomadAgent, NomadDB, ProcessorError,
 };
 use nomad_core::{
     accumulator::merkle::Proof, CommittedMessage, Common, Home, HomeEvents, MessageStatus,
@@ -408,7 +408,6 @@ impl NomadAgent for Processor {
                 indexer.from(),
                 indexer.chunk_size(),
                 sync_metrics,
-                IndexDataTypes::Both,
             );
 
             let home_fail_watch_task = self.watch_home_fail(self.interval);

@@ -11,7 +11,7 @@ use tracing::{info, instrument::Instrumented, Instrument};
 use crate::{
     produce::UpdateProducer, settings::UpdaterSettings as Settings, submit::UpdateSubmitter,
 };
-use nomad_base::{AgentCore, ContractSyncMetrics, IndexDataTypes, NomadAgent, NomadDB};
+use nomad_base::{AgentCore, ContractSyncMetrics, NomadAgent, NomadDB};
 use nomad_core::{Common, Signers};
 
 /// An updater agent
@@ -144,7 +144,6 @@ impl NomadAgent for Updater {
                 indexer.from(),
                 indexer.chunk_size(),
                 sync_metrics,
-                IndexDataTypes::Updates,
             );
 
             // Only spawn updater tasks once syncing has finished

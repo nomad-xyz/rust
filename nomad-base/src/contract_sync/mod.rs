@@ -15,12 +15,16 @@ mod metrics;
 mod schema;
 
 use last_message::OptLatestLeafIndex;
-use last_update::OptLatestNewRoot;
 pub use metrics::ContractSyncMetrics;
 use schema::{CommonContractSyncDB, HomeContractSyncDB};
 
 const UPDATES_LABEL: &str = "updates";
 const MESSAGES_LABEL: &str = "messages";
+
+pub enum UpdatesSyncMode {
+    Fast { finality_blocks: u8 },
+    Slow,
+}
 
 /// Entity that drives the syncing of an agent's db with on-chain data.
 /// Extracts chain-specific data (emitted updates, messages, etc) from an
@@ -67,7 +71,10 @@ where
 {
     /// Spawn task that continuously looks for new on-chain updates and stores
     /// them in db
-    pub fn sync_updates(&self) -> Instrumented<tokio::task::JoinHandle<color_eyre::Result<()>>> {
+    pub fn sync_updates(
+        &self,
+        updates_sync_mode: UpdatesSyncMode,
+    ) -> Instrumented<tokio::task::JoinHandle<color_eyre::Result<()>>> {
         let span = info_span!("UpdateContractSync");
 
         let db = self.db.clone();
@@ -89,12 +96,6 @@ where
             &self.agent_name,
         ]);
 
-        let missed_updates = self.metrics.missed_events.clone().with_label_values(&[
-            UPDATES_LABEL,
-            &self.contract_name,
-            &self.agent_name,
-        ]);
-
         let config_from = self.from_height;
         let chunk_size = self.chunk_size;
 
@@ -103,32 +104,10 @@ where
                 .retrieve_update_latest_block_end()
                 .map_or_else(|| config_from, |h| h + 1);
 
-            let mut finding_missing = false;
-            let mut realized_missing_start_block: u32 = Default::default();
-            let mut realized_missing_end_block: u32 = Default::default();
-            let mut exponential: u32 = Default::default();
-
             info!(from = from, "[Updates]: resuming indexer from {}", from);
 
             loop {
                 indexed_height.set(from as i64);
-
-                // If we were searching for missing update and have reached
-                // original missing start block, turn off finding_missing and
-                // TRY to resume normal indexing
-                if finding_missing && from >= realized_missing_start_block {
-                    finding_missing = false;
-                }
-
-                // If we have passed the end block of the missing update, we
-                // have found the update and can reset variables
-                if from > realized_missing_end_block && realized_missing_end_block != 0 {
-                    missed_updates.inc();
-
-                    exponential = 0;
-                    realized_missing_start_block = 0;
-                    realized_missing_end_block = 0;
-                }
 
                 let tip = indexer.get_block_number().await?;
                 if tip <= from {
@@ -148,7 +127,14 @@ where
                     to
                 );
 
-                let sorted_updates = indexer.fetch_sorted_updates(from, to).await?;
+                let sorted_updates = match updates_sync_mode {
+                    UpdatesSyncMode::Fast { finality_blocks } => {
+                        indexer
+                            .fetch_sorted_updates(from - finality_blocks as u32, to)
+                            .await?
+                    }
+                    UpdatesSyncMode::Slow => indexer.fetch_sorted_updates(from, to).await?,
+                };
 
                 // If no updates found, update last seen block and next height
                 // and continue
@@ -158,71 +144,40 @@ where
                     continue;
                 }
 
-                // If updates found, check that list is valid
-                let last_new_root: OptLatestNewRoot = db.retrieve_latest_root()?.into();
-                match last_new_root.valid_continuation(&sorted_updates) {
-                    ListValidity::Valid => {
-                        // Store updates
-                        db.store_updates_and_meta(&sorted_updates)?;
+                // Store updates
+                db.store_updates_and_meta(&sorted_updates)?;
 
-                        // Report latencies from emit to store if caught up
-                        if to == tip {
-                            let current_timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("!timestamp").as_secs();
-                            for update in sorted_updates.iter() {
-                                let new_root = update.signed_update.update.new_root;
+                // Report latencies from emit to store if caught up
+                if to == tip {
+                    let current_timestamp = SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .expect("!timestamp")
+                        .as_secs();
+                    for update in sorted_updates.iter() {
+                        let new_root = update.signed_update.update.new_root;
 
-                                if let Some(event_timestamp) = update.metadata.timestamp {
-                                    let latency = current_timestamp - event_timestamp;
-                                    info!(
-                                        new_root = ?new_root,
-                                        latency = latency,
-                                        "Latency for update with new_root {}: {}.",
-                                        new_root,
-                                        latency,
-                                    );
-                                    store_update_latency.observe(latency as f64);
-                                } else {
-                                    info!("No timestamp for update with new_root: {}.", new_root);
-                                }
-                            }
-                        }
-
-                        // Report amount of updates stored into db
-                        stored_updates.add(sorted_updates.len().try_into()?);
-
-                        // Move forward next height
-                        db.store_update_latest_block_end(to)?;
-                        from = to + 1;
-                    }
-                    ListValidity::Invalid => {
-                        if finding_missing {
-                            db.store_updates_and_meta(&sorted_updates)?;
-                            from = to + 1;
-                        } else {
-                            warn!(
-                                last_new_root = ?last_new_root,
-                                start_block = from,
-                                end_block = to,
-                                "[Updates]: RPC failed to find update(s) between blocks {}...{}. Last seen new root: {:?}. Activating finding_missing mode.",
-                                from,
-                                to,
-                                last_new_root,
+                        if let Some(event_timestamp) = update.metadata.timestamp {
+                            let latency = current_timestamp - event_timestamp;
+                            info!(
+                                new_root = ?new_root,
+                                latency = latency,
+                                "Latency for update with new_root {}: {}.",
+                                new_root,
+                                latency,
                             );
-
-                            // Turn on finding_missing mode
-                            finding_missing = true;
-                            realized_missing_start_block = from;
-                            realized_missing_end_block = to;
-
-                            from = realized_missing_start_block
-                                - (chunk_size * 2u32.pow(exponential as u32));
-                            exponential += 1;
+                            store_update_latency.observe(latency as f64);
+                        } else {
+                            info!("No timestamp for update with new_root: {}.", new_root);
                         }
                     }
-                    ListValidity::Empty => {
-                        unreachable!("Attempted to validate empty list of updates")
-                    }
-                };
+                }
+
+                // Report amount of updates stored into db
+                stored_updates.add(sorted_updates.len().try_into()?);
+
+                // Move forward next height
+                db.store_update_latest_block_end(to)?;
+                from = to + 1;
             }
         })
         .instrument(span)

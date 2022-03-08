@@ -16,7 +16,7 @@ use tracing::{error, info, info_span, instrument::Instrumented, Instrument};
 
 use nomad_base::{
     cancel_task, AgentCore, BaseError, CachingHome, ConnectionManagers, ContractSyncMetrics,
-    IndexDataTypes, NomadAgent, NomadDB,
+    NomadAgent, NomadDB,
 };
 use nomad_core::{
     ChainCommunicationError, Common, CommonEvents, ConnectionManager, DoubleUpdate,
@@ -560,7 +560,7 @@ impl NomadAgent for Watcher {
 
             let home_sync_task = self
                 .home()
-                .sync(Self::AGENT_NAME.to_owned(), indexer.from(), indexer.chunk_size(), sync_metrics.clone(), IndexDataTypes::Updates);
+                .sync(Self::AGENT_NAME.to_owned(), indexer.from(), indexer.chunk_size(), sync_metrics.clone());
 
             let replica_sync_tasks: Vec<Instrumented<JoinHandle<Result<()>>>> = self.replicas().values().map(|replica| {
                 replica.sync(Self::AGENT_NAME.to_owned(), indexer.from(), indexer.chunk_size(), sync_metrics.clone())

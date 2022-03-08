@@ -1,11 +1,14 @@
-use crate::{ContractSync, ContractSyncMetrics, HomeIndexers, NomadDB};
+use crate::{
+    ContractSync, ContractSyncMetrics, HomeIndexers, IndexMode, NomadDB, Settings, UpdatesSyncMode,
+};
 use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use ethers::core::types::H256;
 use futures_util::future::select_all;
 use nomad_core::{
-    db::DbError, ChainCommunicationError, Common, CommonEvents, DoubleUpdate, Home, HomeEvents,
-    Message, RawCommittedMessage, SignedUpdate, State, TxOutcome, Update,
+    db::{DbError, DB},
+    ChainCommunicationError, Common, CommonEvents, DoubleUpdate, Home, HomeEvents, Message,
+    RawCommittedMessage, SignedUpdate, State, TxOutcome, Update,
 };
 use nomad_ethereum::EthereumHome;
 use nomad_test::mocks::MockHomeContract;
@@ -16,23 +19,14 @@ use tokio::time::{sleep, Duration};
 use tracing::{info_span, Instrument};
 use tracing::{instrument, instrument::Instrumented};
 
-/// Which data types the home ContractSync should index
-#[derive(Debug, Clone)]
-pub enum IndexDataTypes {
-    /// Updates
-    Updates,
-    /// Messages
-    Messages,
-    /// Updates and messages
-    Both,
-}
-
 /// Caching replica type
 #[derive(Debug)]
 pub struct CachingHome {
     home: Homes,
     db: NomadDB,
     indexer: Arc<HomeIndexers>,
+    finality_blocks: u8,
+    index_mode: IndexMode,
 }
 
 impl std::fmt::Display for CachingHome {
@@ -43,8 +37,41 @@ impl std::fmt::Display for CachingHome {
 
 impl CachingHome {
     /// Instantiate new CachingHome
-    pub fn new(home: Homes, db: NomadDB, indexer: Arc<HomeIndexers>) -> Self {
-        Self { home, db, indexer }
+    pub fn new(
+        home: Homes,
+        db: NomadDB,
+        indexer: Arc<HomeIndexers>,
+        finality_blocks: u8,
+        index_mode: IndexMode,
+    ) -> Self {
+        Self {
+            home,
+            db,
+            indexer,
+            finality_blocks,
+            index_mode,
+        }
+    }
+
+    pub async fn from_settings(settings: &Settings) -> Result<Self> {
+        let signer = settings.get_signer(&settings.home.name).await;
+        let opt_home_timelag = settings.home_indexing_timelag();
+        let home_finality_blocks = settings.home.finality_blocks;
+        let index_mode = settings.index.mode();
+
+        let home = settings
+            .home
+            .try_into_home(signer, opt_home_timelag)
+            .await?;
+        let indexer = Arc::new(settings.try_home_indexer(opt_home_timelag).await?);
+        let nomad_db = NomadDB::new(home.name(), DB::from_path(&settings.db)?);
+        Ok(CachingHome::new(
+            home,
+            nomad_db,
+            indexer,
+            home_finality_blocks,
+            index_mode,
+        ))
     }
 
     /// Return handle on home object
@@ -65,10 +92,10 @@ impl CachingHome {
         from_height: u32,
         chunk_size: u32,
         metrics: ContractSyncMetrics,
-        data_types: IndexDataTypes,
     ) -> Instrumented<JoinHandle<Result<()>>> {
         let span = info_span!("HomeContractSync", self = %self);
-
+        let index_mode = self.index_mode.clone();
+        let finality_blocks = self.finality_blocks;
         let sync = ContractSync::new(
             agent_name,
             String::from_str(self.home.name()).expect("!string"),
@@ -80,10 +107,15 @@ impl CachingHome {
         );
 
         tokio::spawn(async move {
-            let tasks = match data_types {
-                IndexDataTypes::Updates => vec![sync.sync_updates()],
-                IndexDataTypes::Messages => vec![sync.sync_messages()],
-                IndexDataTypes::Both => vec![sync.sync_updates(), sync.sync_messages()],
+            let tasks = match index_mode {
+                IndexMode::Updates => vec![sync.sync_updates(UpdatesSyncMode::Slow)],
+                IndexMode::UpdatesAndMessages => vec![
+                    sync.sync_updates(UpdatesSyncMode::Slow),
+                    sync.sync_messages(),
+                ],
+                IndexMode::FastUpdates => {
+                    vec![sync.sync_updates(UpdatesSyncMode::Fast { finality_blocks })]
+                }
             };
 
             let (_, _, remaining) = select_all(tasks).await;

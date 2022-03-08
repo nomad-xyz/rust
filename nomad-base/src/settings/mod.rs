@@ -79,12 +79,8 @@ pub enum AgentType {
 /// Index data types and timelag settings
 #[derive(serde::Deserialize, Debug, PartialEq, Clone)]
 pub enum IndexMode {
-    /// Uninitialized
-    Uninitialized,
     /// Updates with timelag
     Updates,
-    /// Messages with timelag
-    Messages,
     /// Updates and messages with timelag
     UpdatesAndMessages,
     /// Updates at the tip with timelag to catch missed
@@ -93,7 +89,7 @@ pub enum IndexMode {
 
 impl Default for IndexMode {
     fn default() -> Self {
-        Self::Uninitialized
+        Self::Updates
     }
 }
 
@@ -261,7 +257,7 @@ impl Settings {
         if self.index.mode == IndexMode::FastUpdates {
             None
         } else {
-            Some(self.home.timelag)
+            Some(self.home.finality_blocks)
         }
     }
 
@@ -270,8 +266,12 @@ impl Settings {
         if self.index.mode == IndexMode::FastUpdates {
             None
         } else {
-            let replica_timelag = self.replicas.get(replica_name).expect("!replica").timelag;
-            Some(replica_timelag)
+            let replica_finality_blocks = self
+                .replicas
+                .get(replica_name)
+                .expect("!replica")
+                .finality_blocks;
+            Some(replica_finality_blocks)
         }
     }
 
@@ -289,29 +289,11 @@ impl Settings {
                     v.name
                 );
             }
-            let signer = self.get_signer(&v.name).await;
-            let replica_timelag = self.replica_indexing_timelag(k);
 
-            let replica = v.try_into_replica(signer, replica_timelag).await?;
-            let indexer = Arc::new(self.try_replica_indexer(v, replica_timelag).await?);
-            let nomad_db = NomadDB::new(replica.name(), db.clone());
-            result.insert(
-                v.name.clone(),
-                Arc::new(CachingReplica::new(replica, nomad_db, indexer)),
-            );
+            let caching_replica = CachingReplica::from_settings(&self, k).await?;
+            result.insert(v.name.clone(), Arc::new(caching_replica));
         }
         Ok(result)
-    }
-
-    /// Try to get a home object
-    pub async fn try_caching_home(&self, db: DB) -> Result<CachingHome, Report> {
-        let signer = self.get_signer(&self.home.name).await;
-        let home_timelag = self.home_indexing_timelag();
-
-        let home = self.home.try_into_home(signer, home_timelag).await?;
-        let indexer = Arc::new(self.try_home_indexer(home_timelag).await?);
-        let nomad_db = NomadDB::new(home.name(), db);
-        Ok(CachingHome::new(home, nomad_db, indexer))
     }
 
     /// Try to get an indexer object for a home
@@ -375,7 +357,7 @@ impl Settings {
         )?);
 
         let db = DB::from_path(&self.db)?;
-        let home = Arc::new(self.try_caching_home(db.clone()).await?);
+        let home = Arc::new(CachingHome::from_settings(&self).await?);
         let replicas = self.try_caching_replicas(db.clone()).await?;
 
         Ok(AgentCore {
