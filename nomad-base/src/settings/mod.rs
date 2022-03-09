@@ -38,7 +38,8 @@
 
 use crate::{
     agent::AgentCore, CachingHome, CachingReplica, CommonIndexerVariants, CommonIndexers,
-    ContractSync, ContractSyncMetrics, CoreMetrics, HomeIndexerVariants, HomeIndexers, NomadDB,
+    ContractSync, ContractSyncMetrics, CoreMetrics, HomeIndexerVariants, HomeIndexers, Homes,
+    NomadDB, Replicas,
 };
 use color_eyre::{eyre::bail, Report};
 use config::{Config, ConfigError, Environment, File};
@@ -48,7 +49,7 @@ use nomad_ethereum::{make_home_indexer, make_replica_indexer};
 use rusoto_core::{credential::EnvironmentProvider, HttpClient};
 use rusoto_kms::KmsClient;
 use serde::Deserialize;
-use std::{collections::HashMap, env, str::FromStr, sync::Arc};
+use std::{collections::HashMap, env, sync::Arc};
 use tracing::instrument;
 
 /// Chain configuartion
@@ -303,34 +304,88 @@ impl Settings {
         }
     }
 
+    /// Try to get a Homes object
+    pub async fn try_home(&self) -> Result<Homes, Report> {
+        let signer = self.get_signer(&self.home.name).await;
+        let opt_home_timelag = self.home_timelag();
+        self.home.try_into_home(signer, opt_home_timelag).await
+    }
+
+    /// Try to get a home ContractSync
+    pub async fn try_home_contract_sync(
+        &self,
+        agent_name: &str,
+        metrics: Arc<CoreMetrics>,
+    ) -> Result<ContractSync<HomeIndexers>, Report> {
+        let finality = self.home.finality;
+        let index_settings = self.index.clone();
+        let indexer = Arc::new(self.try_home_indexer().await?);
+        let home_name = &self.home.name;
+
+        let nomad_db = NomadDB::new(&home_name, DB::from_path(&self.db)?);
+        let sync_metrics = ContractSyncMetrics::new(metrics);
+
+        Ok(ContractSync::new(
+            agent_name.to_owned(),
+            home_name.to_owned(),
+            nomad_db,
+            indexer,
+            index_settings,
+            finality,
+            sync_metrics,
+        ))
+    }
+
     /// Try to get a CachingHome object
     pub async fn try_caching_home(
         &self,
         agent_name: &str,
         metrics: Arc<CoreMetrics>,
     ) -> Result<CachingHome, Report> {
-        let signer = self.get_signer(&self.home.name).await;
-        let opt_home_timelag = self.home_timelag();
-        let finality = self.home.finality;
+        let home = self.try_home().await?;
+        let contract_sync = self.try_home_contract_sync(agent_name, metrics).await?;
+        let nomad_db = NomadDB::new(home.name(), DB::from_path(&self.db)?);
+
+        Ok(CachingHome::new(home, contract_sync, nomad_db))
+    }
+
+    /// Try to get a Replicas object
+    pub async fn try_replica(&self, replica_name: &str) -> Result<Replicas, Report> {
+        let replica_setup = self.replicas.get(replica_name).expect("!replica");
+        let signer = self.get_signer(replica_name).await;
+        let opt_replica_timelag = self.replica_timelag(replica_name);
+
+        replica_setup
+            .try_into_replica(signer, opt_replica_timelag)
+            .await
+    }
+
+    /// Try to get a replica ContractSync
+    pub async fn try_replica_contract_sync(
+        &self,
+        replica_name: &str,
+        agent_name: &str,
+        metrics: Arc<CoreMetrics>,
+    ) -> Result<ContractSync<CommonIndexers>, Report> {
+        let replica_setup = self.replicas.get(replica_name).expect("!replica");
+        let finality = self.replicas.get(replica_name).expect("!replica").finality;
 
         let index_settings = self.index.clone();
-        let indexer = Arc::new(self.try_home_indexer().await?);
-        let home = self.home.try_into_home(signer, opt_home_timelag).await?;
+        let indexer = Arc::new(self.try_replica_indexer(replica_setup).await?);
+        let replica_name = &replica_setup.name;
 
-        let nomad_db = NomadDB::new(home.name(), DB::from_path(&self.db)?);
+        let nomad_db = NomadDB::new(&replica_name, DB::from_path(&self.db)?);
         let sync_metrics = ContractSyncMetrics::new(metrics);
 
-        let sync = ContractSync::new(
+        Ok(ContractSync::new(
             agent_name.to_owned(),
-            String::from_str(home.name()).expect("!string"),
-            nomad_db.clone(),
+            replica_name.to_owned(),
+            nomad_db,
             indexer,
             index_settings,
             finality,
             sync_metrics,
-        );
-
-        Ok(CachingHome::new(home, sync, nomad_db))
+        ))
     }
 
     /// Try to get a CachingReplica object
@@ -340,31 +395,13 @@ impl Settings {
         agent_name: &str,
         metrics: Arc<CoreMetrics>,
     ) -> Result<CachingReplica, Report> {
-        let replica_setup = self.replicas.get(replica_name).expect("!replica");
-        let signer = self.get_signer(replica_name).await;
-        let opt_replica_timelag = self.replica_timelag(replica_name);
-        let finality = self.replicas.get(replica_name).expect("!replica").finality;
-
-        let index_settings = self.index.clone();
-        let indexer = Arc::new(self.try_replica_indexer(replica_setup).await?);
-        let replica = replica_setup
-            .try_into_replica(signer, opt_replica_timelag)
+        let replica = self.try_replica(replica_name).await?;
+        let contract_sync = self
+            .try_replica_contract_sync(replica_name, agent_name, metrics)
             .await?;
-
         let nomad_db = NomadDB::new(replica.name(), DB::from_path(&self.db)?);
-        let sync_metrics = ContractSyncMetrics::new(metrics);
 
-        let sync = ContractSync::new(
-            agent_name.to_owned(),
-            String::from_str(replica.name()).expect("!string"),
-            nomad_db.clone(),
-            indexer,
-            index_settings,
-            finality,
-            sync_metrics,
-        );
-
-        Ok(CachingReplica::new(replica, sync, nomad_db))
+        Ok(CachingReplica::new(replica, contract_sync, nomad_db))
     }
 
     /// Try to get all replicas from this settings object

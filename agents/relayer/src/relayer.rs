@@ -250,6 +250,7 @@ mod test {
             );
 
             // Setting home
+            let settings = nomad_base::Settings::default();
             let home_indexer = Arc::new(MockIndexer::new().into());
             let home_db = NomadDB::new("home_1", db.clone());
             let mut home_mock = MockHomeContract::new();
