@@ -28,6 +28,13 @@ impl std::ops::DerefMut for CommonIndexers {
     }
 }
 
+impl From<MockIndexer> for CommonIndexers {
+    fn from(mock_indexer: MockIndexer) -> Self {
+        Self(Arc::new(CommonIndexerVariants::Mock(Box::new(mock_indexer))))
+    }
+}
+
+
 #[async_trait]
 impl CommonIndexer for CommonIndexers {
     async fn get_block_number(&self) -> Result<u32> {
@@ -48,12 +55,6 @@ pub enum CommonIndexerVariants {
     Mock(Box<dyn CommonIndexer>),
     /// Other indexer variant
     Other(Box<dyn CommonIndexer>),
-}
-
-impl From<MockIndexer> for CommonIndexerVariants {
-    fn from(mock_indexer: MockIndexer) -> Self {
-        CommonIndexerVariants::Mock(Box::new(mock_indexer))
-    }
 }
 
 #[async_trait]
@@ -101,6 +102,12 @@ impl std::ops::DerefMut for HomeIndexers {
     }
 }
 
+impl From<MockIndexer> for HomeIndexers {
+    fn from(mock_indexer: MockIndexer) -> Self {
+        Self(Arc::new(HomeIndexerVariants::Mock(Box::new(mock_indexer))))
+    }
+}
+
 #[async_trait]
 impl CommonIndexer for HomeIndexers {
     async fn get_block_number(&self) -> Result<u32> {
@@ -128,12 +135,6 @@ pub enum HomeIndexerVariants {
     Mock(Box<dyn HomeIndexer>),
     /// Other indexer variant
     Other(Box<dyn HomeIndexer>),
-}
-
-impl From<MockIndexer> for HomeIndexerVariants {
-    fn from(mock_indexer: MockIndexer) -> Self {
-        HomeIndexerVariants::Mock(Box::new(mock_indexer))
-    }
 }
 
 #[async_trait]

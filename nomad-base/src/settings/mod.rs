@@ -38,7 +38,7 @@
 
 use crate::{
     agent::AgentCore, CachingHome, CachingReplica, CommonIndexerVariants, CommonIndexers,
-    ContractSync, ContractSyncMetrics, CoreMetrics, HomeIndexerVariants, HomeIndexers, Homes,
+    ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes,
     NomadDB, Replicas,
 };
 use color_eyre::{eyre::bail, Report};
@@ -315,7 +315,7 @@ impl Settings {
     pub async fn try_home_contract_sync(
         &self,
         agent_name: &str,
-        metrics: Arc<CoreMetrics>,
+        metrics: ContractSyncMetrics,
     ) -> Result<ContractSync<HomeIndexers>, Report> {
         let finality = self.home.finality;
         let index_settings = self.index.clone();
@@ -323,7 +323,6 @@ impl Settings {
         let home_name = &self.home.name;
 
         let nomad_db = NomadDB::new(&home_name, DB::from_path(&self.db)?);
-        let sync_metrics = ContractSyncMetrics::new(metrics);
 
         Ok(ContractSync::new(
             agent_name.to_owned(),
@@ -332,7 +331,7 @@ impl Settings {
             indexer,
             index_settings,
             finality,
-            sync_metrics,
+            metrics,
         ))
     }
 
@@ -340,7 +339,7 @@ impl Settings {
     pub async fn try_caching_home(
         &self,
         agent_name: &str,
-        metrics: Arc<CoreMetrics>,
+        metrics: ContractSyncMetrics,
     ) -> Result<CachingHome, Report> {
         let home = self.try_home().await?;
         let contract_sync = self.try_home_contract_sync(agent_name, metrics).await?;
@@ -365,7 +364,7 @@ impl Settings {
         &self,
         replica_name: &str,
         agent_name: &str,
-        metrics: Arc<CoreMetrics>,
+        metrics: ContractSyncMetrics,
     ) -> Result<ContractSync<CommonIndexers>, Report> {
         let replica_setup = self.replicas.get(replica_name).expect("!replica");
         let finality = self.replicas.get(replica_name).expect("!replica").finality;
@@ -375,7 +374,6 @@ impl Settings {
         let replica_name = &replica_setup.name;
 
         let nomad_db = NomadDB::new(&replica_name, DB::from_path(&self.db)?);
-        let sync_metrics = ContractSyncMetrics::new(metrics);
 
         Ok(ContractSync::new(
             agent_name.to_owned(),
@@ -384,7 +382,7 @@ impl Settings {
             indexer,
             index_settings,
             finality,
-            sync_metrics,
+            metrics,
         ))
     }
 
@@ -393,7 +391,7 @@ impl Settings {
         &self,
         replica_name: &str,
         agent_name: &str,
-        metrics: Arc<CoreMetrics>,
+        metrics: ContractSyncMetrics,
     ) -> Result<CachingReplica, Report> {
         let replica = self.try_replica(replica_name).await?;
         let contract_sync = self
@@ -408,7 +406,7 @@ impl Settings {
     pub async fn try_caching_replicas(
         &self,
         agent_name: &str,
-        metrics: Arc<CoreMetrics>,
+        metrics: ContractSyncMetrics,
     ) -> Result<HashMap<String, Arc<CachingReplica>>, Report> {
         let mut result = HashMap::default();
         for (k, v) in self.replicas.iter().filter(|(_, v)| v.disabled.is_none()) {
@@ -489,10 +487,11 @@ impl Settings {
                 .map(|v| v.parse::<u16>().expect("metrics port must be u16")),
             Arc::new(prometheus::Registry::new()),
         )?);
+        let sync_metrics = ContractSyncMetrics::new(metrics.clone());
 
         let db = DB::from_path(&self.db)?;
-        let home = Arc::new(self.try_caching_home(name, metrics.clone()).await?);
-        let replicas = self.try_caching_replicas(name, metrics.clone()).await?;
+        let home = Arc::new(self.try_caching_home(name, sync_metrics.clone()).await?);
+        let replicas = self.try_caching_replicas(name, sync_metrics.clone()).await?;
 
         Ok(AgentCore {
             home,

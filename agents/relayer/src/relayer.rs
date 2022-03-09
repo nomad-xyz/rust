@@ -181,64 +181,25 @@ impl NomadAgent for Relayer {
 mod test {
 
     use ethers::prelude::ProviderError;
-    use nomad_base::trace::TracingConfig;
-    use nomad_base::{ChainConf, SignerConf};
-    use nomad_base::{ChainSetup, CoreMetrics, IndexMode, IndexSettings, NomadDB};
-    use nomad_core::utils::HexString;
+    use nomad_base::{
+        CommonIndexers, ContractSync, ContractSyncMetrics, CoreMetrics, HomeIndexers,
+        IndexSettings, NomadDB,
+    };
     use nomad_core::ChainCommunicationError;
     use nomad_test::mocks::{MockHomeContract, MockIndexer, MockReplicaContract};
     use nomad_test::test_utils;
     use std::collections::HashMap;
-    use std::str::FromStr;
     use tokio::time::{sleep, Duration};
     use tokio_test::assert_err;
 
     use super::*;
 
+    const AGENT_NAME: &str = "relayer";
+
     #[tokio::test]
     async fn it_isolates_faulty_channels() {
         test_utils::run_test_db(|db| async move {
             let channel_name = "moonbeam";
-
-            // Settings
-            let replica_settings: HashMap<String, ChainSetup> = HashMap::from([(
-                channel_name.to_string(),
-                ChainSetup {
-                    name: channel_name.to_string(),
-                    domain: "2".to_string(),
-                    address: ".".to_string(),
-                    finality: 3,
-                    chain: ChainConf::default(),
-                    disabled: None,
-                },
-            )]);
-
-            let signers: HashMap<String, SignerConf> = HashMap::from([(
-                channel_name.to_string(),
-                SignerConf::HexKey {
-                    key: HexString::from_str(
-                        "1234567812345678123456781234567812345678123456781234567812345678",
-                    )
-                    .unwrap(),
-                },
-            )]);
-
-            let settings = nomad_base::Settings {
-                db: "...".to_string(),
-                metrics: None,
-                index: IndexSettings::default(),
-                home: ChainSetup {
-                    name: "ethereum".to_string(),
-                    domain: "1".to_string(),
-                    address: "".to_string(),
-                    finality: 3,
-                    chain: ChainConf::default(),
-                    disabled: None,
-                },
-                replicas: replica_settings,
-                tracing: TracingConfig::default(),
-                signers,
-            };
 
             let metrics = Arc::new(
                 CoreMetrics::new(
@@ -248,24 +209,28 @@ mod test {
                 )
                 .expect("could not make metrics"),
             );
+            let sync_metrics = ContractSyncMetrics::new(metrics.clone());
 
             // Setting home
             let settings = nomad_base::Settings::default();
-            let home_indexer = Arc::new(MockIndexer::new().into());
+            let home_indexer: Arc<HomeIndexers> = Arc::new(MockIndexer::new().into());
             let home_db = NomadDB::new("home_1", db.clone());
             let mut home_mock = MockHomeContract::new();
+            let home_sync = ContractSync::new(
+                AGENT_NAME.to_owned(),
+                "home_1".to_owned(),
+                home_db.clone(),
+                home_indexer.clone(),
+                IndexSettings::default(),
+                Default::default(),
+                sync_metrics.clone(),
+            );
+
             {
                 home_mock.expect__name().return_const("home_1".to_owned());
             }
 
-            let home_mock = CachingHome::new(
-                home_mock.into(),
-                home_db.clone(),
-                home_indexer,
-                5,
-                IndexMode::FastUpdates,
-            )
-            .into();
+            let home = CachingHome::new(home_mock.into(), home_sync, home_db.clone()).into();
 
             // Setting replica
             let mut replica_mock = MockReplicaContract::new();
@@ -282,22 +247,30 @@ mod test {
                     });
             }
 
-            let replica_indexer = Arc::new(MockIndexer::new().into());
+            let replica_indexer: Arc<CommonIndexers> = Arc::new(MockIndexer::new().into());
             let replica_db = NomadDB::new("replica_1", db.clone());
+            let replica_sync = ContractSync::new(
+                AGENT_NAME.to_owned(),
+                "replica_1".to_owned(),
+                replica_db.clone(),
+                replica_indexer.clone(),
+                IndexSettings::default(),
+                Default::default(),
+                sync_metrics,
+            );
+
             let replica_mocks: HashMap<String, Arc<CachingReplica>> = HashMap::from([(
                 channel_name.to_string(),
                 Arc::new(CachingReplica::new(
                     replica_mock.into(),
+                    replica_sync,
                     replica_db,
-                    replica_indexer,
-                    5,
-                    IndexMode::FastUpdates,
                 )),
             )]);
 
             // Setting agent
             let core = AgentCore {
-                home: home_mock,
+                home,
                 replicas: replica_mocks,
                 db,
                 metrics,
