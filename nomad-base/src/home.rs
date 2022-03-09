@@ -1,32 +1,24 @@
-use crate::{
-    ContractSync, ContractSyncMetrics, HomeIndexers, IndexMode, NomadDB, Settings, UpdatesSyncMode,
-};
+use crate::{ContractSync, HomeIndexers, NomadDB};
 use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use ethers::core::types::H256;
-use futures_util::future::select_all;
 use nomad_core::{
-    db::{DbError, DB},
-    ChainCommunicationError, Common, CommonEvents, DoubleUpdate, Home, HomeEvents, Message,
-    RawCommittedMessage, SignedUpdate, State, TxOutcome, Update,
+    db::DbError, ChainCommunicationError, Common, CommonEvents, DoubleUpdate, Home, HomeEvents,
+    Message, RawCommittedMessage, SignedUpdate, State, TxOutcome, Update,
 };
 use nomad_ethereum::EthereumHome;
 use nomad_test::mocks::MockHomeContract;
-use std::str::FromStr;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
-use tracing::{info_span, Instrument};
 use tracing::{instrument, instrument::Instrumented};
 
 /// Caching replica type
 #[derive(Debug)]
 pub struct CachingHome {
     home: Homes,
-    db: NomadDB,
     contract_sync: ContractSync<HomeIndexers>,
-    finality: u8,
-    index_mode: IndexMode,
+    db: NomadDB,
 }
 
 impl std::fmt::Display for CachingHome {
@@ -37,63 +29,12 @@ impl std::fmt::Display for CachingHome {
 
 impl CachingHome {
     /// Instantiate new CachingHome
-    pub fn new(
-        home: Homes,
-        db: NomadDB,
-        contract_sync: ContractSync<HomeIndexers>,
-        finality: u8,
-        index_mode: IndexMode,
-    ) -> Self {
+    pub fn new(home: Homes, contract_sync: ContractSync<HomeIndexers>, db: NomadDB) -> Self {
         Self {
             home,
-            db,
             contract_sync,
-            finality,
-            index_mode,
+            db,
         }
-    }
-
-    /// Instantiate caching home from nomad-base Settings
-    pub async fn from_settings(settings: &Settings, agent_name: String) -> Result<Self> {
-        settings.validate()?;
-        let signer = settings.get_signer(&settings.home.name).await;
-        let opt_home_timelag = settings.home_timelag();
-        let finality = settings.home.finality;
-
-        let index_mode = settings.index.mode();
-        let from = settings.index.from();
-        let chunk_size = settings.index.chunk_size();
-
-        let home = settings
-            .home
-            .try_into_home(signer, opt_home_timelag)
-            .await?;
-
-        let nomad_db = NomadDB::new(home.name(), DB::from_path(&settings.db)?);
-
-        let metrics = Arc::new(crate::metrics::CoreMetrics::new(
-            &agent_name,
-            settings
-                .metrics
-                .as_ref()
-                .map(|v| v.parse::<u16>().expect("metrics port must be u16")),
-            Arc::new(prometheus::Registry::new()),
-        )?);
-        let sync_metrics = ContractSyncMetrics::new(metrics);
-
-        let indexer = Arc::new(settings.try_home_indexer().await?);
-        let sync = ContractSync::new(
-            agent_name,
-            String::from_str(home.name()).expect("!string"),
-            nomad_db.clone(),
-            indexer,
-            finality,
-            from,
-            chunk_size,
-            sync_metrics,
-        );
-
-        Ok(CachingHome::new(home, nomad_db, sync, finality, index_mode))
     }
 
     /// Return handle on home object
@@ -108,38 +49,9 @@ impl CachingHome {
 
     /// Spawn a task that syncs the CachingHome's db with the on-chain event
     /// data
-    pub fn sync(
-        &self,
-        agent_name: String,
-        from_height: u32,
-        chunk_size: u32,
-        metrics: ContractSyncMetrics,
-    ) -> Instrumented<JoinHandle<Result<()>>> {
-        let span = info_span!("HomeContractSync", self = %self);
-        let index_mode = self.index_mode.clone();
-        let finality = self.finality;
+    pub fn sync(&self) -> Instrumented<JoinHandle<Result<()>>> {
         let sync = self.contract_sync.clone();
-
-        tokio::spawn(async move {
-            let tasks = match index_mode {
-                IndexMode::Updates => vec![sync.sync_updates(UpdatesSyncMode::Slow)],
-                IndexMode::UpdatesAndMessages => vec![
-                    sync.sync_updates(UpdatesSyncMode::Slow),
-                    sync.sync_messages(),
-                ],
-                IndexMode::FastUpdates => {
-                    vec![sync.sync_updates(UpdatesSyncMode::Fast { finality })]
-                }
-            };
-
-            let (_, _, remaining) = select_all(tasks).await;
-            for task in remaining.into_iter() {
-                cancel_task!(task);
-            }
-
-            Ok(())
-        })
-        .instrument(span)
+        sync.spawn_home()
     }
 }
 

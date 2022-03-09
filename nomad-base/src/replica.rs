@@ -2,33 +2,27 @@ use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use ethers::core::types::H256;
 use nomad_core::{
-    accumulator::merkle::Proof,
-    db::{DbError, DB},
-    ChainCommunicationError, Common, CommonEvents, DoubleUpdate, MessageStatus, NomadMessage,
-    Replica, SignedUpdate, State, TxOutcome,
+    accumulator::merkle::Proof, db::DbError, ChainCommunicationError, Common, CommonEvents,
+    DoubleUpdate, MessageStatus, NomadMessage, Replica, SignedUpdate, State, TxOutcome,
 };
 
-use crate::{IndexMode, NomadDB, Settings};
+use crate::NomadDB;
 
 use nomad_ethereum::EthereumReplica;
 use nomad_test::mocks::MockReplicaContract;
-use std::str::FromStr;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
-use tracing::{info_span, Instrument};
 use tracing::{instrument, instrument::Instrumented};
 
-use crate::{CommonIndexers, ContractSync, ContractSyncMetrics, UpdatesSyncMode};
+use crate::{CommonIndexers, ContractSync};
 
 /// Caching replica type
 #[derive(Debug)]
 pub struct CachingReplica {
     replica: Replicas,
-    db: NomadDB,
     contract_sync: ContractSync<CommonIndexers>,
-    finality: u8,
-    index_mode: IndexMode,
+    db: NomadDB,
 }
 
 impl std::fmt::Display for CachingReplica {
@@ -41,71 +35,14 @@ impl CachingReplica {
     /// Instantiate new CachingReplica
     pub fn new(
         replica: Replicas,
-        db: NomadDB,
         contract_sync: ContractSync<CommonIndexers>,
-        finality: u8,
-        index_mode: IndexMode,
+        db: NomadDB,
     ) -> Self {
         Self {
             replica,
-            db,
             contract_sync,
-            finality,
-            index_mode,
+            db,
         }
-    }
-
-    /// Instantiate caching replica from nomad-base Settings
-    pub async fn from_settings(
-        settings: &Settings,
-        agent_name: String,
-        replica_name: &str,
-    ) -> Result<Self> {
-        settings.validate()?;
-        let replica_setup = settings.replicas.get(replica_name).expect("!replica");
-        let signer = settings.get_signer(replica_name).await;
-        let opt_replica_timelag = settings.replica_timelag(replica_name);
-        let finality = settings
-            .replicas
-            .get(replica_name)
-            .expect("!replica")
-            .finality;
-
-        let index_mode = settings.index.mode();
-        let from = settings.index.from();
-        let chunk_size = settings.index.chunk_size();
-
-        let replica = replica_setup
-            .try_into_replica(signer, opt_replica_timelag)
-            .await?;
-        let indexer = Arc::new(settings.try_replica_indexer(replica_setup).await?);
-
-        let nomad_db = NomadDB::new(replica.name(), DB::from_path(&settings.db)?);
-
-        let metrics = Arc::new(crate::metrics::CoreMetrics::new(
-            &agent_name,
-            settings
-                .metrics
-                .as_ref()
-                .map(|v| v.parse::<u16>().expect("metrics port must be u16")),
-            Arc::new(prometheus::Registry::new()),
-        )?);
-        let sync_metrics = ContractSyncMetrics::new(metrics);
-
-        let sync = ContractSync::new(
-            agent_name,
-            String::from_str(replica.name()).expect("!string"),
-            nomad_db.clone(),
-            indexer,
-            finality,
-            from,
-            chunk_size,
-            sync_metrics,
-        );
-
-        Ok(CachingReplica::new(
-            replica, nomad_db, sync, finality, index_mode,
-        ))
     }
 
     /// Return handle on replica object
@@ -120,29 +57,9 @@ impl CachingReplica {
 
     /// Spawn a task that syncs the CachingReplica's db with the on-chain event
     /// data
-    pub fn sync(
-        &self,
-        agent_name: String,
-        from_height: u32,
-        chunk_size: u32,
-        metrics: ContractSyncMetrics,
-    ) -> Instrumented<JoinHandle<Result<()>>> {
-        let span = info_span!("ReplicaContractSync", self = %self);
-        let index_mode = self.index_mode.clone();
-        let finality = self.finality;
+    pub fn sync(&self) -> Instrumented<JoinHandle<Result<()>>> {
         let sync = self.contract_sync.clone();
-
-        tokio::spawn(async move {
-            match index_mode {
-                IndexMode::Updates => sync.sync_updates(UpdatesSyncMode::Slow).await?,
-                IndexMode::UpdatesAndMessages => sync.sync_updates(UpdatesSyncMode::Slow).await?,
-                IndexMode::FastUpdates => {
-                    sync.sync_updates(UpdatesSyncMode::Fast { finality })
-                        .await?
-                }
-            }
-        })
-        .instrument(span)
+        sync.spawn_common()
     }
 }
 

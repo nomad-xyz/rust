@@ -15,8 +15,7 @@ use tokio::{
 use tracing::{error, info, info_span, instrument::Instrumented, Instrument};
 
 use nomad_base::{
-    cancel_task, AgentCore, BaseError, CachingHome, ConnectionManagers, ContractSyncMetrics,
-    NomadAgent, NomadDB,
+    cancel_task, AgentCore, BaseError, CachingHome, ConnectionManagers, NomadAgent, NomadDB,
 };
 use nomad_core::{
     ChainCommunicationError, Common, CommonEvents, ConnectionManager, DoubleUpdate,
@@ -555,15 +554,12 @@ impl NomadAgent for Watcher {
         tokio::spawn(async move {
             info!("Starting Watcher tasks");
 
-            let indexer = &self.as_ref().indexer;
-            let sync_metrics = ContractSyncMetrics::new(self.metrics());
-
             let home_sync_task = self
                 .home()
-                .sync(Self::AGENT_NAME.to_owned(), indexer.from(), indexer.chunk_size(), sync_metrics.clone());
+                .sync();
 
             let replica_sync_tasks: Vec<Instrumented<JoinHandle<Result<()>>>> = self.replicas().values().map(|replica| {
-                replica.sync(Self::AGENT_NAME.to_owned(), indexer.from(), indexer.chunk_size(), sync_metrics.clone())
+                replica.sync()
             }).collect();
 
             let mut sync_tasks = vec![home_sync_task];

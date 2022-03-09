@@ -1,7 +1,8 @@
-use crate::NomadDB;
+use crate::{IndexMode, IndexSettings, NomadDB};
+use color_eyre::Result;
+use futures_util::future::select_all;
 use nomad_core::{CommonIndexer, HomeIndexer};
-
-use tokio::time::sleep;
+use tokio::{task::JoinHandle, time::sleep};
 use tracing::{info, info_span};
 use tracing::{instrument::Instrumented, Instrument};
 
@@ -21,11 +22,7 @@ const MESSAGES_LABEL: &str = "messages";
 /// Fast indexing with catching timelag vs. slow timelag indexing
 pub enum UpdatesSyncMode {
     /// Index at tip with timelag to catch missed updates
-    Fast {
-        /// Chain finality (handled in contract sync since indexer indexes at
-        /// tip not timelag)
-        finality: u8,
-    },
+    Fast,
     /// Index timelag blocks behind tip (lag handled by indexer)
     Slow,
 }
@@ -41,10 +38,18 @@ pub struct ContractSync<I> {
     contract_name: String,
     db: NomadDB,
     indexer: Arc<I>,
-    finality_blocks: u8,
-    from_height: u32,
-    chunk_size: u32,
+    index_settings: IndexSettings,
+    finality: u8,
     metrics: ContractSyncMetrics,
+}
+
+impl<I> std::fmt::Display for ContractSync<I>
+where
+    I: CommonIndexer,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 impl<I> ContractSync<I> {
@@ -54,9 +59,8 @@ impl<I> ContractSync<I> {
         contract_name: String,
         db: NomadDB,
         indexer: Arc<I>,
-        finality_blocks: u8,
-        from_height: u32,
-        chunk_size: u32,
+        index_settings: IndexSettings,
+        finality: u8,
         metrics: ContractSyncMetrics,
     ) -> Self {
         Self {
@@ -64,9 +68,8 @@ impl<I> ContractSync<I> {
             contract_name,
             db,
             indexer,
-            finality_blocks,
-            from_height,
-            chunk_size,
+            index_settings,
+            finality,
             metrics,
         }
     }
@@ -76,6 +79,21 @@ impl<I> ContractSync<I>
 where
     I: CommonIndexer + 'static,
 {
+    /// Spawn sync task to sync updates
+    pub fn spawn_common(self) -> Instrumented<JoinHandle<Result<()>>> {
+        let span = info_span!("ContractSync: Common", self = %self);
+        let index_mode = self.index_settings.mode();
+
+        tokio::spawn(async move {
+            match index_mode {
+                IndexMode::Updates => self.sync_updates(UpdatesSyncMode::Slow).await?,
+                IndexMode::UpdatesAndMessages => self.sync_updates(UpdatesSyncMode::Slow).await?,
+                IndexMode::FastUpdates => self.sync_updates(UpdatesSyncMode::Fast).await?,
+            }
+        })
+        .instrument(span)
+    }
+
     /// Spawn task that continuously looks for new on-chain updates and stores
     /// them in db. If run in UpdatesSyncMode::Fast mode, will index at the tip
     /// but use a manual timelag to catch any missed updates. In Slow mode,
@@ -83,7 +101,7 @@ where
     pub fn sync_updates(
         &self,
         updates_sync_mode: UpdatesSyncMode,
-    ) -> Instrumented<tokio::task::JoinHandle<color_eyre::Result<()>>> {
+    ) -> Instrumented<JoinHandle<Result<()>>> {
         let span = info_span!("UpdateContractSync");
 
         let db = self.db.clone();
@@ -105,8 +123,9 @@ where
             &self.agent_name,
         ]);
 
-        let config_from = self.from_height;
-        let chunk_size = self.chunk_size;
+        let finality = self.finality;
+        let config_from = self.index_settings.from();
+        let chunk_size = self.index_settings.chunk_size();
 
         tokio::spawn(async move {
             let mut from = db
@@ -125,42 +144,32 @@ where
                     continue;
                 }
 
-                let candidate = from + chunk_size;
-                let to = min(tip, candidate);
-                let size = to - from;
+                let to = min(from + chunk_size, tip);
 
-                let start = match updates_sync_mode {
-                    UpdatesSyncMode::Fast { finality } => {
-                        // Range includes size blocks behind last final block to
-                        // catch missing. This is the range the contract sync
-                        // would have indexed given a normal timelag.
+                let (start, end) = match updates_sync_mode {
+                    UpdatesSyncMode::Fast => {
+                        let range = to - from;
                         let last_final_block = tip - finality as u32;
-                        if to >= last_final_block {
-                            info!(
-                                size = size,
-                                last_final_block = last_final_block,
-                                "[Fast Updates]: Reindexing {} blocks behind last final block {}.",
-                                size,
-                                last_final_block
-                            );
-
-                            last_final_block - size
+                        let from = if to >= last_final_block {
+                            last_final_block - range
                         } else {
                             from + 1
-                        }
+                        };
+
+                        (from, to)
                     }
-                    UpdatesSyncMode::Slow => from + 1,
+                    UpdatesSyncMode::Slow => (from + 1, to - finality as u32),
                 };
 
                 info!(
-                    from = from,
-                    to = to,
+                    start = start,
+                    end = end,
                     "[Updates]: indexing block heights {}...{}",
-                    from,
-                    to
+                    start,
+                    end,
                 );
 
-                let sorted_updates = indexer.fetch_sorted_updates(start, to).await?;
+                let sorted_updates = indexer.fetch_sorted_updates(start, end).await?;
 
                 // If no updates found, update last seen block and next height
                 // and continue
@@ -214,12 +223,39 @@ impl<I> ContractSync<I>
 where
     I: HomeIndexer + 'static,
 {
+    /// Spawn sync task to sync home updates (and potentially messages)
+    pub fn spawn_home(self) -> Instrumented<JoinHandle<Result<()>>> {
+        let span = info_span!("ContractSync: Home", self = %self);
+        let index_mode = self.index_settings.mode();
+
+        tokio::spawn(async move {
+            let tasks = match index_mode {
+                IndexMode::Updates => vec![self.sync_updates(UpdatesSyncMode::Slow)],
+                IndexMode::UpdatesAndMessages => vec![
+                    self.sync_updates(UpdatesSyncMode::Slow),
+                    self.sync_messages(),
+                ],
+                IndexMode::FastUpdates => {
+                    vec![self.sync_updates(UpdatesSyncMode::Fast)]
+                }
+            };
+
+            let (_, _, remaining) = select_all(tasks).await;
+            for task in remaining.into_iter() {
+                cancel_task!(task);
+            }
+
+            Ok(())
+        })
+        .instrument(span)
+    }
+
     /// Spawn task that continuously looks for new on-chain messages and stores
     /// them in db. Indexing messages should ALWAYS be done with a timelag, as
     /// ordering of messages is not guaranteed like it is for updates. Running
     /// without a timelag could cause messages with the incorrectly ordered
     /// index to be stored.
-    pub fn sync_messages(&self) -> Instrumented<tokio::task::JoinHandle<color_eyre::Result<()>>> {
+    pub fn sync_messages(&self) -> Instrumented<JoinHandle<Result<()>>> {
         let span = info_span!("MessageContractSync");
 
         let db = self.db.clone();
@@ -236,8 +272,8 @@ where
             &self.agent_name,
         ]);
 
-        let config_from = self.from_height;
-        let chunk_size = self.chunk_size;
+        let config_from = self.index_settings.from();
+        let chunk_size = self.index_settings.chunk_size();
 
         tokio::spawn(async move {
             let mut from = db

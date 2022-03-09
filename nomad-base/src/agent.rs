@@ -2,7 +2,7 @@ use crate::{
     cancel_task,
     metrics::CoreMetrics,
     settings::{IndexSettings, Settings},
-    BaseError, CachingHome, CachingReplica, ContractSyncMetrics, NomadDB,
+    BaseError, CachingHome, CachingReplica, NomadDB,
 };
 use async_trait::async_trait;
 use color_eyre::{eyre::WrapErr, Result};
@@ -198,18 +198,9 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
 
             // kludge
             if Self::AGENT_NAME != "kathy" {
-                let sync_metrics = ContractSyncMetrics::new(self.metrics());
-
-                let indexer = &self.as_ref().indexer;
-
                 // Only the processor needs to index messages so default is
                 // just indexing updates
-                let sync_task = self.home().sync(
-                    Self::AGENT_NAME.to_owned(),
-                    indexer.from(),
-                    indexer.chunk_size(),
-                    sync_metrics,
-                );
+                let sync_task = self.home().sync();
 
                 tasks.push(sync_task);
             }
