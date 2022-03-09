@@ -241,13 +241,15 @@ impl Replica {
         use nomad_core::Replica;
         let status = self.replica.message_status(message.to_leaf()).await?;
 
-        let opt_tx_outcome = match status {
-            MessageStatus::None => Some(
+        match status {
+            MessageStatus::None => {
                 self.replica
                     .prove_and_process(message.as_ref(), &proof)
-                    .await?,
-            ),
-            MessageStatus::Proven => Some(self.replica.process(message.as_ref()).await?),
+                    .await?;
+            }
+            MessageStatus::Proven => {
+                self.replica.process(message.as_ref()).await?;
+            }
             MessageStatus::Processed => {
                 info!(
                     domain = message.message.destination,
@@ -257,19 +259,9 @@ impl Replica {
                     "Message {}:{} already processed",
                     message.message.destination,
                     message.message.nonce
-                );
-                None
+                )
             }
         };
-
-        if let Some(tx_outcome) = opt_tx_outcome {
-            if !tx_outcome.executed {
-                return Err(ProcessorError::ProcessTransactionReverted {
-                    tx: tx_outcome.txid,
-                }
-                .into());
-            }
-        }
 
         info!(
             domain = message.message.destination,

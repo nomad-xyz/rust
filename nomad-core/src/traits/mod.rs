@@ -50,16 +50,19 @@ impl Display for DoubleUpdate {
 pub struct TxOutcome {
     /// The txid
     pub txid: H256,
-    /// True if executed, false otherwise (reverted, etc.)
-    pub executed: bool,
     // TODO: more? What can be abstracted across all chains?
 }
 
-impl From<TransactionReceipt> for TxOutcome {
-    fn from(t: TransactionReceipt) -> Self {
-        Self {
-            txid: t.transaction_hash,
-            executed: t.status.unwrap().low_u32() == 1,
+impl TryFrom<TransactionReceipt> for TxOutcome {
+    type Error = ChainCommunicationError;
+
+    fn try_from(t: TransactionReceipt) -> Result<Self, Self::Error> {
+        if t.status.unwrap().low_u32() == 1 {
+            Ok(Self {
+                txid: t.transaction_hash,
+            })
+        } else {
+            Err(ChainCommunicationError::NotExecuted(t.transaction_hash))
         }
     }
 }
@@ -80,6 +83,9 @@ pub enum ChainCommunicationError {
     /// A transaction was dropped from the mempool
     #[error("Transaction dropped from mempool {0:?}")]
     DroppedError(H256),
+    /// A transaction was not executed successfully
+    #[error("Transaction was not executed successfully {0:?}")]
+    NotExecuted(H256),
     /// Any other error
     #[error("{0}")]
     CustomError(#[from] Box<dyn StdError + Send + Sync>),
@@ -141,4 +147,30 @@ pub trait CommonEvents: Common + Send + Sync + std::fmt::Debug {
         &self,
         new_root: H256,
     ) -> Result<Option<SignedUpdate>, DbError>;
+}
+
+#[cfg(test)]
+mod test {
+    use ethers::prelude::U64;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn turning_transaction_receipt_into_tx_outcome() {
+        let mut receipt = TransactionReceipt::default();
+        receipt.status = Some(U64::from(0));
+        let tx_outcome: Result<TxOutcome, ChainCommunicationError> = receipt.try_into();
+        assert!(
+            tx_outcome.is_err(),
+            "Turning failed transaction receipt into errored tx outcome not succeeded"
+        );
+
+        let mut receipt = TransactionReceipt::default();
+        receipt.status = Some(U64::from(1));
+        let tx_outcome: Result<TxOutcome, ChainCommunicationError> = receipt.try_into();
+        assert!(
+            tx_outcome.is_ok(),
+            "Turning successeeded transaction receipt into successful tx outcome not succeeded"
+        );
+    }
 }
