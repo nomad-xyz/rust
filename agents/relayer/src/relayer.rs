@@ -197,7 +197,7 @@ mod test {
     const AGENT_NAME: &str = "relayer";
 
     #[tokio::test]
-    async fn it_isolates_faulty_channels() {
+    async fn run_report_error_isolates_faulty_channels() {
         test_utils::run_test_db(|db| async move {
             let channel_name = "moonbeam";
 

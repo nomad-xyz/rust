@@ -38,8 +38,7 @@
 
 use crate::{
     agent::AgentCore, CachingHome, CachingReplica, CommonIndexerVariants, CommonIndexers,
-    ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes,
-    NomadDB, Replicas,
+    ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes, NomadDB, Replicas,
 };
 use color_eyre::{eyre::bail, Report};
 use config::{Config, ConfigError, Environment, File};
@@ -491,7 +490,9 @@ impl Settings {
 
         let db = DB::from_path(&self.db)?;
         let home = Arc::new(self.try_caching_home(name, sync_metrics.clone()).await?);
-        let replicas = self.try_caching_replicas(name, sync_metrics.clone()).await?;
+        let replicas = self
+            .try_caching_replicas(name, sync_metrics.clone())
+            .await?;
 
         Ok(AgentCore {
             home,

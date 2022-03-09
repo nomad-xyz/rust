@@ -30,10 +30,11 @@ impl std::ops::DerefMut for CommonIndexers {
 
 impl From<MockIndexer> for CommonIndexers {
     fn from(mock_indexer: MockIndexer) -> Self {
-        Self(Arc::new(CommonIndexerVariants::Mock(Box::new(mock_indexer))))
+        Self(Arc::new(CommonIndexerVariants::Mock(Box::new(
+            mock_indexer,
+        ))))
     }
 }
-
 
 #[async_trait]
 impl CommonIndexer for CommonIndexers {

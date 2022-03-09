@@ -78,7 +78,7 @@ impl<I> ContractSync<I> {
 impl<I> ContractSync<I>
 where
     I: CommonIndexer + 'static,
-{   
+{
     /// Spawn sync task to sync updates
     pub fn spawn_common(self) -> Instrumented<JoinHandle<Result<()>>> {
         let span = info_span!("ContractSync: Common", self = %self);
