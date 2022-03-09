@@ -148,3 +148,29 @@ pub trait CommonEvents: Common + Send + Sync + std::fmt::Debug {
         new_root: H256,
     ) -> Result<Option<SignedUpdate>, DbError>;
 }
+
+#[cfg(test)]
+mod test {
+    use ethers::prelude::U64;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn turning_transaction_receipt_into_tx_outcome() {
+        let mut receipt = TransactionReceipt::default();
+        receipt.status = Some(U64::from(0));
+        let tx_outcome: Result<TxOutcome, ChainCommunicationError> = receipt.try_into();
+        assert!(
+            tx_outcome.is_err(),
+            "Turning failed transaction receipt into errored tx outcome not succeeded"
+        );
+
+        let mut receipt = TransactionReceipt::default();
+        receipt.status = Some(U64::from(1));
+        let tx_outcome: Result<TxOutcome, ChainCommunicationError> = receipt.try_into();
+        assert!(
+            tx_outcome.is_ok(),
+            "Turning successeeded transaction receipt into successful tx outcome not succeeded"
+        );
+    }
+}
