@@ -36,7 +36,10 @@
 //!    intended to be used by a specific agent.
 //!    E.g. `export OPT_KATHY_CHAT_TYPE="static message"`
 
-use crate::{agent::AgentCore, CachingHome, CachingReplica, CommonIndexers, HomeIndexers};
+use crate::{
+    agent::AgentCore, CachingHome, CachingReplica, CommonIndexerVariants, CommonIndexers,
+    HomeIndexerVariants, HomeIndexers,
+};
 use color_eyre::{eyre::bail, Report};
 use config::{Config, ConfigError, Environment, File};
 use ethers::prelude::AwsSigner;
@@ -247,22 +250,22 @@ impl Settings {
         // If running syncing in IndexMode::FastUpdates, timelag must be OFF.
         // If running syncing in slow modes, timelag must be ON.
         if self.index.mode == IndexMode::FastUpdates {
-            if self.home_indexing_timelag().is_some() {
+            if self.home_timelag().is_some() {
                 bail!("FastUpdates syncing must be run with timelag OFF!",);
             }
 
             for (name, _) in self.replicas.iter() {
-                if self.replica_indexing_timelag(name).is_some() {
+                if self.replica_timelag(name).is_some() {
                     bail!("FastUpdates syncing must be run with timelag OFF!",);
                 }
             }
         } else {
-            if self.home_indexing_timelag().is_none() {
+            if self.home_timelag().is_none() {
                 bail!("Slow syncing must be run with timelag ON!");
             }
 
             for (name, _) in self.replicas.iter() {
-                if self.replica_indexing_timelag(name).is_none() {
+                if self.replica_timelag(name).is_none() {
                     bail!("Slow syncing must be run with timelag ON!");
                 }
             }
@@ -282,7 +285,7 @@ impl Settings {
     }
 
     /// Get optional indexing timelag enum for home
-    pub fn home_indexing_timelag(&self) -> Option<u8> {
+    pub fn home_timelag(&self) -> Option<u8> {
         if self.index.mode == IndexMode::FastUpdates {
             None
         } else {
@@ -291,7 +294,7 @@ impl Settings {
     }
 
     /// Get optional indexing timelag for a replica
-    pub fn replica_indexing_timelag(&self, replica_name: &str) -> Option<u8> {
+    pub fn replica_timelag(&self, replica_name: &str) -> Option<u8> {
         if self.index.mode == IndexMode::FastUpdates {
             None
         } else {
@@ -303,6 +306,7 @@ impl Settings {
     /// Try to get all replicas from this settings object
     pub async fn try_caching_replicas(
         &self,
+        agent_name: String,
     ) -> Result<HashMap<String, Arc<CachingReplica>>, Report> {
         let mut result = HashMap::default();
         for (k, v) in self.replicas.iter().filter(|(_, v)| v.disabled.is_none()) {
@@ -314,18 +318,21 @@ impl Settings {
                 );
             }
 
-            let caching_replica = CachingReplica::from_settings(self, k).await?;
+            let caching_replica =
+                CachingReplica::from_settings(self, agent_name.clone(), k).await?;
             result.insert(v.name.clone(), Arc::new(caching_replica));
         }
         Ok(result)
     }
 
-    /// Try to get an indexer object for a home
-    pub async fn try_home_indexer(&self, timelag: Option<u8>) -> Result<HomeIndexers, Report> {
+    /// Try to get an indexer object for a home. Note that indexers are NOT
+    /// instantiated with a built in timelag. The timelag is handled by the
+    /// ContractSync.
+    pub async fn try_home_indexer(&self) -> Result<HomeIndexers, Report> {
         let signer = self.get_signer(&self.home.name).await;
 
         match &self.home.chain {
-            ChainConf::Ethereum(conn) => Ok(HomeIndexers::Ethereum(
+            ChainConf::Ethereum(conn) => Ok(HomeIndexerVariants::Ethereum(
                 make_home_indexer(
                     conn.clone(),
                     &ContractLocator {
@@ -334,25 +341,24 @@ impl Settings {
                         address: self.home.address.parse::<ethers::types::Address>()?.into(),
                     },
                     signer,
-                    timelag,
+                    None, // no timelag
                     self.index.from(),
                     self.index.chunk_size(),
                 )
                 .await?,
-            )),
+            )
+            .into()),
         }
     }
 
-    /// Try to get an indexer object for a replica
-    pub async fn try_replica_indexer(
-        &self,
-        setup: &ChainSetup,
-        timelag: Option<u8>,
-    ) -> Result<CommonIndexers, Report> {
+    /// Try to get an indexer object for a replica. Note that indexers are NOT
+    /// instantiated with a built in timelag. The timelag is handled by the
+    /// ContractSync.
+    pub async fn try_replica_indexer(&self, setup: &ChainSetup) -> Result<CommonIndexers, Report> {
         let signer = self.get_signer(&setup.name).await;
 
         match &setup.chain {
-            ChainConf::Ethereum(conn) => Ok(CommonIndexers::Ethereum(
+            ChainConf::Ethereum(conn) => Ok(CommonIndexerVariants::Ethereum(
                 make_replica_indexer(
                     conn.clone(),
                     &ContractLocator {
@@ -361,12 +367,13 @@ impl Settings {
                         address: setup.address.parse::<ethers::types::Address>()?.into(),
                     },
                     signer,
-                    timelag,
+                    None, // no timelag
                     self.index.from(),
                     self.index.chunk_size(),
                 )
                 .await?,
-            )),
+            )
+            .into()),
         }
     }
 
@@ -381,8 +388,8 @@ impl Settings {
         )?);
 
         let db = DB::from_path(&self.db)?;
-        let home = Arc::new(CachingHome::from_settings(self).await?);
-        let replicas = self.try_caching_replicas().await?;
+        let home = Arc::new(CachingHome::from_settings(self, name.to_owned()).await?);
+        let replicas = self.try_caching_replicas(name.to_owned()).await?;
 
         Ok(AgentCore {
             home,

@@ -26,7 +26,7 @@ use crate::{CommonIndexers, ContractSync, ContractSyncMetrics, UpdatesSyncMode};
 pub struct CachingReplica {
     replica: Replicas,
     db: NomadDB,
-    indexer: Arc<CommonIndexers>,
+    contract_sync: ContractSync<CommonIndexers>,
     finality: u8,
     index_mode: IndexMode,
 }
@@ -42,47 +42,69 @@ impl CachingReplica {
     pub fn new(
         replica: Replicas,
         db: NomadDB,
-        indexer: Arc<CommonIndexers>,
+        contract_sync: ContractSync<CommonIndexers>,
         finality: u8,
         index_mode: IndexMode,
     ) -> Self {
         Self {
             replica,
             db,
-            indexer,
+            contract_sync,
             finality,
             index_mode,
         }
     }
 
     /// Instantiate caching replica from nomad-base Settings
-    pub async fn from_settings(settings: &Settings, replica_name: &str) -> Result<Self> {
+    pub async fn from_settings(
+        settings: &Settings,
+        agent_name: String,
+        replica_name: &str,
+    ) -> Result<Self> {
         settings.validate()?;
         let replica_setup = settings.replicas.get(replica_name).expect("!replica");
         let signer = settings.get_signer(replica_name).await;
-        let opt_replica_timelag = settings.replica_indexing_timelag(replica_name);
-        let replica_finality = settings
+        let opt_replica_timelag = settings.replica_timelag(replica_name);
+        let finality = settings
             .replicas
             .get(replica_name)
             .expect("!replica")
             .finality;
+
         let index_mode = settings.index.mode();
+        let from = settings.index.from();
+        let chunk_size = settings.index.chunk_size();
 
         let replica = replica_setup
             .try_into_replica(signer, opt_replica_timelag)
             .await?;
-        let indexer = Arc::new(
-            settings
-                .try_replica_indexer(replica_setup, opt_replica_timelag)
-                .await?,
-        );
+        let indexer = Arc::new(settings.try_replica_indexer(replica_setup).await?);
+
         let nomad_db = NomadDB::new(replica.name(), DB::from_path(&settings.db)?);
-        Ok(CachingReplica::new(
-            replica,
-            nomad_db,
+
+        let metrics = Arc::new(crate::metrics::CoreMetrics::new(
+            &agent_name,
+            settings
+                .metrics
+                .as_ref()
+                .map(|v| v.parse::<u16>().expect("metrics port must be u16")),
+            Arc::new(prometheus::Registry::new()),
+        )?);
+        let sync_metrics = ContractSyncMetrics::new(metrics);
+
+        let sync = ContractSync::new(
+            agent_name,
+            String::from_str(replica.name()).expect("!string"),
+            nomad_db.clone(),
             indexer,
-            replica_finality,
-            index_mode,
+            finality,
+            from,
+            chunk_size,
+            sync_metrics,
+        );
+
+        Ok(CachingReplica::new(
+            replica, nomad_db, sync, finality, index_mode,
         ))
     }
 
@@ -108,15 +130,7 @@ impl CachingReplica {
         let span = info_span!("ReplicaContractSync", self = %self);
         let index_mode = self.index_mode.clone();
         let finality = self.finality;
-        let sync = ContractSync::new(
-            agent_name,
-            String::from_str(self.replica.name()).expect("!string"),
-            self.db.clone(),
-            self.indexer.clone(),
-            from_height,
-            chunk_size,
-            metrics,
-        );
+        let sync = self.contract_sync.clone();
 
         tokio::spawn(async move {
             match index_mode {

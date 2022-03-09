@@ -35,12 +35,13 @@ pub enum UpdatesSyncMode {
 /// `indexer` and fills the agent's db with this data. A CachingHome or
 /// CachingReplica will use a contract sync to spawn syncing tasks to keep the
 /// db up-to-date.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ContractSync<I> {
     agent_name: String,
     contract_name: String,
     db: NomadDB,
     indexer: Arc<I>,
+    finality_blocks: u8,
     from_height: u32,
     chunk_size: u32,
     metrics: ContractSyncMetrics,
@@ -53,6 +54,7 @@ impl<I> ContractSync<I> {
         contract_name: String,
         db: NomadDB,
         indexer: Arc<I>,
+        finality_blocks: u8,
         from_height: u32,
         chunk_size: u32,
         metrics: ContractSyncMetrics,
@@ -62,6 +64,7 @@ impl<I> ContractSync<I> {
             contract_name,
             db,
             indexer,
+            finality_blocks,
             from_height,
             chunk_size,
             metrics,
@@ -75,8 +78,8 @@ where
 {
     /// Spawn task that continuously looks for new on-chain updates and stores
     /// them in db. If run in UpdatesSyncMode::Fast mode, will index at the tip
-    /// but use a timelag to catch any missed updates. In Slow mode, update
-    /// syncing will be run timelag blocks behind the tip.
+    /// but use a manual timelag to catch any missed updates. In Slow mode,
+    /// update  syncing will be run timelag blocks behind the tip.
     pub fn sync_updates(
         &self,
         updates_sync_mode: UpdatesSyncMode,
@@ -129,7 +132,8 @@ where
                 let start = match updates_sync_mode {
                     UpdatesSyncMode::Fast { finality } => {
                         // Range includes size blocks behind last final block to
-                        // catch missing
+                        // catch missing. This is the range the contract sync
+                        // would have indexed given a normal timelag.
                         let last_final_block = tip - finality as u32;
                         if to >= last_final_block {
                             info!(
@@ -139,6 +143,7 @@ where
                                 size,
                                 last_final_block
                             );
+
                             last_final_block - size
                         } else {
                             from + 1
@@ -262,13 +267,13 @@ where
                     to
                 );
 
-                let sorted_messages = indexer.fetch_sorted_messages(from, to).await?;
+                let sorted_messages = indexer.fetch_sorted_messages(from + 1, to).await?;
 
                 // If no messages found, update last seen block and next height
                 // and continue
                 if sorted_messages.is_empty() {
                     db.store_message_latest_block_end(to)?;
-                    from = to + 1;
+                    from = to;
                     continue;
                 }
 
@@ -280,7 +285,7 @@ where
 
                 // Move forward next height
                 db.store_message_latest_block_end(to)?;
-                from = to + 1;
+                from = to;
             }
         })
         .instrument(span)

@@ -24,7 +24,7 @@ use tracing::{instrument, instrument::Instrumented};
 pub struct CachingHome {
     home: Homes,
     db: NomadDB,
-    indexer: Arc<HomeIndexers>,
+    contract_sync: ContractSync<HomeIndexers>,
     finality: u8,
     index_mode: IndexMode,
 }
@@ -40,40 +40,60 @@ impl CachingHome {
     pub fn new(
         home: Homes,
         db: NomadDB,
-        indexer: Arc<HomeIndexers>,
+        contract_sync: ContractSync<HomeIndexers>,
         finality: u8,
         index_mode: IndexMode,
     ) -> Self {
         Self {
             home,
             db,
-            indexer,
+            contract_sync,
             finality,
             index_mode,
         }
     }
 
     /// Instantiate caching home from nomad-base Settings
-    pub async fn from_settings(settings: &Settings) -> Result<Self> {
+    pub async fn from_settings(settings: &Settings, agent_name: String) -> Result<Self> {
         settings.validate()?;
         let signer = settings.get_signer(&settings.home.name).await;
-        let opt_home_timelag = settings.home_indexing_timelag();
-        let home_finality = settings.home.finality;
+        let opt_home_timelag = settings.home_timelag();
+        let finality = settings.home.finality;
+
         let index_mode = settings.index.mode();
+        let from = settings.index.from();
+        let chunk_size = settings.index.chunk_size();
 
         let home = settings
             .home
             .try_into_home(signer, opt_home_timelag)
             .await?;
-        let indexer = Arc::new(settings.try_home_indexer(opt_home_timelag).await?);
+
         let nomad_db = NomadDB::new(home.name(), DB::from_path(&settings.db)?);
-        Ok(CachingHome::new(
-            home,
-            nomad_db,
+
+        let metrics = Arc::new(crate::metrics::CoreMetrics::new(
+            &agent_name,
+            settings
+                .metrics
+                .as_ref()
+                .map(|v| v.parse::<u16>().expect("metrics port must be u16")),
+            Arc::new(prometheus::Registry::new()),
+        )?);
+        let sync_metrics = ContractSyncMetrics::new(metrics);
+
+        let indexer = Arc::new(settings.try_home_indexer().await?);
+        let sync = ContractSync::new(
+            agent_name,
+            String::from_str(home.name()).expect("!string"),
+            nomad_db.clone(),
             indexer,
-            home_finality,
-            index_mode,
-        ))
+            finality,
+            from,
+            chunk_size,
+            sync_metrics,
+        );
+
+        Ok(CachingHome::new(home, nomad_db, sync, finality, index_mode))
     }
 
     /// Return handle on home object
@@ -98,15 +118,7 @@ impl CachingHome {
         let span = info_span!("HomeContractSync", self = %self);
         let index_mode = self.index_mode.clone();
         let finality = self.finality;
-        let sync = ContractSync::new(
-            agent_name,
-            String::from_str(self.home.name()).expect("!string"),
-            self.db.clone(),
-            self.indexer.clone(),
-            from_height,
-            chunk_size,
-            metrics,
-        );
+        let sync = self.contract_sync.clone();
 
         tokio::spawn(async move {
             let tasks = match index_mode {
