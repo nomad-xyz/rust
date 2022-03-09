@@ -123,14 +123,15 @@ where
             &self.agent_name,
         ]);
 
-        let finality = self.finality;
+        let finality = self.finality as u32;
+        let apply_timelag = move |from: u32, to: u32| (from - finality, to - finality);
         let config_from = self.index_settings.from();
         let chunk_size = self.index_settings.chunk_size();
 
         tokio::spawn(async move {
             let mut from = db
                 .retrieve_update_latest_block_end()
-                .map_or_else(|| config_from, |h| h + 1);
+                .map_or_else(|| config_from, |h| h);
 
             info!(from = from, "[Updates]: resuming indexer from {}", from);
 
@@ -149,16 +150,16 @@ where
                 let (start, end) = match updates_sync_mode {
                     UpdatesSyncMode::Fast => {
                         let range = to - from;
-                        let last_final_block = tip - finality as u32;
+                        let last_final_block = tip - finality;
                         let from = if to >= last_final_block {
                             last_final_block - range
                         } else {
-                            from + 1
+                            from
                         };
 
                         (from, to)
                     }
-                    UpdatesSyncMode::Slow => (from + 1, to - finality as u32),
+                    UpdatesSyncMode::Slow => apply_timelag(from, to),
                 };
 
                 info!(
@@ -272,13 +273,15 @@ where
             &self.agent_name,
         ]);
 
+        let finality = self.finality as u32;
+        let apply_timelag = move |from: u32, to: u32| (from - finality, to - finality);
         let config_from = self.index_settings.from();
         let chunk_size = self.index_settings.chunk_size();
 
         tokio::spawn(async move {
             let mut from = db
                 .retrieve_message_latest_block_end()
-                .map_or_else(|| config_from, |h| h + 1);
+                .map_or_else(|| config_from, |h| h);
 
             info!(from = from, "[Messages]: resuming indexer from {}", from);
 
@@ -295,15 +298,16 @@ where
                 let candidate = from + chunk_size;
                 let to = min(tip, candidate);
 
+                let (start, end) = apply_timelag(from, to);
                 info!(
-                    from = from,
-                    to = to,
+                    start = start,
+                    end = end,
                     "[Messages]: indexing block heights {}...{}",
-                    from,
-                    to
+                    start,
+                    end
                 );
 
-                let sorted_messages = indexer.fetch_sorted_messages(from + 1, to).await?;
+                let sorted_messages = indexer.fetch_sorted_messages(start, end).await?;
 
                 // If no messages found, update last seen block and next height
                 // and continue
