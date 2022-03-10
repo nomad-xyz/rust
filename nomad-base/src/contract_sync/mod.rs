@@ -315,3 +315,257 @@ where
         .instrument(span)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use mockall::*;
+    use nomad_test::mocks::MockIndexer;
+
+    use std::sync::Arc;
+
+    use ethers::core::types::H256;
+    use ethers::signers::LocalWallet;
+
+    use nomad_core::{SignedUpdateWithMeta, Update, UpdateMeta};
+    use nomad_test::test_utils;
+
+    use super::*;
+    use crate::CoreMetrics;
+
+    const FINALITY: u8 = 5;
+
+    /* RPC Behavior:
+     *  Starting Tip: block 20
+     *  Starting Last Final Block: block 15
+     *
+     *  Finality: 5 blocks
+     *  Chunk Size: 10 blocks
+     *
+     * Responses
+     *  - original 10-20, total indexed 5-20, final indexed 5-15: 1st update @
+     *    block 18
+     *  - original 20-30, total indexed 15-30, final indexed 15-25: 2nd update
+     *    @ block 26
+     *  - original 30-40, total indexed 25-40, final indexed 25-35: empty
+     *    (3rd update reorged out of range 35-40)
+     *  - original 40-50, total indexed 35-50, final indexed 35-45: 3rd update @
+     *    FINAL block 37, 4th update @ block 48
+     */
+    #[tokio::test]
+    async fn handles_reorgs_when_syncing_at_tip() {
+        test_utils::run_test_db(|db| async move {
+            let signer: LocalWallet =
+                "1111111111111111111111111111111111111111111111111111111111111111"
+                    .parse()
+                    .unwrap();
+
+            let first_root = H256::from([0; 32]);
+            let second_root = H256::from([1; 32]);
+            let third_root = H256::from([2; 32]);
+            let fourth_root = H256::from([3; 32]);
+            let fifth_root = H256::from([4; 32]);
+
+            let first_update = Update {
+                home_domain: 1,
+                previous_root: first_root,
+                new_root: second_root,
+            }
+            .sign_with(&signer)
+            .await
+            .expect("!sign");
+
+            let second_update = Update {
+                home_domain: 1,
+                previous_root: second_root,
+                new_root: third_root,
+            }
+            .sign_with(&signer)
+            .await
+            .expect("!sign");
+
+            let third_update = Update {
+                home_domain: 1,
+                previous_root: third_root,
+                new_root: fourth_root,
+            }
+            .sign_with(&signer)
+            .await
+            .expect("!sign");
+
+            let fourth_update = Update {
+                home_domain: 1,
+                previous_root: fourth_root,
+                new_root: fifth_root,
+            }
+            .sign_with(&signer)
+            .await
+            .expect("!sign");
+
+            let mut mock_indexer = MockIndexer::new();
+            {
+                let mut seq = Sequence::new();
+
+                let first_update_with_meta = SignedUpdateWithMeta {
+                    signed_update: first_update.clone(),
+                    metadata: UpdateMeta {
+                        block_number: 18,
+                        timestamp: Default::default(),
+                    },
+                };
+
+                let second_update_with_meta = SignedUpdateWithMeta {
+                    signed_update: second_update.clone(),
+                    metadata: UpdateMeta {
+                        block_number: 26,
+                        timestamp: Default::default(),
+                    },
+                };
+
+                let third_update_with_meta = SignedUpdateWithMeta {
+                    signed_update: third_update.clone(),
+                    metadata: UpdateMeta {
+                        block_number: 37,
+                        timestamp: Default::default(),
+                    },
+                };
+
+                let fourth_update_with_meta = SignedUpdateWithMeta {
+                    signed_update: fourth_update.clone(),
+                    metadata: UpdateMeta {
+                        block_number: 48,
+                        timestamp: Default::default(),
+                    },
+                };
+
+                // Return first update in range 5-20
+                mock_indexer
+                    .expect__get_block_number()
+                    .times(1)
+                    .in_sequence(&mut seq)
+                    .return_once(|| Ok(20));
+                mock_indexer
+                    .expect__fetch_sorted_updates()
+                    .withf(move |from: &u32, to: &u32| *from == 5 && *to == 20)
+                    .times(1)
+                    .in_sequence(&mut seq)
+                    .return_once(move |_, _| Ok(vec![first_update_with_meta]));
+
+                // Return second update in range 15-30
+                mock_indexer
+                    .expect__get_block_number()
+                    .times(1)
+                    .in_sequence(&mut seq)
+                    .return_once(|| Ok(30));
+                mock_indexer
+                    .expect__fetch_sorted_updates()
+                    .withf(move |from: &u32, to: &u32| *from == 15 && *to == 30)
+                    .times(1)
+                    .in_sequence(&mut seq)
+                    .return_once(move |_, _| Ok(vec![second_update_with_meta]));
+
+                // Return empty for range 25-40 (misses 3rd update between
+                // non-final range 35-40)
+                mock_indexer
+                    .expect__get_block_number()
+                    .times(1)
+                    .in_sequence(&mut seq)
+                    .return_once(|| Ok(40));
+                mock_indexer
+                    .expect__fetch_sorted_updates()
+                    .withf(move |from: &u32, to: &u32| *from == 25 && *to == 40)
+                    .times(1)
+                    .in_sequence(&mut seq)
+                    .return_once(move |_, _| Ok(vec![]));
+
+                // Return both missing 3rd and new 4th updates in range 35-50
+                mock_indexer
+                    .expect__get_block_number()
+                    .times(1)
+                    .in_sequence(&mut seq)
+                    .return_once(|| Ok(50));
+                mock_indexer
+                    .expect__fetch_sorted_updates()
+                    .withf(move |from: &u32, to: &u32| *from == 35 && *to == 50)
+                    .times(1)
+                    .in_sequence(&mut seq)
+                    .return_once(move |_, _| {
+                        Ok(vec![third_update_with_meta, fourth_update_with_meta])
+                    });
+
+                // Return empty vec for remaining calls
+                mock_indexer
+                    .expect__get_block_number()
+                    .times(1)
+                    .in_sequence(&mut seq)
+                    .return_once(|| Ok(60));
+                mock_indexer
+                    .expect__fetch_sorted_updates()
+                    .return_once(move |_, _| Ok(vec![]));
+            }
+
+            let nomad_db = NomadDB::new("home_1", db);
+            let index_settings = IndexSettings {
+                from: Some(10.to_string()),
+                chunk: Some(10.to_string()),
+                data_types: IndexDataTypes::Updates,
+                use_timelag: false,
+            };
+
+            let indexer = Arc::new(mock_indexer);
+            let metrics = Arc::new(
+                CoreMetrics::new(
+                    "contract_sync_test",
+                    None,
+                    Arc::new(prometheus::Registry::new()),
+                )
+                .expect("could not make metrics"),
+            );
+
+            let sync_metrics = ContractSyncMetrics::new(metrics);
+
+            let contract_sync = ContractSync::new(
+                "agent".to_owned(),
+                "home_1".to_owned(),
+                nomad_db.clone(),
+                indexer.clone(),
+                index_settings,
+                FINALITY,
+                sync_metrics,
+            );
+
+            let sync_task = contract_sync.sync_updates();
+            sleep(Duration::from_secs(3)).await;
+            cancel_task!(sync_task);
+
+            assert_eq!(
+                nomad_db
+                    .update_by_previous_root(first_root)
+                    .expect("!db")
+                    .expect("!update"),
+                first_update.clone()
+            );
+            assert_eq!(
+                nomad_db
+                    .update_by_previous_root(second_root)
+                    .expect("!db")
+                    .expect("!update"),
+                second_update.clone()
+            );
+            assert_eq!(
+                nomad_db
+                    .update_by_previous_root(third_root)
+                    .expect("!db")
+                    .expect("!update"),
+                third_update.clone()
+            );
+            assert_eq!(
+                nomad_db
+                    .update_by_previous_root(fourth_root)
+                    .expect("!db")
+                    .expect("!update"),
+                fourth_update.clone()
+            );
+        })
+        .await
+    }
+}

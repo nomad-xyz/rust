@@ -152,15 +152,15 @@ impl SignerConf {
 #[serde(rename_all = "camelCase")]
 pub struct IndexSettings {
     /// The height at which to start indexing the Home contract
-    from: Option<String>,
+    pub from: Option<String>,
     /// The number of blocks to query at once at which to start indexing the Home contract
-    chunk: Option<String>,
+    pub chunk: Option<String>,
     /// Data types to index
     #[serde(default)]
-    data_types: IndexDataTypes,
+    pub data_types: IndexDataTypes,
     /// Whether or not to use timelag
     #[serde(default)]
-    use_timelag: bool,
+    pub use_timelag: bool,
 }
 
 impl IndexSettings {
