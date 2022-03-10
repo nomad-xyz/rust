@@ -81,16 +81,14 @@ pub enum AgentType {
 
 /// Index data types and timelag settings
 #[derive(serde::Deserialize, Debug, PartialEq, Clone)]
-pub enum IndexMode {
-    /// Updates with timelag
+pub enum IndexDataTypes {
+    /// Updates
     Updates,
-    /// Updates and messages with timelag
+    /// Updates and messages
     UpdatesAndMessages,
-    /// Updates at the tip with timelag to catch missed
-    FastUpdates,
 }
 
-impl Default for IndexMode {
+impl Default for IndexDataTypes {
     fn default() -> Self {
         Self::Updates
     }
@@ -157,9 +155,12 @@ pub struct IndexSettings {
     from: Option<String>,
     /// The number of blocks to query at once at which to start indexing the Home contract
     chunk: Option<String>,
+    /// Data types to index
     #[serde(default)]
-    /// Data types and timelag setting
-    mode: IndexMode,
+    data_types: IndexDataTypes,
+    /// Whether or not to use timelag
+    #[serde(default)]
+    use_timelag: bool,
 }
 
 impl IndexSettings {
@@ -179,9 +180,14 @@ impl IndexSettings {
             .unwrap_or(1999)
     }
 
-    /// Get IndexMode
-    pub fn mode(&self) -> IndexMode {
-        self.mode.clone()
+    /// Get IndexDataTypes
+    pub fn data_types(&self) -> IndexDataTypes {
+        self.data_types.clone()
+    }
+
+    /// Get timelag on/off status
+    pub fn use_timelag(&self) -> bool {
+        self.use_timelag
     }
 }
 
@@ -245,61 +251,37 @@ impl Settings {
 }
 
 impl Settings {
-    /// Validate invariants that should hold for Settings block
-    pub fn validate(&self) -> Result<(), Report> {
-        // If running syncing in IndexMode::FastUpdates, timelag must be OFF.
-        // If running syncing in slow modes, timelag must be ON.
-        if self.index.mode == IndexMode::FastUpdates {
-            if self.home_timelag().is_some() {
-                bail!("FastUpdates syncing must be run with timelag OFF!",);
-            }
-
-            for (name, _) in self.replicas.iter() {
-                if self.replica_timelag(name).is_some() {
-                    bail!("FastUpdates syncing must be run with timelag OFF!",);
-                }
-            }
-        } else {
-            if self.home_timelag().is_none() {
-                bail!("Slow syncing must be run with timelag ON!");
-            }
-
-            for (name, _) in self.replicas.iter() {
-                if self.replica_timelag(name).is_none() {
-                    bail!("Slow syncing must be run with timelag ON!");
-                }
-            }
-        }
-
-        Ok(())
-    }
-
     /// Try to get a signer instance by name
     pub async fn get_signer(&self, name: &str) -> Option<Signers> {
         self.signers.get(name)?.try_into_signer().await.ok()
     }
 
-    /// Set agent-specific index mode
-    pub fn set_index_mode(&mut self, mode: IndexMode) {
-        self.index.mode = mode;
+    /// Set agent-specific index data types
+    pub fn set_index_data_types(&mut self, data_types: IndexDataTypes) {
+        self.index.data_types = data_types;
+    }
+
+    /// Set agent-specific timelag on/off
+    pub fn set_use_timelag(&mut self, use_timelag: bool) {
+        self.index.use_timelag = use_timelag;
     }
 
     /// Get optional indexing timelag enum for home
     pub fn home_timelag(&self) -> Option<u8> {
-        if self.index.mode == IndexMode::FastUpdates {
-            None
-        } else {
+        if self.index.use_timelag {
             Some(self.home.finality)
+        } else {
+            None
         }
     }
 
     /// Get optional indexing timelag for a replica
     pub fn replica_timelag(&self, replica_name: &str) -> Option<u8> {
-        if self.index.mode == IndexMode::FastUpdates {
-            None
-        } else {
+        if self.index.use_timelag {
             let replica_finality = self.replicas.get(replica_name).expect("!replica").finality;
             Some(replica_finality)
+        } else {
+            None
         }
     }
 
@@ -318,6 +300,7 @@ impl Settings {
     ) -> Result<ContractSync<HomeIndexers>, Report> {
         let finality = self.home.finality;
         let index_settings = self.index.clone();
+
         let indexer = Arc::new(self.try_home_indexer().await?);
         let home_name = &self.home.name;
 
@@ -366,9 +349,10 @@ impl Settings {
         metrics: ContractSyncMetrics,
     ) -> Result<ContractSync<CommonIndexers>, Report> {
         let replica_setup = self.replicas.get(replica_name).expect("!replica");
-        let finality = self.replicas.get(replica_name).expect("!replica").finality;
 
+        let finality = self.replicas.get(replica_name).expect("!replica").finality;
         let index_settings = self.index.clone();
+
         let indexer = Arc::new(self.try_replica_indexer(replica_setup).await?);
         let replica_name = &replica_setup.name;
 
@@ -430,6 +414,7 @@ impl Settings {
     /// ContractSync.
     pub async fn try_home_indexer(&self) -> Result<HomeIndexers, Report> {
         let signer = self.get_signer(&self.home.name).await;
+        let timelag = self.home_timelag();
 
         match &self.home.chain {
             ChainConf::Ethereum(conn) => Ok(HomeIndexerVariants::Ethereum(
@@ -441,7 +426,7 @@ impl Settings {
                         address: self.home.address.parse::<ethers::types::Address>()?.into(),
                     },
                     signer,
-                    None, // no timelag
+                    timelag,
                     self.index.from(),
                     self.index.chunk_size(),
                 )
@@ -456,6 +441,7 @@ impl Settings {
     /// ContractSync.
     pub async fn try_replica_indexer(&self, setup: &ChainSetup) -> Result<CommonIndexers, Report> {
         let signer = self.get_signer(&setup.name).await;
+        let timelag = self.replica_timelag(&setup.name);
 
         match &setup.chain {
             ChainConf::Ethereum(conn) => Ok(CommonIndexerVariants::Ethereum(
@@ -467,7 +453,7 @@ impl Settings {
                         address: setup.address.parse::<ethers::types::Address>()?.into(),
                     },
                     signer,
-                    None, // no timelag
+                    timelag,
                     self.index.from(),
                     self.index.chunk_size(),
                 )

@@ -179,11 +179,26 @@ macro_rules! decl_settings {
 
                     /// Kludge, use proc macro to match on enum later
                     match std::stringify!($name) {
-                        "Kathy" => settings.base.set_index_mode(nomad_base::settings::IndexMode::Updates),
-                        "Updater" => settings.base.set_index_mode(nomad_base::settings::IndexMode::Updates),
-                        "Relayer" => settings.base.set_index_mode(nomad_base::settings::IndexMode::FastUpdates),
-                        "Processor" => settings.base.set_index_mode(nomad_base::settings::IndexMode::UpdatesAndMessages),
-                        "Watcher" => settings.base.set_index_mode(nomad_base::settings::IndexMode::FastUpdates),
+                        "Kathy" => {
+                            settings.base.set_index_data_types(nomad_base::settings::IndexDataTypes::Updates);
+                            settings.base.set_use_timelag(false);
+                        }
+                        "Updater" => {
+                            settings.base.set_index_data_types(nomad_base::settings::IndexDataTypes::Updates);
+                            settings.base.set_use_timelag(true);
+                        }
+                        "Relayer" => {
+                            settings.base.set_index_data_types(nomad_base::settings::IndexDataTypes::Updates);
+                            settings.base.set_use_timelag(false);
+                        }
+                        "Processor" => {
+                            settings.base.set_index_data_types(nomad_base::settings::IndexDataTypes::UpdatesAndMessages);
+                            settings.base.set_use_timelag(true);
+                        }
+                        "Watcher" => {
+                            settings.base.set_index_data_types(nomad_base::settings::IndexDataTypes::Updates);
+                            settings.base.set_use_timelag(false);
+                        }
                         _ => std::panic!("Invalid agent-specific settings name!"),
                     };
 

@@ -1,4 +1,4 @@
-use crate::{IndexMode, IndexSettings, NomadDB};
+use crate::{IndexDataTypes, IndexSettings, NomadDB};
 use color_eyre::Result;
 use futures_util::future::select_all;
 use nomad_core::{CommonIndexer, HomeIndexer};
@@ -18,14 +18,6 @@ use schema::{CommonContractSyncDB, HomeContractSyncDB};
 
 const UPDATES_LABEL: &str = "updates";
 const MESSAGES_LABEL: &str = "messages";
-
-/// Fast indexing with catching timelag vs. slow timelag indexing
-pub enum UpdatesSyncMode {
-    /// Index at tip with timelag to catch missed updates
-    Fast,
-    /// Index timelag blocks behind tip (lag handled by indexer)
-    Slow,
-}
 
 /// Entity that drives the syncing of an agent's db with on-chain data.
 /// Extracts chain-specific data (emitted updates, messages, etc) from an
@@ -82,26 +74,14 @@ where
     /// Spawn sync task to sync updates
     pub fn spawn_common(self) -> Instrumented<JoinHandle<Result<()>>> {
         let span = info_span!("ContractSync: Common", self = %self);
-        let index_mode = self.index_settings.mode();
-
-        tokio::spawn(async move {
-            match index_mode {
-                IndexMode::Updates => self.sync_updates(UpdatesSyncMode::Slow).await?,
-                IndexMode::UpdatesAndMessages => self.sync_updates(UpdatesSyncMode::Slow).await?,
-                IndexMode::FastUpdates => self.sync_updates(UpdatesSyncMode::Fast).await?,
-            }
-        })
-        .instrument(span)
+        tokio::spawn(async move { self.sync_updates().await? }).instrument(span)
     }
 
     /// Spawn task that continuously looks for new on-chain updates and stores
-    /// them in db. If run in UpdatesSyncMode::Fast mode, will index at the tip
-    /// but use a manual timelag to catch any missed updates. In Slow mode,
+    /// them in db. If run in timelag is off, will index at the tip
+    /// but use a manual timelag to catch any missed updates. If timelag on,
     /// update  syncing will be run timelag blocks behind the tip.
-    pub fn sync_updates(
-        &self,
-        updates_sync_mode: UpdatesSyncMode,
-    ) -> Instrumented<JoinHandle<Result<()>>> {
+    pub fn sync_updates(&self) -> Instrumented<JoinHandle<Result<()>>> {
         let span = info_span!("UpdateContractSync");
 
         let db = self.db.clone();
@@ -123,8 +103,8 @@ where
             &self.agent_name,
         ]);
 
+        let timelag_on = self.index_settings.use_timelag();
         let finality = self.finality as u32;
-        let apply_timelag = move |from: u32, to: u32| (from - finality, to - finality);
         let config_from = self.index_settings.from();
         let chunk_size = self.index_settings.chunk_size();
 
@@ -147,19 +127,19 @@ where
 
                 let to = min(from + chunk_size, tip);
 
-                let (start, end) = match updates_sync_mode {
-                    UpdatesSyncMode::Fast => {
-                        let range = to - from;
-                        let last_final_block = tip - finality;
-                        let from = if to >= last_final_block {
-                            last_final_block - range
-                        } else {
-                            from
-                        };
+                let (start, end) = if timelag_on {
+                    // if timelag on, don't modify range
+                    (from, to)
+                } else {
+                    let range = to - from;
+                    let last_final_block = tip - finality;
+                    let from = if to >= last_final_block {
+                        last_final_block - range
+                    } else {
+                        from
+                    };
 
-                        (from, to)
-                    }
-                    UpdatesSyncMode::Slow => apply_timelag(from, to),
+                    (from, to)
                 };
 
                 info!(
@@ -227,17 +207,13 @@ where
     /// Spawn sync task to sync home updates (and potentially messages)
     pub fn spawn_home(self) -> Instrumented<JoinHandle<Result<()>>> {
         let span = info_span!("ContractSync: Home", self = %self);
-        let index_mode = self.index_settings.mode();
+        let data_types = self.index_settings.data_types();
 
         tokio::spawn(async move {
-            let tasks = match index_mode {
-                IndexMode::Updates => vec![self.sync_updates(UpdatesSyncMode::Slow)],
-                IndexMode::UpdatesAndMessages => vec![
-                    self.sync_updates(UpdatesSyncMode::Slow),
-                    self.sync_messages(),
-                ],
-                IndexMode::FastUpdates => {
-                    vec![self.sync_updates(UpdatesSyncMode::Fast)]
+            let tasks = match data_types {
+                IndexDataTypes::Updates => vec![self.sync_updates()],
+                IndexDataTypes::UpdatesAndMessages => {
+                    vec![self.sync_updates(), self.sync_messages()]
                 }
             };
 
@@ -273,8 +249,7 @@ where
             &self.agent_name,
         ]);
 
-        let finality = self.finality as u32;
-        let apply_timelag = move |from: u32, to: u32| (from - finality, to - finality);
+        let timelag_on = self.index_settings.use_timelag();
         let config_from = self.index_settings.from();
         let chunk_size = self.index_settings.chunk_size();
 
@@ -298,7 +273,13 @@ where
                 let candidate = from + chunk_size;
                 let to = min(tip, candidate);
 
-                let (start, end) = apply_timelag(from, to);
+                // timelag always applied
+                let (start, end) = if timelag_on {
+                    (from, to)
+                } else {
+                    panic!("Syncing messages with timelag off should never happen!");
+                };
+
                 info!(
                     start = start,
                     end = end,
