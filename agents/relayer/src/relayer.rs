@@ -259,7 +259,7 @@ mod test {
                 sync_metrics,
             );
 
-            let replica_mocks: HashMap<String, Arc<CachingReplica>> = HashMap::from([(
+            let replicas: HashMap<String, Arc<CachingReplica>> = HashMap::from([(
                 channel_name.to_string(),
                 Arc::new(CachingReplica::new(
                     replica_mock.into(),
@@ -271,7 +271,7 @@ mod test {
             // Setting agent
             let core = AgentCore {
                 home,
-                replicas: replica_mocks,
+                replicas,
                 db,
                 metrics,
                 indexer: IndexSettings::default(),
@@ -280,7 +280,8 @@ mod test {
 
             let agent = Relayer::new(2, core);
 
-            // Sanity check that we indeed throw an error when calling run
+            // Sanity check that we indeed throw an error when calling run NOT
+            // run_report_error
             let run_result =
                 <Relayer as nomad_base::NomadAgent>::run(agent.build_channel("moonbeam"))
                     .await

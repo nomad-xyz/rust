@@ -103,7 +103,7 @@ where
             &self.agent_name,
         ]);
 
-        let timelag_on = self.index_settings.use_timelag();
+        let timelag_on = self.index_settings.timelag_on();
         let finality = self.finality as u32;
         let config_from = self.index_settings.from();
         let chunk_size = self.index_settings.chunk_size();
@@ -133,6 +133,9 @@ where
                 } else {
                     let range = to - from;
                     let last_final_block = tip - finality;
+
+                    // If range includes non-final blocks, include range
+                    // blocks behind last final block
                     let from = if to >= last_final_block {
                         last_final_block - range
                     } else {
@@ -249,7 +252,7 @@ where
             &self.agent_name,
         ]);
 
-        let timelag_on = self.index_settings.use_timelag();
+        let timelag_on = self.index_settings.timelag_on();
         let config_from = self.index_settings.from();
         let chunk_size = self.index_settings.chunk_size();
 

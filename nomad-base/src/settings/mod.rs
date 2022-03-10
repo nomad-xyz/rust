@@ -186,7 +186,7 @@ impl IndexSettings {
     }
 
     /// Get timelag on/off status
-    pub fn use_timelag(&self) -> bool {
+    pub fn timelag_on(&self) -> bool {
         self.use_timelag
     }
 }
@@ -268,7 +268,7 @@ impl Settings {
 
     /// Get optional indexing timelag enum for home
     pub fn home_timelag(&self) -> Option<u8> {
-        if self.index.use_timelag {
+        if self.index.timelag_on() {
             Some(self.home.finality)
         } else {
             None
@@ -277,7 +277,7 @@ impl Settings {
 
     /// Get optional indexing timelag for a replica
     pub fn replica_timelag(&self, replica_name: &str) -> Option<u8> {
-        if self.index.use_timelag {
+        if self.index.timelag_on() {
             let replica_finality = self.replicas.get(replica_name).expect("!replica").finality;
             Some(replica_finality)
         } else {
