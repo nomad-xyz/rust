@@ -661,6 +661,7 @@ impl NomadAgent for Watcher {
 
 #[cfg(test)]
 mod test {
+    use ethers::prelude::U256;
     use nomad_base::IndexSettings;
     use nomad_test::mocks::MockIndexer;
     use std::sync::Arc;
@@ -1264,7 +1265,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn it_doesnt_do_anything_on_dry_run() {
+    async fn it_doesnt_unenroll_anything_on_improper_update_with_dry_run() {
         test_utils::run_test_db(|db| async move {
             let updater: LocalWallet =
                 "1111111111111111111111111111111111111111111111111111111111111111"
@@ -1276,8 +1277,13 @@ mod test {
             let mut mock_connection_manager_2 = MockConnectionManagerContract::new();
 
             let mut mock_home = MockHomeContract::new();
-            let mock_replica_1 = MockReplicaContract::new();
-            let mock_replica_2 = MockReplicaContract::new();
+            let mut mock_replica_1 = MockReplicaContract::new();
+            let mut mock_replica_2 = MockReplicaContract::new();
+
+            {
+                mock_replica_1.expect__double_update().never(); // just in case
+                mock_replica_2.expect__double_update().never(); // just in case
+            }
 
             // Home and replica expectations
             {
@@ -1299,6 +1305,8 @@ mod test {
                     .expect__state()
                     .times(..)
                     .return_once(move || Ok(State::Failed));
+
+                mock_home.expect__double_update().never(); // just in case
             }
 
             // Connection manager expectations
@@ -1369,6 +1377,161 @@ mod test {
                     Watcher::new(updater.into(), 1, connection_managers.clone(), core, true);
 
                 watcher.handle_improper_update_failure().await;
+            }
+
+            // Checkpoint connection managers
+            for connection_manager in connection_managers.iter_mut() {
+                Arc::get_mut(connection_manager).unwrap().checkpoint();
+            }
+
+            // Checkpoint home and replicas
+            Arc::get_mut(&mut mock_home).unwrap().checkpoint();
+            Arc::get_mut(&mut mock_replica_1).unwrap().checkpoint();
+            Arc::get_mut(&mut mock_replica_2).unwrap().checkpoint();
+        })
+        .await
+    }
+
+    #[tokio::test]
+    async fn it_doesnt_unenroll_anything_on_double_update_with_dry_run() {
+        test_utils::run_test_db(|db| async move {
+            let updater: LocalWallet =
+                "1111111111111111111111111111111111111111111111111111111111111111"
+                    .parse()
+                    .unwrap();
+
+            // Contract setup
+            let mut mock_connection_manager_1 = MockConnectionManagerContract::new();
+            let mut mock_connection_manager_2 = MockConnectionManagerContract::new();
+
+            let mut mock_home = MockHomeContract::new();
+            let mut mock_replica_1 = MockReplicaContract::new();
+            let mut mock_replica_2 = MockReplicaContract::new();
+
+            {
+                mock_replica_1.expect__double_update().never();
+                mock_replica_2.expect__double_update().never();
+            }
+
+            // Home and replica expectations
+            {
+                mock_home.expect__name().return_const("home_1".to_owned());
+
+                mock_home
+                    .expect__local_domain()
+                    .times(..)
+                    .return_once(move || 1);
+
+                let updater = updater.clone();
+                mock_home
+                    .expect__updater()
+                    .times(..)
+                    .return_once(move || Ok(updater.address().into()));
+
+                // Home returns failed state
+                mock_home
+                    .expect__state()
+                    .times(..)
+                    .return_once(move || Ok(State::Failed));
+
+                mock_home.expect__double_update().never();
+            }
+
+            // Connection manager expectations
+            {
+                mock_connection_manager_1.expect__unenroll_replica().never(); // just in case
+                mock_connection_manager_2.expect__unenroll_replica().never(); // just in case
+            }
+
+            // Watcher agent setup
+            let mut connection_managers: Vec<Arc<ConnectionManagers>> = vec![
+                Arc::new(mock_connection_manager_1.into()),
+                Arc::new(mock_connection_manager_2.into()),
+            ];
+
+            let mock_indexer: Arc<CommonIndexers> = Arc::new(MockIndexer::new().into());
+
+            let mock_home_indexer: Arc<HomeIndexers> = Arc::new(MockIndexer::new().into());
+
+            let mut mock_home: Homes = mock_home.into();
+            let mut mock_replica_1: Replicas = mock_replica_1.into();
+            let mut mock_replica_2: Replicas = mock_replica_2.into();
+
+            let home_db = NomadDB::new("home_1", db.clone());
+            let replica_1_db = NomadDB::new("replica_1", db.clone());
+            let replica_2_db = NomadDB::new("replica_2", db.clone());
+
+            {
+                let home: Arc<CachingHome> = CachingHome::new(
+                    mock_home.clone(),
+                    home_db.clone(),
+                    mock_home_indexer.clone(),
+                )
+                .into();
+                let replica_1: Arc<CachingReplica> = CachingReplica::new(
+                    mock_replica_1.clone(),
+                    replica_1_db.clone(),
+                    mock_indexer.clone(),
+                )
+                .into();
+                let replica_2: Arc<CachingReplica> = CachingReplica::new(
+                    mock_replica_2.clone(),
+                    replica_2_db.clone(),
+                    mock_indexer.clone(),
+                )
+                .into();
+
+                let mut replica_map: HashMap<String, Arc<CachingReplica>> = HashMap::new();
+                replica_map.insert("replica_1".into(), replica_1);
+                replica_map.insert("replica_2".into(), replica_2);
+
+                let core = AgentCore {
+                    home: home.clone(),
+                    replicas: replica_map,
+                    db,
+                    indexer: IndexSettings::default(),
+                    settings: nomad_base::Settings::default(),
+                    metrics: Arc::new(
+                        nomad_base::CoreMetrics::new(
+                            "watcher_test",
+                            None,
+                            Arc::new(prometheus::Registry::new()),
+                        )
+                        .expect("could not make metrics"),
+                    ),
+                };
+
+                let watcher =
+                    Watcher::new(updater.into(), 1, connection_managers.clone(), core, true);
+
+                let x = DoubleUpdate(
+                    SignedUpdate {
+                        update: Update {
+                            home_domain: 1,
+                            previous_root: H256::default(),
+                            new_root: H256::default(),
+                        },
+                        signature: ethers::prelude::Signature {
+                            r: U256::default(),
+                            s: U256::default(),
+                            v: 0,
+                        },
+                    },
+                    SignedUpdate {
+                        update: Update {
+                            home_domain: 1,
+                            previous_root: H256::default(),
+                            new_root: H256::default(),
+                        },
+                        signature: ethers::prelude::Signature {
+                            r: U256::default(),
+                            s: U256::default(),
+                            v: 0,
+                        },
+                    },
+                );
+
+                watcher.handle_double_update_failure(&x).await;
             }
 
             // Checkpoint connection managers
