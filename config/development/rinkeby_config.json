@@ -2,23 +2,23 @@
   "environment": "dev",
   "signers": {
     "rinkeby": {
-      "key": "",
+      "key": "0x0000001111111111111111111111111111111111111111111111111111ce1005",
       "type": "hexKey"
     },
     "evmostestnet": {
-      "key": "",
+      "key": "0x0000001111111111111111111111111111111111111111111111111111ce1005",
       "type": "hexKey"
     },
     "moonbasealpha": {
-      "key": "",
+      "key": "0x0000001111111111111111111111111111111111111111111111111111ce1005",
       "type": "hexKey"
     },
     "kovan": {
-      "key": "",
+      "key": "0x0000001111111111111111111111111111111111111111111111111111ce1005",
       "type": "hexKey"
     },
     "milkomedatestnet": {
-      "key": "",
+      "key": "0x0000001111111111111111111111111111111111111111111111111111ce1005",
       "type": "hexKey"
     }
   },
@@ -31,7 +31,7 @@
       "finality": 5,
       "connection": {
         "type": "http",
-        "url": ""
+        "url": "https://evmos-archive-testnet.api.bdnodes.net:8545"
       }
     },
     "moonbasealpha": {
@@ -42,7 +42,7 @@
       "finality": 5,
       "connection": {
         "type": "http",
-        "url": ""
+        "url": "https://rpc.api.moonbase.moonbeam.network"
       }
     },
     "kovan": {
@@ -53,7 +53,7 @@
       "finality": 5,
       "connection": {
         "type": "http",
-        "url": ""
+        "url": "https://eth-kovan.alchemyapi.io/v2/9R6dAhbA4IyQoFuX0eEqwFdt3sMNpZnJ"
       }
     },
     "milkomedatestnet": {
@@ -64,7 +64,7 @@
       "finality": 5,
       "connection": {
         "type": "http",
-        "url": ""
+        "url": "https://use-util.cloud.milkomeda.com:8555"
       }
     }
   },
@@ -76,7 +76,7 @@
     "finality": 100,
     "connection": {
       "type": "http",
-      "url": ""
+      "url": "https://eth-rinkeby.alchemyapi.io/v2/-uKtZgu7bWLDEuW3EaOZ0f6eKpqiH-Tj"
     }
   },
   "tracing": {

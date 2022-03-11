@@ -30,7 +30,7 @@ pub struct ContractSync<I> {
     contract_name: String,
     db: NomadDB,
     indexer: Arc<I>,
-    index_settings: Arc<IndexSettings>,
+    index_settings: IndexSettings,
     finality: u8,
     metrics: ContractSyncMetrics,
 }
@@ -51,7 +51,7 @@ impl<I> ContractSync<I> {
         contract_name: String,
         db: NomadDB,
         indexer: Arc<I>,
-        index_settings: Arc<IndexSettings>,
+        index_settings: IndexSettings,
         finality: u8,
         metrics: ContractSyncMetrics,
     ) -> Self {
@@ -528,7 +528,7 @@ mod test {
                 "home_1".to_owned(),
                 nomad_db.clone(),
                 indexer.clone(),
-                Arc::new(index_settings),
+                index_settings,
                 FINALITY,
                 sync_metrics,
             );

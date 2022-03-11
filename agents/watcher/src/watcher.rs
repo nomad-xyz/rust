@@ -705,7 +705,7 @@ mod test {
                 "home_1".to_owned(),
                 nomad_db.clone(),
                 home_indexer.clone(),
-                Arc::new(IndexSettings::default()),
+                IndexSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -798,7 +798,7 @@ mod test {
                 "home_1".to_owned(),
                 nomad_db.clone(),
                 home_indexer.clone(),
-                Arc::new(IndexSettings::default()),
+                IndexSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -890,7 +890,7 @@ mod test {
                 "home_1".to_owned(),
                 nomad_db.clone(),
                 home_indexer.clone(),
-                Arc::new(IndexSettings::default()),
+                IndexSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1097,7 +1097,7 @@ mod test {
                 "home_1".to_owned(),
                 home_db.clone(),
                 home_indexer.clone(),
-                Arc::new(IndexSettings::default()),
+                IndexSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1106,7 +1106,7 @@ mod test {
                 "replica_1".to_owned(),
                 replica_1_db.clone(),
                 replica_indexer.clone(),
-                Arc::new(IndexSettings::default()),
+                IndexSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1115,7 +1115,7 @@ mod test {
                 "replica_2".to_owned(),
                 replica_2_db.clone(),
                 replica_indexer.clone(),
-                Arc::new(IndexSettings::default()),
+                IndexSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1285,7 +1285,7 @@ mod test {
                 "home_1".to_owned(),
                 home_db.clone(),
                 home_indexer.clone(),
-                Arc::new(IndexSettings::default()),
+                IndexSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1294,7 +1294,7 @@ mod test {
                 "replica_1".to_owned(),
                 replica_1_db.clone(),
                 replica_indexer.clone(),
-                Arc::new(IndexSettings::default()),
+                IndexSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1303,7 +1303,7 @@ mod test {
                 "replica_2".to_owned(),
                 replica_2_db.clone(),
                 replica_indexer.clone(),
-                Arc::new(IndexSettings::default()),
+                IndexSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
