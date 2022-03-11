@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use color_eyre::Result;
 use nomad_core::{CommonIndexer, HomeIndexer, RawCommittedMessage, SignedUpdateWithMeta};
 use nomad_test::mocks::MockIndexer;
-use std::sync::Arc;
+use std::{ops::Deref, sync::Arc};
 
 #[derive(Debug, Clone)]
 /// Arc wrapper for HomeVariants enum
@@ -39,11 +39,11 @@ impl From<MockIndexer> for CommonIndexers {
 #[async_trait]
 impl CommonIndexer for CommonIndexers {
     async fn get_block_number(&self) -> Result<u32> {
-        (*self).get_block_number().await
+        self.deref().get_block_number().await
     }
 
     async fn fetch_sorted_updates(&self, from: u32, to: u32) -> Result<Vec<SignedUpdateWithMeta>> {
-        (*self).fetch_sorted_updates(from, to).await
+        self.deref().fetch_sorted_updates(from, to).await
     }
 }
 
@@ -112,18 +112,18 @@ impl From<MockIndexer> for HomeIndexers {
 #[async_trait]
 impl CommonIndexer for HomeIndexers {
     async fn get_block_number(&self) -> Result<u32> {
-        (*self).get_block_number().await
+        self.deref().get_block_number().await
     }
 
     async fn fetch_sorted_updates(&self, from: u32, to: u32) -> Result<Vec<SignedUpdateWithMeta>> {
-        (*self).fetch_sorted_updates(from, to).await
+        self.deref().fetch_sorted_updates(from, to).await
     }
 }
 
 #[async_trait]
 impl HomeIndexer for HomeIndexers {
     async fn fetch_sorted_messages(&self, from: u32, to: u32) -> Result<Vec<RawCommittedMessage>> {
-        (*self).fetch_sorted_messages(from, to).await
+        self.deref().fetch_sorted_messages(from, to).await
     }
 }
 
