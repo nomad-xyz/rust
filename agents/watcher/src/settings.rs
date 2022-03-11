@@ -10,4 +10,6 @@ decl_settings!(Watcher {
     managers: HashMap<String, ChainSetup>,
     /// The polling interval (in seconds)
     interval: String,
+    /// Dry run
+    dry_run: bool,
 });
