@@ -30,7 +30,7 @@ pub struct ContractSync<I> {
     contract_name: String,
     db: NomadDB,
     indexer: Arc<I>,
-    index_settings: IndexSettings,
+    index_settings: Arc<IndexSettings>,
     finality: u8,
     metrics: ContractSyncMetrics,
 }
@@ -51,7 +51,7 @@ impl<I> ContractSync<I> {
         contract_name: String,
         db: NomadDB,
         indexer: Arc<I>,
-        index_settings: IndexSettings,
+        index_settings: Arc<IndexSettings>,
         finality: u8,
         metrics: ContractSyncMetrics,
     ) -> Self {
@@ -86,7 +86,7 @@ where
 
         let db = self.db.clone();
         let indexer = self.indexer.clone();
-        let indexed_height = self.metrics.indexed_height.clone().with_label_values(&[
+        let indexed_height = self.metrics.indexed_height.with_label_values(&[
             UPDATES_LABEL,
             &self.contract_name,
             &self.agent_name,
@@ -97,7 +97,7 @@ where
             .clone()
             .with_label_values(&[UPDATES_LABEL, &self.contract_name, &self.agent_name]);
 
-        let stored_updates = self.metrics.stored_events.clone().with_label_values(&[
+        let stored_updates = self.metrics.stored_events.with_label_values(&[
             UPDATES_LABEL,
             &self.contract_name,
             &self.agent_name,
@@ -240,13 +240,13 @@ where
 
         let db = self.db.clone();
         let indexer = self.indexer.clone();
-        let indexed_height = self.metrics.indexed_height.clone().with_label_values(&[
+        let indexed_height = self.metrics.indexed_height.with_label_values(&[
             MESSAGES_LABEL,
             &self.contract_name,
             &self.agent_name,
         ]);
 
-        let stored_messages = self.metrics.stored_events.clone().with_label_values(&[
+        let stored_messages = self.metrics.stored_events.with_label_values(&[
             MESSAGES_LABEL,
             &self.contract_name,
             &self.agent_name,
@@ -528,7 +528,7 @@ mod test {
                 "home_1".to_owned(),
                 nomad_db.clone(),
                 indexer.clone(),
-                index_settings,
+                Arc::new(index_settings),
                 FINALITY,
                 sync_metrics,
             );

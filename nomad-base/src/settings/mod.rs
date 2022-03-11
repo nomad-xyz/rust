@@ -300,7 +300,7 @@ impl Settings {
         metrics: ContractSyncMetrics,
     ) -> Result<ContractSync<HomeIndexers>, Report> {
         let finality = self.home.finality;
-        let index_settings = self.index.clone();
+        let index_settings = Arc::new(self.index.clone());
 
         let indexer = Arc::new(self.try_home_indexer().await?);
         let home_name = &self.home.name;
@@ -356,7 +356,7 @@ impl Settings {
         let replica_setup = self.replicas.get(replica_name).expect("!replica");
 
         let finality = self.replicas.get(replica_name).expect("!replica").finality;
-        let index_settings = self.index.clone();
+        let index_settings = Arc::new(self.index.clone());
 
         let indexer = Arc::new(self.try_replica_indexer(replica_setup).await?);
         let replica_name = &replica_setup.name;
