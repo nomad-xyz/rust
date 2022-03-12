@@ -15,7 +15,8 @@ use tokio::{
 use tracing::{error, info, info_span, instrument::Instrumented, Instrument};
 
 use nomad_base::{
-    cancel_task, AgentCore, BaseError, CachingHome, ConnectionManagers, NomadAgent, NomadDB,
+    cancel_task, cancel_tasks, AgentCore, BaseError, CachingHome, ConnectionManagers, NomadAgent,
+    NomadDB,
 };
 use nomad_core::{
     ChainCommunicationError, Common, CommonEvents, ConnectionManager, DoubleUpdate,
@@ -564,19 +565,22 @@ impl NomadAgent for Watcher {
 
             let mut sync_tasks = vec![home_sync_task];
             sync_tasks.extend(replica_sync_tasks);
-            let sync_task_unified = select_all(sync_tasks);
+            let mut sync_task_unified = select_all(sync_tasks);
 
-            let double_update_watch_task = self.watch_double_update();
-            let improper_update_watch_task = self.watch_home_fail(self.interval_seconds);
+            let mut double_update_watch_task = self.watch_double_update();
+            let mut improper_update_watch_task = self.watch_home_fail(self.interval_seconds);
 
             // Race index and run tasks
             info!("Selecting across tasks...");
             select! {
-                _ = sync_task_unified => {
+                _ = &mut sync_task_unified => {
                     info!("Syncing tasks finished early!");
+
+                    cancel_task!(double_update_watch_task);
+                    cancel_task!(improper_update_watch_task);
                     self.shutdown().await;
                 },
-                double_res = double_update_watch_task => {
+                double_res = &mut double_update_watch_task => {
                     let opt_double = double_res??;
                     if let Some(double) = opt_double {
                         tracing::error!(
@@ -601,9 +605,11 @@ impl NomadAgent for Watcher {
                         )
                     }
 
+                    cancel_tasks!(sync_task_unified);
+                    cancel_task!(improper_update_watch_task);
                     self.shutdown().await;
                 },
-                improper_res = improper_update_watch_task => {
+                improper_res = &mut improper_update_watch_task => {
                     if let Err(e) = improper_res? {
                         let some_base_error = e.downcast::<BaseError>()?;
                         if let BaseError::FailedHome = some_base_error {
@@ -628,6 +634,9 @@ impl NomadAgent for Watcher {
                         }
                     } else {
                         error!("It should not happen that self.watch_home_fail() would return Ok.");
+
+                        cancel_tasks!(sync_task_unified);
+                        cancel_task!(double_update_watch_task);
                         self.shutdown().await;
                     }
                 }

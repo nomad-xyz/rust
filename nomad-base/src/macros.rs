@@ -12,6 +12,21 @@ macro_rules! cancel_task {
 }
 
 #[macro_export]
+/// Shortcut for aborting a SelectAll of joinhandles
+macro_rules! cancel_tasks {
+    ($tasks:ident) => {
+        #[allow(unused_must_use)]
+        {
+            for t in $tasks.into_inner() {
+                let inner = t.into_inner();
+                inner.abort();
+                inner.await;
+            }
+        }
+    };
+}
+
+#[macro_export]
 /// Shortcut for implementing agent traits
 macro_rules! impl_as_ref_core {
     ($agent:ident) => {
