@@ -9,7 +9,8 @@
 #![warn(missing_docs)]
 #![warn(unused_extern_crates)]
 
-mod settings;
+/// Settings for building agent
+pub mod settings;
 pub use settings::*;
 
 /// Base trait for an agent

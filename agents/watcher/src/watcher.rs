@@ -15,8 +15,7 @@ use tokio::{
 use tracing::{error, info, info_span, instrument::Instrumented, Instrument};
 
 use nomad_base::{
-    cancel_task, AgentCore, BaseError, CachingHome, ConnectionManagers, ContractSyncMetrics,
-    IndexDataTypes, NomadAgent, NomadDB,
+    cancel_task, AgentCore, BaseError, CachingHome, ConnectionManagers, NomadAgent, NomadDB,
 };
 use nomad_core::{
     ChainCommunicationError, Common, CommonEvents, ConnectionManager, DoubleUpdate,
@@ -502,11 +501,7 @@ impl NomadAgent for Watcher {
         let mut connection_managers = vec![];
         for chain_setup in settings.managers.values() {
             let signer = settings.base.get_signer(&chain_setup.name).await;
-            let xapp_timelag = if settings.base.use_timelag {
-                Some(chain_setup.timelag)
-            } else {
-                None
-            };
+            let xapp_timelag = None;
 
             let manager = chain_setup
                 .try_into_connection_manager(signer, xapp_timelag)
@@ -559,15 +554,12 @@ impl NomadAgent for Watcher {
         tokio::spawn(async move {
             info!("Starting Watcher tasks");
 
-            let indexer = &self.as_ref().indexer;
-            let sync_metrics = ContractSyncMetrics::new(self.metrics());
-
             let home_sync_task = self
                 .home()
-                .sync(Self::AGENT_NAME.to_owned(), indexer.from(), indexer.chunk_size(), sync_metrics.clone(), IndexDataTypes::Updates);
+                .sync();
 
             let replica_sync_tasks: Vec<Instrumented<JoinHandle<Result<()>>>> = self.replicas().values().map(|replica| {
-                replica.sync(Self::AGENT_NAME.to_owned(), indexer.from(), indexer.chunk_size(), sync_metrics.clone())
+                replica.sync()
             }).collect();
 
             let mut sync_tasks = vec![home_sync_task];
@@ -657,7 +649,10 @@ mod test {
     use ethers::core::types::H256;
     use ethers::signers::{LocalWallet, Signer};
 
-    use nomad_base::{CachingReplica, CommonIndexers, HomeIndexers, Homes, Replicas};
+    use nomad_base::{
+        CachingReplica, CommonIndexers, ContractSync, ContractSyncMetrics, CoreMetrics,
+        HomeIndexers, Homes, Replicas,
+    };
     use nomad_core::{DoubleUpdate, SignedFailureNotification, State, Update};
     use nomad_test::mocks::{MockConnectionManagerContract, MockHomeContract, MockReplicaContract};
     use nomad_test::test_utils;
@@ -684,6 +679,16 @@ mod test {
             .await
             .expect("!sign");
 
+            let metrics = Arc::new(
+                CoreMetrics::new(
+                    "contract_sync_test",
+                    None,
+                    Arc::new(prometheus::Registry::new()),
+                )
+                .expect("could not make metrics"),
+            );
+            let sync_metrics = ContractSyncMetrics::new(metrics.clone());
+
             let mut mock_home = MockHomeContract::new();
             let nomad_db = NomadDB::new("home_1", db.clone());
 
@@ -694,9 +699,19 @@ mod test {
                 nomad_db.store_latest_update(&signed_update).unwrap();
             }
 
-            let mock_home_indexer = Arc::new(MockIndexer::new().into());
+            let home_indexer: Arc<HomeIndexers> = Arc::new(MockIndexer::new().into());
+            let home_sync = ContractSync::new(
+                AGENT_NAME.to_owned(),
+                "home_1".to_owned(),
+                nomad_db.clone(),
+                home_indexer.clone(),
+                IndexSettings::default(),
+                Default::default(),
+                sync_metrics.clone(),
+            );
+
             let home: Arc<CachingHome> =
-                CachingHome::new(mock_home.into(), nomad_db.clone(), mock_home_indexer).into();
+                CachingHome::new(mock_home.into(), home_sync, nomad_db.clone()).into();
 
             let updates_inspected_for_double = IntGauge::new(
                 "updates_inspected_for_double",
@@ -756,6 +771,16 @@ mod test {
             .await
             .expect("!sign");
 
+            let metrics = Arc::new(
+                CoreMetrics::new(
+                    "contract_sync_test",
+                    None,
+                    Arc::new(prometheus::Registry::new()),
+                )
+                .expect("could not make metrics"),
+            );
+            let sync_metrics = ContractSyncMetrics::new(metrics.clone());
+
             let mut mock_home = MockHomeContract::new();
             let nomad_db = NomadDB::new("home_1", db.clone());
 
@@ -767,9 +792,18 @@ mod test {
                 nomad_db.store_latest_update(&second_signed_update).unwrap();
             }
 
-            let mock_home_indexer = Arc::new(MockIndexer::new().into());
+            let home_indexer: Arc<HomeIndexers> = Arc::new(MockIndexer::new().into());
+            let home_sync = ContractSync::new(
+                AGENT_NAME.to_owned(),
+                "home_1".to_owned(),
+                nomad_db.clone(),
+                home_indexer.clone(),
+                IndexSettings::default(),
+                Default::default(),
+                sync_metrics.clone(),
+            );
             let home: Arc<CachingHome> =
-                CachingHome::new(mock_home.into(), nomad_db.clone(), mock_home_indexer).into();
+                CachingHome::new(mock_home.into(), home_sync, nomad_db.clone()).into();
 
             let (tx, mut rx) = mpsc::channel(200);
             let mut history_sync = HistorySync::new(3, second_root, tx.clone(), home.clone());
@@ -836,13 +870,33 @@ mod test {
             .await
             .expect("!sign");
 
+            let metrics = Arc::new(
+                CoreMetrics::new(
+                    "contract_sync_test",
+                    None,
+                    Arc::new(prometheus::Registry::new()),
+                )
+                .expect("could not make metrics"),
+            );
+            let sync_metrics = ContractSyncMetrics::new(metrics.clone());
+
             let mut mock_home = MockHomeContract::new();
             mock_home.expect__name().return_const("home_1".to_owned());
 
             let nomad_db = NomadDB::new("home_1_watcher", db);
-            let mock_home_indexer = Arc::new(MockIndexer::new().into());
+            let home_indexer: Arc<HomeIndexers> = Arc::new(MockIndexer::new().into());
+            let home_sync = ContractSync::new(
+                AGENT_NAME.to_owned(),
+                "home_1".to_owned(),
+                nomad_db.clone(),
+                home_indexer.clone(),
+                IndexSettings::default(),
+                Default::default(),
+                sync_metrics.clone(),
+            );
+
             let home: Arc<CachingHome> =
-                CachingHome::new(mock_home.into(), nomad_db.clone(), mock_home_indexer).into();
+                CachingHome::new(mock_home.into(), home_sync, nomad_db.clone()).into();
 
             let (_tx, rx) = mpsc::channel(200);
             let mut handler = UpdateHandler {
@@ -1016,8 +1070,20 @@ mod test {
                 Arc::new(mock_connection_manager_2.into()),
             ];
 
-            let mock_indexer: Arc<CommonIndexers> = Arc::new(MockIndexer::new().into());
-            let mock_home_indexer: Arc<HomeIndexers> = Arc::new(MockIndexer::new().into());
+            // Metrics
+            let metrics = Arc::new(
+                CoreMetrics::new(
+                    "contract_sync_test",
+                    None,
+                    Arc::new(prometheus::Registry::new()),
+                )
+                .expect("could not make metrics"),
+            );
+            let sync_metrics = ContractSyncMetrics::new(metrics.clone());
+
+            let home_indexer: Arc<HomeIndexers> = Arc::new(MockIndexer::new().into());
+            let replica_indexer: Arc<CommonIndexers> = Arc::new(MockIndexer::new().into());
+
             let mut mock_home: Homes = mock_home.into();
             let mut mock_replica_1: Replicas = mock_replica_1.into();
             let mut mock_replica_2: Replicas = mock_replica_2.into();
@@ -1026,23 +1092,47 @@ mod test {
             let replica_1_db = NomadDB::new("replica_1", db.clone());
             let replica_2_db = NomadDB::new("replica_2", db.clone());
 
+            let home_sync = ContractSync::new(
+                AGENT_NAME.to_owned(),
+                "home_1".to_owned(),
+                home_db.clone(),
+                home_indexer.clone(),
+                IndexSettings::default(),
+                Default::default(),
+                sync_metrics.clone(),
+            );
+            let replica_1_sync = ContractSync::new(
+                AGENT_NAME.to_owned(),
+                "replica_1".to_owned(),
+                replica_1_db.clone(),
+                replica_indexer.clone(),
+                IndexSettings::default(),
+                Default::default(),
+                sync_metrics.clone(),
+            );
+            let replica_2_sync = ContractSync::new(
+                AGENT_NAME.to_owned(),
+                "replica_2".to_owned(),
+                replica_2_db.clone(),
+                replica_indexer.clone(),
+                IndexSettings::default(),
+                Default::default(),
+                sync_metrics.clone(),
+            );
+
             {
-                let home: Arc<CachingHome> = CachingHome::new(
-                    mock_home.clone(),
-                    home_db.clone(),
-                    mock_home_indexer.clone(),
-                )
-                .into();
+                let home: Arc<CachingHome> =
+                    CachingHome::new(mock_home.clone(), home_sync, home_db.clone()).into();
                 let replica_1: Arc<CachingReplica> = CachingReplica::new(
                     mock_replica_1.clone(),
+                    replica_1_sync,
                     replica_1_db.clone(),
-                    mock_indexer.clone(),
                 )
                 .into();
                 let replica_2: Arc<CachingReplica> = CachingReplica::new(
                     mock_replica_2.clone(),
+                    replica_2_sync,
                     replica_2_db.clone(),
-                    mock_indexer.clone(),
                 )
                 .into();
 
@@ -1168,8 +1258,20 @@ mod test {
                 Arc::new(mock_connection_manager_2.into()),
             ];
 
-            let mock_indexer: Arc<CommonIndexers> = Arc::new(MockIndexer::new().into());
-            let mock_home_indexer: Arc<HomeIndexers> = Arc::new(MockIndexer::new().into());
+            // Metrics
+            let metrics = Arc::new(
+                CoreMetrics::new(
+                    "contract_sync_test",
+                    None,
+                    Arc::new(prometheus::Registry::new()),
+                )
+                .expect("could not make metrics"),
+            );
+            let sync_metrics = ContractSyncMetrics::new(metrics.clone());
+
+            let home_indexer: Arc<HomeIndexers> = Arc::new(MockIndexer::new().into());
+            let replica_indexer: Arc<CommonIndexers> = Arc::new(MockIndexer::new().into());
+
             let mut mock_home: Homes = mock_home.into();
             let mut mock_replica_1: Replicas = mock_replica_1.into();
             let mut mock_replica_2: Replicas = mock_replica_2.into();
@@ -1178,23 +1280,47 @@ mod test {
             let replica_1_db = NomadDB::new("replica_1", db.clone());
             let replica_2_db = NomadDB::new("replica_2", db.clone());
 
+            let home_sync = ContractSync::new(
+                AGENT_NAME.to_owned(),
+                "home_1".to_owned(),
+                home_db.clone(),
+                home_indexer.clone(),
+                IndexSettings::default(),
+                Default::default(),
+                sync_metrics.clone(),
+            );
+            let replica_1_sync = ContractSync::new(
+                AGENT_NAME.to_owned(),
+                "replica_1".to_owned(),
+                replica_1_db.clone(),
+                replica_indexer.clone(),
+                IndexSettings::default(),
+                Default::default(),
+                sync_metrics.clone(),
+            );
+            let replica_2_sync = ContractSync::new(
+                AGENT_NAME.to_owned(),
+                "replica_2".to_owned(),
+                replica_2_db.clone(),
+                replica_indexer.clone(),
+                IndexSettings::default(),
+                Default::default(),
+                sync_metrics.clone(),
+            );
+
             {
-                let home: Arc<CachingHome> = CachingHome::new(
-                    mock_home.clone(),
-                    home_db.clone(),
-                    mock_home_indexer.clone(),
-                )
-                .into();
+                let home: Arc<CachingHome> =
+                    CachingHome::new(mock_home.clone(), home_sync, home_db.clone()).into();
                 let replica_1: Arc<CachingReplica> = CachingReplica::new(
                     mock_replica_1.clone(),
+                    replica_1_sync,
                     replica_1_db.clone(),
-                    mock_indexer.clone(),
                 )
                 .into();
                 let replica_2: Arc<CachingReplica> = CachingReplica::new(
                     mock_replica_2.clone(),
+                    replica_2_sync,
                     replica_2_db.clone(),
-                    mock_indexer.clone(),
                 )
                 .into();
 

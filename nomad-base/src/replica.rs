@@ -10,21 +10,19 @@ use crate::NomadDB;
 
 use nomad_ethereum::EthereumReplica;
 use nomad_test::mocks::MockReplicaContract;
-use std::str::FromStr;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
-use tracing::{info_span, Instrument};
 use tracing::{instrument, instrument::Instrumented};
 
-use crate::{CommonIndexers, ContractSync, ContractSyncMetrics};
+use crate::{CommonIndexers, ContractSync};
 
 /// Caching replica type
 #[derive(Debug)]
 pub struct CachingReplica {
     replica: Replicas,
+    contract_sync: ContractSync<CommonIndexers>,
     db: NomadDB,
-    indexer: Arc<CommonIndexers>,
 }
 
 impl std::fmt::Display for CachingReplica {
@@ -35,15 +33,19 @@ impl std::fmt::Display for CachingReplica {
 
 impl CachingReplica {
     /// Instantiate new CachingReplica
-    pub fn new(replica: Replicas, db: NomadDB, indexer: Arc<CommonIndexers>) -> Self {
+    pub fn new(
+        replica: Replicas,
+        contract_sync: ContractSync<CommonIndexers>,
+        db: NomadDB,
+    ) -> Self {
         Self {
             replica,
+            contract_sync,
             db,
-            indexer,
         }
     }
 
-    /// Return handle on home object
+    /// Return handle on replica object
     pub fn replica(&self) -> Replicas {
         self.replica.clone()
     }
@@ -55,26 +57,9 @@ impl CachingReplica {
 
     /// Spawn a task that syncs the CachingReplica's db with the on-chain event
     /// data
-    pub fn sync(
-        &self,
-        agent_name: String,
-        from_height: u32,
-        chunk_size: u32,
-        metrics: ContractSyncMetrics,
-    ) -> Instrumented<JoinHandle<Result<()>>> {
-        let span = info_span!("ReplicaContractSync", self = %self);
-
-        let sync = ContractSync::new(
-            agent_name,
-            String::from_str(self.replica.name()).expect("!string"),
-            self.db.clone(),
-            self.indexer.clone(),
-            from_height,
-            chunk_size,
-            metrics,
-        );
-
-        tokio::spawn(async move { sync.sync_updates().await? }).instrument(span)
+    pub fn sync(&self) -> Instrumented<JoinHandle<Result<()>>> {
+        let sync = self.contract_sync.clone();
+        sync.spawn_common()
     }
 }
 
@@ -173,8 +158,8 @@ impl CommonEvents for CachingReplica {
 pub struct Replicas(Arc<ReplicaVariants>);
 
 impl From<ReplicaVariants> for Replicas {
-    fn from(homes: ReplicaVariants) -> Self {
-        Self(Arc::new(homes))
+    fn from(replicas: ReplicaVariants) -> Self {
+        Self(Arc::new(replicas))
     }
 }
 

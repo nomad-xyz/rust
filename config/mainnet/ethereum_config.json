@@ -20,7 +20,7 @@
       "domain": "25393",
       "name": "milkomedac1",
       "rpcStyle": "ethereum",
-      "timelag": 20,
+      "finality": 20,
       "connection": {
         "type": "http",
         "url": ""
@@ -31,7 +31,7 @@
       "domain": "1650811245",
       "name": "moonbeam",
       "rpcStyle": "ethereum",
-      "timelag": 20,
+      "finality": 20,
       "connection": {
         "type": "http",
         "url": ""
@@ -43,7 +43,7 @@
     "domain": "6648936",
     "name": "ethereum",
     "rpcStyle": "ethereum",
-    "timelag": 20,
+    "finality": 20,
     "connection": {
       "type": "http",
       "url": ""

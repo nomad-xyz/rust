@@ -1,38 +1,24 @@
-use crate::{ContractSync, ContractSyncMetrics, HomeIndexers, NomadDB};
+use crate::{ContractSync, HomeIndexers, NomadDB};
 use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use ethers::core::types::H256;
-use futures_util::future::select_all;
 use nomad_core::{
     db::DbError, ChainCommunicationError, Common, CommonEvents, DoubleUpdate, Home, HomeEvents,
     Message, RawCommittedMessage, SignedUpdate, State, TxOutcome, Update,
 };
 use nomad_ethereum::EthereumHome;
 use nomad_test::mocks::MockHomeContract;
-use std::str::FromStr;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
-use tracing::{info_span, Instrument};
 use tracing::{instrument, instrument::Instrumented};
-
-/// Which data types the home ContractSync should index
-#[derive(Debug, Clone)]
-pub enum IndexDataTypes {
-    /// Updates
-    Updates,
-    /// Messages
-    Messages,
-    /// Updates and messages
-    Both,
-}
 
 /// Caching replica type
 #[derive(Debug)]
 pub struct CachingHome {
     home: Homes,
+    contract_sync: ContractSync<HomeIndexers>,
     db: NomadDB,
-    indexer: Arc<HomeIndexers>,
 }
 
 impl std::fmt::Display for CachingHome {
@@ -43,8 +29,12 @@ impl std::fmt::Display for CachingHome {
 
 impl CachingHome {
     /// Instantiate new CachingHome
-    pub fn new(home: Homes, db: NomadDB, indexer: Arc<HomeIndexers>) -> Self {
-        Self { home, db, indexer }
+    pub fn new(home: Homes, contract_sync: ContractSync<HomeIndexers>, db: NomadDB) -> Self {
+        Self {
+            home,
+            contract_sync,
+            db,
+        }
     }
 
     /// Return handle on home object
@@ -59,41 +49,9 @@ impl CachingHome {
 
     /// Spawn a task that syncs the CachingHome's db with the on-chain event
     /// data
-    pub fn sync(
-        &self,
-        agent_name: String,
-        from_height: u32,
-        chunk_size: u32,
-        metrics: ContractSyncMetrics,
-        data_types: IndexDataTypes,
-    ) -> Instrumented<JoinHandle<Result<()>>> {
-        let span = info_span!("HomeContractSync", self = %self);
-
-        let sync = ContractSync::new(
-            agent_name,
-            String::from_str(self.home.name()).expect("!string"),
-            self.db.clone(),
-            self.indexer.clone(),
-            from_height,
-            chunk_size,
-            metrics,
-        );
-
-        tokio::spawn(async move {
-            let tasks = match data_types {
-                IndexDataTypes::Updates => vec![sync.sync_updates()],
-                IndexDataTypes::Messages => vec![sync.sync_messages()],
-                IndexDataTypes::Both => vec![sync.sync_updates(), sync.sync_messages()],
-            };
-
-            let (_, _, remaining) = select_all(tasks).await;
-            for task in remaining.into_iter() {
-                cancel_task!(task);
-            }
-
-            Ok(())
-        })
-        .instrument(span)
+    pub fn sync(&self) -> Instrumented<JoinHandle<Result<()>>> {
+        let sync = self.contract_sync.clone();
+        sync.spawn_home()
     }
 }
 

@@ -11,7 +11,7 @@ use tracing::{info, instrument::Instrumented, Instrument};
 use crate::{
     produce::UpdateProducer, settings::UpdaterSettings as Settings, submit::UpdateSubmitter,
 };
-use nomad_base::{AgentCore, ContractSyncMetrics, IndexDataTypes, NomadAgent, NomadDB};
+use nomad_base::{AgentCore, NomadAgent, NomadDB};
 use nomad_core::{Common, Signers};
 
 /// An updater agent
@@ -106,9 +106,6 @@ impl NomadAgent for Updater {
         let address = self.signer.address();
         let db = NomadDB::new(self.home().name(), self.db());
 
-        let indexer = self.as_ref().indexer.clone();
-        let sync_metrics = ContractSyncMetrics::new(self.metrics());
-
         let produce = UpdateProducer::new(
             self.home(),
             db.clone(),
@@ -139,13 +136,7 @@ impl NomadAgent for Updater {
             );
 
             info!("Spawning sync task for updater...");
-            let sync_task = home.sync(
-                Updater::AGENT_NAME.to_owned(),
-                indexer.from(),
-                indexer.chunk_size(),
-                sync_metrics,
-                IndexDataTypes::Updates,
-            );
+            let sync_task = home.sync();
 
             // Only spawn updater tasks once syncing has finished
             info!("Spawning produce and submit tasks...");

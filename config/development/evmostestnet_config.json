@@ -16,7 +16,7 @@
       "domain": "2000",
       "name": "rinkeby",
       "rpcStyle": "ethereum",
-      "timelag": 100,
+      "finality": 100,
       "connection": {
         "type": "http",
         "url": ""
@@ -28,7 +28,7 @@
     "domain": "9000",
     "name": "evmostestnet",
     "rpcStyle": "ethereum",
-    "timelag": 5,
+    "finality": 5,
     "connection": {
       "type": "http",
       "url": ""

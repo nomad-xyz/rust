@@ -11,8 +11,8 @@ use tokio::{sync::RwLock, task::JoinHandle, time::sleep};
 use tracing::{debug, error, info, info_span, instrument, instrument::Instrumented, Instrument};
 
 use nomad_base::{
-    cancel_task, decl_agent, decl_channel, AgentCore, CachingHome, CachingReplica,
-    ContractSyncMetrics, IndexDataTypes, NomadAgent, NomadDB, ProcessorError,
+    cancel_task, decl_agent, decl_channel, AgentCore, CachingHome, CachingReplica, NomadAgent,
+    NomadDB, ProcessorError,
 };
 use nomad_core::{
     accumulator::merkle::Proof, CommittedMessage, Common, Home, HomeEvents, MessageStatus,
@@ -400,16 +400,7 @@ impl NomadAgent for Processor {
             let prover_sync_task = sync.spawn();
 
             info!("Starting indexer");
-            let indexer = &self.as_ref().indexer;
-            let sync_metrics = ContractSyncMetrics::new(self.metrics());
-
-            let home_sync_task = self.home().sync(
-                Self::AGENT_NAME.to_owned(),
-                indexer.from(),
-                indexer.chunk_size(),
-                sync_metrics,
-                IndexDataTypes::Both,
-            );
+            let home_sync_task = self.home().sync();
 
             let home_fail_watch_task = self.watch_home_fail(self.interval);
 

@@ -181,65 +181,25 @@ impl NomadAgent for Relayer {
 mod test {
 
     use ethers::prelude::ProviderError;
-    use nomad_base::trace::TracingConfig;
-    use nomad_base::{ChainConf, SignerConf};
-    use nomad_base::{ChainSetup, CoreMetrics, IndexSettings, NomadDB};
-    use nomad_core::utils::HexString;
+    use nomad_base::{
+        CommonIndexers, ContractSync, ContractSyncMetrics, CoreMetrics, HomeIndexers,
+        IndexSettings, NomadDB,
+    };
     use nomad_core::ChainCommunicationError;
     use nomad_test::mocks::{MockHomeContract, MockIndexer, MockReplicaContract};
     use nomad_test::test_utils;
     use std::collections::HashMap;
-    use std::str::FromStr;
-    use tokio::{select, time::sleep};
+    use tokio::time::{sleep, Duration};
     use tokio_test::assert_err;
 
     use super::*;
 
+    const AGENT_NAME: &str = "relayer";
+
     #[tokio::test]
-    async fn it_isolates_faulty_channels() {
+    async fn run_report_error_isolates_faulty_channels() {
         test_utils::run_test_db(|db| async move {
             let channel_name = "moonbeam";
-
-            // Settings
-            let replica_settings: HashMap<String, ChainSetup> = HashMap::from([(
-                channel_name.to_string(),
-                ChainSetup {
-                    name: channel_name.to_string(),
-                    domain: "2".to_string(),
-                    address: ".".to_string(),
-                    timelag: 3,
-                    chain: ChainConf::default(),
-                    disabled: None,
-                },
-            )]);
-
-            let signers: HashMap<String, SignerConf> = HashMap::from([(
-                channel_name.to_string(),
-                SignerConf::HexKey {
-                    key: HexString::from_str(
-                        "1234567812345678123456781234567812345678123456781234567812345678",
-                    )
-                    .unwrap(),
-                },
-            )]);
-
-            let settings = nomad_base::Settings {
-                db: "...".to_string(),
-                metrics: None,
-                index: IndexSettings::default(),
-                use_timelag: false,
-                home: ChainSetup {
-                    name: "ethereum".to_string(),
-                    domain: "1".to_string(),
-                    address: "".to_string(),
-                    timelag: 3,
-                    chain: ChainConf::default(),
-                    disabled: None,
-                },
-                replicas: replica_settings,
-                tracing: TracingConfig::default(),
-                signers,
-            };
 
             let metrics = Arc::new(
                 CoreMetrics::new(
@@ -249,17 +209,28 @@ mod test {
                 )
                 .expect("could not make metrics"),
             );
+            let sync_metrics = ContractSyncMetrics::new(metrics.clone());
 
             // Setting home
-            let home_indexer = Arc::new(MockIndexer::new().into());
+            let settings = nomad_base::Settings::default();
+            let home_indexer: Arc<HomeIndexers> = Arc::new(MockIndexer::new().into());
             let home_db = NomadDB::new("home_1", db.clone());
             let mut home_mock = MockHomeContract::new();
+            let home_sync = ContractSync::new(
+                AGENT_NAME.to_owned(),
+                "home_1".to_owned(),
+                home_db.clone(),
+                home_indexer.clone(),
+                IndexSettings::default(),
+                Default::default(),
+                sync_metrics.clone(),
+            );
+
             {
                 home_mock.expect__name().return_const("home_1".to_owned());
             }
 
-            let home_mock =
-                CachingHome::new(home_mock.into(), home_db.clone(), home_indexer).into();
+            let home = CachingHome::new(home_mock.into(), home_sync, home_db.clone()).into();
 
             // Setting replica
             let mut replica_mock = MockReplicaContract::new();
@@ -276,21 +247,31 @@ mod test {
                     });
             }
 
-            let replica_indexer = Arc::new(MockIndexer::new().into());
+            let replica_indexer: Arc<CommonIndexers> = Arc::new(MockIndexer::new().into());
             let replica_db = NomadDB::new("replica_1", db.clone());
-            let replica_mocks: HashMap<String, Arc<CachingReplica>> = HashMap::from([(
+            let replica_sync = ContractSync::new(
+                AGENT_NAME.to_owned(),
+                "replica_1".to_owned(),
+                replica_db.clone(),
+                replica_indexer.clone(),
+                IndexSettings::default(),
+                Default::default(),
+                sync_metrics,
+            );
+
+            let replicas: HashMap<String, Arc<CachingReplica>> = HashMap::from([(
                 channel_name.to_string(),
                 Arc::new(CachingReplica::new(
                     replica_mock.into(),
+                    replica_sync,
                     replica_db,
-                    replica_indexer,
                 )),
             )]);
 
             // Setting agent
             let core = AgentCore {
-                home: home_mock,
-                replicas: replica_mocks,
+                home,
+                replicas,
                 db,
                 metrics,
                 indexer: IndexSettings::default(),
@@ -299,33 +280,26 @@ mod test {
 
             let agent = Relayer::new(2, core);
 
-            // Sanity check that we indeed throw an error
+            // Sanity check that we indeed throw an error when calling run NOT
+            // run_report_error
             let run_result =
                 <Relayer as nomad_base::NomadAgent>::run(agent.build_channel("moonbeam"))
                     .await
                     .expect("Couldn't join relayer's run task");
             assert_err!(run_result, "Must have returned error");
 
-            let sleep_task = tokio::spawn(async {
-                sleep(Duration::from_secs(1)).await;
-            })
-            .in_current_span();
+            let run_report_error_task = agent
+                .run_report_error(channel_name.to_string())
+                .into_inner();
 
-            let run_report_error_task = agent.run_report_error(channel_name.to_string());
+            sleep(Duration::from_secs(3)).await;
 
-            // Sleep task waits 1 second which is enough to throw an error do all the necessary things.
-            let finished_after_timeout = select! {
-                _ = sleep_task => {
-                    // If the timeout comes first it means that the agent is still running.
-                    true
-                },
-                _ = run_report_error_task => {
-                    // Else, if the aggent returned, it means that the retry mechanics didn't work
-                    false
-                },
-            };
-
-            assert!(finished_after_timeout, "Agent finished early");
+            // Awaiting task will return error if abort cancelled task and Ok if
+            // it already finished before abort. We throw error if task returned
+            // Ok instead of error, as it means run task finished early. We also
+            // check it was cancelled.
+            run_report_error_task.abort();
+            assert!(run_report_error_task.await.unwrap_err().is_cancelled());
         })
         .await
     }

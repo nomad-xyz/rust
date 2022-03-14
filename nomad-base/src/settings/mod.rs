@@ -36,7 +36,10 @@
 //!    intended to be used by a specific agent.
 //!    E.g. `export OPT_KATHY_CHAT_TYPE="static message"`
 
-use crate::{agent::AgentCore, CachingHome, CachingReplica, CommonIndexers, HomeIndexers, NomadDB};
+use crate::{
+    agent::AgentCore, CachingHome, CachingReplica, CommonIndexerVariants, CommonIndexers,
+    ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes, NomadDB, Replicas,
+};
 use color_eyre::{eyre::bail, Report};
 use config::{Config, ConfigError, Environment, File};
 use ethers::prelude::AwsSigner;
@@ -74,6 +77,21 @@ pub enum AgentType {
     Processor,
     /// Watcher
     Watcher,
+}
+
+/// Index data types and timelag settings
+#[derive(serde::Deserialize, Debug, PartialEq, Clone)]
+pub enum IndexDataTypes {
+    /// Updates
+    Updates,
+    /// Updates and messages
+    UpdatesAndMessages,
+}
+
+impl Default for IndexDataTypes {
+    fn default() -> Self {
+        Self::Updates
+    }
 }
 
 /// Ethereum signer types
@@ -134,9 +152,15 @@ impl SignerConf {
 #[serde(rename_all = "camelCase")]
 pub struct IndexSettings {
     /// The height at which to start indexing the Home contract
-    from: Option<String>,
+    pub from: Option<String>,
     /// The number of blocks to query at once at which to start indexing the Home contract
-    chunk: Option<String>,
+    pub chunk: Option<String>,
+    /// Data types to index
+    #[serde(default)]
+    pub data_types: IndexDataTypes,
+    /// Whether or not to use timelag
+    #[serde(default)]
+    pub use_timelag: bool,
 }
 
 impl IndexSettings {
@@ -154,6 +178,16 @@ impl IndexSettings {
             .as_ref()
             .and_then(|s| s.parse::<u32>().ok())
             .unwrap_or(1999)
+    }
+
+    /// Get IndexDataTypes
+    pub fn data_types(&self) -> IndexDataTypes {
+        self.data_types.clone()
+    }
+
+    /// Get timelag on/off status
+    pub fn timelag_on(&self) -> bool {
+        self.use_timelag
     }
 }
 
@@ -191,9 +225,6 @@ pub struct Settings {
     /// Settings for the home indexer
     #[serde(default)]
     pub index: IndexSettings,
-    /// Whether or not agent should use timelag
-    #[serde(default)]
-    pub use_timelag: bool,
     /// The home configuration
     pub home: ChainSetup,
     /// The replica configurations
@@ -211,7 +242,6 @@ impl Settings {
             db: self.db.clone(),
             metrics: self.metrics.clone(),
             index: self.index.clone(),
-            use_timelag: self.use_timelag,
             home: self.home.clone(),
             replicas: self.replicas.clone(),
             tracing: self.tracing.clone(),
@@ -226,34 +256,147 @@ impl Settings {
         self.signers.get(name)?.try_into_signer().await.ok()
     }
 
-    /// Set timelag on/off
-    pub fn use_timelag_for_indexing(&mut self, use_lag: bool) {
-        self.use_timelag = use_lag;
+    /// Set agent-specific index data types
+    pub fn set_index_data_types(&mut self, data_types: IndexDataTypes) {
+        self.index.data_types = data_types;
+    }
+
+    /// Set agent-specific timelag on/off
+    pub fn set_use_timelag(&mut self, use_timelag: bool) {
+        self.index.use_timelag = use_timelag;
     }
 
     /// Get optional indexing timelag enum for home
-    pub fn home_indexing_timelag(&self) -> Option<u8> {
-        if self.use_timelag {
-            Some(self.home.timelag)
+    pub fn home_timelag(&self) -> Option<u8> {
+        if self.index.timelag_on() {
+            Some(self.home.finality)
         } else {
             None
         }
     }
 
     /// Get optional indexing timelag for a replica
-    pub fn replica_indexing_timelag(&self, replica_name: &str) -> Option<u8> {
-        if self.use_timelag {
-            let replica_timelag = self.replicas.get(replica_name).expect("!replica").timelag;
-            Some(replica_timelag)
+    pub fn replica_timelag(&self, replica_name: &str) -> Option<u8> {
+        if self.index.timelag_on() {
+            let replica_finality = self.replicas.get(replica_name).expect("!replica").finality;
+            Some(replica_finality)
         } else {
             None
         }
     }
 
+    /// Try to get a Homes object
+    pub async fn try_home(&self) -> Result<Homes, Report> {
+        let signer = self.get_signer(&self.home.name).await;
+        let opt_home_timelag = self.home_timelag();
+        self.home.try_into_home(signer, opt_home_timelag).await
+    }
+
+    /// Try to get a home ContractSync
+    pub async fn try_home_contract_sync(
+        &self,
+        agent_name: &str,
+        db: DB,
+        metrics: ContractSyncMetrics,
+    ) -> Result<ContractSync<HomeIndexers>, Report> {
+        let finality = self.home.finality;
+        let index_settings = self.index.clone();
+
+        let indexer = Arc::new(self.try_home_indexer().await?);
+        let home_name = &self.home.name;
+
+        let nomad_db = NomadDB::new(&home_name, db);
+
+        Ok(ContractSync::new(
+            agent_name.to_owned(),
+            home_name.to_owned(),
+            nomad_db,
+            indexer,
+            index_settings,
+            finality,
+            metrics,
+        ))
+    }
+
+    /// Try to get a CachingHome object
+    pub async fn try_caching_home(
+        &self,
+        agent_name: &str,
+        db: DB,
+        metrics: ContractSyncMetrics,
+    ) -> Result<CachingHome, Report> {
+        let home = self.try_home().await?;
+        let contract_sync = self
+            .try_home_contract_sync(agent_name, db.clone(), metrics)
+            .await?;
+        let nomad_db = NomadDB::new(home.name(), db);
+
+        Ok(CachingHome::new(home, contract_sync, nomad_db))
+    }
+
+    /// Try to get a Replicas object
+    pub async fn try_replica(&self, replica_name: &str) -> Result<Replicas, Report> {
+        let replica_setup = self.replicas.get(replica_name).expect("!replica");
+        let signer = self.get_signer(replica_name).await;
+        let opt_replica_timelag = self.replica_timelag(replica_name);
+
+        replica_setup
+            .try_into_replica(signer, opt_replica_timelag)
+            .await
+    }
+
+    /// Try to get a replica ContractSync
+    pub async fn try_replica_contract_sync(
+        &self,
+        replica_name: &str,
+        agent_name: &str,
+        db: DB,
+        metrics: ContractSyncMetrics,
+    ) -> Result<ContractSync<CommonIndexers>, Report> {
+        let replica_setup = self.replicas.get(replica_name).expect("!replica");
+
+        let finality = self.replicas.get(replica_name).expect("!replica").finality;
+        let index_settings = self.index.clone();
+
+        let indexer = Arc::new(self.try_replica_indexer(replica_setup).await?);
+        let replica_name = &replica_setup.name;
+
+        let nomad_db = NomadDB::new(&replica_name, db);
+
+        Ok(ContractSync::new(
+            agent_name.to_owned(),
+            replica_name.to_owned(),
+            nomad_db,
+            indexer,
+            index_settings,
+            finality,
+            metrics,
+        ))
+    }
+
+    /// Try to get a CachingReplica object
+    pub async fn try_caching_replica(
+        &self,
+        replica_name: &str,
+        agent_name: &str,
+        db: DB,
+        metrics: ContractSyncMetrics,
+    ) -> Result<CachingReplica, Report> {
+        let replica = self.try_replica(replica_name).await?;
+        let contract_sync = self
+            .try_replica_contract_sync(replica_name, agent_name, db.clone(), metrics)
+            .await?;
+        let nomad_db = NomadDB::new(replica.name(), db);
+
+        Ok(CachingReplica::new(replica, contract_sync, nomad_db))
+    }
+
     /// Try to get all replicas from this settings object
     pub async fn try_caching_replicas(
         &self,
+        agent_name: &str,
         db: DB,
+        metrics: ContractSyncMetrics,
     ) -> Result<HashMap<String, Arc<CachingReplica>>, Report> {
         let mut result = HashMap::default();
         for (k, v) in self.replicas.iter().filter(|(_, v)| v.disabled.is_none()) {
@@ -264,37 +407,24 @@ impl Settings {
                     v.name
                 );
             }
-            let signer = self.get_signer(&v.name).await;
-            let replica_timelag = self.replica_indexing_timelag(k);
 
-            let replica = v.try_into_replica(signer, replica_timelag).await?;
-            let indexer = Arc::new(self.try_replica_indexer(v, replica_timelag).await?);
-            let nomad_db = NomadDB::new(replica.name(), db.clone());
-            result.insert(
-                v.name.clone(),
-                Arc::new(CachingReplica::new(replica, nomad_db, indexer)),
-            );
+            let caching_replica = self
+                .try_caching_replica(k, agent_name, db.clone(), metrics.clone())
+                .await?;
+            result.insert(v.name.clone(), Arc::new(caching_replica));
         }
         Ok(result)
     }
 
-    /// Try to get a home object
-    pub async fn try_caching_home(&self, db: DB) -> Result<CachingHome, Report> {
+    /// Try to get an indexer object for a home. Note that indexers are NOT
+    /// instantiated with a built in timelag. The timelag is handled by the
+    /// ContractSync.
+    pub async fn try_home_indexer(&self) -> Result<HomeIndexers, Report> {
         let signer = self.get_signer(&self.home.name).await;
-        let home_timelag = self.home_indexing_timelag();
-
-        let home = self.home.try_into_home(signer, home_timelag).await?;
-        let indexer = Arc::new(self.try_home_indexer(home_timelag).await?);
-        let nomad_db = NomadDB::new(home.name(), db);
-        Ok(CachingHome::new(home, nomad_db, indexer))
-    }
-
-    /// Try to get an indexer object for a home
-    pub async fn try_home_indexer(&self, timelag: Option<u8>) -> Result<HomeIndexers, Report> {
-        let signer = self.get_signer(&self.home.name).await;
+        let timelag = self.home_timelag();
 
         match &self.home.chain {
-            ChainConf::Ethereum(conn) => Ok(HomeIndexers::Ethereum(
+            ChainConf::Ethereum(conn) => Ok(HomeIndexerVariants::Ethereum(
                 make_home_indexer(
                     conn.clone(),
                     &ContractLocator {
@@ -308,20 +438,20 @@ impl Settings {
                     self.index.chunk_size(),
                 )
                 .await?,
-            )),
+            )
+            .into()),
         }
     }
 
-    /// Try to get an indexer object for a replica
-    pub async fn try_replica_indexer(
-        &self,
-        setup: &ChainSetup,
-        timelag: Option<u8>,
-    ) -> Result<CommonIndexers, Report> {
+    /// Try to get an indexer object for a replica. Note that indexers are NOT
+    /// instantiated with a built in timelag. The timelag is handled by the
+    /// ContractSync.
+    pub async fn try_replica_indexer(&self, setup: &ChainSetup) -> Result<CommonIndexers, Report> {
         let signer = self.get_signer(&setup.name).await;
+        let timelag = self.replica_timelag(&setup.name);
 
         match &setup.chain {
-            ChainConf::Ethereum(conn) => Ok(CommonIndexers::Ethereum(
+            ChainConf::Ethereum(conn) => Ok(CommonIndexerVariants::Ethereum(
                 make_replica_indexer(
                     conn.clone(),
                     &ContractLocator {
@@ -335,7 +465,8 @@ impl Settings {
                     self.index.chunk_size(),
                 )
                 .await?,
-            )),
+            )
+            .into()),
         }
     }
 
@@ -348,10 +479,16 @@ impl Settings {
                 .map(|v| v.parse::<u16>().expect("metrics port must be u16")),
             Arc::new(prometheus::Registry::new()),
         )?);
+        let sync_metrics = ContractSyncMetrics::new(metrics.clone());
 
         let db = DB::from_path(&self.db)?;
-        let home = Arc::new(self.try_caching_home(db.clone()).await?);
-        let replicas = self.try_caching_replicas(db.clone()).await?;
+        let home = Arc::new(
+            self.try_caching_home(name, db.clone(), sync_metrics.clone())
+                .await?,
+        );
+        let replicas = self
+            .try_caching_replicas(name, db.clone(), sync_metrics.clone())
+            .await?;
 
         Ok(AgentCore {
             home,
