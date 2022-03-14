@@ -8,7 +8,7 @@ use prometheus::{IntGauge, IntGaugeVec};
 use std::{collections::HashMap, fmt::Display, sync::Arc, time::Duration};
 use tokio::{
     select,
-    sync::{mpsc, oneshot, RwLock},
+    sync::{mpsc, RwLock},
     task::JoinHandle,
     time::sleep,
 };
@@ -354,12 +354,7 @@ impl Watcher {
     /// Spawn UpdateHandler and sync tasks. Have sync tasks send UpdateHandler
     /// signed updates through mpsc. Return Some(double_update) if any
     /// conflicting updates are found.
-    fn watch_double_update(
-        &self,
-    ) -> (
-        Instrumented<JoinHandle<Result<Option<DoubleUpdate>>>>,
-        oneshot::Sender<()>,
-    ) {
+    fn watch_double_update(&self) -> Instrumented<JoinHandle<Result<Option<DoubleUpdate>>>> {
         let home = self.home();
         let replicas = self.replicas().clone();
         let watcher_db_name = format!("{}_{}", home.name(), AGENT_NAME);
@@ -368,12 +363,11 @@ impl Watcher {
         let sync_tasks = self.sync_tasks.clone();
         let watch_tasks = self.watch_tasks.clone();
         let updates_inspected_for_double = self.updates_inspected_for_double.clone();
-        let (stop_sender, stop_receiver) = oneshot::channel::<()>();
 
-        let handle = tokio::spawn(async move {
+        tokio::spawn(async move {
             // Spawn update handler
             let (tx, rx) = mpsc::channel(200);
-            let mut handler = UpdateHandler::new(rx, watcher_db, home.clone())
+            let handler = UpdateHandler::new(rx, watcher_db, home.clone())
                 .spawn()
                 .in_current_span(); // this handler consumes home arc and clones it another time inside
 
@@ -422,16 +416,7 @@ impl Watcher {
 
             // Wait for update handler to finish (should only happen watcher is
             // manually shut down)
-            // cancel_task!(handler);
-            let double_update_res = select! {
-                _ = stop_receiver => {
-                    cancel_task!(handler);
-                    None
-                },
-                double_update_res = &mut handler => {
-                    double_update_res?.ok()
-                }
-            };
+            let double_update_res = handler.await?;
 
             // Cancel running tasks
             tracing::info!("Update handler has resolved. Cancelling all other tasks");
@@ -441,11 +426,9 @@ impl Watcher {
             // Map Result<DoubleUpdate> into Option. If handler returned error
             // no double update. If handler returned Ok(double_update), map into
             // Some(double_update).
-            Ok(double_update_res)
+            Ok(double_update_res.ok())
         })
-        .in_current_span();
-
-        (handle, stop_sender)
+        .in_current_span()
     }
 
     async fn create_signed_failure(&self) -> SignedFailureNotification {
@@ -596,24 +579,20 @@ impl NomadAgent for Watcher {
 
             let indexer = &self.as_ref().indexer;
             let sync_metrics = ContractSyncMetrics::new(self.metrics());
-            println!("Strong count trace 1: {}", Arc::strong_count(&self.core.home));
 
             let home_sync_task = self
                 .home()
                 .sync(Self::AGENT_NAME.to_owned(), indexer.from(), indexer.chunk_size(), sync_metrics.clone(), IndexDataTypes::Updates);
-                println!("Strong count trace 2: {}", Arc::strong_count(&self.core.home));
 
             let replica_sync_tasks: Vec<Instrumented<JoinHandle<Result<()>>>> = self.replicas().values().map(|replica| {
                 replica.sync(Self::AGENT_NAME.to_owned(), indexer.from(), indexer.chunk_size(), sync_metrics.clone())
             }).collect();
-            println!("Strong count trace 3: {}", Arc::strong_count(&self.core.home));
 
             let mut sync_tasks = vec![home_sync_task];
             sync_tasks.extend(replica_sync_tasks);
             let sync_task_unified = select_all(sync_tasks);
-            println!("Strong count trace 4: {}", Arc::strong_count(&self.core.home));
 
-            let (mut double_update_watch_task, double_update_handle) = self.watch_double_update();
+            let mut double_update_watch_task = self.watch_double_update();
             println!("Strong count trace 5: {}", Arc::strong_count(&self.core.home));
             let mut improper_update_watch_task = self.watch_home_fail(self.interval_seconds);
             println!("Strong count trace 6: {}", Arc::strong_count(&self.core.home));
@@ -625,7 +604,7 @@ impl NomadAgent for Watcher {
                     info!("Syncing tasks finished early!");
                     self.shutdown().await;
                     cancel_task!(improper_update_watch_task);
-                    double_update_handle.send(()).expect("Couldn't send cancel task signal");
+                    cancel_task!(double_update_watch_task);
                 },
                 double_res = &mut double_update_watch_task => {
                     let opt_double = double_res??;
@@ -676,23 +655,18 @@ impl NomadAgent for Watcher {
                 improper_res = &mut improper_update_watch_task => {
 
                     self.shutdown().await;
-                    double_update_handle.send(()).expect("Couldn't send cancel task signal");
+                    cancel_task!(double_update_watch_task);
 
                     if let Err(e) = improper_res? {
-                        println!("Strong count trace 7: {}", Arc::strong_count(&self.core.home));
                         let some_base_error = e.downcast::<BaseError>()?;
                         if let BaseError::FailedHome = some_base_error {
                             self.improper_updates_observed.inc();
-
-                            println!("Strong count trace 8: {}", Arc::strong_count(&self.core.home));
 
                             if self.dry_run {
                                 tracing::error!(
                                     "Improper update detected! Watcher is running in dry-run mode, so no further action will be taken by the watcher!",
                                 );
     
-                                println!("Strong count trace 10: {}", Arc::strong_count(&self.core.home));
-                                drop(self.core.home);
                                 bail!(
                                     r#"
                                     Improper update detected!
@@ -704,13 +678,11 @@ impl NomadAgent for Watcher {
                                 tracing::error!(
                                     "Improper update detected! Notifying all contracts and unenrolling replicas!",
                                 );
-                                println!("Strong count trace 11: {}", Arc::strong_count(&self.core.home));
-    
+
                                 self.handle_improper_update_failure()
                                     .await
                                     .iter()
                                     .for_each(|res| tracing::info!("{:#?}", res));
-
                                     
                                 bail!(
                                     r#"
@@ -737,7 +709,6 @@ impl NomadAgent for Watcher {
 
 #[cfg(test)]
 mod test {
-    use ethers::prelude::U256;
     use nomad_base::IndexSettings;
     use nomad_test::mocks::MockIndexer;
     use std::sync::Arc;
@@ -747,10 +718,7 @@ mod test {
     use ethers::signers::{LocalWallet, Signer};
 
     use nomad_base::{CachingReplica, CommonIndexers, HomeIndexers, Homes, Replicas};
-    use nomad_core::{
-        DoubleUpdate, SignedFailureNotification, SignedUpdateWithMeta, State,
-        Update, UpdateMeta,
-    };
+    use nomad_core::{DoubleUpdate, SignedFailureNotification, State, Update};
     use nomad_test::mocks::{MockConnectionManagerContract, MockHomeContract, MockReplicaContract};
     use nomad_test::test_utils;
 
@@ -1328,226 +1296,6 @@ mod test {
                 });
 
                 watcher.handle_improper_update_failure().await;
-            }
-
-            // Checkpoint connection managers
-            for connection_manager in connection_managers.iter_mut() {
-                Arc::get_mut(connection_manager).unwrap().checkpoint();
-            }
-
-            // Checkpoint home and replicas
-            Arc::get_mut(&mut mock_home).unwrap().checkpoint();
-            Arc::get_mut(&mut mock_replica_1).unwrap().checkpoint();
-            Arc::get_mut(&mut mock_replica_2).unwrap().checkpoint();
-        })
-        .await
-    }
-
-    #[tokio::test]
-    async fn it_doesnt_unenroll_anything_on_improper_update_with_dry_run() {
-        test_utils::run_test_db(|db| async move {
-            let updater: LocalWallet =
-                "1111111111111111111111111111111111111111111111111111111111111111"
-                    .parse()
-                    .unwrap();
-
-            // Contract setup
-            let mut mock_connection_manager_1 = MockConnectionManagerContract::new();
-            let mut mock_connection_manager_2 = MockConnectionManagerContract::new();
-
-            let mut mock_home = MockHomeContract::new();
-            let mut mock_replica_1 = MockReplicaContract::new();
-            let mut mock_replica_2 = MockReplicaContract::new();
-
-            {
-                mock_replica_1.expect__double_update().never(); // just in case
-                mock_replica_2.expect__double_update().never(); // just in case
-                mock_replica_1
-                    .expect__name()
-                    .return_const("replica_1".to_owned()); // just in case
-                mock_replica_2
-                    .expect__name()
-                    .return_const("replica_2".to_owned()); // just in case
-
-                mock_replica_1
-                    .expect__committed_root()
-                    .times(..)
-                    .returning(|| Ok(H256::default()));
-                mock_replica_2
-                    .expect__committed_root()
-                    .times(..)
-                    .returning(|| Ok(H256::default()));
-            }
-
-            // Home and replica expectations
-            {
-                mock_home.expect__name().return_const("home_1".to_owned());
-
-                mock_home
-                    .expect__local_domain()
-                    .times(..)
-                    .return_once(move || 1);
-
-                let updater = updater.clone();
-                mock_home
-                    .expect__updater()
-                    .times(..)
-                    .return_once(move || Ok(updater.address().into()));
-
-                // Home returns failed state
-                mock_home
-                    .expect__state()
-                    .times(..)
-                    .return_once(move || Ok(State::Failed));
-
-                mock_home.expect__double_update().never(); // just in case
-
-                mock_home
-                    .expect__committed_root()
-                    .times(..)
-                    .returning(|| Ok(H256::default()));
-
-                mock_home.expect__update().times(..).returning(|_| {
-                    Ok(TxOutcome {
-                        txid: H256::default(),
-                    })
-                });
-            }
-
-            // Connection manager expectations
-            {
-                mock_connection_manager_1.expect__unenroll_replica().never();
-                mock_connection_manager_2.expect__unenroll_replica().never();
-            }
-
-            // Watcher agent setup
-            let mut connection_managers: Vec<Arc<ConnectionManagers>> = vec![
-                Arc::new(mock_connection_manager_1.into()),
-                Arc::new(mock_connection_manager_2.into()),
-            ];
-
-            let mut mock_indexer = MockIndexer::new();
-            {
-                mock_indexer
-                    .expect__get_block_number()
-                    .times(2..)
-                    .returning(|| Ok(1));
-                mock_indexer
-                    .expect__fetch_sorted_updates()
-                    .times(..)
-                    .returning(|_, _| {
-                        let x = vec![SignedUpdateWithMeta {
-                            signed_update: SignedUpdate {
-                                update: Update {
-                                    home_domain: 1,
-                                    previous_root: H256::default(),
-                                    new_root: H256::default(),
-                                },
-                                signature: ethers::prelude::Signature {
-                                    r: U256::default(),
-                                    s: U256::default(),
-                                    v: 0,
-                                },
-                            },
-                            metadata: UpdateMeta {
-                                block_number: 1,
-                                timestamp: None,
-                            },
-                        }];
-
-                        Ok(x)
-                    });
-            }
-            let mock_indexer: Arc<CommonIndexers> = Arc::new(mock_indexer.into());
-
-            let mut mock_home_indexer = MockIndexer::new();
-            {
-                mock_home_indexer
-                    .expect__get_block_number()
-                    .times(2..)
-                    .returning(|| Ok(1));
-                mock_home_indexer
-                    .expect__fetch_sorted_updates()
-                    .times(..)
-                    .returning(|_, _| {
-                        let x = vec![SignedUpdateWithMeta {
-                            signed_update: SignedUpdate {
-                                update: Update {
-                                    home_domain: 1,
-                                    previous_root: H256::default(),
-                                    new_root: H256::default(),
-                                },
-                                signature: ethers::prelude::Signature {
-                                    r: U256::default(),
-                                    s: U256::default(),
-                                    v: 0,
-                                },
-                            },
-                            metadata: UpdateMeta {
-                                block_number: 1,
-                                timestamp: None,
-                            },
-                        }];
-
-                        Ok(x)
-                    });
-            }
-            let mock_home_indexer: Arc<HomeIndexers> = Arc::new(mock_home_indexer.into());
-
-            let mut mock_home: Homes = mock_home.into();
-            let mut mock_replica_1: Replicas = mock_replica_1.into();
-            let mut mock_replica_2: Replicas = mock_replica_2.into();
-
-            let home_db = NomadDB::new("home_1", db.clone());
-            let replica_1_db = NomadDB::new("replica_1", db.clone());
-            let replica_2_db = NomadDB::new("replica_2", db.clone());
-
-            {
-                let home: Arc<CachingHome> = CachingHome::new(
-                    mock_home.clone(),
-                    home_db.clone(),
-                    mock_home_indexer.clone(),
-                )
-                .into();
-
-                let replica_1: Arc<CachingReplica> = CachingReplica::new(
-                    mock_replica_1.clone(),
-                    replica_1_db.clone(),
-                    mock_indexer.clone(),
-                )
-                .into();
-                let replica_2: Arc<CachingReplica> = CachingReplica::new(
-                    mock_replica_2.clone(),
-                    replica_2_db.clone(),
-                    mock_indexer.clone(),
-                )
-                .into();
-
-                let mut replica_map: HashMap<String, Arc<CachingReplica>> = HashMap::new();
-                replica_map.insert("replica_1".into(), replica_1);
-                replica_map.insert("replica_2".into(), replica_2);
-
-                let core = AgentCore {
-                    home,
-                    replicas: replica_map,
-                    db,
-                    indexer: IndexSettings::default(),
-                    settings: nomad_base::Settings::default(),
-                    metrics: Arc::new(
-                        nomad_base::CoreMetrics::new(
-                            "watcher_test",
-                            None,
-                            Arc::new(prometheus::Registry::new()),
-                        )
-                        .expect("could not make metrics"),
-                    ),
-                };
-
-                let watcher =
-                    Watcher::new(updater.into(), 1, connection_managers.clone(), core, true);
-
-
-                assert!(watcher.run_all().await.expect("Couldn't join future").is_err(), "Not an error for some reason");
             }
 
             // Checkpoint connection managers
