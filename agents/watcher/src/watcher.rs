@@ -664,7 +664,6 @@ impl NomadAgent for Watcher {
                                 tracing::error!(
                                     "Improper update detected! Watcher is running in dry-run mode, so no further action will be taken by the watcher!",
                                 );
-    
                                 bail!(
                                     r#"
                                     Improper update detected!
@@ -681,7 +680,6 @@ impl NomadAgent for Watcher {
                                     .await
                                     .iter()
                                     .for_each(|res| tracing::info!("{:#?}", res));
-                                    
                                 bail!(
                                     r#"
                                     Improper update detected!
