@@ -369,7 +369,7 @@ impl Watcher {
             let (tx, rx) = mpsc::channel(200);
             let handler = UpdateHandler::new(rx, watcher_db, home.clone())
                 .spawn()
-                .in_current_span(); // this handler consumes home arc and clones it another time inside
+                .in_current_span();
 
             // For each replica, spawn polling and history syncing tasks
             info!("Spawning replica watch and sync tasks...");
@@ -593,9 +593,7 @@ impl NomadAgent for Watcher {
             let sync_task_unified = select_all(sync_tasks);
 
             let mut double_update_watch_task = self.watch_double_update();
-            println!("Strong count trace 5: {}", Arc::strong_count(&self.core.home));
             let mut improper_update_watch_task = self.watch_home_fail(self.interval_seconds);
-            println!("Strong count trace 6: {}", Arc::strong_count(&self.core.home));
 
             // Race index and run tasks
             info!("Selecting across tasks...");
@@ -692,7 +690,6 @@ impl NomadAgent for Watcher {
                                     "#
                                 );
                             }
-                            
                         } else {
                             return Err(some_base_error.into())
                         }
