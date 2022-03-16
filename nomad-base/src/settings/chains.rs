@@ -61,13 +61,13 @@ impl ChainSetup {
     pub fn home_from_nomad_config(network: &str, config: &NomadConfig) -> Self {
         let domain = config
             .protocol()
-            .get_network(NameOrDomain::Name(network.to_owned()))
+            .get_network(network.to_owned().into())
             .expect("!domain");
         let domain_number = domain.domain.try_into().unwrap(); // TODO: fix uint
         let finality = domain.specs.finalization_blocks.try_into().unwrap(); // TODO: fix uint
 
-        let core = config.core().get(network).expect("!core");
-        let (address, page_settings, chain) = match core {
+        let home_core = config.core().get(network).expect("!core");
+        let (address, page_settings, chain) = match home_core {
             CoreContracts::Evm(core) => {
                 let address = (*core.home.proxy).into(); // TODO: fix repeated type
                 let page_settings = PageSettings {
@@ -83,9 +83,55 @@ impl ChainSetup {
             }
         };
 
-        // TODO: index page size, chain conf
         Self {
             name: network.to_owned(),
+            domain: domain_number,
+            address,
+            page_settings,
+            finality,
+            chain,
+            disabled: None,
+        }
+    }
+
+    /// Instatiate replica ChainSetup from NomadConfig
+    pub fn replica_from_nomad_config(
+        home_network: &str,
+        remote_network: &str,
+        config: &NomadConfig,
+    ) -> Self {
+        let remote_domain = config
+            .protocol()
+            .get_network(NameOrDomain::Name(remote_network.to_owned()))
+            .expect("!replica domain");
+        let domain_number = remote_domain.domain.try_into().unwrap(); // TODO: fix uint
+        let finality = remote_domain.specs.finalization_blocks.try_into().unwrap(); // TODO: fix uint
+
+        let remote_core = config.core().get(remote_network).expect("!replica core");
+        let (address, page_settings, chain) = match remote_core {
+            CoreContracts::Evm(core) => {
+                let address = (*config
+                    .locate_replica_of(
+                        home_network.to_owned().into(),
+                        remote_network.to_owned().into(),
+                    )
+                    .expect("!replica"))
+                .into(); // TODO: fix repeated type
+                let page_settings = PageSettings {
+                    from: core.deploy_height.try_into().unwrap(), // TODO: fix uint
+                    page_size: remote_domain.specs.index_page_size.try_into().unwrap(), // TODO: fix uint
+                };
+
+                let chain = ChainConf::Ethereum(Connection::Http {
+                    url: "TODO: get secret rpc url".into(),
+                }); // TODO: draw on secrets
+
+                (address, page_settings, chain)
+            }
+        };
+
+        Self {
+            name: remote_network.to_owned(),
             domain: domain_number,
             address,
             page_settings,

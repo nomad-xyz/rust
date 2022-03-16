@@ -486,13 +486,39 @@ impl Settings {
     }
 
     /// Instantiate Settings block from NomadConfig
-    pub fn from_nomad_config(agent: &str, home: &str, config: NomadConfig) -> Self {
+    pub fn from_nomad_config(agent: &str, home_network: &str, config: NomadConfig) -> Self {
         let agent = config.agent().get(agent).expect("!agent config");
 
         let mut settings = Settings::default();
         settings.db = agent.db.to_str().expect("!db").to_owned();
-        settings.metrics = Some("9090".to_owned()); // TODO: update config crate
-        settings.home = ChainSetup::home_from_nomad_config(home, &config);
+        settings.metrics = Some("9090".to_owned()); // TODO: update config crate to include metrics
+        settings.home = ChainSetup::home_from_nomad_config(home_network, &config);
+
+        let replica_networks = &config
+            .protocol()
+            .networks
+            .get(home_network)
+            .expect("!replica networks")
+            .connections;
+        settings.replicas = replica_networks
+            .into_iter()
+            .map(|replica_network| {
+                (
+                    replica_network.to_owned(),
+                    ChainSetup::replica_from_nomad_config(home_network, &replica_network, &config),
+                )
+            })
+            .collect();
+
+        // TODO: migrate nomad-base-types to separate crate
+        // settings.tracing = TracingConfig {
+        //     jaeger: Default::default(),
+        //     zipkin: Default::default(),
+        //     fmt: agent.logging.fmt,
+        //     level: agent.logging.level,
+        // };
+
+        // TODO: index settings + signers
 
         settings
     }

@@ -48,6 +48,7 @@ where
 
 impl<I> ContractSync<I> {
     /// Instantiate new ContractSync
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         agent_name: String,
         contract_name: String,
