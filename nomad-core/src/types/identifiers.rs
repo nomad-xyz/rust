@@ -1,6 +1,6 @@
-use ethers::prelude::{H160, H256};
-
 use crate::{Decode, Encode};
+use core::ops::{Deref, DerefMut};
+use ethers::prelude::{H160, H256};
 
 /// Identifier type.
 ///
@@ -19,6 +19,20 @@ impl NomadIdentifier {
     /// Cast to an ethereum address by truncating.
     pub fn as_ethereum_address(&self) -> H160 {
         H160::from_slice(&self.0.as_ref()[12..])
+    }
+}
+
+impl Deref for NomadIdentifier {
+    type Target = H256;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for NomadIdentifier {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 

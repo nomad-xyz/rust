@@ -1,8 +1,8 @@
 use color_eyre::Report;
-use serde::Deserialize;
-
-use nomad_core::{ContractLocator, Signers};
+use nomad_core::{ContractLocator, NomadIdentifier, Signers};
 use nomad_ethereum::{make_conn_manager, make_home, make_replica, Connection};
+use nomad_xyz_configuration::{common::NameOrDomain, contracts::CoreContracts, NomadConfig};
+use serde::Deserialize;
 
 use crate::{
     home::Homes, replica::Replicas, xapp::ConnectionManagers, HomeVariants, ReplicaVariants,
@@ -25,6 +25,15 @@ impl Default for ChainConf {
     }
 }
 
+/// Chain specific page settings for indexing
+#[derive(Clone, Debug, Deserialize, Default)]
+pub struct PageSettings {
+    /// What block to start indexing at
+    pub from: u32,
+    /// Index page size
+    pub page_size: u32,
+}
+
 /// A chain setup is a domain ID, an address on that chain (where the home or
 /// replica is deployed) and details for connecting to the chain API.
 #[derive(Clone, Debug, Deserialize, Default)]
@@ -32,9 +41,11 @@ pub struct ChainSetup {
     /// Chain name
     pub name: String,
     /// Chain domain identifier
-    pub domain: String,
+    pub domain: u32,
     /// Address of contract on the chain
-    pub address: String,
+    pub address: NomadIdentifier,
+    /// Paging settings
+    pub page_settings: PageSettings,
     /// Network specific finality in blocks
     pub finality: u8,
     /// The chain connection details
@@ -46,6 +57,44 @@ pub struct ChainSetup {
 }
 
 impl ChainSetup {
+    /// Instantiate home ChainSetup from NomadConfig
+    pub fn home_from_nomad_config(network: &str, config: &NomadConfig) -> Self {
+        let domain = config
+            .protocol()
+            .get_network(NameOrDomain::Name(network.to_owned()))
+            .expect("!domain");
+        let domain_number = domain.domain.try_into().unwrap(); // TODO: fix uint
+        let finality = domain.specs.finalization_blocks.try_into().unwrap(); // TODO: fix uint
+
+        let core = config.core().get(network).expect("!core");
+        let (address, page_settings, chain) = match core {
+            CoreContracts::Evm(core) => {
+                let address = (*core.home.proxy).into(); // TODO: fix repeated type
+                let page_settings = PageSettings {
+                    from: core.deploy_height.try_into().unwrap(), // TODO: fix uint
+                    page_size: domain.specs.index_page_size.try_into().unwrap(), // TODO: fix uint
+                };
+
+                let chain = ChainConf::Ethereum(Connection::Http {
+                    url: "TODO: get secret rpc url".into(),
+                }); // TODO: draw on secrets
+
+                (address, page_settings, chain)
+            }
+        };
+
+        // TODO: index page size, chain conf
+        Self {
+            name: network.to_owned(),
+            domain: domain_number,
+            address,
+            page_settings,
+            finality,
+            chain,
+            disabled: None,
+        }
+    }
+
     /// Try to convert the chain setting into a Home contract
     pub async fn try_into_home(
         &self,
@@ -58,8 +107,8 @@ impl ChainSetup {
                     conf.clone(),
                     &ContractLocator {
                         name: self.name.clone(),
-                        domain: self.domain.parse().expect("invalid uint"),
-                        address: self.address.parse::<ethers::types::Address>()?.into(),
+                        domain: self.domain,
+                        address: self.address,
                     },
                     signer,
                     timelag,
@@ -82,8 +131,8 @@ impl ChainSetup {
                     conf.clone(),
                     &ContractLocator {
                         name: self.name.clone(),
-                        domain: self.domain.parse().expect("invalid uint"),
-                        address: self.address.parse::<ethers::types::Address>()?.into(),
+                        domain: self.domain,
+                        address: self.address,
                     },
                     signer,
                     timelag,
@@ -106,8 +155,8 @@ impl ChainSetup {
                     conf.clone(),
                     &ContractLocator {
                         name: self.name.clone(),
-                        domain: self.domain.parse().expect("invalid uint"),
-                        address: self.address.parse::<ethers::types::Address>()?.into(),
+                        domain: self.domain,
+                        address: self.address,
                     },
                     signer,
                     timelag,

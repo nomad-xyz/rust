@@ -116,7 +116,7 @@ async fn main() -> color_eyre::Result<()> {
             match res {
                 Ok(s) => {
                     // TODO: export metric
-                    println!("{} {} = {}", network, address, s);
+                    println!("{} {:?} = {}", network, *address, s);
                 }
                 Err(e) => {
                     eprintln!("Error while querying {:?}: {}", setup.contracts[ix], e);
@@ -141,13 +141,14 @@ async fn mainnet_works() {
         &Input {
             contracts: vec![ChainSetup {
                 name: "ethereum".into(),
-                domain: "6648936".into(),
+                domain: 6648936,
                 finality: 5,
+                page_settings: Default::default(),
                 // i would love for this to just be ChainConf::ethereum()
                 chain: nomad_base::chains::ChainConf::Ethereum(nomad_ethereum::Connection::Ws {
                     url: "wss://main-light.eth.linkpool.io/ws".into(),
                 }),
-                address: "0xcEc158A719d11005Bd9339865965bed938BEafA3".into(),
+                address: Default::default(),
                 disabled: None,
             }],
         },

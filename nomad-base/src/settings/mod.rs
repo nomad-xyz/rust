@@ -45,6 +45,7 @@ use config::{Config, ConfigError, Environment, File};
 use ethers::prelude::AwsSigner;
 use nomad_core::{db::DB, utils::HexString, Common, ContractLocator, Signers};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
+use nomad_xyz_configuration::NomadConfig;
 use rusoto_core::{credential::EnvironmentProvider, HttpClient};
 use rusoto_kms::KmsClient;
 use serde::Deserialize;
@@ -151,10 +152,6 @@ impl SignerConf {
 #[derive(Debug, Deserialize, Default, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct IndexSettings {
-    /// The height at which to start indexing the Home contract
-    pub from: Option<String>,
-    /// The number of blocks to query at once at which to start indexing the Home contract
-    pub chunk: Option<String>,
     /// Data types to index
     #[serde(default)]
     pub data_types: IndexDataTypes,
@@ -164,22 +161,6 @@ pub struct IndexSettings {
 }
 
 impl IndexSettings {
-    /// Get the `from` setting
-    pub fn from(&self) -> u32 {
-        self.from
-            .as_ref()
-            .and_then(|s| s.parse::<u32>().ok())
-            .unwrap_or_default()
-    }
-
-    /// Get the `chunk_size` setting
-    pub fn chunk_size(&self) -> u32 {
-        self.chunk
-            .as_ref()
-            .and_then(|s| s.parse::<u32>().ok())
-            .unwrap_or(1999)
-    }
-
     /// Get IndexDataTypes
     pub fn data_types(&self) -> IndexDataTypes {
         self.data_types.clone()
@@ -301,6 +282,7 @@ impl Settings {
     ) -> Result<ContractSync<HomeIndexers>, Report> {
         let finality = self.home.finality;
         let index_settings = self.index.clone();
+        let page_settings = self.home.page_settings.clone();
 
         let indexer = Arc::new(self.try_home_indexer().await?);
         let home_name = &self.home.name;
@@ -313,6 +295,7 @@ impl Settings {
             nomad_db,
             indexer,
             index_settings,
+            page_settings,
             finality,
             metrics,
         ))
@@ -357,6 +340,7 @@ impl Settings {
 
         let finality = self.replicas.get(replica_name).expect("!replica").finality;
         let index_settings = self.index.clone();
+        let page_settings = self.home.page_settings.clone();
 
         let indexer = Arc::new(self.try_replica_indexer(replica_setup).await?);
         let replica_name = &replica_setup.name;
@@ -369,6 +353,7 @@ impl Settings {
             nomad_db,
             indexer,
             index_settings,
+            page_settings,
             finality,
             metrics,
         ))
@@ -429,13 +414,13 @@ impl Settings {
                     conn.clone(),
                     &ContractLocator {
                         name: self.home.name.clone(),
-                        domain: self.home.domain.parse().expect("invalid uint"),
-                        address: self.home.address.parse::<ethers::types::Address>()?.into(),
+                        domain: self.home.domain,
+                        address: self.home.address,
                     },
                     signer,
                     timelag,
-                    self.index.from(),
-                    self.index.chunk_size(),
+                    self.home.page_settings.from,
+                    self.home.page_settings.page_size,
                 )
                 .await?,
             )
@@ -456,13 +441,13 @@ impl Settings {
                     conn.clone(),
                     &ContractLocator {
                         name: setup.name.clone(),
-                        domain: setup.domain.parse().expect("invalid uint"),
-                        address: setup.address.parse::<ethers::types::Address>()?.into(),
+                        domain: setup.domain,
+                        address: setup.address,
                     },
                     signer,
                     timelag,
-                    self.index.from(),
-                    self.index.chunk_size(),
+                    setup.page_settings.from,
+                    setup.page_settings.page_size,
                 )
                 .await?,
             )
@@ -498,6 +483,18 @@ impl Settings {
             metrics,
             indexer: self.index.clone(),
         })
+    }
+
+    /// Instantiate Settings block from NomadConfig
+    pub fn from_nomad_config(agent: &str, home: &str, config: NomadConfig) -> Self {
+        let agent = config.agent().get(agent).expect("!agent config");
+
+        let mut settings = Settings::default();
+        settings.db = agent.db.to_str().expect("!db").to_owned();
+        settings.metrics = Some("9090".to_owned()); // TODO: update config crate
+        settings.home = ChainSetup::home_from_nomad_config(home, &config);
+
+        settings
     }
 
     /// Read settings from the config file

@@ -650,8 +650,8 @@ mod test {
     use ethers::signers::{LocalWallet, Signer};
 
     use nomad_base::{
-        CachingReplica, CommonIndexers, ContractSync, ContractSyncMetrics, CoreMetrics,
-        HomeIndexers, Homes, Replicas,
+        chains::PageSettings, CachingReplica, CommonIndexers, ContractSync, ContractSyncMetrics,
+        CoreMetrics, HomeIndexers, Homes, Replicas,
     };
     use nomad_core::{DoubleUpdate, SignedFailureNotification, State, Update};
     use nomad_test::mocks::{MockConnectionManagerContract, MockHomeContract, MockReplicaContract};
@@ -706,6 +706,7 @@ mod test {
                 nomad_db.clone(),
                 home_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -799,6 +800,7 @@ mod test {
                 nomad_db.clone(),
                 home_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -891,6 +893,7 @@ mod test {
                 nomad_db.clone(),
                 home_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1098,6 +1101,7 @@ mod test {
                 home_db.clone(),
                 home_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1107,6 +1111,7 @@ mod test {
                 replica_1_db.clone(),
                 replica_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1116,6 +1121,7 @@ mod test {
                 replica_2_db.clone(),
                 replica_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1286,6 +1292,7 @@ mod test {
                 home_db.clone(),
                 home_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1295,6 +1302,7 @@ mod test {
                 replica_1_db.clone(),
                 replica_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1304,6 +1312,7 @@ mod test {
                 replica_2_db.clone(),
                 replica_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );

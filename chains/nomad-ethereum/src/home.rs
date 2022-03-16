@@ -52,7 +52,10 @@ where
         chunk_size: u32,
     ) -> Self {
         Self {
-            contract: Arc::new(EthereumHomeInternal::new(address, provider.clone())),
+            contract: Arc::new(EthereumHomeInternal::new(
+                address.as_ethereum_address(),
+                provider.clone(),
+            )),
             provider,
             from_height,
             chunk_size,
@@ -179,7 +182,10 @@ where
         }: &ContractLocator,
     ) -> Self {
         Self {
-            contract: Arc::new(EthereumHomeInternal::new(address, provider.clone())),
+            contract: Arc::new(EthereumHomeInternal::new(
+                address.as_ethereum_address(),
+                provider.clone(),
+            )),
             domain: *domain,
             name: name.to_owned(),
             provider,

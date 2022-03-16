@@ -37,7 +37,10 @@ where
         }: &ContractLocator,
     ) -> Self {
         Self {
-            contract: EthereumConnectionManagerInternal::new(address, provider.clone()),
+            contract: EthereumConnectionManagerInternal::new(
+                address.as_ethereum_address(),
+                provider.clone(),
+            ),
             provider,
             domain: *domain,
             name: name.to_owned(),
