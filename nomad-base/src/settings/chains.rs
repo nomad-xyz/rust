@@ -1,7 +1,7 @@
 use color_eyre::Report;
 use nomad_core::{ContractLocator, NomadIdentifier, Signers};
 use nomad_ethereum::{make_conn_manager, make_home, make_replica, Connection};
-use nomad_xyz_configuration::{common::NameOrDomain, contracts::CoreContracts, NomadConfig};
+use nomad_xyz_configuration::{contracts::CoreContracts, NomadConfig};
 use serde::Deserialize;
 
 use crate::{
@@ -100,23 +100,24 @@ impl ChainSetup {
         remote_network: &str,
         config: &NomadConfig,
     ) -> Self {
+        let address = (*config
+            .locate_replica_of(
+                home_network.to_owned().into(),
+                remote_network.to_owned().into(),
+            )
+            .expect("!replica"))
+        .into(); // TODO: fix repeated type
+
         let remote_domain = config
             .protocol()
-            .get_network(NameOrDomain::Name(remote_network.to_owned()))
+            .get_network(remote_network.to_owned().into())
             .expect("!replica domain");
         let domain_number = remote_domain.domain.try_into().unwrap(); // TODO: fix uint
         let finality = remote_domain.specs.finalization_blocks.try_into().unwrap(); // TODO: fix uint
 
         let remote_core = config.core().get(remote_network).expect("!replica core");
-        let (address, page_settings, chain) = match remote_core {
+        let (page_settings, chain) = match remote_core {
             CoreContracts::Evm(core) => {
-                let address = (*config
-                    .locate_replica_of(
-                        home_network.to_owned().into(),
-                        remote_network.to_owned().into(),
-                    )
-                    .expect("!replica"))
-                .into(); // TODO: fix repeated type
                 let page_settings = PageSettings {
                     from: core.deploy_height.try_into().unwrap(), // TODO: fix uint
                     page_size: remote_domain.specs.index_page_size.try_into().unwrap(), // TODO: fix uint
@@ -126,7 +127,7 @@ impl ChainSetup {
                     url: "TODO: get secret rpc url".into(),
                 }); // TODO: draw on secrets
 
-                (address, page_settings, chain)
+                (page_settings, chain)
             }
         };
 
