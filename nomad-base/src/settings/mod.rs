@@ -60,7 +60,7 @@ pub use chains::{ChainConf, ChainSetup};
 /// Tracing subscriber management
 pub mod trace;
 
-use crate::settings::trace::TracingConfig;
+use nomad_types::agent::TracingConfig;
 
 use once_cell::sync::OnceCell;
 
@@ -225,7 +225,7 @@ impl Settings {
             index: self.index.clone(),
             home: self.home.clone(),
             replicas: self.replicas.clone(),
-            tracing: self.tracing.clone(),
+            tracing: self.tracing,
             signers: self.signers.clone(),
         }
     }
@@ -489,10 +489,9 @@ impl Settings {
     pub fn from_nomad_config(agent: &str, home_network: &str, config: NomadConfig) -> Self {
         let agent = config.agent().get(agent).expect("!agent config");
 
-        let mut settings = Settings::default();
-        settings.db = agent.db.to_str().expect("!db").to_owned();
-        settings.metrics = Some("9090".to_owned()); // TODO: update config crate to include metrics
-        settings.home = ChainSetup::home_from_nomad_config(home_network, &config);
+        let db = agent.db.to_str().expect("!db").to_owned();
+        let metrics = Some("9090".to_owned()); // TODO: update config crate to include metrics
+        let home = ChainSetup::home_from_nomad_config(home_network, &config);
 
         let replica_networks = &config
             .protocol()
@@ -500,27 +499,25 @@ impl Settings {
             .get(home_network)
             .expect("!replica networks")
             .connections;
-        settings.replicas = replica_networks
-            .into_iter()
+        let replicas = replica_networks
+            .iter()
             .map(|replica_network| {
                 (
                     replica_network.to_owned(),
-                    ChainSetup::replica_from_nomad_config(home_network, &replica_network, &config),
+                    ChainSetup::replica_from_nomad_config(home_network, replica_network, &config),
                 )
             })
             .collect();
 
-        // TODO: migrate nomad-base-types to separate crate
-        // settings.tracing = TracingConfig {
-        //     jaeger: Default::default(),
-        //     zipkin: Default::default(),
-        //     fmt: agent.logging.fmt,
-        //     level: agent.logging.level,
-        // };
-
-        // TODO: index settings + signers
-
-        settings
+        Self {
+            db,
+            metrics,
+            home,
+            replicas,
+            index: Default::default(),   // TODO: match on agent name
+            tracing: Default::default(), // TODO: get from config crate
+            signers: Default::default(), // TODO: get from file
+        }
     }
 
     /// Read settings from the config file

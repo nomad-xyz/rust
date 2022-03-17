@@ -9,10 +9,7 @@ where
 {
     // Instantiate an agent
     let oa = OA::from_settings(settings).await?;
-    oa.as_ref()
-        .settings
-        .tracing
-        .start_tracing(oa.metrics().span_duration())?;
+    oa.start_tracing(oa.metrics().span_duration())?;
 
     // Use the agent to run a number of replicas
     oa.run_all().await?

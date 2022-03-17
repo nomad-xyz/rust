@@ -1,5 +1,5 @@
+use nomad_types::agent::LogStyle;
 use std::io::Stdout;
-
 use tracing::{span, Subscriber};
 use tracing_subscriber::{
     fmt::{
@@ -9,27 +9,6 @@ use tracing_subscriber::{
     registry::LookupSpan,
     Layer,
 };
-
-/// Basic tracing configuration
-#[derive(Debug, Clone, Copy, serde::Deserialize, Eq, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub enum Style {
-    /// Pretty print
-    Pretty,
-    /// JSON
-    Json,
-    /// Compact
-    Compact,
-    /// Default style
-    #[serde(other)]
-    Full,
-}
-
-impl Default for Style {
-    fn default() -> Self {
-        Style::Full
-    }
-}
 
 /// Unification of the fmt Subscriber formatting modes
 ///
@@ -62,13 +41,13 @@ impl<S> Default for LogOutputLayer<S> {
     }
 }
 
-impl<S> From<Style> for LogOutputLayer<S> {
-    fn from(style: Style) -> Self {
+impl<S> From<LogStyle> for LogOutputLayer<S> {
+    fn from(style: LogStyle) -> Self {
         match style {
-            Style::Full => Self::Full(fmt::layer()),
-            Style::Pretty => Self::Pretty(fmt::layer().pretty()),
-            Style::Compact => Self::Compact(fmt::layer().compact()),
-            Style::Json => Self::Json(fmt::layer().json()),
+            LogStyle::Full => Self::Full(fmt::layer()),
+            LogStyle::Pretty => Self::Pretty(fmt::layer().pretty()),
+            LogStyle::Compact => Self::Compact(fmt::layer().compact()),
+            LogStyle::Json => Self::Json(fmt::layer().json()),
         }
     }
 }
@@ -211,7 +190,7 @@ mod test {
 
     #[derive(serde::Deserialize)]
     struct TestStyle {
-        style: Style,
+        style: LogStyle,
     }
 
     #[test]
@@ -219,31 +198,31 @@ mod test {
         let case = r#"{"style": "pretty"}"#;
         assert_eq!(
             serde_json::from_str::<TestStyle>(case).unwrap().style,
-            Style::Pretty
+            LogStyle::Pretty
         );
 
         let case = r#"{"style": "compact"}"#;
         assert_eq!(
             serde_json::from_str::<TestStyle>(case).unwrap().style,
-            Style::Compact
+            LogStyle::Compact
         );
 
         let case = r#"{"style": "full"}"#;
         assert_eq!(
             serde_json::from_str::<TestStyle>(case).unwrap().style,
-            Style::Full
+            LogStyle::Full
         );
 
         let case = r#"{"style": "json"}"#;
         assert_eq!(
             serde_json::from_str::<TestStyle>(case).unwrap().style,
-            Style::Json
+            LogStyle::Json
         );
 
         let case = r#"{"style": "toast"}"#;
         assert_eq!(
             serde_json::from_str::<TestStyle>(case).unwrap().style,
-            Style::Full
+            LogStyle::Full
         );
     }
 }

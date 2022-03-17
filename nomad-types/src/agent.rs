@@ -1,8 +1,7 @@
 //! Agent configuration types
 
-use std::path::PathBuf;
-
 use crate::core::deser_nomad_number;
+use tracing_subscriber::filter::LevelFilter;
 
 /// Rpc Styles
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, Eq, PartialEq)]
@@ -64,14 +63,42 @@ impl Default for LogLevel {
     }
 }
 
+impl From<LogLevel> for LevelFilter {
+    fn from(level: LogLevel) -> LevelFilter {
+        match level {
+            LogLevel::Off => LevelFilter::OFF,
+            LogLevel::Error => LevelFilter::ERROR,
+            LogLevel::Warn => LevelFilter::WARN,
+            LogLevel::Debug => LevelFilter::DEBUG,
+            LogLevel::Trace => LevelFilter::TRACE,
+            LogLevel::Info => LevelFilter::INFO,
+        }
+    }
+}
+
+impl LogLevel {
+    pub fn to_filter(self) -> LevelFilter {
+        self.into()
+    }
+}
+
 /// Logger configuration
-#[derive(Default, Debug, Copy, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct LogConfig {
+pub struct TracingConfig {
     /// fmt specifier
     pub fmt: LogStyle,
     /// level specifier
     pub level: LogLevel,
+}
+
+impl Default for TracingConfig {
+    fn default() -> Self {
+        Self {
+            fmt: LogStyle::Pretty,
+            level: LogLevel::Trace,
+        }
+    }
 }
 
 /// Individual agent configuration
@@ -83,28 +110,6 @@ pub struct BaseAgentConfig {
     /// the polling interval
     #[serde(deserialize_with = "deser_nomad_number")]
     pub interval: u64,
-}
-
-/// Full agent configuration
-#[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AgentConfig {
-    /// RPC specifier
-    pub rpc_style: RpcStyles,
-    /// Path to the DB
-    pub db: PathBuf,
-    /// Logging configuration
-    pub logging: LogConfig,
-    /// Updater configuration
-    pub updater: BaseAgentConfig,
-    /// Relayer configuration
-    pub relayer: BaseAgentConfig,
-    /// Processor configuration
-    pub processor: BaseAgentConfig,
-    /// Watcher configuration
-    pub watcher: BaseAgentConfig,
-    /// Kathy configuration
-    pub kathy: BaseAgentConfig,
 }
 
 #[cfg(test)]
