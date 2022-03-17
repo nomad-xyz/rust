@@ -1,5 +1,4 @@
 use color_eyre::Result;
-use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::{filter::LevelFilter, prelude::*};
 
 use crate::settings::trace::fmt::Style;
@@ -7,13 +6,7 @@ use crate::settings::trace::fmt::Style;
 /// Configure a `tracing_subscriber::fmt` Layer outputting to stdout
 pub mod fmt;
 
-use self::{fmt::LogOutputLayer, jaeger::JaegerConfig, zipkin::ZipkinConfig};
-
-/// Configure a Layer using `tracing_opentelemtry` + `opentelemetry-jaeger`
-pub mod jaeger;
-
-/// Configure a Layer using `tracing_opentelemtry` + `opentelemetry-zipkin`
-pub mod zipkin;
+use self::fmt::LogOutputLayer;
 
 mod span_metrics;
 
@@ -66,8 +59,6 @@ impl From<Level> for LevelFilter {
 /// Configuration for the tracing subscribers used by Nomad agents
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct TracingConfig {
-    jaeger: Option<JaegerConfig>,
-    zipkin: Option<ZipkinConfig>,
     #[serde(default)]
     fmt: Style,
     #[serde(default)]
@@ -77,8 +68,6 @@ pub struct TracingConfig {
 impl Default for TracingConfig {
     fn default() -> Self {
         Self {
-            jaeger: None,
-            zipkin: None,
             fmt: Style::Pretty,
             level: Level::Trace,
         }
@@ -97,20 +86,7 @@ impl TracingConfig {
             .with(fmt_layer)
             .with(err_layer);
 
-        match self.jaeger {
-            None => match self.zipkin {
-                None => subscriber.try_init()?,
-                Some(ref zipkin) => {
-                    let layer: OpenTelemetryLayer<_, _> = zipkin.try_into_layer()?;
-                    subscriber.with(layer).try_init()?
-                }
-            },
-            Some(ref jaeger) => {
-                let layer: OpenTelemetryLayer<_, _> = jaeger.try_into_layer()?;
-                subscriber.with(layer).try_init()?
-            }
-        }
-
+        subscriber.try_init()?;
         Ok(())
     }
 }
