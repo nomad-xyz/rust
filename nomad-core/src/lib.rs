@@ -49,7 +49,7 @@ pub use chain::*;
 
 use std::convert::Infallible;
 
-pub use identifiers::NomadIdentifier;
+pub use nomad_types::NomadIdentifier;
 
 use async_trait::async_trait;
 use ethers::{

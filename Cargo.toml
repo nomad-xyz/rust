@@ -3,6 +3,7 @@ cargo-features = ["edition2021"]
 [workspace]
 
 members = [
+    "nomad-types",
     "nomad-core",
     "nomad-base",
     "nomad-test",

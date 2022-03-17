@@ -3,6 +3,7 @@
 
 use async_trait::async_trait;
 use nomad_core::*;
+use nomad_types::NomadIdentifier;
 use std::sync::Arc;
 
 use crate::bindings::xappconnectionmanager::XAppConnectionManager as EthereumConnectionManagerInternal;
@@ -38,7 +39,7 @@ where
     ) -> Self {
         Self {
             contract: EthereumConnectionManagerInternal::new(
-                address.as_ethereum_address(),
+                address.as_ethereum_address().expect("!eth address"),
                 provider.clone(),
             ),
             provider,
@@ -61,7 +62,7 @@ where
     async fn is_replica(&self, address: NomadIdentifier) -> Result<bool, ChainCommunicationError> {
         Ok(self
             .contract
-            .is_replica(address.as_ethereum_address())
+            .is_replica(address.as_ethereum_address().expect("!eth address"))
             .call()
             .await?)
     }
@@ -74,7 +75,7 @@ where
     ) -> Result<bool, ChainCommunicationError> {
         Ok(self
             .contract
-            .watcher_permission(address.as_ethereum_address(), domain)
+            .watcher_permission(address.as_ethereum_address().expect("!eth address"), domain)
             .call()
             .await?)
     }
@@ -87,7 +88,7 @@ where
     ) -> Result<TxOutcome, ChainCommunicationError> {
         let tx = self
             .contract
-            .owner_enroll_replica(replica.as_ethereum_address(), domain);
+            .owner_enroll_replica(replica.as_ethereum_address().expect("!eth address"), domain);
 
         report_tx!(tx, &self.provider).try_into()
     }
@@ -99,14 +100,16 @@ where
     ) -> Result<TxOutcome, ChainCommunicationError> {
         let tx = self
             .contract
-            .owner_unenroll_replica(replica.as_ethereum_address());
+            .owner_unenroll_replica(replica.as_ethereum_address().expect("!eth address"));
 
         report_tx!(tx, &self.provider).try_into()
     }
 
     #[tracing::instrument(err)]
     async fn set_home(&self, home: NomadIdentifier) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self.contract.set_home(home.as_ethereum_address());
+        let tx = self
+            .contract
+            .set_home(home.as_ethereum_address().expect("!eth address"));
 
         report_tx!(tx, &self.provider).try_into()
     }
@@ -118,9 +121,11 @@ where
         domain: u32,
         access: bool,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx =
-            self.contract
-                .set_watcher_permission(watcher.as_ethereum_address(), domain, access);
+        let tx = self.contract.set_watcher_permission(
+            watcher.as_ethereum_address().expect("!eth address"),
+            domain,
+            access,
+        );
 
         report_tx!(tx, &self.provider).try_into()
     }

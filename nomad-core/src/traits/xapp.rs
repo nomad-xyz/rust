@@ -1,8 +1,9 @@
 use crate::{
     traits::{ChainCommunicationError, TxOutcome},
-    NomadIdentifier, SignedFailureNotification,
+    SignedFailureNotification,
 };
 use async_trait::async_trait;
+use nomad_types::NomadIdentifier;
 
 /// Interface for on-chain XAppConnectionManager
 #[async_trait]

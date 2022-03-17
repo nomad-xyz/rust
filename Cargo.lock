@@ -2577,6 +2577,7 @@ dependencies = [
  "nomad-core",
  "nomad-ethereum",
  "nomad-test",
+ "nomad-types",
  "nomad-xyz-configuration",
  "once_cell",
  "opentelemetry",
@@ -2631,6 +2632,7 @@ dependencies = [
  "ethers-signers 0.6.0",
  "hex",
  "lazy_static",
+ "nomad-types",
  "num",
  "prometheus",
  "rocksdb",
@@ -2658,6 +2660,7 @@ dependencies = [
  "futures-util",
  "hex",
  "nomad-core",
+ "nomad-types",
  "num",
  "prometheus",
  "rocksdb",
@@ -2690,6 +2693,16 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
+]
+
+[[package]]
+name = "nomad-types"
+version = "0.1.0"
+dependencies = [
+ "ethers 0.6.2",
+ "serde 1.0.136",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]

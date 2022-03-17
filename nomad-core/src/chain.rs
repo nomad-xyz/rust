@@ -1,7 +1,7 @@
 #![allow(missing_docs)]
 
-use crate::NomadIdentifier;
 use color_eyre::eyre::Result;
+use nomad_types::NomadIdentifier;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

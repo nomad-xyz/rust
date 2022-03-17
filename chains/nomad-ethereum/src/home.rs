@@ -53,7 +53,7 @@ where
     ) -> Self {
         Self {
             contract: Arc::new(EthereumHomeInternal::new(
-                address.as_ethereum_address(),
+                address.as_ethereum_address().expect("!eth address"),
                 provider.clone(),
             )),
             provider,
@@ -183,7 +183,7 @@ where
     ) -> Self {
         Self {
             contract: Arc::new(EthereumHomeInternal::new(
-                address.as_ethereum_address(),
+                address.as_ethereum_address().expect("!eth address"),
                 provider.clone(),
             )),
             domain: *domain,
