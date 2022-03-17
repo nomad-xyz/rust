@@ -161,6 +161,33 @@ pub struct IndexSettings {
 }
 
 impl IndexSettings {
+    /// Get agent-specific index settings unique to that agent
+    pub fn from_agent_name(agent_name: &str) -> Self {
+        match agent_name.to_lowercase().as_ref() {
+            "kathy" => Self {
+                data_types: IndexDataTypes::Updates,
+                use_timelag: true,
+            },
+            "updater" => Self {
+                data_types: IndexDataTypes::Updates,
+                use_timelag: true,
+            },
+            "relayer" => Self {
+                data_types: IndexDataTypes::Updates,
+                use_timelag: false,
+            },
+            "processor" => Self {
+                data_types: IndexDataTypes::UpdatesAndMessages,
+                use_timelag: true,
+            },
+            "watcher" => Self {
+                data_types: IndexDataTypes::Updates,
+                use_timelag: false,
+            },
+            _ => std::panic!("Invalid agent-specific settings name!"),
+        }
+    }
+
     /// Get IndexDataTypes
     pub fn data_types(&self) -> IndexDataTypes {
         self.data_types.clone()
@@ -486,11 +513,13 @@ impl Settings {
     }
 
     /// Instantiate Settings block from NomadConfig
-    pub fn from_nomad_config(agent: &str, home_network: &str, config: NomadConfig) -> Self {
-        let agent = config.agent().get(agent).expect("!agent config");
+    pub fn from_nomad_config(agent_name: &str, home_network: &str, config: NomadConfig) -> Self {
+        let agent = config.agent().get(agent_name).expect("!agent config");
 
         let db = agent.db.to_str().expect("!db").to_owned();
         let metrics = Some("9090".to_owned()); // TODO: update config crate to include metrics
+        let index = IndexSettings::from_agent_name(agent_name);
+
         let home = ChainSetup::home_from_nomad_config(home_network, &config);
 
         let replica_networks = &config
@@ -514,7 +543,7 @@ impl Settings {
             metrics,
             home,
             replicas,
-            index: Default::default(),   // TODO: match on agent name
+            index,
             tracing: Default::default(), // TODO: get from config crate
             signers: Default::default(), // TODO: get from file
         }
