@@ -85,14 +85,14 @@ impl LogLevel {
 /// Logger configuration
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TracingConfig {
+pub struct LogConfig {
     /// fmt specifier
     pub fmt: LogStyle,
     /// level specifier
     pub level: LogLevel,
 }
 
-impl Default for TracingConfig {
+impl Default for LogConfig {
     fn default() -> Self {
         Self {
             fmt: LogStyle::Pretty,

@@ -60,7 +60,7 @@ pub use chains::{ChainConf, ChainSetup};
 /// Tracing subscriber management
 pub mod trace;
 
-use nomad_types::agent::TracingConfig;
+use nomad_types::agent::LogConfig;
 
 use once_cell::sync::OnceCell;
 
@@ -238,7 +238,7 @@ pub struct Settings {
     /// The replica configurations
     pub replicas: HashMap<String, ChainSetup>,
     /// The tracing configuration
-    pub tracing: TracingConfig,
+    pub logging: LogConfig,
     /// Transaction signers
     pub signers: HashMap<String, SignerConf>,
 }
@@ -252,7 +252,7 @@ impl Settings {
             index: self.index.clone(),
             home: self.home.clone(),
             replicas: self.replicas.clone(),
-            tracing: self.tracing,
+            logging: self.logging,
             signers: self.signers.clone(),
         }
     }
@@ -544,7 +544,7 @@ impl Settings {
             home,
             replicas,
             index,
-            tracing: Default::default(), // TODO: get from config crate
+            logging: Default::default(), // TODO: get from config crate
             signers: Default::default(), // TODO: get from file
         }
     }

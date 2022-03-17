@@ -261,13 +261,13 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
 
     /// Attempt to instantiate and register a tracing subscriber setup from settings.
     fn start_tracing(&self, latencies: prometheus::HistogramVec) -> Result<()> {
-        let tracing = self.as_ref().settings.tracing;
-        let fmt_layer: LogOutputLayer<_> = tracing.fmt.into();
+        let log = self.as_ref().settings.logging;
+        let fmt_layer: LogOutputLayer<_> = log.fmt.into();
         let err_layer = tracing_error::ErrorLayer::default();
 
         let subscriber = tracing_subscriber::Registry::default()
             .with(TimeSpanLifetime::new(latencies))
-            .with(tracing.level.to_filter())
+            .with(log.level.to_filter())
             .with(fmt_layer)
             .with(err_layer);
 
