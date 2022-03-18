@@ -36,7 +36,6 @@ use nomad_types::agent::LogConfig;
 
 use once_cell::sync::OnceCell;
 
-
 static KMS_CLIENT: OnceCell<KmsClient> = OnceCell::new();
 
 /// Agent types
@@ -487,8 +486,8 @@ impl Settings {
 
     /// Instantiate Settings block from NomadConfig
     pub fn from_config_and_secrets(
-        agent_name: &str, 
-        home_network: &str, 
+        agent_name: &str,
+        home_network: &str,
         config: &NomadConfig,
         secrets: &AgentSecrets,
     ) -> Self {
@@ -498,7 +497,7 @@ impl Settings {
         let metrics = Some("9090".to_owned()); // TODO: update config crate to include metrics
         let index = IndexSettings::from_agent_name(agent_name);
 
-        let home = ChainSetup::home_from_nomad_config(home_network, &config);
+        let home = ChainSetup::home_from_nomad_config(home_network, config);
 
         let replica_networks = &config
             .protocol()
@@ -511,7 +510,7 @@ impl Settings {
             .map(|replica_network| {
                 (
                     replica_network.to_owned(),
-                    ChainSetup::replica_from_nomad_config(home_network, replica_network, &config),
+                    ChainSetup::replica_from_nomad_config(home_network, replica_network, config),
                 )
             })
             .collect();
@@ -523,7 +522,7 @@ impl Settings {
             replicas,
             index,
             logging: agent.logging,
-            signers: secrets.transaction_signers,
+            signers: secrets.transaction_signers.clone(),
         }
     }
 

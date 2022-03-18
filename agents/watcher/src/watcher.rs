@@ -499,7 +499,7 @@ impl NomadAgent for Watcher {
         Self: Sized,
     {
         let mut connection_managers = vec![];
-        for chain_setup in settings.managers.values() {
+        for chain_setup in settings.agent.managers.values() {
             let signer = settings.base.get_signer(&chain_setup.name).await;
             let xapp_timelag = None;
 
@@ -527,8 +527,8 @@ impl NomadAgent for Watcher {
         let core = settings.as_ref().try_into_core("watcher").await?;
 
         Ok(Self::new(
-            settings.watcher.try_into_signer().await?,
-            settings.interval.parse().expect("invalid uint"),
+            settings.agent.attestation_signer.try_into_signer().await?,
+            settings.agent.interval,
             connection_managers,
             core,
         ))

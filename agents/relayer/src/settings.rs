@@ -1,14 +1,8 @@
 //! Configuration
 
 use nomad_base::{decl_settings, AgentSecrets, AgentSettingsBlock};
-use serde::Deserialize;
 
-// decl_settings!(Relayer {
-//     /// The polling interval (in seconds)
-//     interval: String,
-// });
-
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct RelayerSettingsBlock {
     pub interval: u64,
 }

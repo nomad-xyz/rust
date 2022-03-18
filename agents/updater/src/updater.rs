@@ -79,8 +79,8 @@ impl NomadAgent for Updater {
     where
         Self: Sized,
     {
-        let signer = settings.updater.try_into_signer().await?;
-        let interval_seconds = settings.interval.parse().expect("invalid uint");
+        let signer = settings.agent.attestation_signer.try_into_signer().await?;
+        let interval_seconds = settings.agent.interval;
         let core = settings.as_ref().try_into_core(Self::AGENT_NAME).await?;
         Ok(Self::new(signer, interval_seconds, core))
     }

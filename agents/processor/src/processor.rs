@@ -344,12 +344,12 @@ impl NomadAgent for Processor {
         Self: Sized,
     {
         Ok(Self::new(
-            settings.interval.parse().expect("invalid integer"),
+            settings.agent.interval,
             settings.as_ref().try_into_core(AGENT_NAME).await?,
-            settings.allowed,
-            settings.denied,
-            settings.indexon.is_some(),
-            settings.s3,
+            settings.agent.allowed,
+            settings.agent.denied,
+            settings.agent.indexon.is_some(),
+            settings.agent.s3,
         ))
     }
 

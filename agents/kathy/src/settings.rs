@@ -4,9 +4,9 @@ use ethers::core::types::H256;
 
 use crate::kathy::ChatGenerator;
 
-use nomad_base::decl_settings;
+use nomad_base::{decl_settings, AgentSecrets, AgentSettingsBlock};
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum ChatGenConfig {
     Static {
@@ -45,10 +45,24 @@ impl From<ChatGenConfig> for ChatGenerator {
     }
 }
 
-decl_settings!(Kathy {
-    /// The message interval (in seconds)
-    interval: String,
-    /// Chat generation configuration
-    #[serde(default)]
-    chat: ChatGenConfig,
-});
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct KathySettingsBlock {
+    pub interval: u64,
+    pub chat: ChatGenConfig,
+}
+
+// TODO: add kathy settings to configuration
+impl AgentSettingsBlock for KathySettingsBlock {
+    fn from_config_and_secrets(
+        home_network: &str,
+        config: &nomad_xyz_configuration::NomadConfig,
+        _secrets: &AgentSecrets,
+    ) -> Self {
+        let interval = config.agent().get(home_network).unwrap().kathy.interval;
+        Self {
+            interval,
+            chat: Default::default(),
+        }
+    }
+}
+decl_settings!(Kathy, KathySettingsBlock,);

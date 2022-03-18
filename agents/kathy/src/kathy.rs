@@ -60,8 +60,8 @@ impl NomadAgent for Kathy {
 
     async fn from_settings(settings: Settings) -> Result<Self> {
         Ok(Self::new(
-            settings.interval.parse().expect("invalid u64"),
-            settings.chat.into(),
+            settings.agent.interval,
+            settings.agent.chat.into(),
             settings.base.try_into_core(Self::AGENT_NAME).await?,
         ))
     }

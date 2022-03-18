@@ -2113,6 +2113,7 @@ dependencies = [
  "log",
  "nomad-base",
  "nomad-core",
+ "nomad-xyz-configuration",
  "paste",
  "prometheus",
  "rand",
@@ -2571,7 +2572,7 @@ dependencies = [
  "nomad-core",
  "nomad-ethereum",
  "nomad-test",
- "nomad-types 0.1.0",
+ "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=0abcc7a)",
  "nomad-xyz-configuration",
  "once_cell",
  "opentelemetry",
@@ -2702,7 +2703,7 @@ dependencies = [
 [[package]]
 name = "nomad-types"
 version = "0.1.0"
-source = "git+https://github.com/nomad-xyz/rust?branch=luke/integrate-config#fb399898893b5cdcc709c66b52568f6fda2b1199"
+source = "git+https://github.com/nomad-xyz/rust?rev=0abcc7a#0abcc7a108f374ed760453638a7d886a7493fa69"
 dependencies = [
  "ethers 0.6.2",
  "prometheus",
@@ -2715,13 +2716,13 @@ dependencies = [
 [[package]]
 name = "nomad-xyz-configuration"
 version = "0.1.0-rc.3"
-source = "git+https://github.com/nomad-xyz/configuration?branch=luke/nomad-types#2ec78730f14db313c8b7a60f85f0fb3ca31d82dc"
+source = "git+https://github.com/nomad-xyz/configuration?rev=0410551#04105510442ddc66b51dbcd87232032efad63999"
 dependencies = [
  "affix",
  "ethers 0.6.2",
  "eyre",
  "js-sys",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?branch=luke/integrate-config)",
+ "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=0abcc7a)",
  "once_cell",
  "serde 1.0.136",
  "serde_json",
@@ -3216,6 +3217,7 @@ dependencies = [
  "nomad-base",
  "nomad-core",
  "nomad-test",
+ "nomad-xyz-configuration",
  "paste",
  "prometheus",
  "rocksdb",
@@ -4583,6 +4585,7 @@ dependencies = [
  "nomad-core",
  "nomad-ethereum",
  "nomad-test",
+ "nomad-xyz-configuration",
  "paste",
  "prometheus",
  "rocksdb",
@@ -4796,6 +4799,7 @@ dependencies = [
  "nomad-core",
  "nomad-ethereum",
  "nomad-test",
+ "nomad-xyz-configuration",
  "paste",
  "prometheus",
  "rocksdb",

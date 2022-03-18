@@ -33,10 +33,10 @@
 //! }
 
 use crate::{ChainConf, SignerConf};
+use color_eyre::Report;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::{fs::File, io::BufReader, path::PathBuf};
-use color_eyre::Report;
 
 /// Agent secrets block
 #[derive(Debug, Deserialize, Default, Clone)]
