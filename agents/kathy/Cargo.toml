@@ -24,6 +24,7 @@ rand = "0.8.3"
 prometheus = "0.12"
 nomad-xyz-configuration = { git = "https://github.com/nomad-xyz/configuration", rev = "0410551" }
 
-nomad-base = {path = "../../nomad-base"}
-nomad-core = {path = "../../nomad-core"}
+nomad-types = { path = "../../nomad-types" }
+nomad-base = { path = "../../nomad-base" }
+nomad-core = { path = "../../nomad-core" }
 paste = "1.0.5"

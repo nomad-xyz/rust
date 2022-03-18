@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use color_eyre::{eyre::bail, Result};
 use ethers::prelude::H256;
 use futures_util::future::select_all;
+use nomad_types::agent::processor::S3Config;
 use std::{
     collections::{HashMap, HashSet},
     sync::Arc,
@@ -18,11 +19,7 @@ use nomad_core::{
     accumulator::merkle::Proof, CommittedMessage, Common, Home, HomeEvents, MessageStatus,
 };
 
-use crate::{
-    prover_sync::ProverSync,
-    push::Pusher,
-    settings::{ProcessorSettings as Settings, S3Config},
-};
+use crate::{prover_sync::ProverSync, push::Pusher, settings::ProcessorSettings as Settings};
 
 const AGENT_NAME: &str = "processor";
 static CURRENT_NONCE: &str = "current_nonce_";

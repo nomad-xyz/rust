@@ -1,15 +1,8 @@
 //! Configuration
 use ethers::prelude::H256;
-use serde::Deserialize;
-use std::collections::HashSet;
-
 use nomad_base::{decl_settings, AgentSecrets, AgentSettingsBlock};
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct S3Config {
-    pub bucket: String,
-    pub region: String,
-}
+use nomad_types::agent::processor::S3Config;
+use std::collections::HashSet;
 
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct ProcessorSettingsBlock {

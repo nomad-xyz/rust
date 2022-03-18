@@ -9,9 +9,9 @@ use tracing::instrument::Instrumented;
 use tracing::{info, Instrument};
 
 use ethers::core::types::H256;
-
 use nomad_base::{decl_agent, decl_channel, AgentCore, CachingHome, CachingReplica, NomadAgent};
 use nomad_core::{Common, Home, Message, Replica};
+use nomad_types::agent::kathy::ChatGenConfig;
 
 use crate::settings::KathySettings as Settings;
 
@@ -149,6 +149,22 @@ pub enum ChatGenerator {
 impl Default for ChatGenerator {
     fn default() -> Self {
         Self::Default
+    }
+}
+
+impl From<ChatGenConfig> for ChatGenerator {
+    fn from(conf: ChatGenConfig) -> ChatGenerator {
+        match conf {
+            ChatGenConfig::Static { recipient, message } => {
+                ChatGenerator::Static { recipient, message }
+            }
+            ChatGenConfig::OrderedList { messages } => ChatGenerator::OrderedList {
+                messages,
+                counter: 0,
+            },
+            ChatGenConfig::Random { length } => ChatGenerator::Random { length },
+            ChatGenConfig::Default => ChatGenerator::Default,
+        }
     }
 }
 
