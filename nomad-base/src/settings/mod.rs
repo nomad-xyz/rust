@@ -10,7 +10,6 @@ use crate::{
     ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes, NomadDB, Replicas,
 };
 use color_eyre::{eyre::bail, Report};
-use config::{Config, ConfigError, Environment, File};
 use ethers::prelude::AwsSigner;
 use nomad_core::{db::DB, utils::HexString, Common, ContractLocator, Signers};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
@@ -18,7 +17,7 @@ use nomad_xyz_configuration::NomadConfig;
 use rusoto_core::{credential::EnvironmentProvider, HttpClient};
 use rusoto_kms::KmsClient;
 use serde::Deserialize;
-use std::{collections::HashMap, env, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 use tracing::instrument;
 
 /// Chain configuration
@@ -497,7 +496,11 @@ impl Settings {
         let metrics = Some("9090".to_owned()); // TODO: update config crate to include metrics
         let index = IndexSettings::from_agent_name(agent_name);
 
-        let home = ChainSetup::from_nomad_config(ChainSetupType::Home { home_network }, config);
+        let home = ChainSetup::from_config_and_secrets(
+            ChainSetupType::Home { home_network },
+            config,
+            secrets,
+        );
 
         let replica_networks = &config
             .protocol()
@@ -510,12 +513,13 @@ impl Settings {
             .map(|remote_network| {
                 (
                     remote_network.to_owned(),
-                    ChainSetup::from_nomad_config(
+                    ChainSetup::from_config_and_secrets(
                         ChainSetupType::Replica {
                             home_network,
                             remote_network,
                         },
                         config,
+                        secrets,
                     ),
                 )
             })
@@ -530,21 +534,5 @@ impl Settings {
             logging: agent.logging,
             signers: secrets.transaction_signers.clone(),
         }
-    }
-
-    /// Read settings from the config file
-    pub fn new() -> Result<Self, ConfigError> {
-        let mut s = Config::new();
-
-        s.merge(File::with_name("config/default"))?;
-
-        let env = env::var("RUN_MODE").unwrap_or_else(|_| "development".into());
-        s.merge(File::with_name(&format!("config/{}", env)).required(false))?;
-
-        // Add in settings from the environment (with a prefix of NOMAD)
-        // Eg.. `NOMAD_DEBUG=1 would set the `debug` key
-        s.merge(Environment::with_prefix("NOMAD"))?;
-
-        s.try_into()
     }
 }

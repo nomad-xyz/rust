@@ -17,18 +17,19 @@ where
 
 /// Read settings from the config file and set up reporting and logging based
 /// on the settings
-#[allow(dead_code)]
-fn setup() -> Result<Settings> {
-    color_eyre::install()?;
+// #[allow(dead_code)]
+// fn setup() -> Result<Settings> {
+// TODO: add back base settings block
+// color_eyre::install()?;
 
-    let settings = Settings::new()?;
+// let settings = Settings::new()?;
 
-    Ok(settings)
-}
+// Ok(settings)
+// }
 
 #[allow(dead_code)]
 fn main() -> Result<()> {
-    let _settings = setup()?;
+    // let _settings = setup()?;
     // tokio::runtime::Builder::new_current_thread()
     //     .enable_all()
     //     .build()

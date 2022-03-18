@@ -9,7 +9,6 @@ pub struct KathySettingsBlock {
     pub chat: ChatGenConfig,
 }
 
-// TODO: add kathy settings to configuration
 impl AgentSettingsBlock for KathySettingsBlock {
     fn from_config_and_secrets(
         home_network: &str,

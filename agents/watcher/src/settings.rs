@@ -33,9 +33,10 @@ impl AgentSettingsBlock for WatcherSettingsBlock {
             .map(|remote_network| {
                 (
                     remote_network.to_owned(),
-                    ChainSetup::from_nomad_config(
+                    ChainSetup::from_config_and_secrets(
                         ChainSetupType::ConnectionManager { remote_network },
                         config,
+                        secrets,
                     ),
                 )
             })

@@ -6,7 +6,8 @@ use nomad_xyz_configuration::{contracts::CoreContracts, NomadConfig};
 use serde::Deserialize;
 
 use crate::{
-    home::Homes, replica::Replicas, xapp::ConnectionManagers, HomeVariants, ReplicaVariants,
+    home::Homes, replica::Replicas, xapp::ConnectionManagers, AgentSecrets, HomeVariants,
+    ReplicaVariants,
 };
 
 /// A connection to _some_ blockchain.
@@ -81,22 +82,32 @@ pub struct ChainSetup {
 
 impl ChainSetup {
     /// Instatiate ChainSetup from NomadConfig
-    pub fn from_nomad_config(setup_type: ChainSetupType, config: &NomadConfig) -> Self {
-        let network: String = match &setup_type {
+    pub fn from_config_and_secrets(
+        setup_type: ChainSetupType,
+        config: &NomadConfig,
+        secrets: &AgentSecrets,
+    ) -> Self {
+        let resident_network: String = match &setup_type {
             ChainSetupType::Home { home_network } => home_network.to_string(),
             ChainSetupType::Replica { remote_network, .. } => remote_network.to_string(),
             ChainSetupType::ConnectionManager { remote_network } => remote_network.to_string(),
         };
 
+        let chain = secrets
+            .rpcs
+            .get(&resident_network)
+            .expect("!rpc")
+            .to_owned();
+
         let domain = config
             .protocol()
-            .get_network(network.clone().into())
+            .get_network(resident_network.clone().into())
             .expect("!domain");
         let domain_number = domain.domain.try_into().unwrap(); // TODO: fix uint
         let finality = domain.specs.finalization_blocks.try_into().unwrap(); // TODO: fix uint
 
-        let core = config.core().get(&network).expect("!core");
-        let (address, page_settings, chain) = match core {
+        let core = config.core().get(&resident_network).expect("!core");
+        let (address, page_settings) = match core {
             CoreContracts::Evm(core) => {
                 let address = match &setup_type {
                     ChainSetupType::Home { .. } => core.home.proxy,
@@ -114,16 +125,12 @@ impl ChainSetup {
                     page_size: domain.specs.index_page_size.try_into().unwrap(), // TODO: fix uint
                 };
 
-                let chain = ChainConf::Ethereum(Connection::Http {
-                    url: "TODO: get secret rpc url".into(),
-                }); // TODO: draw on secrets
-
-                (address, page_settings, chain)
+                (address, page_settings)
             }
         };
 
         Self {
-            name: network,
+            name: resident_network,
             domain: domain_number,
             address,
             page_settings,
