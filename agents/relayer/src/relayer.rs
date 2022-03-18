@@ -145,7 +145,7 @@ impl NomadAgent for Relayer {
         Self: Sized,
     {
         Ok(Self::new(
-            settings.interval.parse().expect("invalid uint"),
+            settings.agent.interval,
             settings.as_ref().try_into_core("relayer").await?,
         ))
     }

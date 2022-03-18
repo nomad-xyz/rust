@@ -2571,7 +2571,7 @@ dependencies = [
  "nomad-core",
  "nomad-ethereum",
  "nomad-test",
- "nomad-types",
+ "nomad-types 0.1.0",
  "nomad-xyz-configuration",
  "once_cell",
  "opentelemetry",
@@ -2624,7 +2624,7 @@ dependencies = [
  "ethers-signers 0.6.0",
  "hex",
  "lazy_static",
- "nomad-types",
+ "nomad-types 0.1.0",
  "num",
  "prometheus",
  "rocksdb",
@@ -2652,7 +2652,7 @@ dependencies = [
  "futures-util",
  "hex",
  "nomad-core",
- "nomad-types",
+ "nomad-types 0.1.0",
  "num",
  "prometheus",
  "rocksdb",
@@ -2700,15 +2700,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "nomad-types"
+version = "0.1.0"
+source = "git+https://github.com/nomad-xyz/rust?branch=luke/integrate-config#fb399898893b5cdcc709c66b52568f6fda2b1199"
+dependencies = [
+ "ethers 0.6.2",
+ "prometheus",
+ "serde 1.0.136",
+ "serde_json",
+ "thiserror",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "nomad-xyz-configuration"
-version = "0.1.0-rc.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac4e34003db80d0a5069785e21c2c2f8ddd2a89abd285427ca676bc9e5d6aec1"
+version = "0.1.0-rc.3"
+source = "git+https://github.com/nomad-xyz/configuration?branch=luke/nomad-types#2ec78730f14db313c8b7a60f85f0fb3ca31d82dc"
 dependencies = [
  "affix",
  "ethers 0.6.2",
  "eyre",
  "js-sys",
+ "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?branch=luke/integrate-config)",
  "once_cell",
  "serde 1.0.136",
  "serde_json",
@@ -3398,6 +3411,7 @@ dependencies = [
  "nomad-base",
  "nomad-core",
  "nomad-test",
+ "nomad-xyz-configuration",
  "paste",
  "prometheus",
  "serde 1.0.136",

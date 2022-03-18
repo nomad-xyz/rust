@@ -27,6 +27,7 @@ pub use chains::{ChainConf, ChainSetup};
 
 /// Secrets
 pub mod secrets;
+pub use secrets::AgentSecrets;
 
 /// Tracing subscriber management
 pub mod trace;
@@ -34,6 +35,7 @@ pub mod trace;
 use nomad_types::agent::LogConfig;
 
 use once_cell::sync::OnceCell;
+
 
 static KMS_CLIENT: OnceCell<KmsClient> = OnceCell::new();
 
@@ -484,7 +486,12 @@ impl Settings {
     }
 
     /// Instantiate Settings block from NomadConfig
-    pub fn from_nomad_config(agent_name: &str, home_network: &str, config: NomadConfig) -> Self {
+    pub fn from_config_and_secrets(
+        agent_name: &str, 
+        home_network: &str, 
+        config: &NomadConfig,
+        secrets: &AgentSecrets,
+    ) -> Self {
         let agent = config.agent().get(agent_name).expect("!agent config");
 
         let db = agent.db.to_str().expect("!db").to_owned();
@@ -515,8 +522,8 @@ impl Settings {
             home,
             replicas,
             index,
-            logging: Default::default(), // TODO: get from config crate
-            signers: Default::default(), // TODO: get from file
+            logging: agent.logging,
+            signers: secrets.transaction_signers,
         }
     }
 
