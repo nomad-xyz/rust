@@ -11,12 +11,13 @@ impl AgentSettingsBlock for UpdaterSettingsBlock {
     fn from_config_and_secrets(
         home_network: &str,
         config: &nomad_xyz_configuration::NomadConfig,
-        _secrets: &AgentSecrets,
+        secrets: &AgentSecrets,
     ) -> Self {
         let interval = config.agent().get(home_network).unwrap().updater.interval;
+        let attestation_signer = secrets.attestation_signer.clone();
         Self {
             interval,
-            attestation_signer: Default::default(),
+            attestation_signer,
         }
     }
 }

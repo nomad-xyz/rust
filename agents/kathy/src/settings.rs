@@ -1,7 +1,7 @@
 //! Configuration
 
 use nomad_base::{decl_settings, AgentSecrets, AgentSettingsBlock};
-use nomad_types::agent::kathy::ChatGenConfig;
+use nomad_xyz_configuration::agent::kathy::ChatGenConfig;
 
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct KathySettingsBlock {
@@ -16,10 +16,10 @@ impl AgentSettingsBlock for KathySettingsBlock {
         config: &nomad_xyz_configuration::NomadConfig,
         _secrets: &AgentSecrets,
     ) -> Self {
-        let interval = config.agent().get(home_network).unwrap().kathy.interval;
+        let config = &config.agent().get(home_network).unwrap().kathy;
         Self {
-            interval,
-            chat: Default::default(),
+            interval: config.interval,
+            chat: config.chat.clone(),
         }
     }
 }

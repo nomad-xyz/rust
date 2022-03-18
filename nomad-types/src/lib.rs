@@ -5,5 +5,3 @@ pub use crate::core::*;
 
 mod error;
 pub use error::*;
-
-pub mod agent;

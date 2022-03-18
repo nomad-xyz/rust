@@ -1,7 +1,8 @@
-use nomad_types::agent::LogStyle;
+use nomad_xyz_configuration::agent::{LogLevel, LogStyle};
 use std::io::Stdout;
 use tracing::{span, Subscriber};
 use tracing_subscriber::{
+    filter::LevelFilter,
     fmt::{
         self,
         format::{Compact, DefaultFields, Format, Full, Json, JsonFields, Pretty},
@@ -9,6 +10,18 @@ use tracing_subscriber::{
     registry::LookupSpan,
     Layer,
 };
+
+/// Convert configuration LogLevel to tracing LevelFilter
+pub fn log_level_to_level_filter(level: LogLevel) -> LevelFilter {
+    match level {
+        LogLevel::Off => LevelFilter::OFF,
+        LogLevel::Error => LevelFilter::ERROR,
+        LogLevel::Warn => LevelFilter::WARN,
+        LogLevel::Debug => LevelFilter::DEBUG,
+        LogLevel::Trace => LevelFilter::TRACE,
+        LogLevel::Info => LevelFilter::INFO,
+    }
+}
 
 /// Unification of the fmt Subscriber formatting modes
 ///

@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use color_eyre::{eyre::bail, Result};
 use ethers::prelude::H256;
 use futures_util::future::select_all;
-use nomad_types::agent::processor::S3Config;
+use nomad_xyz_configuration::agent::processor::S3Config;
 use std::{
     collections::{HashMap, HashSet},
     sync::Arc,
@@ -345,7 +345,7 @@ impl NomadAgent for Processor {
             settings.as_ref().try_into_core(AGENT_NAME).await?,
             settings.agent.allowed,
             settings.agent.denied,
-            settings.agent.indexon.is_some(),
+            settings.agent.index_only,
             settings.agent.s3,
         ))
     }

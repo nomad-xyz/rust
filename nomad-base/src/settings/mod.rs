@@ -23,7 +23,7 @@ use tracing::instrument;
 
 /// Chain configuration
 pub mod chains;
-pub use chains::{ChainConf, ChainSetup};
+pub use chains::{ChainConf, ChainSetup, ChainSetupType};
 
 /// Secrets
 pub mod secrets;
@@ -32,7 +32,7 @@ pub use secrets::AgentSecrets;
 /// Tracing subscriber management
 pub mod trace;
 
-use nomad_types::agent::LogConfig;
+use nomad_xyz_configuration::agent::LogConfig;
 
 use once_cell::sync::OnceCell;
 
@@ -497,7 +497,7 @@ impl Settings {
         let metrics = Some("9090".to_owned()); // TODO: update config crate to include metrics
         let index = IndexSettings::from_agent_name(agent_name);
 
-        let home = ChainSetup::home_from_nomad_config(home_network, config);
+        let home = ChainSetup::from_nomad_config(ChainSetupType::Home { home_network }, config);
 
         let replica_networks = &config
             .protocol()
@@ -507,10 +507,16 @@ impl Settings {
             .connections;
         let replicas = replica_networks
             .iter()
-            .map(|replica_network| {
+            .map(|remote_network| {
                 (
-                    replica_network.to_owned(),
-                    ChainSetup::replica_from_nomad_config(home_network, replica_network, config),
+                    remote_network.to_owned(),
+                    ChainSetup::from_nomad_config(
+                        ChainSetupType::Replica {
+                            home_network,
+                            remote_network,
+                        },
+                        config,
+                    ),
                 )
             })
             .collect();

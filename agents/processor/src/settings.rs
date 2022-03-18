@@ -1,7 +1,7 @@
 //! Configuration
 use ethers::prelude::H256;
 use nomad_base::{decl_settings, AgentSecrets, AgentSettingsBlock};
-use nomad_types::agent::processor::S3Config;
+use nomad_xyz_configuration::agent::processor::S3Config;
 use std::collections::HashSet;
 
 #[derive(Debug, Clone, serde::Deserialize)]
@@ -13,7 +13,7 @@ pub struct ProcessorSettingsBlock {
     /// A deny list of message senders
     pub denied: Option<HashSet<H256>>,
     /// Only index transactions if this key is set
-    pub indexon: Option<String>,
+    pub index_only: bool,
     /// An amazon aws s3 bucket to push proofs to
     pub s3: Option<S3Config>,
 }
@@ -25,16 +25,13 @@ impl AgentSettingsBlock for ProcessorSettingsBlock {
         config: &nomad_xyz_configuration::NomadConfig,
         _secrets: &AgentSecrets,
     ) -> Self {
-        let interval = config.agent().get(home_network).unwrap().processor.interval;
+        let config = &config.agent().get(home_network).unwrap().processor;
         Self {
-            interval,
-            allowed: Default::default(),
-            denied: Default::default(),
-            indexon: Default::default(),
-            s3: Some(S3Config {
-                bucket: Default::default(),
-                region: Default::default(),
-            }),
+            interval: config.interval,
+            allowed: config.allowed.clone(),
+            denied: config.denied.clone(),
+            index_only: config.index_only,
+            s3: config.s3.clone(),
         }
     }
 }

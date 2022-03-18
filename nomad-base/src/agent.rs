@@ -2,7 +2,10 @@ use crate::{
     cancel_task,
     metrics::CoreMetrics,
     settings::{IndexSettings, Settings},
-    trace::{fmt::LogOutputLayer, TimeSpanLifetime},
+    trace::{
+        fmt::{log_level_to_level_filter, LogOutputLayer},
+        TimeSpanLifetime,
+    },
     BaseError, CachingHome, CachingReplica, NomadDB,
 };
 use async_trait::async_trait;
@@ -262,12 +265,13 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
     /// Attempt to instantiate and register a tracing subscriber setup from settings.
     fn start_tracing(&self, latencies: prometheus::HistogramVec) -> Result<()> {
         let log = self.as_ref().settings.logging;
+        let level_filter = log_level_to_level_filter(log.level);
         let fmt_layer: LogOutputLayer<_> = log.fmt.into();
         let err_layer = tracing_error::ErrorLayer::default();
 
         let subscriber = tracing_subscriber::Registry::default()
             .with(TimeSpanLifetime::new(latencies))
-            .with(log.level.to_filter())
+            .with(level_filter)
             .with(fmt_layer)
             .with(err_layer);
 

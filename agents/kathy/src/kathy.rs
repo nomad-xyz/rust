@@ -11,7 +11,7 @@ use tracing::{info, Instrument};
 use ethers::core::types::H256;
 use nomad_base::{decl_agent, decl_channel, AgentCore, CachingHome, CachingReplica, NomadAgent};
 use nomad_core::{Common, Home, Message, Replica};
-use nomad_types::agent::kathy::ChatGenConfig;
+use nomad_xyz_configuration::agent::kathy::ChatGenConfig;
 
 use crate::settings::KathySettings as Settings;
 

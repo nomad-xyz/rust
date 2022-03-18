@@ -1,6 +1,7 @@
 use color_eyre::Report;
-use nomad_core::{ContractLocator, NomadIdentifier, Signers};
+use nomad_core::{ContractLocator, Signers};
 use nomad_ethereum::{make_conn_manager, make_home, make_replica, Connection};
+use nomad_types::NomadIdentifier;
 use nomad_xyz_configuration::{contracts::CoreContracts, NomadConfig};
 use serde::Deserialize;
 
@@ -34,6 +35,28 @@ pub struct PageSettings {
     pub page_size: u32,
 }
 
+/// What type of chain setup your are retrieving
+#[derive(Debug, Clone)]
+pub enum ChainSetupType<'a> {
+    /// Home
+    Home {
+        /// Home network
+        home_network: &'a str,
+    },
+    /// Replica
+    Replica {
+        /// Home network
+        home_network: &'a str,
+        /// Remote network
+        remote_network: &'a str,
+    },
+    /// Connection manager
+    ConnectionManager {
+        /// Remote network
+        remote_network: &'a str,
+    },
+}
+
 /// A chain setup is a domain ID, an address on that chain (where the home or
 /// replica is deployed) and details for connecting to the chain API.
 #[derive(Clone, Debug, Deserialize, Default)]
@@ -57,8 +80,14 @@ pub struct ChainSetup {
 }
 
 impl ChainSetup {
-    /// Instantiate home ChainSetup from NomadConfig
-    pub fn home_from_nomad_config(network: &str, config: &NomadConfig) -> Self {
+    /// Instatiate ChainSetup from NomadConfig
+    pub fn from_nomad_config(setup_type: ChainSetupType, config: &NomadConfig) -> Self {
+        let network: String = match &setup_type {
+            ChainSetupType::Home { home_network } => home_network.to_string(),
+            ChainSetupType::Replica { remote_network, .. } => remote_network.to_string(),
+            ChainSetupType::ConnectionManager { remote_network } => remote_network.to_string(),
+        };
+
         let domain = config
             .protocol()
             .get_network(network.to_owned().into())
@@ -66,10 +95,20 @@ impl ChainSetup {
         let domain_number = domain.domain.try_into().unwrap(); // TODO: fix uint
         let finality = domain.specs.finalization_blocks.try_into().unwrap(); // TODO: fix uint
 
-        let home_core = config.core().get(network).expect("!core");
-        let (address, page_settings, chain) = match home_core {
+        let core = config.core().get(&network).expect("!core");
+        let (address, page_settings, chain) = match core {
             CoreContracts::Evm(core) => {
-                let address = (*core.home.proxy).into(); // TODO: fix repeated type
+                let address = match &setup_type {
+                    ChainSetupType::Home { .. } => core.home.proxy,
+                    ChainSetupType::Replica { home_network, .. } => {
+                        core.replicas
+                            .get(&home_network.to_string())
+                            .expect("!replica")
+                            .proxy
+                    }
+                    ChainSetupType::ConnectionManager { .. } => core.x_app_connection_manager,
+                };
+
                 let page_settings = PageSettings {
                     from: core.deploy_height.try_into().unwrap(), // TODO: fix uint
                     page_size: domain.specs.index_page_size.try_into().unwrap(), // TODO: fix uint
@@ -84,55 +123,7 @@ impl ChainSetup {
         };
 
         Self {
-            name: network.to_owned(),
-            domain: domain_number,
-            address,
-            page_settings,
-            finality,
-            chain,
-            disabled: None,
-        }
-    }
-
-    /// Instatiate replica ChainSetup from NomadConfig
-    pub fn replica_from_nomad_config(
-        home_network: &str,
-        remote_network: &str,
-        config: &NomadConfig,
-    ) -> Self {
-        let address = (*config
-            .locate_replica_of(
-                home_network.to_owned().into(),
-                remote_network.to_owned().into(),
-            )
-            .expect("!replica"))
-        .into(); // TODO: fix repeated type
-
-        let remote_domain = config
-            .protocol()
-            .get_network(remote_network.to_owned().into())
-            .expect("!replica domain");
-        let domain_number = remote_domain.domain.try_into().unwrap(); // TODO: fix uint
-        let finality = remote_domain.specs.finalization_blocks.try_into().unwrap(); // TODO: fix uint
-
-        let remote_core = config.core().get(remote_network).expect("!replica core");
-        let (page_settings, chain) = match remote_core {
-            CoreContracts::Evm(core) => {
-                let page_settings = PageSettings {
-                    from: core.deploy_height.try_into().unwrap(), // TODO: fix uint
-                    page_size: remote_domain.specs.index_page_size.try_into().unwrap(), // TODO: fix uint
-                };
-
-                let chain = ChainConf::Ethereum(Connection::Http {
-                    url: "TODO: get secret rpc url".into(),
-                }); // TODO: draw on secrets
-
-                (page_settings, chain)
-            }
-        };
-
-        Self {
-            name: remote_network.to_owned(),
+            name: network,
             domain: domain_number,
             address,
             page_settings,
