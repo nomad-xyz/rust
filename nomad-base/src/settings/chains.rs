@@ -90,7 +90,7 @@ impl ChainSetup {
 
         let domain = config
             .protocol()
-            .get_network(network.to_owned().into())
+            .get_network(network.clone().into())
             .expect("!domain");
         let domain_number = domain.domain.try_into().unwrap(); // TODO: fix uint
         let finality = domain.specs.finalization_blocks.try_into().unwrap(); // TODO: fix uint
