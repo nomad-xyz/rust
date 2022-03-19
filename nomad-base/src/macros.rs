@@ -94,6 +94,8 @@ macro_rules! decl_channel {
     }
 }
 
+/// Trait agent-specific settings must implement to be constructed from
+/// NomadConfig and AgentSecrets blocks. Used in decl_settings! macro.
 pub trait AgentSettingsBlock {
     fn from_config_and_secrets(
         home_network: &str,

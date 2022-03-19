@@ -200,7 +200,7 @@ pub struct Settings {
     /// The path to use for the DB file
     pub db: String,
     /// Port to listen for prometheus scrape requests
-    pub metrics: Option<String>,
+    pub metrics: Option<u16>,
     /// Settings for the home indexer
     #[serde(default)]
     pub index: IndexSettings,
@@ -219,7 +219,7 @@ impl Settings {
     fn clone(&self) -> Self {
         Self {
             db: self.db.clone(),
-            metrics: self.metrics.clone(),
+            metrics: self.metrics,
             index: self.index.clone(),
             home: self.home.clone(),
             replicas: self.replicas.clone(),
@@ -457,9 +457,7 @@ impl Settings {
     pub async fn try_into_core(&self, name: &str) -> Result<AgentCore, Report> {
         let metrics = Arc::new(crate::metrics::CoreMetrics::new(
             name,
-            self.metrics
-                .as_ref()
-                .map(|v| v.parse::<u16>().expect("metrics port must be u16")),
+            self.metrics,
             Arc::new(prometheus::Registry::new()),
         )?);
         let sync_metrics = ContractSyncMetrics::new(metrics.clone());
@@ -490,10 +488,10 @@ impl Settings {
         config: &NomadConfig,
         secrets: &AgentSecrets,
     ) -> Self {
-        let agent = config.agent().get(agent_name).expect("!agent config");
+        let agent = config.agent().get(home_network).expect("!agent config");
 
         let db = agent.db.to_str().expect("!db").to_owned();
-        let metrics = Some("9090".to_owned()); // TODO: update config crate to include metrics
+        let metrics = agent.metrics;
         let index = IndexSettings::from_agent_name(agent_name);
 
         let home = ChainSetup::from_config_and_secrets(

@@ -2113,7 +2113,7 @@ dependencies = [
  "log",
  "nomad-base",
  "nomad-core",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=ffae9b7)",
+ "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=3a6f754)",
  "nomad-xyz-configuration",
  "paste",
  "prometheus",
@@ -2573,7 +2573,7 @@ dependencies = [
  "nomad-core",
  "nomad-ethereum",
  "nomad-test",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=ffae9b7)",
+ "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=3a6f754)",
  "nomad-xyz-configuration",
  "once_cell",
  "opentelemetry",
@@ -2626,7 +2626,7 @@ dependencies = [
  "ethers-signers 0.6.0",
  "hex",
  "lazy_static",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=ffae9b7)",
+ "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=3a6f754)",
  "num",
  "prometheus",
  "rocksdb",
@@ -2654,7 +2654,7 @@ dependencies = [
  "futures-util",
  "hex",
  "nomad-core",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=ffae9b7)",
+ "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=3a6f754)",
  "num",
  "prometheus",
  "rocksdb",
@@ -2704,7 +2704,7 @@ dependencies = [
 [[package]]
 name = "nomad-types"
 version = "0.1.0"
-source = "git+https://github.com/nomad-xyz/rust?rev=ffae9b7#ffae9b7cea9e916c3f88e87966cc0791ecbccb80"
+source = "git+https://github.com/nomad-xyz/rust?rev=3a6f754#3a6f754586260bc5176c24b2df96607a1b58ab5b"
 dependencies = [
  "ethers 0.6.2",
  "prometheus",
@@ -2717,13 +2717,13 @@ dependencies = [
 [[package]]
 name = "nomad-xyz-configuration"
 version = "0.1.0-rc.3"
-source = "git+https://github.com/nomad-xyz/configuration?rev=de4e8f5#de4e8f5a3868469177266c724117c814543b94eb"
+source = "git+https://github.com/nomad-xyz/configuration?rev=ef61f9f#ef61f9f1c2fb625d049ea4e1c37235aba7ef0806"
 dependencies = [
  "affix",
  "ethers 0.6.2",
  "eyre",
  "js-sys",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=ffae9b7)",
+ "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=3a6f754)",
  "once_cell",
  "paste",
  "serde 1.0.136",
@@ -3219,7 +3219,7 @@ dependencies = [
  "nomad-base",
  "nomad-core",
  "nomad-test",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=ffae9b7)",
+ "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=3a6f754)",
  "nomad-xyz-configuration",
  "paste",
  "prometheus",

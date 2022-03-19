@@ -18,7 +18,6 @@ pub struct ProcessorSettingsBlock {
     pub s3: Option<S3Config>,
 }
 
-// TODO: add processor settings block to nomad-types
 impl AgentSettingsBlock for ProcessorSettingsBlock {
     fn from_config_and_secrets(
         home_network: &str,
