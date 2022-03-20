@@ -18,11 +18,11 @@ macro_rules! impl_deser_nomad_number {
                             .write_str("an integer, a decimal string, or a 0x-prepended hexadecimal string")
                     }
 
-                    fn [<visit_ $u>]<E>(self, v: $u) -> Result<Self::Value, E>
+                    fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
                     where
                         E: serde::de::Error,
                     {
-                        Ok(v)
+                        Ok(v.try_into().expect(&std::format!("failed to cast u64 into {}", stringify!($u))))
                     }
 
                     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>

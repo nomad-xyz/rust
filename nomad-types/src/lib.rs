@@ -6,7 +6,6 @@ pub use error::*;
 mod macros;
 pub use macros::*;
 
-use crate::NomadTypeError;
 use ethers::prelude::{Address, H256};
 use serde::{de, Deserializer};
 use std::{fmt, ops::DerefMut};
@@ -196,7 +195,7 @@ mod test {
 
     #[test]
     fn it_sers_and_desers_numbers() {
-        // should serialize as a number, but have permissive deser
+        // u64
         let five: u64 = 5;
         let serialized = serde_json::to_value(&five).unwrap();
 
@@ -211,6 +210,23 @@ mod test {
 
         let val = json! { "0x5" };
         let n = deser_nomad_number_u64(val).unwrap();
+        assert_eq!(n, five);
+
+        // u32
+        let five: u32 = 5;
+        let serialized = serde_json::to_value(&five).unwrap();
+
+        let val = json! { 5 };
+        assert_eq!(serialized, val);
+        let n = deser_nomad_number_u32(val).unwrap();
+        assert_eq!(n, five);
+
+        let val = json! { "5" };
+        let n = deser_nomad_number_u32(val).unwrap();
+        assert_eq!(n, five);
+
+        let val = json! { "0x5" };
+        let n = deser_nomad_number_u32(val).unwrap();
         assert_eq!(n, five);
     }
 }
