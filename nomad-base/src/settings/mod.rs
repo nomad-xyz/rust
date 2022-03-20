@@ -614,6 +614,9 @@ impl Settings {
                     assert_eq!(replica_setup.page_settings.from as u64, core.deploy_height);
                 }
             }
+
+            let replica_chain_conf = secrets.rpcs.get(remote_network).unwrap();
+            assert_eq!(&replica_setup.chain, replica_chain_conf);
         }
 
         for (network, signer) in self.signers.iter() {
