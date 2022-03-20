@@ -2695,6 +2695,7 @@ name = "nomad-types"
 version = "0.1.0"
 dependencies = [
  "ethers 0.6.2",
+ "paste",
  "prometheus",
  "serde 1.0.136",
  "serde_json",
