@@ -98,9 +98,8 @@ impl ChainSetup {
             .protocol()
             .get_network(resident_network.clone().into())
             .expect("!domain");
-        let domain_number = domain.domain.try_into().unwrap(); // TODO: fix uint
-        let finality = domain.specs.finalization_blocks.try_into().unwrap(); // TODO: fix uint
-
+        let domain_number = domain.domain;
+        let finality = domain.specs.finalization_blocks;
         let core = config.core().get(&resident_network).expect("!core");
         let (address, page_settings) = match core {
             CoreContracts::Evm(core) => {
@@ -116,8 +115,8 @@ impl ChainSetup {
                 };
 
                 let page_settings = PageSettings {
-                    from: core.deploy_height.try_into().unwrap(), // TODO: fix uint
-                    page_size: domain.specs.index_page_size.try_into().unwrap(), // TODO: fix uint
+                    from: core.deploy_height,
+                    page_size: domain.specs.index_page_size,
                 };
 
                 (address, page_settings)

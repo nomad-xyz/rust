@@ -107,13 +107,13 @@ mod test {
                 .unwrap();
 
             assert_eq!(manager_setup.name, config_manager_domain.name);
-            assert_eq!(manager_setup.domain as u64, config_manager_domain.domain);
+            assert_eq!(manager_setup.domain, config_manager_domain.domain);
             assert_eq!(
-                manager_setup.page_settings.page_size as u64,
+                manager_setup.page_settings.page_size,
                 config_manager_domain.specs.index_page_size
             );
             assert_eq!(
-                manager_setup.finality as u64,
+                manager_setup.finality,
                 config_manager_domain.specs.finalization_blocks
             );
 
@@ -121,7 +121,7 @@ mod test {
             match config_manager_core {
                 CoreContracts::Evm(core) => {
                     assert_eq!(manager_setup.address, core.x_app_connection_manager,);
-                    assert_eq!(manager_setup.page_settings.from as u64, core.deploy_height);
+                    assert_eq!(manager_setup.page_settings.from, core.deploy_height);
                 }
             }
 

@@ -559,13 +559,13 @@ impl Settings {
             .get_network(home_network.to_owned().into())
             .unwrap();
         assert_eq!(self.home.name, config_home_domain.name);
-        assert_eq!(self.home.domain as u64, config_home_domain.domain);
+        assert_eq!(self.home.domain, config_home_domain.domain);
         assert_eq!(
-            self.home.page_settings.page_size as u64,
+            self.home.page_settings.page_size,
             config_home_domain.specs.index_page_size
         );
         assert_eq!(
-            self.home.finality as u64,
+            self.home.finality,
             config_home_domain.specs.finalization_blocks
         );
 
@@ -573,7 +573,7 @@ impl Settings {
         match config_home_core {
             CoreContracts::Evm(core) => {
                 assert_eq!(self.home.address, core.home.proxy);
-                assert_eq!(self.home.page_settings.from as u64, core.deploy_height);
+                assert_eq!(self.home.page_settings.from, core.deploy_height);
             }
         }
 
@@ -594,13 +594,13 @@ impl Settings {
                 .unwrap();
 
             assert_eq!(replica_setup.name, config_replica_domain.name);
-            assert_eq!(replica_setup.domain as u64, config_replica_domain.domain);
+            assert_eq!(replica_setup.domain, config_replica_domain.domain);
             assert_eq!(
-                replica_setup.page_settings.page_size as u64,
+                replica_setup.page_settings.page_size,
                 config_replica_domain.specs.index_page_size
             );
             assert_eq!(
-                replica_setup.finality as u64,
+                replica_setup.finality,
                 config_replica_domain.specs.finalization_blocks
             );
 
@@ -611,7 +611,7 @@ impl Settings {
                         replica_setup.address,
                         core.replicas.get(home_network).unwrap().proxy
                     );
-                    assert_eq!(replica_setup.page_settings.from as u64, core.deploy_height);
+                    assert_eq!(replica_setup.page_settings.from, core.deploy_height);
                 }
             }
 

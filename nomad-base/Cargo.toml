@@ -22,9 +22,9 @@ tracing-subscriber = "0.2.15"
 rocksdb = { git = "https://github.com/rust-rocksdb/rust-rocksdb" }
 mockall = "0.10.2"
 rand = "0.8.3"
-nomad-xyz-configuration = { git = "https://github.com/nomad-xyz/configuration", rev = "e0df0b7" }
+nomad-xyz-configuration = { git = "https://github.com/nomad-xyz/configuration", rev = "6aa70cc" }
 
-nomad-types = {git = "https://github.com/nomad-xyz/rust", rev = "c366580"}
+nomad-types = {git = "https://github.com/nomad-xyz/rust", rev = "6f5f96b"}
 nomad-core = { path = "../nomad-core" }
 nomad-ethereum = { path = "../chains/nomad-ethereum"}
 nomad-test = { path = "../nomad-test" }
