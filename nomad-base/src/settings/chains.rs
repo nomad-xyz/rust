@@ -14,7 +14,7 @@ use crate::{
 ///
 /// Specify the chain name (enum variant) in toml under the `chain` key
 /// Specify the connection details as a toml object under the `connection` key.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(tag = "rpcStyle", content = "connection", rename_all = "camelCase")]
 pub enum ChainConf {
     /// Ethereum configuration
@@ -88,16 +88,11 @@ impl ChainSetup {
         secrets: &AgentSecrets,
     ) -> Self {
         let resident_network: String = match &setup_type {
-            ChainSetupType::Home { home_network } => home_network.to_string(),
-            ChainSetupType::Replica { remote_network, .. } => remote_network.to_string(),
-            ChainSetupType::ConnectionManager { remote_network } => remote_network.to_string(),
-        };
-
-        let chain = secrets
-            .rpcs
-            .get(&resident_network)
-            .expect("!rpc")
-            .to_owned();
+            ChainSetupType::Home { home_network } => home_network,
+            ChainSetupType::Replica { remote_network, .. } => remote_network,
+            ChainSetupType::ConnectionManager { remote_network } => remote_network,
+        }
+        .to_string();
 
         let domain = config
             .protocol()
@@ -128,6 +123,12 @@ impl ChainSetup {
                 (address, page_settings)
             }
         };
+
+        let chain = secrets
+            .rpcs
+            .get(&resident_network)
+            .expect("!rpc")
+            .to_owned();
 
         Self {
             name: resident_network,

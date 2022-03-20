@@ -8,22 +8,28 @@
 //! {
 //!     "rpcs": {
 //!         "ethereum": {
-//!             "type": "http",
-//!             "url": ""
+//!             "rpcStyle": "ethereum",
+//!             "connection": {
+//!                 "type": "http",
+//!                 "url": ""
+//!             }
 //!         },
 //!         "moonbeam": {
-//!             "type": "http",
-//!             "url": ""
+//!             "rpcStyle": "ethereum",
+//!             "connection": {
+//!                 "type": "http",
+//!                 "url": ""
+//!             }
 //!         },
 //!     },
 //!     "transactionSigners": {
 //!         "ethereum": {
-//!             "key": "",
 //!             "type": "hexKey"
+//!             "key": "",
 //!         },
 //!         "moonbeam": {
-//!             "key": "",
 //!             "type": "hexKey"
+//!             "key": "",
 //!         },
 //!     },
 //!     "attestationSigner": {

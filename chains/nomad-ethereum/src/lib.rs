@@ -37,7 +37,7 @@ mod xapp;
 mod gas;
 
 /// Ethereum connection configuration
-#[derive(Debug, serde::Deserialize, Clone)]
+#[derive(Debug, serde::Deserialize, Clone, PartialEq)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum Connection {
     /// HTTP connection details

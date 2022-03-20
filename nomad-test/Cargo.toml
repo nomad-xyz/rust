@@ -18,6 +18,7 @@ mockall = "0.10.2"
 rand = "0.8.3"
 rocksdb = { git = "https://github.com/rust-rocksdb/rust-rocksdb" }
 
+nomad-xyz-configuration = { git = "https://github.com/nomad-xyz/configuration", rev = "e0df0b7" }
 nomad-core = { path = "../nomad-core" }
 nomad-ethereum = { path = "../chains/nomad-ethereum"}
 tracing = "0.1.26"

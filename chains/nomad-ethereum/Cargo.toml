@@ -21,7 +21,7 @@ color-eyre = "0.5.0"
 anyhow = "1"
 num = "0.4"
 
-nomad-types = {git = "https://github.com/nomad-xyz/rust", rev = "3a6f754"}
+nomad-types = {git = "https://github.com/nomad-xyz/rust", rev = "c366580"}
 nomad-core = { path = "../../nomad-core" }
 tokio = "1.7.1"
 hex = "0.4.3"

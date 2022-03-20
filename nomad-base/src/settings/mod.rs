@@ -13,7 +13,7 @@ use color_eyre::{eyre::bail, Report};
 use ethers::prelude::AwsSigner;
 use nomad_core::{db::DB, utils::HexString, Common, ContractLocator, Signers};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
-use nomad_xyz_configuration::NomadConfig;
+use nomad_xyz_configuration::{contracts::CoreContracts, NomadConfig};
 use rusoto_core::{credential::EnvironmentProvider, HttpClient};
 use rusoto_kms::KmsClient;
 use serde::Deserialize;
@@ -27,6 +27,10 @@ pub use chains::{ChainConf, ChainSetup, ChainSetupType};
 /// Secrets
 pub mod secrets;
 pub use secrets::AgentSecrets;
+
+/// Macros
+pub mod macros;
+pub use macros::*;
 
 /// Tracing subscriber management
 pub mod trace;
@@ -67,7 +71,7 @@ impl Default for IndexDataTypes {
 }
 
 /// Ethereum signer types
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum SignerConf {
     /// A local hex key
@@ -120,7 +124,7 @@ impl SignerConf {
 }
 
 /// Home indexing settings
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Default, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct IndexSettings {
     /// Data types to index
@@ -500,13 +504,13 @@ impl Settings {
             secrets,
         );
 
-        let replica_networks = &config
+        let connections = &config
             .protocol()
             .networks
             .get(home_network)
             .expect("!replica networks")
             .connections;
-        let replicas = replica_networks
+        let replicas = connections
             .iter()
             .map(|remote_network| {
                 (
@@ -532,5 +536,91 @@ impl Settings {
             logging: agent.logging,
             signers: secrets.transaction_signers.clone(),
         }
+    }
+
+    /// Validate base config against NomadConfig and AgentSecrets blocks
+    pub fn validate_against_config_and_secrets(
+        &self,
+        agent_name: &str,
+        home_network: &str,
+        config: &NomadConfig,
+        secrets: &AgentSecrets,
+    ) -> color_eyre::Result<()> {
+        let agent = config.agent().get(home_network).unwrap();
+        assert_eq!(self.db, agent.db.to_str().unwrap());
+        assert_eq!(self.metrics, agent.metrics);
+        assert_eq!(self.logging, agent.logging); // TODO: fix in config crate
+
+        let index_settings = IndexSettings::from_agent_name(agent_name);
+        assert_eq!(self.index, index_settings);
+
+        let config_home_domain = config
+            .protocol()
+            .get_network(home_network.to_owned().into())
+            .unwrap();
+        assert_eq!(self.home.name, config_home_domain.name);
+        assert_eq!(self.home.domain as u64, config_home_domain.domain);
+        assert_eq!(
+            self.home.page_settings.page_size as u64,
+            config_home_domain.specs.index_page_size
+        );
+        assert_eq!(
+            self.home.finality as u64,
+            config_home_domain.specs.finalization_blocks
+        );
+
+        let config_home_core = config.core().get(home_network).unwrap();
+        match config_home_core {
+            CoreContracts::Evm(core) => {
+                assert_eq!(self.home.address, core.home.proxy);
+                assert_eq!(self.home.page_settings.from as u64, core.deploy_height);
+            }
+        }
+
+        let home_chain_conf = secrets.rpcs.get(home_network).unwrap();
+        assert_eq!(&self.home.chain, home_chain_conf);
+
+        let home_connections = &config
+            .protocol()
+            .networks
+            .get(home_network)
+            .expect("!networks")
+            .connections;
+        for remote_network in home_connections {
+            let replica_setup = self.replicas.get(remote_network).unwrap();
+            let config_replica_domain = config
+                .protocol()
+                .get_network(remote_network.to_owned().into())
+                .unwrap();
+
+            assert_eq!(replica_setup.name, config_replica_domain.name);
+            assert_eq!(replica_setup.domain as u64, config_replica_domain.domain);
+            assert_eq!(
+                replica_setup.page_settings.page_size as u64,
+                config_replica_domain.specs.index_page_size
+            );
+            assert_eq!(
+                replica_setup.finality as u64,
+                config_replica_domain.specs.finalization_blocks
+            );
+
+            let config_replica_core = config.core().get(remote_network).unwrap();
+            match config_replica_core {
+                CoreContracts::Evm(core) => {
+                    assert_eq!(
+                        replica_setup.address,
+                        core.replicas.get(home_network).unwrap().proxy
+                    );
+                    assert_eq!(replica_setup.page_settings.from as u64, core.deploy_height);
+                }
+            }
+        }
+
+        for (network, signer) in self.signers.iter() {
+            let secret_signer = secrets.transaction_signers.get(network).unwrap();
+            assert_eq!(signer, secret_signer);
+        }
+
+        Ok(())
     }
 }

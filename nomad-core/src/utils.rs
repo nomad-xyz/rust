@@ -37,7 +37,7 @@ pub fn destination_and_nonce(destination: u32, nonce: u32) -> u64 {
 }
 
 /// A Hex String of length `N` representing bytes of length `N / 2`
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct HexString<const N: usize>(String);
 
 impl<const N: usize> AsRef<String> for HexString<N> {

@@ -18,7 +18,7 @@ color-eyre = "0.5.0"
 tracing = "0.1.22"
 tracing-futures = "0.2.4"
 tracing-subscriber = "0.2.15"
-nomad-xyz-configuration = { git = "https://github.com/nomad-xyz/configuration", rev = "ef61f9f" }
+nomad-xyz-configuration = { git = "https://github.com/nomad-xyz/configuration", rev = "e0df0b7" }
 
 nomad-core = { path = "../../nomad-core" }
 nomad-base = { path = "../../nomad-base" }
