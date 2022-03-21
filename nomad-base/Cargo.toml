@@ -46,3 +46,7 @@ once_cell = "1.8.0"
 [[example]]
 name = "example"
 path = "./bin/example.rs"
+
+[[bin]]
+name = "secrets-template"
+path = "./src/bin/secrets_template.rs"
