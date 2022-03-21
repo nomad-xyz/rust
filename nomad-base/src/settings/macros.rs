@@ -43,7 +43,6 @@ macro_rules! decl_settings {
                 #[serde(flatten)]
                 pub(crate) base: nomad_base::Settings,
                 pub(crate) agent: $agent_settings, // TODO: flatten out struct fields
-
             }
 
             impl AsRef<nomad_base::Settings> for [<$name Settings>] {
@@ -57,7 +56,7 @@ macro_rules! decl_settings {
                     let agent = std::stringify!($name).to_lowercase();
                     let env = std::env::var("RUN_ENV").expect("missing RUN_ENV env var");
                     let home = std::env::var("AGENT_HOME").expect("missing AGENT_HOME env var");
-                    let secrets_path = &std::env::var("SECRETS_PATH").expect("missing SECRETS_PATH env var");
+                    let secrets_path = &std::env::var("SECRETS_PATH").unwrap_or("./secrets.json".to_owned()); // default to ./secrets.json
 
                     let config = nomad_xyz_configuration::get_builtin(&env).expect("!config");
                     let secrets = nomad_base::AgentSecrets::from_file(secrets_path.into())?;
