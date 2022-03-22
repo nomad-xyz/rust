@@ -2114,7 +2114,7 @@ dependencies = [
  "log",
  "nomad-base",
  "nomad-core",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=f63d288)",
+ "nomad-types",
  "nomad-xyz-configuration",
  "prometheus",
  "rand",
@@ -2574,7 +2574,7 @@ dependencies = [
  "nomad-core",
  "nomad-ethereum",
  "nomad-test",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=f63d288)",
+ "nomad-types",
  "nomad-xyz-configuration",
  "once_cell",
  "opentelemetry",
@@ -2626,7 +2626,7 @@ dependencies = [
  "ethers-signers 0.6.0",
  "hex",
  "lazy_static",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=f63d288)",
+ "nomad-types",
  "num",
  "prometheus",
  "rocksdb",
@@ -2654,7 +2654,7 @@ dependencies = [
  "futures-util",
  "hex",
  "nomad-core",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=f63d288)",
+ "nomad-types",
  "num",
  "prometheus",
  "rocksdb",
@@ -2704,29 +2704,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "nomad-types"
-version = "0.1.0"
-source = "git+https://github.com/nomad-xyz/rust?rev=f63d288#f63d2885ebc5914c95c52e79e46f25aee2ec7984"
-dependencies = [
- "ethers 0.6.2",
- "paste",
- "prometheus",
- "serde 1.0.136",
- "serde_json",
- "thiserror",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "nomad-xyz-configuration"
-version = "0.1.0-rc.3"
-source = "git+https://github.com/nomad-xyz/configuration?rev=2350f74#2350f74313d6ad11c316a07982dfec1f59ccd044"
+version = "0.1.0-rc.5"
 dependencies = [
  "affix",
  "ethers 0.6.2",
  "eyre",
  "js-sys",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=f63d288)",
+ "nomad-types",
  "once_cell",
  "serde 1.0.136",
  "serde_json",
@@ -3023,12 +3008,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "paste"
-version = "1.0.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0744126afe1a6dd7f394cb50a716dbe086cb06e255e53d8d0185d82828358fb5"
-
-[[package]]
 name = "pbkdf2"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3222,7 +3201,7 @@ dependencies = [
  "nomad-base",
  "nomad-core",
  "nomad-test",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=f63d288)",
+ "nomad-types",
  "nomad-xyz-configuration",
  "prometheus",
  "rocksdb",

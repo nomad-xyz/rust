@@ -1,0 +1,35 @@
+[package]
+name = "nomad-xyz-configuration"
+version = "0.1.0-rc.5"
+edition = "2021"
+authors = ["James Prestwich <james@nomad.xyz>", "The Nomad Developers <team@nomad.xyz>"]
+description = "Nomad project configuration file utilities"
+repository = "https://github.com/nomad-xyz/configuration"
+license = "MIT OR Apache-2.0"
+exclude = [
+    "*.sh",
+    ".git*"
+]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+eyre = "0.6.6"
+
+[dependencies]
+affix = "0.1.2"
+ethers = "0.6.2"
+eyre = "0.6.6"
+once_cell = "1.9.0"
+serde = "1.0.136"
+serde_json = "1.0.78"
+serde_yaml = "0.8.23"
+nomad-types = { path = "../nomad-types" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wee_alloc = "0.4.5"
+js-sys = "0.3.56"
+wasm-bindgen = { version = "0.2.79", features = ["serde-serialize"] }

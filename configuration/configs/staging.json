@@ -1,0 +1,372 @@
+{
+  "version": 0,
+  "environment": "staging",
+  "networks": ["rinkeby", "kovan", "moonbasealpha"],
+  "rpcs": {
+    "rinkeby": [],
+    "kovan": [],
+    "moonbasealpha": []
+  },
+  "protocol": {
+    "governor": {
+      "id": "0x812c096810e8eFAA73efF841B601Ab82a7be9aB0",
+      "domain": 2000
+    },
+    "networks": {
+      "rinkeby": {
+        "name": "rinkeby",
+        "domain": 2000,
+        "connections": ["kovan", "moonbasealpha"],
+        "specs": {
+          "chainId": 4,
+          "blockTime": 15,
+          "finalizationBlocks": 10,
+          "supports1559": true,
+          "confirmations": 2,
+          "blockExplorer": "https://rinkeby.etherscan.io/",
+          "indexPageSize": 2000
+        },
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 15000,
+          "maximumGas": 1000000,
+          "governance": {
+            "recoveryManager": "0x812c096810e8eFAA73efF841B601Ab82a7be9aB0",
+            "recoveryTimelock": 86400
+          },
+          "updater": "0x6b237D5AF6E5116Fe27116C0F6257Caa6721d043",
+          "watchers": ["0x37B1E57b43e755dA8384D05cf437D88D0274Bfbd"]
+        },
+        "bridgeConfiguration": {
+          "weth": "0xc778417E063141139Fce010982780140Aa0cD5Ab",
+          "customs": [],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
+      },
+      "kovan": {
+        "name": "kovan",
+        "domain": 3000,
+        "connections": ["rinkeby"],
+        "specs": {
+          "chainId": 42,
+          "blockTime": 4,
+          "finalizationBlocks": 5,
+          "supports1559": false,
+          "confirmations": 2,
+          "blockExplorer": "https://kovan.etherscan.io/",
+          "indexPageSize": 2000
+        },
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 15000,
+          "maximumGas": 1000000,
+          "governance": {
+            "recoveryManager": "0xa4849f1D96B26066f9C631FCdc8F1457D27Fb5EC",
+            "recoveryTimelock": 86400
+          },
+          "updater": "0x5340fe2F454B861E71647bd80596A3463e095C9c",
+          "watchers": ["0xa031973b293B924f6C848202Bf1dc3107fDE4D1e"]
+        },
+        "bridgeConfiguration": {
+          "weth": "0xd0a1e359811322d97991e03f863a0c30c2cf029c",
+          "customs": [],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
+      },
+      "moonbasealpha": {
+        "name": "moonbasealpha",
+        "domain": 5000,
+        "connections": ["rinkeby"],
+        "specs": {
+          "chainId": 1287,
+          "blockTime": 17,
+          "finalizationBlocks": 20,
+          "supports1559": true,
+          "confirmations": 3,
+          "blockExplorer": "https://moonbase-blockscout.testnet.moonbeam.network/",
+          "indexPageSize": 500
+        },
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 15000,
+          "maximumGas": 1000000,
+          "governance": {
+            "recoveryManager": "0xa4849f1D96B26066f9C631FCdc8F1457D27Fb5EC",
+            "recoveryTimelock": 86400
+          },
+          "updater": "0xD39dd43eFDD867939A2F070469cB3e1252827466",
+          "watchers": ["0x1795f9A0a6853D6328241e9Dc37203cA545C3b79"]
+        },
+        "bridgeConfiguration": {
+          "weth": "0x674421e9567653ee76e96feea3b2b2966d000dbd",
+          "customs": [],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
+      }
+    }
+  },
+  "core": {
+    "rinkeby": {
+      "deployHeight": 29371335,
+      "upgradeBeaconController": "0xc87243FC20ba9CcbaeaF223C193d5AB056113609",
+      "xAppConnectionManager": "0xB72E8910e67B5743E9255F1BEa2F9e0EADbB4E65",
+      "updaterManager": "0xe12f91d610e880292200c49870f4b80B32236fBd",
+      "governanceRouter": {
+        "implementation": "0x7b87FFF56Ae297a76966802cCB80668FEe59560c",
+        "proxy": "0x681bb680067909552C868b54329F8b14342837E4",
+        "beacon": "0x02AA899c385420A0aC6CBd699f2a2D525e3C4D12"
+      },
+      "home": {
+        "implementation": "0xFD95a4A81B776De8f006bD948494feF579E4E61A",
+        "proxy": "0x86BE4e9Bc9d1dd25866477a343ea8FD2cCf11dF9",
+        "beacon": "0x2286968480CB6A5d22460769d56D4081cD9b1645"
+      },
+      "replicas": {
+        "kovan": {
+          "implementation": "0x2D701969F694e0CFa4f1F0978B1A16307FC16e42",
+          "proxy": "0x3F28A3e66326c3aa494d4F8e9477d1397EE94432",
+          "beacon": "0xC2175E11894DCb181a3D0e2bA783bc7CA47a5Bcc"
+        },
+        "moonbasealpha": {
+          "implementation": "0x2D701969F694e0CFa4f1F0978B1A16307FC16e42",
+          "proxy": "0x4058C320fe3Ee874FeC5e83B5BcA9267641C60bE",
+          "beacon": "0xC2175E11894DCb181a3D0e2bA783bc7CA47a5Bcc"
+        }
+      }
+    },
+    "kovan": {
+      "deployHeight": 29371350,
+      "upgradeBeaconController": "0xC76f53cD2C7Ac383e564FbB3790Df1702B21A574",
+      "xAppConnectionManager": "0xFA148438B26D36bcE290a45e12AA00Bdf0B9ca2e",
+      "updaterManager": "0x2B2a2f5EE2B46822DA28407F8c95aec8B0ceD7BF",
+      "governanceRouter": {
+        "implementation": "0x51Ad29cE7CdBA2a1AB2E1EbE2f15df9A34BefDfF",
+        "proxy": "0x01403db34b7aFCb5144D9c37876da5ef58b66646",
+        "beacon": "0x240fccBf3213c5243272661cAa0eA2be6cF877AF"
+      },
+      "home": {
+        "implementation": "0x65240027C0E62652b944A828903696f376946ea7",
+        "proxy": "0x85789e726B31cB74ba471aeF5FF93c3f68AE510F",
+        "beacon": "0x278D1885509b8caCd4c92f0Ae2D48B7eA40ddEFd"
+      },
+      "replicas": {
+        "rinkeby": {
+          "implementation": "0x9c6f06Fe1Ec71BEd7d4E64A5935BaE7b67AC2787",
+          "proxy": "0x3C4BD86F76E524EA81B3E84eE75C964A2ae20bc1",
+          "beacon": "0x18cebAAc57b458AC99AfE5AbE58166BDd43d461F"
+        }
+      }
+    },
+    "moonbasealpha": {
+      "deployHeight": 1556676,
+      "upgradeBeaconController": "0x272E4af5d4A496ff74615fd4f87104a6E202A365",
+      "xAppConnectionManager": "0x166b6a590A2eBEb71C3BDc74762C03a1276BBA0C",
+      "updaterManager": "0x15FD033C7Bb9eAf0961f351193BFD47f851ee414",
+      "governanceRouter": {
+        "implementation": "0x7695FA537EbCFA20e17d2c70233F6e6278925C4C",
+        "proxy": "0xB5013Dc90fC096F22b9D5b6121EE5887552F88B7",
+        "beacon": "0x39d6Cdb0ff6a08bf8EA83A476c3AAa1CD1B37d2f"
+      },
+      "home": {
+        "implementation": "0x151b8a335aD5D0D15085D172c1FC70e6A81ceec2",
+        "proxy": "0xeA5EE132A66c2cE09AEB8baDdabb26EcF33603AE",
+        "beacon": "0x40Ac82A5AaFC919a917d93c73D614891Dec6581b"
+      },
+      "replicas": {
+        "rinkeby": {
+          "implementation": "0xF49Babc83690f8A1858fe6b018ab91DE00eE1471",
+          "proxy": "0xDAF0b05031CDB7B138627af790d23FBa442A6017",
+          "beacon": "0xf95282ac903b8EEa08773C927148f3c2d95F92e6"
+        }
+      }
+    }
+  },
+  "bridge": {
+    "rinkeby": {
+      "deployHeight": 29371335,
+      "bridgeRouter": {
+        "implementation": "0x48c165f72a42ff3fe7E78c7E93a3145202CE0CC0",
+        "proxy": "0xA51a5c634309524899160327168d7f5e41988Df1",
+        "beacon": "0x74CDB1893cA722c823474a197EEFf298f580075C"
+      },
+      "tokenRegistry": {
+        "implementation": "0x997d46b019c93EAb56cE76002471FC658FF90690",
+        "proxy": "0x84B8eA132CBBAbC90e0d01E2965978204F60E46C",
+        "beacon": "0xCF7094D0DF9Fdc6419dC2492753583d8e9498bD6"
+      },
+      "bridgeToken": {
+        "implementation": "0x77534486c6467fd24b1f7d60CA61D984D91F6A2a",
+        "proxy": "0x0c576960a81F3007d0570c215F1e8820EC30c54F",
+        "beacon": "0x8441c5418713893CA4DF32a0a0c7E56bF5EE6A5f"
+      },
+      "ethHelper": "0x3B810a4545E4E71b1126dF389482eb37C0aE8815"
+    },
+    "kovan": {
+      "deployHeight": 29371350,
+      "bridgeRouter": {
+        "implementation": "0x8423980e7A20cB370b3406aBB649c0F9123F8056",
+        "proxy": "0xe2364b8B5BE2BE6B32B5BA77e29F4c22944E3ce8",
+        "beacon": "0x2e256d42DC17850229B438E3614a5bdBbf0e5F44"
+      },
+      "tokenRegistry": {
+        "implementation": "0x63A0E2380F50c48d226d2666fF7646A45542205a",
+        "proxy": "0x04062bbE05607afFcbc70FbAB1A36EF661b51760",
+        "beacon": "0x2E6Ae9Ca1C987D2F4716de414B44FC099533E4ad"
+      },
+      "bridgeToken": {
+        "implementation": "0x592E82bce3095DDE7F80E90F321DeEf72f1Ba00a",
+        "proxy": "0x6F8Bf67F0187E109cE1D0110736109808b3e5E9c",
+        "beacon": "0xB3f1e4d8eB9F47Fa56116978713Ee8Df8A8dCC01"
+      },
+      "ethHelper": "0x8679A6f835b4Bd647035d623571894665099ac36"
+    },
+    "moonbasealpha": {
+      "deployHeight": 1556676,
+      "bridgeRouter": {
+        "implementation": "0x91c798958E77CCC1D5e95F88251FD3729961AC27",
+        "proxy": "0x65A779c45334B09DE19Ccd0b5AE508Eb4D56EB4d",
+        "beacon": "0xa99F5908A4db7017f008155C57bE2454aD36eC64"
+      },
+      "tokenRegistry": {
+        "implementation": "0x8644324a1dfDbC6064E35579fF1F2a44ac9883a2",
+        "proxy": "0x33a977668b223744AF77B0d3AbB6A24899E7DE5B",
+        "beacon": "0x11494903c9a21E522bC52062165c78E591E25BD9"
+      },
+      "bridgeToken": {
+        "implementation": "0x69D7Cb022731026ef540B2214C7C0Bb0D09db72c",
+        "proxy": "0x029109e83ea6436404e943B6B57B9a6bF45658Fd",
+        "beacon": "0x665914E3c24Aa5578C1B8D3aa19d32Aa1DEfB692"
+      },
+      "ethHelper": "0x53976bBAf52e7B6770BfF6a24d26d3E4cac3DA59"
+    }
+  },
+  "agent": {
+    "rinkeby": {
+      "rpcStyle": "ethereum",
+      "db": "db",
+      "metrics": 9090,
+      "logging": {
+        "level": "debug",
+        "fmt": "json"
+      },
+      "updater": {
+        "enabled": true,
+        "interval": 5
+      },
+      "relayer": {
+        "enabled": true,
+        "interval": 10
+      },
+      "processor": {
+        "enabled": true,
+        "indexOnly": false,
+        "interval": 5
+      },
+      "watcher": {
+        "enabled": true,
+        "interval": 10
+      },
+      "kathy": {
+        "enabled": false,
+        "interval": 500
+      }
+    },
+    "kovan": {
+      "rpcStyle": "ethereum",
+      "db": "db",
+      "metrics": 9090,
+      "logging": {
+        "level": "debug",
+        "fmt": "json"
+      },
+      "updater": {
+        "enabled": true,
+        "interval": 5
+      },
+      "relayer": {
+        "enabled": true,
+        "interval": 10
+      },
+      "processor": {
+        "enabled": true,
+        "indexOnly": false,
+        "interval": 5
+      },
+      "watcher": {
+        "enabled": true,
+        "interval": 10
+      },
+      "kathy": {
+        "enabled": false,
+        "interval": 500
+      }
+    },
+    "moonbasealpha": {
+      "rpcStyle": "ethereum",
+      "db": "db",
+      "metrics": 9090,
+      "logging": {
+        "level": "debug",
+        "fmt": "json"
+      },
+      "updater": {
+        "enabled": true,
+        "interval": 5
+      },
+      "relayer": {
+        "enabled": true,
+        "interval": 10
+      },
+      "processor": {
+        "enabled": true,
+        "indexOnly": false,
+        "interval": 5
+      },
+      "watcher": {
+        "enabled": true,
+        "interval": 10
+      },
+      "kathy": {
+        "enabled": false,
+        "interval": 500
+      }
+    },
+    "milkomedaC1testnet": {
+      "rpcStyle": "ethereum",
+      "db": "db",
+      "metrics": 9090,
+      "logging": {
+        "level": "debug",
+        "fmt": "json"
+      },
+      "updater": {
+        "enabled": true,
+        "interval": 5
+      },
+      "relayer": {
+        "enabled": true,
+        "interval": 10
+      },
+      "processor": {
+        "enabled": true,
+        "indexOnly": false,
+        "interval": 5
+      },
+      "watcher": {
+        "enabled": true,
+        "interval": 10
+      },
+      "kathy": {
+        "enabled": false,
+        "interval": 500
+      }
+    }
+  },
+  "bridgeGui": {}
+}
