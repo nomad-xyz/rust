@@ -12,11 +12,11 @@ use sha3::{Digest, Keccak256};
 pub const TREE_DEPTH: usize = 32;
 const EMPTY_SLICE: &[H256] = &[];
 
-pub(super) fn hash(preimage: impl AsRef<[u8]>) -> H256 {
+pub fn hash(preimage: impl AsRef<[u8]>) -> H256 {
     H256::from_slice(Keccak256::digest(preimage.as_ref()).as_slice())
 }
 
-pub(super) fn hash_concat(left: impl AsRef<[u8]>, right: impl AsRef<[u8]>) -> H256 {
+pub fn hash_concat(left: impl AsRef<[u8]>, right: impl AsRef<[u8]>) -> H256 {
     H256::from_slice(
         Keccak256::new()
             .chain(left.as_ref())
@@ -25,6 +25,9 @@ pub(super) fn hash_concat(left: impl AsRef<[u8]>, right: impl AsRef<[u8]>) -> H2
             .as_slice(),
     )
 }
+
+pub use incremental::*;
+pub use merkle::*;
 
 lazy_static! {
     /// A cache of the zero hashes for each layer of the tree.

@@ -13,6 +13,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "accumulator"
+version = "0.1.0"
+dependencies = [
+ "ethers 0.6.0",
+ "lazy_static",
+ "serde 1.0.136",
+ "sha3",
+ "thiserror",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2456,6 +2467,7 @@ dependencies = [
 name = "nomad-core"
 version = "0.1.0"
 dependencies = [
+ "accumulator",
  "async-trait",
  "bytes",
  "color-eyre 0.5.11",

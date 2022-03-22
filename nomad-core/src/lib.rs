@@ -8,8 +8,7 @@
 #![forbid(unsafe_code)]
 #![forbid(where_clauses_object_safety)]
 
-/// Accumulator management
-pub mod accumulator;
+pub use accumulator;
 
 /// DB related utilities
 pub mod db;

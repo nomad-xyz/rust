@@ -24,11 +24,12 @@ color-eyre = "0.5.0"
 rocksdb = { git = "https://github.com/rust-rocksdb/rust-rocksdb" }
 prometheus = "0.12.0"
 bytes = { version = "1", features = ["serde"]}
-num = {version="0", features=["serde"]}
 rusoto_core = "0.47.0"
 rusoto_kms = "0.47.0"
 once_cell = "1.8.0"
+num = { version="0", features=["serde"] }
 
+accumulator = { path = "../accumulator" }
 nomad-types = { path = "../nomad-types" }
 nomad-xyz-configuration = { path = "../configuration" }
 
