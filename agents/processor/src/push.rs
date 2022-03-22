@@ -17,7 +17,7 @@ static AWS_S3_PREFIX: &str = "OPT_PROCESSOR_S3";
 #[derive(serde::Serialize, serde::Deserialize)]
 struct ProvenMessage {
     message: Vec<u8>,
-    proof: Proof,
+    proof: Proof<32>,
 }
 
 /// Pushes proofs to an S3 bucket

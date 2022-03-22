@@ -14,14 +14,14 @@ mock! {
 
         pub fn _remote_domain(&self) -> Result<u32, ChainCommunicationError> {}
 
-        pub fn _prove(&self, proof: &Proof) -> Result<TxOutcome, ChainCommunicationError> {}
+        pub fn _prove(&self, proof: &Proof<32>) -> Result<TxOutcome, ChainCommunicationError> {}
 
         pub fn _process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError> {}
 
         pub fn _prove_and_process(
             &self,
             message: &NomadMessage,
-            proof: &Proof,
+            proof: &Proof<32>,
         ) -> Result<TxOutcome, ChainCommunicationError> {}
 
         // Common
@@ -63,7 +63,7 @@ impl Replica for MockReplicaContract {
         self._remote_domain()
     }
 
-    async fn prove(&self, proof: &Proof) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn prove(&self, proof: &Proof<32>) -> Result<TxOutcome, ChainCommunicationError> {
         self._prove(proof)
     }
 
@@ -74,7 +74,7 @@ impl Replica for MockReplicaContract {
     async fn prove_and_process(
         &self,
         message: &NomadMessage,
-        proof: &Proof,
+        proof: &Proof<32>,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self._prove_and_process(message, proof)
     }

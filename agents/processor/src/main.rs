@@ -9,7 +9,7 @@
 #![warn(unused_extern_crates)]
 
 mod processor;
-mod prover;
+// mod prover;
 mod prover_sync;
 mod push;
 mod settings;

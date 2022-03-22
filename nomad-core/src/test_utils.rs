@@ -11,7 +11,7 @@ pub struct MerkleTestCase {
     /// Leaves of merkle tree
     pub leaves: Vec<String>,
     /// Proofs for leaves in tree
-    pub proofs: Vec<Proof>,
+    pub proofs: Vec<Proof<32>>,
     /// Root of tree
     pub expected_root: H256,
 }

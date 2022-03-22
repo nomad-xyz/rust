@@ -322,13 +322,13 @@ impl NomadDB {
     ///
     /// Keys --> Values:
     /// - `leaf_index` --> `proof`
-    pub fn store_proof(&self, leaf_index: u32, proof: &Proof) -> Result<(), DbError> {
+    pub fn store_proof(&self, leaf_index: u32, proof: &Proof<32>) -> Result<(), DbError> {
         debug!(leaf_index, "storing proof in DB");
         self.store_keyed_encodable(PROOF, &leaf_index, proof)
     }
 
     /// Retrieve a proof by its leaf index
-    pub fn proof_by_leaf_index(&self, leaf_index: u32) -> Result<Option<Proof>, DbError> {
+    pub fn proof_by_leaf_index(&self, leaf_index: u32) -> Result<Option<Proof<32>>, DbError> {
         self.retrieve_keyed_decodable(PROOF, &leaf_index)
     }
 

@@ -4,14 +4,14 @@ use crate::{full::merkle_root_from_branch, hash_concat, Proof, TREE_DEPTH, ZERO_
 
 #[derive(Debug, Clone, Copy)]
 /// An incremental merkle tree, modeled on the eth2 deposit contract
-pub struct IncrementalMerkle {
-    branch: [H256; TREE_DEPTH],
+pub struct IncrementalMerkle<const N: usize> {
+    branch: [H256; N],
     count: usize,
 }
 
-impl Default for IncrementalMerkle {
+impl<const N: usize> Default for IncrementalMerkle<N> {
     fn default() -> Self {
-        let mut branch: [H256; TREE_DEPTH] = Default::default();
+        let mut branch: [H256; N] = [Default::default(); N];
         branch
             .iter_mut()
             .enumerate()
@@ -20,7 +20,7 @@ impl Default for IncrementalMerkle {
     }
 }
 
-impl IncrementalMerkle {
+impl<const N: usize> IncrementalMerkle<N> {
     /// Ingest a leaf into the tree.
     pub fn ingest(&mut self, element: H256) {
         let mut node = element;
@@ -60,17 +60,17 @@ impl IncrementalMerkle {
     }
 
     /// Get the leading-edge branch.
-    pub fn branch(&self) -> &[H256; TREE_DEPTH] {
+    pub fn branch(&self) -> &[H256; N] {
         &self.branch
     }
 
     /// Calculate the root of a branch for incremental given the index
-    pub fn branch_root(item: H256, branch: [H256; TREE_DEPTH], index: usize) -> H256 {
+    pub fn branch_root(item: H256, branch: [H256; N], index: usize) -> H256 {
         merkle_root_from_branch(item, &branch, 32, index)
     }
 
     /// Verify a incremental merkle proof of inclusion
-    pub fn verify(&self, proof: &Proof) -> bool {
+    pub fn verify(&self, proof: &Proof<N>) -> bool {
         let computed = IncrementalMerkle::branch_root(proof.leaf, proof.path, proof.index as usize);
         computed == self.root()
     }

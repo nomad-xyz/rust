@@ -117,7 +117,7 @@ impl Decode for u64 {
     }
 }
 
-impl Encode for accumulator::Proof {
+impl<const N: usize> Encode for accumulator::Proof<N> {
     fn write_to<W>(&self, writer: &mut W) -> std::io::Result<usize>
     where
         W: std::io::Write,
@@ -127,11 +127,11 @@ impl Encode for accumulator::Proof {
         for hash in self.path.iter() {
             writer.write_all(hash.as_bytes())?;
         }
-        Ok(32 + 8 + accumulator::TREE_DEPTH * 32)
+        Ok(32 + 8 + N * 32)
     }
 }
 
-impl Decode for accumulator::Proof {
+impl<const N: usize> Decode for accumulator::Proof<N> {
     fn read_from<R>(reader: &mut R) -> Result<Self, NomadError>
     where
         R: std::io::Read,
@@ -139,7 +139,7 @@ impl Decode for accumulator::Proof {
     {
         let mut leaf = H256::default();
         let mut index_bytes = [0u8; 8];
-        let mut path = [H256::default(); 32];
+        let mut path = [H256::default(); N];
 
         reader.read_exact(leaf.as_bytes_mut())?;
         reader.read_exact(&mut index_bytes)?;

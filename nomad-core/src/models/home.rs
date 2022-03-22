@@ -10,14 +10,14 @@ use crate::{
 #[derive(Default, Debug, Clone)]
 pub struct Waiting {
     queue: VecDeque<H256>,
-    accumulator: IncrementalMerkle,
+    accumulator: IncrementalMerkle<32>,
 }
 
 /// Failed state
 #[derive(Debug, Clone)]
 pub struct Failed {
     queue: VecDeque<H256>,
-    accumulator: IncrementalMerkle,
+    accumulator: IncrementalMerkle<32>,
 }
 
 impl Waiting {
@@ -27,7 +27,7 @@ impl Waiting {
     }
 
     /// Return a reference to the incremental merkle tree
-    pub fn accumulator(&self) -> &IncrementalMerkle {
+    pub fn accumulator(&self) -> &IncrementalMerkle<32> {
         &self.accumulator
     }
 }
@@ -39,7 +39,7 @@ impl Failed {
     }
 
     /// Return a reference to the incremental merkle tree
-    pub fn accumulator(&self) -> &IncrementalMerkle {
+    pub fn accumulator(&self) -> &IncrementalMerkle<32> {
         &self.accumulator
     }
 }

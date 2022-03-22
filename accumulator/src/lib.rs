@@ -34,6 +34,7 @@ const EMPTY_SLICE: &[H256] = &[];
 pub use full::*;
 pub use light::*;
 pub use proof::*;
+pub use tree::*;
 
 /// Return the keccak256 digest of the preimage
 pub fn hash(preimage: impl AsRef<[u8]>) -> H256 {
@@ -62,7 +63,7 @@ lazy_static! {
     };
 
     /// The root of an empty tree
-    pub static ref INITIAL_ROOT: H256 = light::IncrementalMerkle::default().root();
+    pub static ref INITIAL_ROOT: H256 = light::IncrementalMerkle::<32>::default().root();
 }
 
 #[cfg(test)]

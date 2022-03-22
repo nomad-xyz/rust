@@ -114,7 +114,7 @@ impl ProveCommand {
         }
     }
 
-    fn fetch_proof(&self, db: NomadDB) -> Result<(NomadMessage, Proof)> {
+    fn fetch_proof(&self, db: NomadDB) -> Result<(NomadMessage, Proof<32>)> {
         let idx = match (self.leaf_index, self.leaf) {
             (Some(idx), _) => idx,
             (None, Some(digest)) => match db.message_by_leaf(digest)? {

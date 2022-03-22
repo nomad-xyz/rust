@@ -73,7 +73,7 @@ impl Replica for CachingReplica {
         self.replica.remote_domain().await
     }
 
-    async fn prove(&self, proof: &Proof) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn prove(&self, proof: &Proof<32>) -> Result<TxOutcome, ChainCommunicationError> {
         self.replica.prove(proof).await
     }
 
@@ -241,7 +241,7 @@ impl Replica for ReplicaVariants {
         }
     }
 
-    async fn prove(&self, proof: &Proof) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn prove(&self, proof: &Proof<32>) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
             ReplicaVariants::Ethereum(replica) => replica.prove(proof).await,
             ReplicaVariants::Mock(mock_replica) => mock_replica.prove(proof).await,
@@ -268,7 +268,7 @@ impl Replica for ReplicaVariants {
     async fn prove_and_process(
         &self,
         message: &NomadMessage,
-        proof: &Proof,
+        proof: &Proof<32>,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
             ReplicaVariants::Ethereum(replica) => replica.prove_and_process(message, proof).await,
