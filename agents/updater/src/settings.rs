@@ -1,10 +1,11 @@
 //! Configuration
 use nomad_base::{decl_settings, AgentSecrets, AgentSettingsBlock};
+use nomad_xyz_configuration::agent::SignerConf;
 
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct UpdaterSettingsBlock {
     pub interval: u64,
-    pub attestation_signer: nomad_base::SignerConf,
+    pub attestation_signer: SignerConf,
 }
 
 impl AgentSettingsBlock for UpdaterSettingsBlock {

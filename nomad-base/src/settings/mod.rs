@@ -10,15 +10,12 @@ use crate::{
     ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes, NomadDB, Replicas,
 };
 use color_eyre::{eyre::bail, Report};
-use ethers::prelude::AwsSigner;
-use nomad_core::{db::DB, utils::HexString, Common, ContractLocator, Signers};
+use nomad_core::{db::DB, Common, ContractLocator, Signers};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
+use nomad_xyz_configuration::agent::SignerConf;
 use nomad_xyz_configuration::{contracts::CoreContracts, NomadConfig};
-use rusoto_core::{credential::EnvironmentProvider, HttpClient};
-use rusoto_kms::KmsClient;
 use serde::Deserialize;
 use std::{collections::HashMap, sync::Arc};
-use tracing::instrument;
 
 /// Chain configuration
 pub mod chains;
@@ -36,10 +33,6 @@ pub use macros::*;
 pub mod trace;
 
 use nomad_xyz_configuration::agent::LogConfig;
-
-use once_cell::sync::OnceCell;
-
-static KMS_CLIENT: OnceCell<KmsClient> = OnceCell::new();
 
 /// Agent types
 pub enum AgentType {
@@ -67,59 +60,6 @@ pub enum IndexDataTypes {
 impl Default for IndexDataTypes {
     fn default() -> Self {
         Self::Updates
-    }
-}
-
-/// Ethereum signer types
-#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
-pub enum SignerConf {
-    /// A local hex key
-    HexKey {
-        /// Hex string of private key, without 0x prefix
-        key: HexString<64>,
-    },
-    /// An AWS signer. Note that AWS credentials must be inserted into the env
-    /// separately.
-    Aws {
-        /// The UUID identifying the AWS KMS Key
-        id: String, // change to no _ so we can set by env
-        /// The AWS region
-        region: String,
-    },
-    #[serde(other)]
-    /// Assume node will sign on RPC calls
-    Node,
-}
-
-impl Default for SignerConf {
-    fn default() -> Self {
-        Self::Node
-    }
-}
-
-impl SignerConf {
-    /// Try to convert the ethereum signer to a local wallet
-    #[instrument(err)]
-    pub async fn try_into_signer(&self) -> Result<Signers, Report> {
-        match self {
-            SignerConf::HexKey { key } => Ok(Signers::Local(key.as_ref().parse()?)),
-            SignerConf::Aws { id, region } => {
-                let client = KMS_CLIENT.get_or_init(|| {
-                    KmsClient::new_with_client(
-                        rusoto_core::Client::new_with(
-                            EnvironmentProvider::default(),
-                            HttpClient::new().unwrap(),
-                        ),
-                        region.parse().expect("invalid region"),
-                    )
-                });
-
-                let signer = AwsSigner::new(client, id, 0).await?;
-                Ok(Signers::Aws(signer))
-            }
-            SignerConf::Node => bail!("Node signer"),
-        }
     }
 }
 
@@ -236,7 +176,9 @@ impl Settings {
 impl Settings {
     /// Try to get a signer instance by name
     pub async fn get_signer(&self, name: &str) -> Option<Signers> {
-        self.signers.get(name)?.try_into_signer().await.ok()
+        Signers::try_from_signer_conf(self.signers.get(name)?)
+            .await
+            .ok()
     }
 
     /// Set agent-specific index data types

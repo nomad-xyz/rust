@@ -6,9 +6,61 @@ pub use error::*;
 mod macros;
 pub use macros::*;
 
+mod utils;
+pub use utils::*;
+
+use color_eyre::{eyre::bail, Report};
 use ethers::prelude::{Address, H256};
 use serde::{de, Deserializer};
-use std::{fmt, ops::DerefMut};
+use std::{fmt, ops::DerefMut, str::FromStr};
+
+/// A Hex String of length `N` representing bytes of length `N / 2`
+#[derive(Debug, Clone, PartialEq)]
+pub struct HexString<const N: usize>(String);
+
+impl<const N: usize> AsRef<String> for HexString<N> {
+    fn as_ref(&self) -> &String {
+        &self.0
+    }
+}
+
+impl<const N: usize> HexString<N> {
+    /// Instantiate a new HexString from any `AsRef<str>`. Tolerates 0x
+    /// prefixing. A succesful instantiation will create an owned copy of the
+    /// string.
+    pub fn from_string<S: AsRef<str>>(candidate: S) -> Result<Self, Report> {
+        let s = strip_0x_prefix(candidate.as_ref());
+
+        if s.len() != N {
+            bail!("Expected string of length {}, got {}", N, s.len());
+        }
+
+        // Lazy. Should do the check as a cheaper action
+        #[allow(clippy::question_mark)]
+        if hex::decode(s).is_err() {
+            bail!("String is not hex");
+        }
+        Ok(Self(s.to_owned()))
+    }
+}
+
+impl<const N: usize> FromStr for HexString<N> {
+    type Err = Report;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::from_string(s)
+    }
+}
+
+impl<'de, const N: usize> serde::Deserialize<'de> for HexString<N> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Self::from_string(s).map_err(serde::de::Error::custom)
+    }
+}
 
 /// A 32-byte network-agnostic identifier
 #[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, serde::Serialize, Default, Hash)]

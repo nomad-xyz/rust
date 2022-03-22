@@ -1,8 +1,7 @@
 //! Configuration
 
-use nomad_base::{
-    decl_settings, AgentSecrets, AgentSettingsBlock, ChainSetup, ChainSetupType, SignerConf,
-};
+use nomad_base::{decl_settings, AgentSecrets, AgentSettingsBlock, ChainSetup, ChainSetupType};
+use nomad_xyz_configuration::agent::SignerConf;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, serde::Deserialize)]

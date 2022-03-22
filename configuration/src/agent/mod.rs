@@ -8,6 +8,9 @@
 mod logging;
 pub use logging::*;
 
+mod signer;
+pub use signer::*;
+
 pub mod kathy;
 pub mod processor;
 pub mod relayer;

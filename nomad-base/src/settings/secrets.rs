@@ -38,8 +38,9 @@
 //!     }
 //! }
 
-use crate::{ChainConf, SignerConf};
+use crate::ChainConf;
 use color_eyre::Report;
+use nomad_xyz_configuration::agent::SignerConf;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::{fs::File, io::BufReader, path::Path};

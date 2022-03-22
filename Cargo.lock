@@ -2627,9 +2627,13 @@ dependencies = [
  "hex",
  "lazy_static",
  "nomad-types",
+ "nomad-xyz-configuration",
  "num",
+ "once_cell",
  "prometheus",
  "rocksdb",
+ "rusoto_core",
+ "rusoto_kms",
  "serde 1.0.136",
  "serde_json",
  "sha3",
@@ -2695,7 +2699,9 @@ name = "nomad-types"
 version = "0.1.0"
 dependencies = [
  "affix",
+ "color-eyre",
  "ethers 0.6.2",
+ "hex",
  "prometheus",
  "serde 1.0.136",
  "serde_json",
