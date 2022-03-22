@@ -1,4 +1,4 @@
-use crate::accumulator::merkle::Proof;
+use crate::accumulator::Proof;
 use ethers::core::types::H256;
 use std::{fs::File, io::Read, path::PathBuf};
 

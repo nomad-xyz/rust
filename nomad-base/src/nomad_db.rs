@@ -2,7 +2,7 @@ use color_eyre::Result;
 use ethers::core::types::H256;
 use nomad_core::db::{DbError, TypedDB, DB};
 use nomad_core::{
-    accumulator::merkle::Proof, utils, CommittedMessage, Decode, NomadMessage, RawCommittedMessage,
+    accumulator::Proof, utils, CommittedMessage, Decode, NomadMessage, RawCommittedMessage,
     SignedUpdate, SignedUpdateWithMeta, UpdateMeta,
 };
 use tokio::time::sleep;
@@ -379,7 +379,7 @@ impl NomadDB {
 mod test {
     use super::*;
     use ethers::types::H256;
-    use nomad_core::{accumulator::merkle::Proof, Encode, NomadMessage, RawCommittedMessage};
+    use nomad_core::{accumulator::Proof, Encode, NomadMessage, RawCommittedMessage};
     use nomad_test::test_utils::run_test_db;
 
     #[tokio::test]

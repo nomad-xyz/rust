@@ -15,9 +15,7 @@ use nomad_base::{
     cancel_task, decl_agent, decl_channel, AgentCore, CachingHome, CachingReplica, NomadAgent,
     NomadDB, ProcessorError,
 };
-use nomad_core::{
-    accumulator::merkle::Proof, CommittedMessage, Common, Home, HomeEvents, MessageStatus,
-};
+use nomad_core::{accumulator::Proof, CommittedMessage, Common, Home, HomeEvents, MessageStatus};
 
 use crate::{prover_sync::ProverSync, push::Pusher, settings::ProcessorSettings as Settings};
 

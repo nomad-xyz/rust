@@ -8,7 +8,7 @@ use color_eyre::eyre::{bail, eyre, Result};
 
 use nomad_base::NomadDB;
 
-use nomad_core::accumulator::merkle::Proof;
+use nomad_core::accumulator::Proof;
 use tokio::{task::JoinHandle, time::sleep};
 use tracing::{debug, info, info_span, instrument::Instrumented, Instrument};
 

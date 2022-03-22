@@ -4,8 +4,8 @@ use structopt::StructOpt;
 use crate::{replicas, rpc};
 
 use nomad_core::{
-    accumulator::merkle::Proof, db::DB, ContractLocator, Decode, MessageStatus, NomadMessage,
-    Replica, Signers,
+    accumulator::Proof, db::DB, ContractLocator, Decode, MessageStatus, NomadMessage, Replica,
+    Signers,
 };
 
 use nomad_base::NomadDB;

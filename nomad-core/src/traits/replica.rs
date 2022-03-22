@@ -3,7 +3,7 @@ use color_eyre::Result;
 use ethers::core::types::H256;
 
 use crate::{
-    accumulator::merkle::Proof,
+    accumulator::Proof,
     traits::{ChainCommunicationError, Common, TxOutcome},
     NomadMessage,
 };

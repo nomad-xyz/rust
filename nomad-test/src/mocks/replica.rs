@@ -5,7 +5,7 @@ use mockall::*;
 
 use ethers::core::types::H256;
 
-use nomad_core::{accumulator::merkle::Proof, *};
+use nomad_core::{accumulator::Proof, *};
 
 mock! {
     pub ReplicaContract {

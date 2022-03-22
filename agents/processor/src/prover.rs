@@ -5,8 +5,8 @@
 use ethers::core::types::H256;
 
 use nomad_core::accumulator::{
-    merkle::{merkle_root_from_branch, MerkleTree, MerkleTreeError, Proof},
-    TREE_DEPTH,
+    merkle::{merkle_root_from_branch, MerkleTree, MerkleTreeError},
+    Proof, TREE_DEPTH,
 };
 
 /// A depth-32 sparse Merkle tree capable of producing proofs for arbitrary

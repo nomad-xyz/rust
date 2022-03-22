@@ -2,8 +2,8 @@ use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use ethers::core::types::H256;
 use nomad_core::{
-    accumulator::merkle::Proof, db::DbError, ChainCommunicationError, Common, CommonEvents,
-    DoubleUpdate, MessageStatus, NomadMessage, Replica, SignedUpdate, State, TxOutcome,
+    accumulator::Proof, db::DbError, ChainCommunicationError, Common, CommonEvents, DoubleUpdate,
+    MessageStatus, NomadMessage, Replica, SignedUpdate, State, TxOutcome,
 };
 
 use crate::NomadDB;

@@ -3,6 +3,8 @@
 pub mod incremental;
 /// A full incremental merkle. Suitable for running off-chain.
 pub mod merkle;
+/// Merkle Proof struct
+pub mod proof;
 
 use ethers::core::types::H256;
 use lazy_static::lazy_static;
@@ -11,6 +13,10 @@ use sha3::{Digest, Keccak256};
 /// Tree depth
 pub const TREE_DEPTH: usize = 32;
 const EMPTY_SLICE: &[H256] = &[];
+
+pub use incremental::*;
+pub use merkle::*;
+pub use proof::*;
 
 pub fn hash(preimage: impl AsRef<[u8]>) -> H256 {
     H256::from_slice(Keccak256::digest(preimage.as_ref()).as_slice())
@@ -25,9 +31,6 @@ pub fn hash_concat(left: impl AsRef<[u8]>, right: impl AsRef<[u8]>) -> H256 {
             .as_slice(),
     )
 }
-
-pub use incremental::*;
-pub use merkle::*;
 
 lazy_static! {
     /// A cache of the zero hashes for each layer of the tree.

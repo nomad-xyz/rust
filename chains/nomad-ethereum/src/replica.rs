@@ -6,7 +6,7 @@ use color_eyre::Result;
 use ethers::core::types::{Signature, H256};
 use futures_util::future::join_all;
 use nomad_core::{
-    accumulator::merkle::Proof, ChainCommunicationError, Common, CommonIndexer, ContractLocator,
+    accumulator::Proof, ChainCommunicationError, Common, CommonIndexer, ContractLocator,
     DoubleUpdate, Encode, MessageStatus, NomadMessage, Replica, SignedUpdate, SignedUpdateWithMeta,
     State, TxOutcome, Update, UpdateMeta,
 };

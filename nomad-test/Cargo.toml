@@ -23,4 +23,3 @@ prometheus = "0.12.0"
 nomad-xyz-configuration = { path = "../configuration" }
 nomad-core = { path = "../nomad-core" }
 nomad-ethereum = { path = "../chains/nomad-ethereum"}
-
