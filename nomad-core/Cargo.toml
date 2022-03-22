@@ -26,7 +26,7 @@ prometheus = "0.12.0"
 bytes = { version = "1", features = ["serde"]}
 num = {version="0", features=["serde"]}
 
-nomad-types = {git = "https://github.com/nomad-xyz/rust", rev = "d4d02aa"}
+nomad-types = {git = "https://github.com/nomad-xyz/rust", rev = "f63d288"}
 
 [dev-dependencies]
 tokio = {version = "1.0.1", features = ["rt", "time"]}

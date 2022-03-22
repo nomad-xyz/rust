@@ -2105,6 +2105,7 @@ dependencies = [
 name = "kathy"
 version = "0.1.0"
 dependencies = [
+ "affix",
  "async-trait",
  "color-eyre",
  "config 0.10.1",
@@ -2113,9 +2114,8 @@ dependencies = [
  "log",
  "nomad-base",
  "nomad-core",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=d4d02aa)",
+ "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=f63d288)",
  "nomad-xyz-configuration",
- "paste",
  "prometheus",
  "rand",
  "serde 1.0.136",
@@ -2563,6 +2563,7 @@ dependencies = [
 name = "nomad-base"
 version = "0.1.0"
 dependencies = [
+ "affix",
  "async-trait",
  "color-eyre",
  "config 0.10.1",
@@ -2573,11 +2574,10 @@ dependencies = [
  "nomad-core",
  "nomad-ethereum",
  "nomad-test",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=d4d02aa)",
+ "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=f63d288)",
  "nomad-xyz-configuration",
  "once_cell",
  "opentelemetry",
- "paste",
  "prometheus",
  "rand",
  "rocksdb",
@@ -2626,7 +2626,7 @@ dependencies = [
  "ethers-signers 0.6.0",
  "hex",
  "lazy_static",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=d4d02aa)",
+ "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=f63d288)",
  "num",
  "prometheus",
  "rocksdb",
@@ -2654,7 +2654,7 @@ dependencies = [
  "futures-util",
  "hex",
  "nomad-core",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=d4d02aa)",
+ "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=f63d288)",
  "num",
  "prometheus",
  "rocksdb",
@@ -2694,8 +2694,8 @@ dependencies = [
 name = "nomad-types"
 version = "0.1.0"
 dependencies = [
+ "affix",
  "ethers 0.6.2",
- "paste",
  "prometheus",
  "serde 1.0.136",
  "serde_json",
@@ -2706,7 +2706,7 @@ dependencies = [
 [[package]]
 name = "nomad-types"
 version = "0.1.0"
-source = "git+https://github.com/nomad-xyz/rust?rev=d4d02aa#d4d02aa44fb65937eaaf5a420a4b67f10fc690ff"
+source = "git+https://github.com/nomad-xyz/rust?rev=f63d288#f63d2885ebc5914c95c52e79e46f25aee2ec7984"
 dependencies = [
  "ethers 0.6.2",
  "paste",
@@ -2720,15 +2720,14 @@ dependencies = [
 [[package]]
 name = "nomad-xyz-configuration"
 version = "0.1.0-rc.3"
-source = "git+https://github.com/nomad-xyz/configuration?rev=68d2403#68d2403dd128d17eff0fea50896bdb76c9478704"
+source = "git+https://github.com/nomad-xyz/configuration?rev=2350f74#2350f74313d6ad11c316a07982dfec1f59ccd044"
 dependencies = [
  "affix",
  "ethers 0.6.2",
  "eyre",
  "js-sys",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=d4d02aa)",
+ "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=f63d288)",
  "once_cell",
- "paste",
  "serde 1.0.136",
  "serde_json",
  "serde_yaml",
@@ -3213,6 +3212,7 @@ dependencies = [
 name = "processor"
 version = "0.1.0"
 dependencies = [
+ "affix",
  "async-trait",
  "color-eyre",
  "config 0.10.1",
@@ -3222,9 +3222,8 @@ dependencies = [
  "nomad-base",
  "nomad-core",
  "nomad-test",
- "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=d4d02aa)",
+ "nomad-types 0.1.0 (git+https://github.com/nomad-xyz/rust?rev=f63d288)",
  "nomad-xyz-configuration",
- "paste",
  "prometheus",
  "rocksdb",
  "rusoto_core",
@@ -3410,6 +3409,7 @@ checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
 name = "relayer"
 version = "0.1.0"
 dependencies = [
+ "affix",
  "async-trait",
  "color-eyre",
  "config 0.10.1",
@@ -3420,7 +3420,6 @@ dependencies = [
  "nomad-core",
  "nomad-test",
  "nomad-xyz-configuration",
- "paste",
  "prometheus",
  "serde 1.0.136",
  "serde_json",
@@ -4579,6 +4578,7 @@ checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
 name = "updater"
 version = "0.1.0"
 dependencies = [
+ "affix",
  "async-trait",
  "color-eyre",
  "config 0.11.0",
@@ -4592,7 +4592,6 @@ dependencies = [
  "nomad-ethereum",
  "nomad-test",
  "nomad-xyz-configuration",
- "paste",
  "prometheus",
  "rocksdb",
  "serde 1.0.136",
@@ -4795,6 +4794,7 @@ dependencies = [
 name = "watcher"
 version = "0.1.0"
 dependencies = [
+ "affix",
  "async-trait",
  "color-eyre",
  "config 0.10.1",
@@ -4806,7 +4806,6 @@ dependencies = [
  "nomad-ethereum",
  "nomad-test",
  "nomad-xyz-configuration",
- "paste",
  "prometheus",
  "rocksdb",
  "serde 1.0.136",

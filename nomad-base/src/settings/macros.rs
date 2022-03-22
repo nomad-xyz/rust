@@ -35,7 +35,7 @@ pub trait AgentSettingsBlock {
 /// ```
 macro_rules! decl_settings {
     ($name:ident, $agent_settings:ty,) => {
-        paste::paste! {
+        affix::paste! {
             #[derive(Debug, serde::Deserialize)]
             #[serde(rename_all = "camelCase")]
             #[doc = "Settings for `" $name]
@@ -59,7 +59,7 @@ macro_rules! decl_settings {
                     let secrets_path = &std::env::var("SECRETS_PATH").unwrap_or("./secrets.json".to_owned()); // default to ./secrets.json
 
                     let config = nomad_xyz_configuration::get_builtin(&env).expect("!config");
-                    let secrets = nomad_base::AgentSecrets::from_file(secrets_path.into())?;
+                    let secrets = nomad_base::AgentSecrets::from_file(secrets_path)?;
 
                     let base = nomad_base::Settings::from_config_and_secrets(&agent, &home, &config, &secrets);
                     let agent = <$agent_settings as AgentSettingsBlock>::from_config_and_secrets(&home, &config, &secrets);

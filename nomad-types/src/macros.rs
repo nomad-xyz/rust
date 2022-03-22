@@ -2,9 +2,9 @@
 /// Implement deser_nomad_number for a uint type
 macro_rules! impl_deser_nomad_number {
     ($($u:ident),*) => {
-        $(paste::paste! {
+        $(affix::paste! {
             #[doc = "Permissive deserialization of numbers. Allows numbers, hex strings, and decimal strings"]
-            pub fn [<deser_nomad_number_ $u>]<'de, D>(deserializer: D) -> Result<$u, D::Error>
+            pub fn [<deser_nomad_ $u>]<'de, D>(deserializer: D) -> Result<$u, D::Error>
             where
                 D: serde::Deserializer<'de>,
             {

@@ -59,7 +59,7 @@ macro_rules! decl_channel {
             $($(#[$tags:meta])* $prop:ident: $type:ty,)*
         }
     ) => {
-        paste::paste! {
+        affix::paste! {
             #[derive(Debug, Clone)]
             #[doc = "Channel for `" $name]
             pub struct [<$name Channel>] {

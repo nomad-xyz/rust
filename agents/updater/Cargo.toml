@@ -19,12 +19,12 @@ tracing = "0.1.22"
 tracing-futures = "0.2.4"
 tracing-subscriber = "0.2.15"
 rocksdb = { git = "https://github.com/rust-rocksdb/rust-rocksdb" }
-nomad-xyz-configuration = { git = "https://github.com/nomad-xyz/configuration", rev = "68d2403" }
+nomad-xyz-configuration = { git = "https://github.com/nomad-xyz/configuration", rev = "2350f74" }
 
 nomad-core = { path = "../../nomad-core" }
 nomad-base = { path = "../../nomad-base" }
 nomad-ethereum = { path = "../../chains/nomad-ethereum" }
-paste = "1.0.5"
+affix = "0.1.2"
 
 prometheus = "0.12"
 warp = "0.3"

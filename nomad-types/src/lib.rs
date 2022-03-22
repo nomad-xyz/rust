@@ -201,15 +201,15 @@ mod test {
 
         let val = json! { 5 };
         assert_eq!(serialized, val);
-        let n = deser_nomad_number_u64(val).unwrap();
+        let n = deser_nomad_u64(val).unwrap();
         assert_eq!(n, five);
 
         let val = json! { "5" };
-        let n = deser_nomad_number_u64(val).unwrap();
+        let n = deser_nomad_u64(val).unwrap();
         assert_eq!(n, five);
 
         let val = json! { "0x5" };
-        let n = deser_nomad_number_u64(val).unwrap();
+        let n = deser_nomad_u64(val).unwrap();
         assert_eq!(n, five);
 
         // u32
@@ -218,15 +218,15 @@ mod test {
 
         let val = json! { 5 };
         assert_eq!(serialized, val);
-        let n = deser_nomad_number_u32(val).unwrap();
+        let n = deser_nomad_u32(val).unwrap();
         assert_eq!(n, five);
 
         let val = json! { "5" };
-        let n = deser_nomad_number_u32(val).unwrap();
+        let n = deser_nomad_u32(val).unwrap();
         assert_eq!(n, five);
 
         let val = json! { "0x5" };
-        let n = deser_nomad_number_u32(val).unwrap();
+        let n = deser_nomad_u32(val).unwrap();
         assert_eq!(n, five);
     }
 }

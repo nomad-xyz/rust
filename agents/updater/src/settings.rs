@@ -41,7 +41,7 @@ mod test {
         let settings = UpdaterSettings::new().unwrap();
 
         let config = nomad_xyz_configuration::get_builtin(RUN_ENV).unwrap();
-        let secrets = AgentSecrets::from_file(SECRETS_PATH.into()).unwrap();
+        let secrets = AgentSecrets::from_file(SECRETS_PATH).unwrap();
 
         settings
             .base
