@@ -22,8 +22,8 @@ tracing-subscriber = "0.2.15"
 rocksdb = { git = "https://github.com/rust-rocksdb/rust-rocksdb" }
 mockall = "0.10.2"
 rand = "0.8.3"
-nomad-xyz-configuration = { path = "../configuration" }
 
+nomad-xyz-configuration = { path = "../configuration" }
 nomad-types = { path = "../nomad-types" }
 nomad-core = { path = "../nomad-core" }
 nomad-ethereum = { path = "../chains/nomad-ethereum"}

@@ -1,31 +1,14 @@
 use color_eyre::Report;
 use nomad_core::{ContractLocator, Signers};
-use nomad_ethereum::{make_conn_manager, make_home, make_replica, Connection};
+use nomad_ethereum::{make_conn_manager, make_home, make_replica};
 use nomad_types::NomadIdentifier;
-use nomad_xyz_configuration::{contracts::CoreContracts, NomadConfig};
+use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig};
 use serde::Deserialize;
 
 use crate::{
     home::Homes, replica::Replicas, xapp::ConnectionManagers, AgentSecrets, HomeVariants,
     ReplicaVariants,
 };
-
-/// A connection to _some_ blockchain.
-///
-/// Specify the chain name (enum variant) in toml under the `chain` key
-/// Specify the connection details as a toml object under the `connection` key.
-#[derive(Clone, Debug, Deserialize, PartialEq)]
-#[serde(tag = "rpcStyle", content = "connection", rename_all = "camelCase")]
-pub enum ChainConf {
-    /// Ethereum configuration
-    Ethereum(Connection),
-}
-
-impl Default for ChainConf {
-    fn default() -> Self {
-        Self::Ethereum(Default::default())
-    }
-}
 
 /// Chain specific page settings for indexing
 #[derive(Clone, Debug, Deserialize, Default)]

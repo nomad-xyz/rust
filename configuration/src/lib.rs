@@ -15,6 +15,9 @@ pub mod network;
 pub mod builtin;
 pub use builtin::*;
 
+pub mod chains;
+pub use chains::*;
+
 #[cfg(target_arch = "wasm32")]
 /// Wasm bindings for common operations
 pub mod wasm;

@@ -21,6 +21,7 @@ color-eyre = "0.5.0"
 anyhow = "1"
 num = "0.4"
 
+nomad-xyz-configuration = { path = "../../configuration" }
 nomad-types = { path = "../../nomad-types" }
 nomad-core = { path = "../../nomad-core" }
 tokio = "1.7.1"

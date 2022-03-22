@@ -13,13 +13,13 @@ use color_eyre::{eyre::bail, Report};
 use nomad_core::{db::DB, Common, ContractLocator, Signers};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
 use nomad_xyz_configuration::agent::SignerConf;
-use nomad_xyz_configuration::{contracts::CoreContracts, NomadConfig};
+use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig};
 use serde::Deserialize;
 use std::{collections::HashMap, sync::Arc};
 
 /// Chain configuration
 pub mod chains;
-pub use chains::{ChainConf, ChainSetup, ChainSetupType};
+pub use chains::{ChainSetup, ChainSetupType};
 
 /// Secrets
 pub mod secrets;

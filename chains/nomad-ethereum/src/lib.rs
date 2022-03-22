@@ -7,6 +7,7 @@
 use color_eyre::eyre::Result;
 use ethers::prelude::*;
 use nomad_core::*;
+use nomad_xyz_configuration::chains::ethereum::Connection;
 use num::Num;
 use std::sync::Arc;
 
@@ -35,30 +36,6 @@ mod xapp;
 
 /// Gas increasing Middleware
 mod gas;
-
-/// Ethereum connection configuration
-#[derive(Debug, serde::Deserialize, Clone, PartialEq)]
-#[serde(tag = "type", rename_all = "camelCase")]
-pub enum Connection {
-    /// HTTP connection details
-    Http {
-        /// Fully qualified string to connect to
-        url: String,
-    },
-    /// Websocket connection details
-    Ws {
-        /// Fully qualified string to connect to
-        url: String,
-    },
-}
-
-impl Default for Connection {
-    fn default() -> Self {
-        Self::Http {
-            url: Default::default(),
-        }
-    }
-}
 
 #[cfg(not(doctest))]
 pub use crate::{home::*, replica::*, xapp::*};
