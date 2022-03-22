@@ -1,6 +1,6 @@
 use ethers::core::types::H256;
 
-use crate::{hash_concat, merkle::merkle_root_from_branch, Proof, TREE_DEPTH, ZERO_HASHES};
+use crate::{full::merkle_root_from_branch, hash_concat, Proof, TREE_DEPTH, ZERO_HASHES};
 
 #[derive(Debug, Clone, Copy)]
 /// An incremental merkle tree, modeled on the eth2 deposit contract

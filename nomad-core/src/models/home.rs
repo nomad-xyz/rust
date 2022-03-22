@@ -2,7 +2,7 @@ use ethers::core::types::{Address, H256};
 use std::{collections::VecDeque, io::Write};
 
 use crate::{
-    accumulator::{hash, incremental::IncrementalMerkle},
+    accumulator::{hash, light::IncrementalMerkle},
     NomadError, SignedUpdate, Update,
 };
 

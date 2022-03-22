@@ -37,7 +37,7 @@ pub enum MerkleTree {
 }
 
 /// Error type for merkle tree ops.
-#[derive(Debug, PartialEq, Clone, Error)]
+#[derive(Debug, PartialEq, Clone, Copy, Error)]
 pub enum MerkleTreeError {
     /// Trying to push in a leaf
     #[error("Trying to push in a leaf")]
@@ -148,6 +148,7 @@ impl MerkleTree {
 
         Ok(())
     }
+
     /// Get a reference to the left and right subtrees if they exist.
     pub fn left_and_right_branches(&self) -> Option<(&Self, &Self)> {
         match *self {
@@ -234,7 +235,7 @@ pub fn merkle_root_from_branch(leaf: H256, branch: &[H256], depth: usize, index:
 
 #[cfg(test)]
 mod tests {
-    use crate::incremental;
+    use crate::light;
 
     use super::*;
 
@@ -427,7 +428,7 @@ mod tests {
         let leaf = H256::repeat_byte(1);
 
         let mut full = MerkleTree::create(&[], TREE_DEPTH);
-        let mut incr = incremental::IncrementalMerkle::default();
+        let mut incr = light::IncrementalMerkle::default();
         let second = MerkleTree::create(&[leaf], TREE_DEPTH);
 
         full.push_leaf(leaf, TREE_DEPTH).unwrap();
