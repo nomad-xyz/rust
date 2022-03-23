@@ -10,7 +10,7 @@ mod utils;
 pub use utils::*;
 
 use color_eyre::{eyre::bail, Report};
-use ethers::prelude::{Address, H256};
+use ethers::prelude::{Address, H160, H256};
 use serde::{de, Deserializer};
 use std::{fmt, ops::DerefMut, str::FromStr};
 
@@ -63,12 +63,25 @@ impl<'de, const N: usize> serde::Deserialize<'de> for HexString<N> {
 }
 
 /// A 32-byte network-agnostic identifier
-#[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, serde::Serialize, Default, Hash)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Default, Hash)]
 pub struct NomadIdentifier(H256);
 
 impl std::fmt::Display for NomadIdentifier {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:x}", self.0)
+    }
+}
+
+impl serde::Serialize for NomadIdentifier {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        if let Ok(addr) = self.as_ethereum_address() {
+            H160::serialize(&addr, serializer)
+        } else {
+            H256::serialize(&self, serializer)
+        }
     }
 }
 
