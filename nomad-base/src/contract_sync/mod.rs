@@ -1,3 +1,4 @@
+use crate::chains::PageSettings;
 use crate::{IndexDataTypes, IndexSettings, NomadDB};
 use color_eyre::Result;
 use futures_util::future::select_all;
@@ -31,6 +32,7 @@ pub struct ContractSync<I> {
     db: NomadDB,
     indexer: Arc<I>,
     index_settings: IndexSettings,
+    page_settings: PageSettings,
     finality: u8,
     metrics: ContractSyncMetrics,
 }
@@ -46,12 +48,14 @@ where
 
 impl<I> ContractSync<I> {
     /// Instantiate new ContractSync
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         agent_name: String,
         contract_name: String,
         db: NomadDB,
         indexer: Arc<I>,
         index_settings: IndexSettings,
+        page_settings: PageSettings,
         finality: u8,
         metrics: ContractSyncMetrics,
     ) -> Self {
@@ -61,6 +65,7 @@ impl<I> ContractSync<I> {
             db,
             indexer,
             index_settings,
+            page_settings,
             finality,
             metrics,
         }
@@ -105,8 +110,8 @@ where
 
         let timelag_on = self.index_settings.timelag_on();
         let finality = self.finality as u32;
-        let config_from = self.index_settings.from();
-        let chunk_size = self.index_settings.chunk_size();
+        let config_from = self.page_settings.from;
+        let chunk_size = self.page_settings.page_size;
 
         tokio::spawn(async move {
             let mut from = db
@@ -253,8 +258,8 @@ where
         ]);
 
         let timelag_on = self.index_settings.timelag_on();
-        let config_from = self.index_settings.from();
-        let chunk_size = self.index_settings.chunk_size();
+        let config_from = self.page_settings.from;
+        let chunk_size = self.page_settings.page_size;
 
         tokio::spawn(async move {
             let mut from = db
@@ -326,6 +331,7 @@ mod test {
     use ethers::core::types::H256;
     use ethers::signers::LocalWallet;
 
+    use crate::chains::PageSettings;
     use nomad_core::{SignedUpdateWithMeta, Update, UpdateMeta};
     use nomad_test::test_utils;
 
@@ -505,10 +511,12 @@ mod test {
 
             let nomad_db = NomadDB::new("home_1", db);
             let index_settings = IndexSettings {
-                from: Some(10.to_string()),
-                chunk: Some(10.to_string()),
                 data_types: IndexDataTypes::Updates,
                 use_timelag: false,
+            };
+            let page_settings = PageSettings {
+                from: 10,
+                page_size: 10,
             };
 
             let indexer = Arc::new(mock_indexer);
@@ -529,6 +537,7 @@ mod test {
                 nomad_db.clone(),
                 indexer.clone(),
                 index_settings,
+                page_settings,
                 FINALITY,
                 sync_metrics,
             );

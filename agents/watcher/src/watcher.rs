@@ -499,7 +499,13 @@ impl NomadAgent for Watcher {
         Self: Sized,
     {
         let mut connection_managers = vec![];
-        for chain_setup in settings.managers.values() {
+        for chain_setup in settings
+            .as_ref()
+            .managers
+            .as_ref()
+            .expect("!managers")
+            .values()
+        {
             let signer = settings.base.get_signer(&chain_setup.name).await;
             let xapp_timelag = None;
 
@@ -527,8 +533,9 @@ impl NomadAgent for Watcher {
         let core = settings.as_ref().try_into_core("watcher").await?;
 
         Ok(Self::new(
-            settings.watcher.try_into_signer().await?,
-            settings.interval.parse().expect("invalid uint"),
+            Signers::try_from_signer_conf(&settings.base.attestation_signer.expect("signer"))
+                .await?,
+            settings.agent.interval,
             connection_managers,
             core,
         ))
@@ -650,8 +657,8 @@ mod test {
     use ethers::signers::{LocalWallet, Signer};
 
     use nomad_base::{
-        CachingReplica, CommonIndexers, ContractSync, ContractSyncMetrics, CoreMetrics,
-        HomeIndexers, Homes, Replicas,
+        chains::PageSettings, CachingReplica, CommonIndexers, ContractSync, ContractSyncMetrics,
+        CoreMetrics, HomeIndexers, Homes, Replicas,
     };
     use nomad_core::{DoubleUpdate, SignedFailureNotification, State, Update};
     use nomad_test::mocks::{MockConnectionManagerContract, MockHomeContract, MockReplicaContract};
@@ -706,6 +713,7 @@ mod test {
                 nomad_db.clone(),
                 home_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -799,6 +807,7 @@ mod test {
                 nomad_db.clone(),
                 home_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -891,6 +900,7 @@ mod test {
                 nomad_db.clone(),
                 home_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1098,6 +1108,7 @@ mod test {
                 home_db.clone(),
                 home_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1107,6 +1118,7 @@ mod test {
                 replica_1_db.clone(),
                 replica_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1116,6 +1128,7 @@ mod test {
                 replica_2_db.clone(),
                 replica_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1286,6 +1299,7 @@ mod test {
                 home_db.clone(),
                 home_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1295,6 +1309,7 @@ mod test {
                 replica_1_db.clone(),
                 replica_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -1304,6 +1319,7 @@ mod test {
                 replica_2_db.clone(),
                 replica_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );

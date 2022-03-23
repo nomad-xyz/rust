@@ -1,37 +1,47 @@
 use color_eyre::Result;
 
-use nomad_base::{NomadAgent, Settings};
+// use nomad_base::{decl_settings, NomadAgent};
 
-/// An example main function for any agent that implemented Default
-async fn _example_main<OA>(settings: Settings) -> Result<()>
-where
-    OA: NomadAgent<Settings = Settings> + Sized + 'static,
-{
-    // Instantiate an agent
-    let oa = OA::from_settings(settings).await?;
-    oa.as_ref()
-        .settings
-        .tracing
-        .start_tracing(oa.metrics().span_duration())?;
+// /// Example agent
+// pub struct Example;
 
-    // Use the agent to run a number of replicas
-    oa.run_all().await?
-}
+// // Example settings block containing addition agent-specific fields
+// #[derive(Debug, Clone, serde::Deserialize)]
+// pub struct ExampleConfig {
+//     interval: u64,
+//     enabled: bool,
+// }
 
-/// Read settings from the config file and set up reporting and logging based
-/// on the settings
-#[allow(dead_code)]
-fn setup() -> Result<Settings> {
-    color_eyre::install()?;
+// // Generate ExampleSettings which includes base and agent-specific settings
+// decl_settings!(Example, ExampleConfig,);
 
-    let settings = Settings::new()?;
+// /// An example main function for any agent that implemented Default
+// async fn _example_main<NA>(settings: ExampleSettings) -> Result<()>
+// where
+//     NA: NomadAgent<Settings = ExampleSettings> + Sized + 'static,
+// {
+//     // Instantiate an agent
+//     let oa = NA::from_settings(settings).await?;
+//     oa.start_tracing(oa.metrics().span_duration())?;
 
-    Ok(settings)
-}
+//     // Use the agent to run a number of replicas
+//     oa.run_all().await?
+// }
 
-#[allow(dead_code)]
+// /// Read settings from the config file and set up reporting and logging based
+// /// on the settings
+// #[allow(dead_code)]
+// fn setup() -> Result<ExampleSettings> {
+//     color_eyre::install()?;
+
+//     let settings = ExampleSettings::new()?;
+
+//     Ok(settings)
+// }
+
+// #[allow(dead_code)]
 fn main() -> Result<()> {
-    let _settings = setup()?;
+    // let _settings = setup()?;
     // tokio::runtime::Builder::new_current_thread()
     //     .enable_all()
     //     .build()

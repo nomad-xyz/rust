@@ -1,69 +1,47 @@
 //! Settings and configuration for Nomad agents
 //!
-//! ## Introduction
+//! This crate draws heavily on `nomad-xyz-configuration`. All public values are
+//! drawn from this publicly hosted package. All secret values are drawn from
+//! either a secrets.json file (see secrets.rs for more info) or a hosted
+//! secrets manager backend.
 //!
-//! Nomad Agents have a shared core, which contains connection info for rpc,
-//! relevant contract addresses on each chain, etc. In addition, each agent has
-//! agent-specific settings. Be convention, we represent these as a base config
-//! per-Home contract, and a "partial" config per agent. On bootup, the agent
-//! loads the configuration, establishes RPC connections, and monitors each
-//! configured chain.
-//!
-//! All agents share the [`Settings`] struct in this crate, and then define any
-//! additional `Settings` in their own crate. By convention this is done in
-//! `settings.rs` using the [`decl_settings!`] macro.
-//!
-//! ### Configuration
-//!
-//! Agents read settings from the config files and/or env.
-//!
-//! Config files are loaded from `rust/config/default` unless specified
-//! otherwise. Currently deployment config directories are labeled by the
-//! timestamp at which they were deployed
-//!
-//! Configuration key/value pairs are loaded in the following order, with later
-//! sources taking precedence:
-//!
-//! 1. The config file specified by the `RUN_ENV` and `BASE_CONFIG`
-//!    env vars. `$RUN_ENV/$BASE_CONFIG`
-//! 2. The config file specified by the `RUN_ENV` env var and the
-//!    agent's name. `$RUN_ENV/{agent}-partial.json`.
-//!    E.g. `$RUN_ENV/updater-partial.json`
-//! 3. Configuration env vars with the prefix `OPT_BASE` intended
-//!    to be shared by multiple agents in the same environment
-//!    E.g. `export OPT_BASE_REPLICAS_KOVAN_DOMAIN=3000`
-//! 4. Configuration env vars with the prefix `OPT_{agent name}`
-//!    intended to be used by a specific agent.
-//!    E.g. `export OPT_KATHY_CHAT_TYPE="static message"`
+//! Agent Deployment Flow:
+//!  1. Run /nomad-base/src/bin/secrets_template.rs, passing in RUN_ENV
+//!     environment variable (RUN_ENV=<development | production> env cargo run
+//!     --bin secrets-template). This will create a secrets.json template for
+//!     the given RUN_ENV in the current directory.
+//!  2. Override template secrets.json values (rpcs, tx signers, optional
+//!     attestation signer) with environment variables.
+//!  3. Run agents, passing in RUN_ENV and AGENT_HOME as environment variables.
 
 use crate::{
     agent::AgentCore, CachingHome, CachingReplica, CommonIndexerVariants, CommonIndexers,
     ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes, NomadDB, Replicas,
 };
 use color_eyre::{eyre::bail, Report};
-use config::{Config, ConfigError, Environment, File};
-use ethers::prelude::AwsSigner;
-use nomad_core::{db::DB, utils::HexString, Common, ContractLocator, Signers};
+use nomad_core::{db::DB, Common, ContractLocator, Signers};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
-use rusoto_core::{credential::EnvironmentProvider, HttpClient};
-use rusoto_kms::KmsClient;
+use nomad_xyz_configuration::agent::SignerConf;
+use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig};
 use serde::Deserialize;
-use std::{collections::HashMap, env, sync::Arc};
-use tracing::instrument;
+use std::{collections::HashMap, sync::Arc};
 
-/// Chain configuartion
+/// Chain configuration
 pub mod chains;
+pub use chains::{ChainSetup, ChainSetupType};
 
-pub use chains::{ChainConf, ChainSetup};
+/// Secrets
+pub mod secrets;
+pub use secrets::AgentSecrets;
+
+/// Macros
+pub mod macros;
+pub use macros::*;
 
 /// Tracing subscriber management
 pub mod trace;
 
-use crate::settings::trace::TracingConfig;
-
-use once_cell::sync::OnceCell;
-
-static KMS_CLIENT: OnceCell<KmsClient> = OnceCell::new();
+use nomad_xyz_configuration::agent::LogConfig;
 
 /// Agent types
 pub enum AgentType {
@@ -94,67 +72,10 @@ impl Default for IndexDataTypes {
     }
 }
 
-/// Ethereum signer types
-#[derive(Debug, Clone, serde::Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
-pub enum SignerConf {
-    /// A local hex key
-    HexKey {
-        /// Hex string of private key, without 0x prefix
-        key: HexString<64>,
-    },
-    /// An AWS signer. Note that AWS credentials must be inserted into the env
-    /// separately.
-    Aws {
-        /// The UUID identifying the AWS KMS Key
-        id: String, // change to no _ so we can set by env
-        /// The AWS region
-        region: String,
-    },
-    #[serde(other)]
-    /// Assume node will sign on RPC calls
-    Node,
-}
-
-impl Default for SignerConf {
-    fn default() -> Self {
-        Self::Node
-    }
-}
-
-impl SignerConf {
-    /// Try to convert the ethereum signer to a local wallet
-    #[instrument(err)]
-    pub async fn try_into_signer(&self) -> Result<Signers, Report> {
-        match self {
-            SignerConf::HexKey { key } => Ok(Signers::Local(key.as_ref().parse()?)),
-            SignerConf::Aws { id, region } => {
-                let client = KMS_CLIENT.get_or_init(|| {
-                    KmsClient::new_with_client(
-                        rusoto_core::Client::new_with(
-                            EnvironmentProvider::default(),
-                            HttpClient::new().unwrap(),
-                        ),
-                        region.parse().expect("invalid region"),
-                    )
-                });
-
-                let signer = AwsSigner::new(client, id, 0).await?;
-                Ok(Signers::Aws(signer))
-            }
-            SignerConf::Node => bail!("Node signer"),
-        }
-    }
-}
-
 /// Home indexing settings
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Default, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct IndexSettings {
-    /// The height at which to start indexing the Home contract
-    pub from: Option<String>,
-    /// The number of blocks to query at once at which to start indexing the Home contract
-    pub chunk: Option<String>,
     /// Data types to index
     #[serde(default)]
     pub data_types: IndexDataTypes,
@@ -164,20 +85,31 @@ pub struct IndexSettings {
 }
 
 impl IndexSettings {
-    /// Get the `from` setting
-    pub fn from(&self) -> u32 {
-        self.from
-            .as_ref()
-            .and_then(|s| s.parse::<u32>().ok())
-            .unwrap_or_default()
-    }
-
-    /// Get the `chunk_size` setting
-    pub fn chunk_size(&self) -> u32 {
-        self.chunk
-            .as_ref()
-            .and_then(|s| s.parse::<u32>().ok())
-            .unwrap_or(1999)
+    /// Get agent-specific index settings unique to that agent
+    pub fn from_agent_name(agent_name: &str) -> Self {
+        match agent_name.to_lowercase().as_ref() {
+            "kathy" => Self {
+                data_types: IndexDataTypes::Updates,
+                use_timelag: true,
+            },
+            "updater" => Self {
+                data_types: IndexDataTypes::Updates,
+                use_timelag: true,
+            },
+            "relayer" => Self {
+                data_types: IndexDataTypes::Updates,
+                use_timelag: false,
+            },
+            "processor" => Self {
+                data_types: IndexDataTypes::UpdatesAndMessages,
+                use_timelag: true,
+            },
+            "watcher" => Self {
+                data_types: IndexDataTypes::Updates,
+                use_timelag: false,
+            },
+            _ => std::panic!("Invalid agent-specific settings name!"),
+        }
     }
 
     /// Get IndexDataTypes
@@ -221,7 +153,7 @@ pub struct Settings {
     /// The path to use for the DB file
     pub db: String,
     /// Port to listen for prometheus scrape requests
-    pub metrics: Option<String>,
+    pub metrics: Option<u16>,
     /// Settings for the home indexer
     #[serde(default)]
     pub index: IndexSettings,
@@ -229,10 +161,14 @@ pub struct Settings {
     pub home: ChainSetup,
     /// The replica configurations
     pub replicas: HashMap<String, ChainSetup>,
+    /// Optional connection manager configurations (set for watcher only)
+    pub managers: Option<HashMap<String, ChainSetup>>,
     /// The tracing configuration
-    pub tracing: TracingConfig,
+    pub logging: LogConfig,
     /// Transaction signers
     pub signers: HashMap<String, SignerConf>,
+    /// Optional attestation signer
+    pub attestation_signer: Option<SignerConf>,
 }
 
 impl Settings {
@@ -240,12 +176,14 @@ impl Settings {
     fn clone(&self) -> Self {
         Self {
             db: self.db.clone(),
-            metrics: self.metrics.clone(),
+            metrics: self.metrics,
             index: self.index.clone(),
             home: self.home.clone(),
             replicas: self.replicas.clone(),
-            tracing: self.tracing.clone(),
+            managers: self.managers.clone(),
+            logging: self.logging,
             signers: self.signers.clone(),
+            attestation_signer: self.attestation_signer.clone(),
         }
     }
 }
@@ -253,7 +191,9 @@ impl Settings {
 impl Settings {
     /// Try to get a signer instance by name
     pub async fn get_signer(&self, name: &str) -> Option<Signers> {
-        self.signers.get(name)?.try_into_signer().await.ok()
+        Signers::try_from_signer_conf(self.signers.get(name)?)
+            .await
+            .ok()
     }
 
     /// Set agent-specific index data types
@@ -301,6 +241,7 @@ impl Settings {
     ) -> Result<ContractSync<HomeIndexers>, Report> {
         let finality = self.home.finality;
         let index_settings = self.index.clone();
+        let page_settings = self.home.page_settings.clone();
 
         let indexer = Arc::new(self.try_home_indexer().await?);
         let home_name = &self.home.name;
@@ -313,6 +254,7 @@ impl Settings {
             nomad_db,
             indexer,
             index_settings,
+            page_settings,
             finality,
             metrics,
         ))
@@ -357,6 +299,7 @@ impl Settings {
 
         let finality = self.replicas.get(replica_name).expect("!replica").finality;
         let index_settings = self.index.clone();
+        let page_settings = self.home.page_settings.clone();
 
         let indexer = Arc::new(self.try_replica_indexer(replica_setup).await?);
         let replica_name = &replica_setup.name;
@@ -369,6 +312,7 @@ impl Settings {
             nomad_db,
             indexer,
             index_settings,
+            page_settings,
             finality,
             metrics,
         ))
@@ -429,13 +373,13 @@ impl Settings {
                     conn.clone(),
                     &ContractLocator {
                         name: self.home.name.clone(),
-                        domain: self.home.domain.parse().expect("invalid uint"),
-                        address: self.home.address.parse::<ethers::types::Address>()?.into(),
+                        domain: self.home.domain,
+                        address: self.home.address,
                     },
                     signer,
                     timelag,
-                    self.index.from(),
-                    self.index.chunk_size(),
+                    self.home.page_settings.from,
+                    self.home.page_settings.page_size,
                 )
                 .await?,
             )
@@ -456,13 +400,13 @@ impl Settings {
                     conn.clone(),
                     &ContractLocator {
                         name: setup.name.clone(),
-                        domain: setup.domain.parse().expect("invalid uint"),
-                        address: setup.address.parse::<ethers::types::Address>()?.into(),
+                        domain: setup.domain,
+                        address: setup.address,
                     },
                     signer,
                     timelag,
-                    self.index.from(),
-                    self.index.chunk_size(),
+                    setup.page_settings.from,
+                    setup.page_settings.page_size,
                 )
                 .await?,
             )
@@ -474,9 +418,7 @@ impl Settings {
     pub async fn try_into_core(&self, name: &str) -> Result<AgentCore, Report> {
         let metrics = Arc::new(crate::metrics::CoreMetrics::new(
             name,
-            self.metrics
-                .as_ref()
-                .map(|v| v.parse::<u16>().expect("metrics port must be u16")),
+            self.metrics,
             Arc::new(prometheus::Registry::new()),
         )?);
         let sync_metrics = ContractSyncMetrics::new(metrics.clone());
@@ -500,19 +442,169 @@ impl Settings {
         })
     }
 
-    /// Read settings from the config file
-    pub fn new() -> Result<Self, ConfigError> {
-        let mut s = Config::new();
+    /// Instantiate Settings block from NomadConfig
+    pub fn from_config_and_secrets(
+        agent_name: &str,
+        home_network: &str,
+        config: &NomadConfig,
+        secrets: &AgentSecrets,
+    ) -> Self {
+        let agent = config.agent().get(home_network).expect("!agent config");
 
-        s.merge(File::with_name("config/default"))?;
+        let db = agent.db.to_str().expect("!db").to_owned();
+        let metrics = agent.metrics;
+        let index = IndexSettings::from_agent_name(agent_name);
 
-        let env = env::var("RUN_MODE").unwrap_or_else(|_| "development".into());
-        s.merge(File::with_name(&format!("config/{}", env)).required(false))?;
+        let home = ChainSetup::from_config_and_secrets(
+            ChainSetupType::Home { home_network },
+            config,
+            secrets,
+        );
 
-        // Add in settings from the environment (with a prefix of NOMAD)
-        // Eg.. `NOMAD_DEBUG=1 would set the `debug` key
-        s.merge(Environment::with_prefix("NOMAD"))?;
+        let connections = &config
+            .protocol()
+            .networks
+            .get(home_network)
+            .expect("!replica networks")
+            .connections;
+        let replicas = connections
+            .iter()
+            .map(|remote_network| {
+                (
+                    remote_network.to_owned(),
+                    ChainSetup::from_config_and_secrets(
+                        ChainSetupType::Replica {
+                            home_network,
+                            remote_network,
+                        },
+                        config,
+                        secrets,
+                    ),
+                )
+            })
+            .collect();
 
-        s.try_into()
+        // Create connection managers if watcher
+        let managers: Option<HashMap<String, ChainSetup>> =
+            if agent_name.to_lowercase() == "watcher" {
+                Some(
+                    connections
+                        .iter()
+                        .map(|remote_network| {
+                            (
+                                remote_network.to_owned(),
+                                ChainSetup::from_config_and_secrets(
+                                    ChainSetupType::ConnectionManager { remote_network },
+                                    config,
+                                    secrets,
+                                ),
+                            )
+                        })
+                        .collect(),
+                )
+            } else {
+                None
+            };
+
+        Self {
+            db,
+            metrics,
+            home,
+            replicas,
+            managers,
+            index,
+            logging: agent.logging,
+            signers: secrets.transaction_signers.clone(),
+            attestation_signer: secrets.attestation_signer.clone(),
+        }
+    }
+
+    /// Validate base config against NomadConfig and AgentSecrets blocks
+    pub fn validate_against_config_and_secrets(
+        &self,
+        agent_name: &str,
+        home_network: &str,
+        config: &NomadConfig,
+        secrets: &AgentSecrets,
+    ) -> color_eyre::Result<()> {
+        let agent = config.agent().get(home_network).unwrap();
+        assert_eq!(self.db, agent.db.to_str().unwrap());
+        assert_eq!(self.metrics, agent.metrics);
+        assert_eq!(self.logging, agent.logging);
+
+        let index_settings = IndexSettings::from_agent_name(agent_name);
+        assert_eq!(self.index, index_settings);
+
+        let config_home_domain = config
+            .protocol()
+            .get_network(home_network.to_owned().into())
+            .unwrap();
+        assert_eq!(self.home.name, config_home_domain.name);
+        assert_eq!(self.home.domain, config_home_domain.domain);
+        assert_eq!(
+            self.home.page_settings.page_size,
+            config_home_domain.specs.index_page_size
+        );
+        assert_eq!(
+            self.home.finality,
+            config_home_domain.specs.finalization_blocks
+        );
+
+        let config_home_core = config.core().get(home_network).unwrap();
+        match config_home_core {
+            CoreContracts::Evm(core) => {
+                assert_eq!(self.home.address, core.home.proxy);
+                assert_eq!(self.home.page_settings.from, core.deploy_height);
+            }
+        }
+
+        let home_chain_conf = secrets.rpcs.get(home_network).unwrap();
+        assert_eq!(&self.home.chain, home_chain_conf);
+
+        let home_connections = &config
+            .protocol()
+            .networks
+            .get(home_network)
+            .expect("!networks")
+            .connections;
+        for remote_network in home_connections {
+            let replica_setup = self.replicas.get(remote_network).unwrap();
+            let config_replica_domain = config
+                .protocol()
+                .get_network(remote_network.to_owned().into())
+                .unwrap();
+
+            assert_eq!(replica_setup.name, config_replica_domain.name);
+            assert_eq!(replica_setup.domain, config_replica_domain.domain);
+            assert_eq!(
+                replica_setup.page_settings.page_size,
+                config_replica_domain.specs.index_page_size
+            );
+            assert_eq!(
+                replica_setup.finality,
+                config_replica_domain.specs.finalization_blocks
+            );
+
+            let config_replica_core = config.core().get(remote_network).unwrap();
+            match config_replica_core {
+                CoreContracts::Evm(core) => {
+                    assert_eq!(
+                        replica_setup.address,
+                        core.replicas.get(home_network).unwrap().proxy
+                    );
+                    assert_eq!(replica_setup.page_settings.from, core.deploy_height);
+                }
+            }
+
+            let replica_chain_conf = secrets.rpcs.get(remote_network).unwrap();
+            assert_eq!(&replica_setup.chain, replica_chain_conf);
+        }
+
+        for (network, signer) in self.signers.iter() {
+            let secret_signer = secrets.transaction_signers.get(network).unwrap();
+            assert_eq!(signer, secret_signer);
+        }
+
+        Ok(())
     }
 }

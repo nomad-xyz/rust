@@ -1,28 +1,44 @@
 use color_eyre::Report;
+use nomad_core::{ContractLocator, Signers};
+use nomad_ethereum::{make_conn_manager, make_home, make_replica};
+use nomad_types::NomadIdentifier;
+use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig};
 use serde::Deserialize;
 
-use nomad_core::{ContractLocator, Signers};
-use nomad_ethereum::{make_conn_manager, make_home, make_replica, Connection};
-
 use crate::{
-    home::Homes, replica::Replicas, xapp::ConnectionManagers, HomeVariants, ReplicaVariants,
+    home::Homes, replica::Replicas, xapp::ConnectionManagers, AgentSecrets, HomeVariants,
+    ReplicaVariants,
 };
 
-/// A connection to _some_ blockchain.
-///
-/// Specify the chain name (enum variant) in toml under the `chain` key
-/// Specify the connection details as a toml object under the `connection` key.
-#[derive(Clone, Debug, Deserialize)]
-#[serde(tag = "rpcStyle", content = "connection", rename_all = "camelCase")]
-pub enum ChainConf {
-    /// Ethereum configuration
-    Ethereum(Connection),
+/// Chain specific page settings for indexing
+#[derive(Clone, Debug, Deserialize, Default)]
+pub struct PageSettings {
+    /// What block to start indexing at
+    pub from: u32,
+    /// Index page size
+    pub page_size: u32,
 }
 
-impl Default for ChainConf {
-    fn default() -> Self {
-        Self::Ethereum(Default::default())
-    }
+/// What type of chain setup you are retrieving
+#[derive(Debug, Clone)]
+pub enum ChainSetupType<'a> {
+    /// Home
+    Home {
+        /// Home network
+        home_network: &'a str,
+    },
+    /// Replica
+    Replica {
+        /// Home network
+        home_network: &'a str,
+        /// Remote network
+        remote_network: &'a str,
+    },
+    /// Connection manager
+    ConnectionManager {
+        /// Remote network
+        remote_network: &'a str,
+    },
 }
 
 /// A chain setup is a domain ID, an address on that chain (where the home or
@@ -32,9 +48,11 @@ pub struct ChainSetup {
     /// Chain name
     pub name: String,
     /// Chain domain identifier
-    pub domain: String,
+    pub domain: u32,
     /// Address of contract on the chain
-    pub address: String,
+    pub address: NomadIdentifier,
+    /// Paging settings
+    pub page_settings: PageSettings,
     /// Network specific finality in blocks
     pub finality: u8,
     /// The chain connection details
@@ -46,6 +64,65 @@ pub struct ChainSetup {
 }
 
 impl ChainSetup {
+    /// Instatiate ChainSetup from NomadConfig
+    pub fn from_config_and_secrets(
+        setup_type: ChainSetupType,
+        config: &NomadConfig,
+        secrets: &AgentSecrets,
+    ) -> Self {
+        let resident_network: String = match &setup_type {
+            ChainSetupType::Home { home_network } => home_network,
+            ChainSetupType::Replica { remote_network, .. } => remote_network,
+            ChainSetupType::ConnectionManager { remote_network } => remote_network,
+        }
+        .to_string();
+
+        let domain = config
+            .protocol()
+            .get_network(resident_network.clone().into())
+            .expect("!domain");
+        let domain_number = domain.domain;
+        let finality = domain.specs.finalization_blocks;
+        let core = config.core().get(&resident_network).expect("!core");
+        let (address, page_settings) = match core {
+            CoreContracts::Evm(core) => {
+                let address = match &setup_type {
+                    ChainSetupType::Home { .. } => core.home.proxy,
+                    ChainSetupType::Replica { home_network, .. } => {
+                        core.replicas
+                            .get(&home_network.to_string())
+                            .expect("!replica")
+                            .proxy
+                    }
+                    ChainSetupType::ConnectionManager { .. } => core.x_app_connection_manager,
+                };
+
+                let page_settings = PageSettings {
+                    from: core.deploy_height,
+                    page_size: domain.specs.index_page_size,
+                };
+
+                (address, page_settings)
+            }
+        };
+
+        let chain = secrets
+            .rpcs
+            .get(&resident_network)
+            .expect("!rpc")
+            .to_owned();
+
+        Self {
+            name: resident_network,
+            domain: domain_number,
+            address,
+            page_settings,
+            finality,
+            chain,
+            disabled: None,
+        }
+    }
+
     /// Try to convert the chain setting into a Home contract
     pub async fn try_into_home(
         &self,
@@ -58,8 +135,8 @@ impl ChainSetup {
                     conf.clone(),
                     &ContractLocator {
                         name: self.name.clone(),
-                        domain: self.domain.parse().expect("invalid uint"),
-                        address: self.address.parse::<ethers::types::Address>()?.into(),
+                        domain: self.domain,
+                        address: self.address,
                     },
                     signer,
                     timelag,
@@ -82,8 +159,8 @@ impl ChainSetup {
                     conf.clone(),
                     &ContractLocator {
                         name: self.name.clone(),
-                        domain: self.domain.parse().expect("invalid uint"),
-                        address: self.address.parse::<ethers::types::Address>()?.into(),
+                        domain: self.domain,
+                        address: self.address,
                     },
                     signer,
                     timelag,
@@ -106,8 +183,8 @@ impl ChainSetup {
                     conf.clone(),
                     &ContractLocator {
                         name: self.name.clone(),
-                        domain: self.domain.parse().expect("invalid uint"),
-                        address: self.address.parse::<ethers::types::Address>()?.into(),
+                        domain: self.domain,
+                        address: self.address,
                     },
                     signer,
                     timelag,

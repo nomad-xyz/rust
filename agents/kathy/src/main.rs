@@ -19,11 +19,7 @@ async fn _main() -> Result<()> {
 
     let agent = Kathy::from_settings(settings).await?;
 
-    agent
-        .as_ref()
-        .settings
-        .tracing
-        .start_tracing(agent.metrics().span_duration())?;
+    agent.start_tracing(agent.metrics().span_duration())?;
     let _ = agent.metrics().run_http_server();
 
     agent.run_all().await?

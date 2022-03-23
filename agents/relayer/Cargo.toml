@@ -18,10 +18,11 @@ color-eyre = "0.5.0"
 tracing = "0.1.22"
 tracing-futures = "0.2.4"
 tracing-subscriber = "0.2.15"
+nomad-xyz-configuration = { path = "../../configuration" }
 
 nomad-core = { path = "../../nomad-core" }
 nomad-base = { path = "../../nomad-base" }
-paste = "1.0.5"
+affix = "0.1.2"
 
 prometheus = "0.12"
 

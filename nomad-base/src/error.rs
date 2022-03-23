@@ -1,9 +1,13 @@
 use ethers::prelude::H256;
 use nomad_core::{db::DbError, ChainCommunicationError, NomadError, Update};
+use nomad_types::NomadTypeError;
 
 /// DB Error type
 #[derive(thiserror::Error, Debug)]
 pub enum BaseError {
+    /// Nomad type error
+    #[error("{0}")]
+    TypeError(#[from] NomadTypeError),
     /// Index is above tree max size
     #[error("{0}")]
     AgentError(#[from] AgentError),

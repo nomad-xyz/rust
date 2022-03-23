@@ -215,7 +215,7 @@ pub mod output_functions {
 
             let signed_json = json!({
                 "domain": signed_failure.notification.home_domain,
-                "updater": signed_failure.notification.updater.as_ethereum_address(),
+                "updater": signed_failure.notification.updater.as_ethereum_address().expect("!eth address"),
                 "signature": signed_failure.signature,
                 "signer": signer.address()
             });

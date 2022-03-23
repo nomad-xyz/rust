@@ -1,10 +1,11 @@
-use crate::{utils::home_domain_hash, NomadError, NomadIdentifier, SignerExt};
+use crate::{utils::home_domain_hash, NomadError, SignerExt};
 use ethers::{
     prelude::{Address, Signature},
     types::H256,
     utils::hash_message,
 };
 use ethers_signers::Signer;
+use nomad_types::NomadIdentifier;
 use sha3::{Digest, Keccak256};
 
 /// Failure notification produced by watcher

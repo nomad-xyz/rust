@@ -22,7 +22,9 @@ tracing-futures = "0.2.4"
 tracing-subscriber = "0.2.15"
 rand = "0.8.3"
 prometheus = "0.12"
+nomad-xyz-configuration = { path = "../../configuration" }
 
-nomad-base = {path = "../../nomad-base"}
-nomad-core = {path = "../../nomad-core"}
-paste = "1.0.5"
+nomad-types = { path = "../../nomad-types" }
+nomad-base = { path = "../../nomad-base" }
+nomad-core = { path = "../../nomad-core" }
+affix = "0.1.2"

@@ -145,7 +145,7 @@ impl NomadAgent for Relayer {
         Self: Sized,
     {
         Ok(Self::new(
-            settings.interval.parse().expect("invalid uint"),
+            settings.agent.interval,
             settings.as_ref().try_into_core("relayer").await?,
         ))
     }
@@ -182,8 +182,8 @@ mod test {
 
     use ethers::prelude::ProviderError;
     use nomad_base::{
-        CommonIndexers, ContractSync, ContractSyncMetrics, CoreMetrics, HomeIndexers,
-        IndexSettings, NomadDB,
+        chains::PageSettings, CommonIndexers, ContractSync, ContractSyncMetrics, CoreMetrics,
+        HomeIndexers, IndexSettings, NomadDB,
     };
     use nomad_core::ChainCommunicationError;
     use nomad_test::mocks::{MockHomeContract, MockIndexer, MockReplicaContract};
@@ -222,6 +222,7 @@ mod test {
                 home_db.clone(),
                 home_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics.clone(),
             );
@@ -255,6 +256,7 @@ mod test {
                 replica_db.clone(),
                 replica_indexer.clone(),
                 IndexSettings::default(),
+                PageSettings::default(),
                 Default::default(),
                 sync_metrics,
             );
