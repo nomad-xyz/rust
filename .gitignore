@@ -1,5 +1,5 @@
 target
-db_path
+db
 processordb
 updaterdb
 relayerdb

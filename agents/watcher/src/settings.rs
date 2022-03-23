@@ -47,14 +47,10 @@ mod test {
             .expect("!networks")
             .connections;
 
+        let manager_setups = settings.as_ref().managers.as_ref().unwrap();
+
         for remote_network in home_connections {
-            let manager_setup = settings
-                .as_ref()
-                .managers
-                .as_ref()
-                .unwrap()
-                .get(remote_network)
-                .unwrap();
+            let manager_setup = manager_setups.get(remote_network).unwrap();
 
             let config_manager_domain = config
                 .protocol()

@@ -41,12 +41,12 @@ use color_eyre::Result;
 
 // #[allow(dead_code)]
 fn main() -> Result<()> {
-    //     // let _settings = setup()?;
-    //     // tokio::runtime::Builder::new_current_thread()
-    //     //     .enable_all()
-    //     //     .build()
-    //     //     .unwrap()
-    //     //     .block_on(_example_main(settings))?;
+    // let _settings = setup()?;
+    // tokio::runtime::Builder::new_current_thread()
+    //     .enable_all()
+    //     .build()
+    //     .unwrap()
+    //     .block_on(_example_main(settings))?;
 
     Ok(())
 }
