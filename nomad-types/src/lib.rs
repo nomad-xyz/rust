@@ -10,7 +10,7 @@ mod utils;
 pub use utils::*;
 
 use color_eyre::{eyre::bail, Report};
-use ethers::prelude::{Address, H256};
+use ethers::prelude::{Address, H160, H256};
 use serde::{de, Deserializer};
 use std::{fmt, ops::DerefMut, str::FromStr};
 
@@ -63,12 +63,25 @@ impl<'de, const N: usize> serde::Deserialize<'de> for HexString<N> {
 }
 
 /// A 32-byte network-agnostic identifier
-#[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, serde::Serialize, Default, Hash)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Default, Hash)]
 pub struct NomadIdentifier(H256);
 
 impl std::fmt::Display for NomadIdentifier {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:x}", self.0)
+    }
+}
+
+impl serde::Serialize for NomadIdentifier {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        if let Ok(addr) = self.as_ethereum_address() {
+            H160::serialize(&addr, serializer)
+        } else {
+            H256::serialize(self, serializer)
+        }
     }
 }
 
@@ -233,14 +246,14 @@ mod test {
 
     #[test]
     fn it_sers_and_desers_identifiers() {
-        let addr = json! {"0x0000000000000000000000000000000000000000"};
-        let h256 = json! {"0x0000000000000000000000000000000000000000000000000000000000000000"};
+        let addr_0 = json! {"0x0000000000000000000000000000000000000000"};
+        let h256_0 = json! {"0x0000000000000000000000000000000000000000000000000000000000000000"};
 
         let expected = NomadIdentifier::default();
-        assert_eq!(h256, serde_json::to_value(&expected).unwrap());
+        assert_eq!(addr_0, serde_json::to_value(&expected).unwrap());
 
-        let a: NomadIdentifier = serde_json::from_value(addr).unwrap();
-        let b = serde_json::from_value(h256).unwrap();
+        let a: NomadIdentifier = serde_json::from_value(addr_0).unwrap();
+        let b = serde_json::from_value(h256_0).unwrap();
         assert_eq!(a, b);
         assert_eq!(a, expected);
     }
