@@ -38,8 +38,8 @@
 //!     }
 //! }
 
-use color_eyre::Report;
-use nomad_xyz_configuration::{agent::SignerConf, ChainConf};
+use color_eyre::{eyre, Result};
+use nomad_xyz_configuration::{agent::SignerConf, ethereum, ChainConf};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::{fs::File, io::BufReader, path::Path};
@@ -58,10 +58,58 @@ pub struct AgentSecrets {
 
 impl AgentSecrets {
     /// Get JSON file and deserialize into AgentSecrets
-    pub fn from_file(path: impl AsRef<Path>) -> Result<Self, Report> {
+    pub fn from_file(path: impl AsRef<Path>) -> Result<Self> {
         let file = File::open(path)?;
         let reader = BufReader::new(file);
         let secrets = serde_json::from_reader(reader)?;
         Ok(secrets)
+    }
+
+    /// Ensure populated RPCs and transaction signers
+    pub fn validate(&self, agent_name: &str) -> Result<()> {
+        // TODO: replace agent name with associated type
+        if agent_name == "updater" || agent_name == "watcher" {
+            eyre::ensure!(
+                self.attestation_signer.is_some(),
+                "Must pass in attestation signer for {}",
+                agent_name,
+            )
+        }
+
+        for (network, chain_conf) in self.rpcs.iter() {
+            match chain_conf {
+                ChainConf::Ethereum(conn) => match conn {
+                    ethereum::Connection::Http { url } => {
+                        eyre::ensure!(!url.is_empty(), "Http url for {} empty!", network,);
+                    }
+                    ethereum::Connection::Ws { url } => {
+                        eyre::ensure!(!url.is_empty(), "Ws url for {} empty!", network,);
+                    }
+                },
+            }
+        }
+
+        for (network, signer_conf) in self.transaction_signers.iter() {
+            match signer_conf {
+                SignerConf::HexKey { key } => {
+                    eyre::ensure!(
+                        !key.as_ref().is_empty(),
+                        "Hex signer key for {} empty!",
+                        network,
+                    );
+                }
+                SignerConf::Aws { id, region } => {
+                    eyre::ensure!(!id.is_empty(), "ID for {} aws signer key empty!", network,);
+                    eyre::ensure!(
+                        !region.is_empty(),
+                        "Region for {} aws signer key empty!",
+                        network,
+                    );
+                }
+                SignerConf::Node => (),
+            }
+        }
+
+        Ok(())
     }
 }

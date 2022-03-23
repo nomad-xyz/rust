@@ -40,8 +40,10 @@ macro_rules! decl_settings {
                         }
                         None => nomad_xyz_configuration::get_builtin(&env).expect("!config").to_owned(),
                     };
+                    config.validate()?;
 
                     let secrets = nomad_base::AgentSecrets::from_file(&secrets_path)?;
+                    secrets.validate(&agent)?;
 
                     let base = nomad_base::Settings::from_config_and_secrets(&agent, &home, &config, &secrets);
                     let agent = config.agent().get(&home).expect("agent config").[<$name:lower>].clone();

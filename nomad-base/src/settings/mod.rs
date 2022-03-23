@@ -530,7 +530,7 @@ impl Settings {
         let agent = config.agent().get(home_network).unwrap();
         assert_eq!(self.db, agent.db.to_str().unwrap());
         assert_eq!(self.metrics, agent.metrics);
-        assert_eq!(self.logging, agent.logging); // TODO: fix in config crate
+        assert_eq!(self.logging, agent.logging);
 
         let index_settings = IndexSettings::from_agent_name(agent_name);
         assert_eq!(self.index, index_settings);
