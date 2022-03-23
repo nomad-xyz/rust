@@ -43,9 +43,7 @@ mod home_mod {
             address: T,
             client: ::std::sync::Arc<M>,
         ) -> Self {
-            let contract =
-                ethers::contract::Contract::new(address.into(), HOME_ABI.clone(), client);
-            Self(contract)
+            ethers::contract::Contract::new(address.into(), HOME_ABI.clone(), client).into()
         }
         #[doc = "Calls the contract's `MAX_MESSAGE_BODY_BYTES` (0x522ae002) function"]
         pub fn max_message_body_bytes(
@@ -306,6 +304,11 @@ mod home_mod {
         #[doc = r" Returns an [`Event`](#ethers_contract::builders::Event) builder for all events of this contract"]
         pub fn events(&self) -> ethers::contract::builders::Event<M, HomeEvents> {
             self.0.event_with_filter(Default::default())
+        }
+    }
+    impl<M: ethers::providers::Middleware> From<ethers::contract::Contract<M>> for Home<M> {
+        fn from(contract: ethers::contract::Contract<M>) -> Self {
+            Self(contract)
         }
     }
     #[derive(
