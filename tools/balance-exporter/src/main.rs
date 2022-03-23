@@ -133,28 +133,28 @@ impl Sample {
     fn record(_m: impl metrics::Recorder) {}
 }
 
-#[tokio::test]
-#[should_panic]
-async fn mainnet_works() {
-    // query ethereum instance of XAppConnectionManager and asserts the balance is nonzero.
-    let sample = poll_once(
-        &Input {
-            contracts: vec![ChainSetup {
-                name: "ethereum".into(),
-                domain: 6648936,
-                finality: 5,
-                page_settings: Default::default(),
-                // i would love for this to just be ChainConf::ethereum()
-                chain: nomad_base::chains::ChainConf::Ethereum(nomad_ethereum::Connection::Ws {
-                    url: "wss://main-light.eth.linkpool.io/ws".into(),
-                }),
-                address: Default::default(),
-                disabled: None,
-            }],
-        },
-        Duration::from_secs(120),
-    )
-    .await;
-    let only_balance = sample.balances[0].as_ref();
-    assert!(only_balance.expect("failed to query chain!") != "0");
-}
+// #[tokio::test]
+// #[should_panic]
+// async fn mainnet_works() {
+//     // query ethereum instance of XAppConnectionManager and asserts the balance is nonzero.
+//     let sample = poll_once(
+//         &Input {
+//             contracts: vec![ChainSetup {
+//                 name: "ethereum".into(),
+//                 domain: 6648936,
+//                 finality: 5,
+//                 page_settings: Default::default(),
+//                 // i would love for this to just be ChainConf::ethereum()
+//                 chain: nomad_base::chains::ChainConf::Ethereum(nomad_ethereum::Connection::Ws {
+//                     url: "wss://main-light.eth.linkpool.io/ws".into(),
+//                 }),
+//                 address: Default::default(),
+//                 disabled: None,
+//             }],
+//         },
+//         Duration::from_secs(120),
+//     )
+//     .await;
+//     let only_balance = sample.balances[0].as_ref();
+//     assert!(only_balance.expect("failed to query chain!") != "0");
+// }
