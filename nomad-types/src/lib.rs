@@ -80,7 +80,7 @@ impl serde::Serialize for NomadIdentifier {
         if let Ok(addr) = self.as_ethereum_address() {
             H160::serialize(&addr, serializer)
         } else {
-            H256::serialize(&self, serializer)
+            H256::serialize(self, serializer)
         }
     }
 }
@@ -246,14 +246,14 @@ mod test {
 
     #[test]
     fn it_sers_and_desers_identifiers() {
-        let addr = json! {"0x0000000000000000000000000000000000000000"};
-        let h256 = json! {"0x0000000000000000000000000000000000000000000000000000000000000000"};
+        let addr_0 = json! {"0x0000000000000000000000000000000000000000"};
+        let h256_0 = json! {"0x0000000000000000000000000000000000000000000000000000000000000000"};
 
         let expected = NomadIdentifier::default();
-        assert_eq!(h256, serde_json::to_value(&expected).unwrap());
+        assert_eq!(addr_0, serde_json::to_value(&expected).unwrap());
 
-        let a: NomadIdentifier = serde_json::from_value(addr).unwrap();
-        let b = serde_json::from_value(h256).unwrap();
+        let a: NomadIdentifier = serde_json::from_value(addr_0).unwrap();
+        let b = serde_json::from_value(h256_0).unwrap();
         assert_eq!(a, b);
         assert_eq!(a, expected);
     }
