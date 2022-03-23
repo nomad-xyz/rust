@@ -19,7 +19,7 @@ pub struct PageSettings {
     pub page_size: u32,
 }
 
-/// What type of chain setup your are retrieving
+/// What type of chain setup you are retrieving
 #[derive(Debug, Clone)]
 pub enum ChainSetupType<'a> {
     /// Home
