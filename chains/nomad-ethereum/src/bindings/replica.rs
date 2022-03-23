@@ -43,9 +43,7 @@ mod replica_mod {
             address: T,
             client: ::std::sync::Arc<M>,
         ) -> Self {
-            let contract =
-                ethers::contract::Contract::new(address.into(), REPLICA_ABI.clone(), client);
-            Self(contract)
+            ethers::contract::Contract::new(address.into(), REPLICA_ABI.clone(), client).into()
         }
         #[doc = "Calls the contract's `PROCESS_GAS` (0xd88beda2) function"]
         pub fn process_gas(
@@ -301,6 +299,11 @@ mod replica_mod {
         #[doc = r" Returns an [`Event`](#ethers_contract::builders::Event) builder for all events of this contract"]
         pub fn events(&self) -> ethers::contract::builders::Event<M, ReplicaEvents> {
             self.0.event_with_filter(Default::default())
+        }
+    }
+    impl<M: ethers::providers::Middleware> From<ethers::contract::Contract<M>> for Replica<M> {
+        fn from(contract: ethers::contract::Contract<M>) -> Self {
+            Self(contract)
         }
     }
     #[derive(

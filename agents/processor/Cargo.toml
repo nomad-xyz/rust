@@ -19,16 +19,17 @@ tracing = "0.1.22"
 tracing-futures = "0.2.4"
 tracing-subscriber = "0.2.15"
 rocksdb = { git = "https://github.com/rust-rocksdb/rust-rocksdb" }
-nomad-xyz-configuration = { path = "../../configuration" }
-
-nomad-types = { path = "../../nomad-types" }
-nomad-core = { path = "../../nomad-core" }
-nomad-base = { path = "../../nomad-base" }
 affix = "0.1.2"
-
 prometheus = "0.12"
 rusoto_s3 = "0.47.0"
 rusoto_core = "0.47.0"
+
+nomad-xyz-configuration = { path = "../../configuration" }
+nomad-types = { path = "../../nomad-types" }
+nomad-core = { path = "../../nomad-core" }
+nomad-base = { path = "../../nomad-base" }
+
+
 
 [dev-dependencies]
 nomad-test = { path = "../../nomad-test" }

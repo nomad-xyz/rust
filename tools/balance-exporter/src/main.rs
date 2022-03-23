@@ -60,24 +60,24 @@ async fn main() -> color_eyre::Result<()> {
     setup_panic!();
     color_eyre::install()?;
 
-    let args = clap::app_from_crate!()
+    let args = clap::command!()
         .arg(
             Arg::new("polling-interval")
                 .validator(|s| {
                     str::parse::<u64>(s).map_err(|_| anyhow!("polling interval must be u64!"))
                 })
-                .about("Minimum number of seconds to wait between poll attempts")
+                .help("Minimum number of seconds to wait between poll attempts")
                 .default_value("120"),
         )
         .arg(
             Arg::new("stdin")
-                .about("Read configuration JSON from stdin")
+                .help("Read configuration JSON from stdin")
                 .required_unless_present("file"),
         )
         .arg(
             Arg::new("file")
                 .takes_value(true)
-                .about("Path to configuration JSON file"),
+                .help("Path to configuration JSON file"),
         )
         .get_matches();
 
@@ -133,28 +133,28 @@ impl Sample {
     fn record(_m: impl metrics::Recorder) {}
 }
 
-#[tokio::test]
-#[should_panic]
-async fn mainnet_works() {
-    // query ethereum instance of XAppConnectionManager and asserts the balance is nonzero.
-    let sample = poll_once(
-        &Input {
-            contracts: vec![ChainSetup {
-                name: "ethereum".into(),
-                domain: 6648936,
-                finality: 5,
-                page_settings: Default::default(),
-                // i would love for this to just be ChainConf::ethereum()
-                chain: nomad_base::chains::ChainConf::Ethereum(nomad_ethereum::Connection::Ws {
-                    url: "wss://main-light.eth.linkpool.io/ws".into(),
-                }),
-                address: Default::default(),
-                disabled: None,
-            }],
-        },
-        Duration::from_secs(120),
-    )
-    .await;
-    let only_balance = sample.balances[0].as_ref();
-    assert!(only_balance.expect("failed to query chain!") != "0");
-}
+// #[tokio::test]
+// #[should_panic]
+// async fn mainnet_works() {
+//     // query ethereum instance of XAppConnectionManager and asserts the balance is nonzero.
+//     let sample = poll_once(
+//         &Input {
+//             contracts: vec![ChainSetup {
+//                 name: "ethereum".into(),
+//                 domain: 6648936,
+//                 finality: 5,
+//                 page_settings: Default::default(),
+//                 // i would love for this to just be ChainConf::ethereum()
+//                 chain: nomad_base::chains::ChainConf::Ethereum(nomad_ethereum::Connection::Ws {
+//                     url: "wss://main-light.eth.linkpool.io/ws".into(),
+//                 }),
+//                 address: Default::default(),
+//                 disabled: None,
+//             }],
+//         },
+//         Duration::from_secs(120),
+//     )
+//     .await;
+//     let only_balance = sample.balances[0].as_ref();
+//     assert!(only_balance.expect("failed to query chain!") != "0");
+// }
