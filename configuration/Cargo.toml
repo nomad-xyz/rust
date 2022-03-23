@@ -1,8 +1,8 @@
 [package]
 name = "nomad-xyz-configuration"
-version = "0.1.0-rc.5"
+version = "0.1.0-rc.6"
 edition = "2021"
-authors = ["James Prestwich <james@nomad.xyz>", "The Nomad Developers <team@nomad.xyz>"]
+authors = ["James Prestwich <james@nomad.xyz>", "The Nomad Developers <eng@nomad.xyz>"]
 description = "Nomad project configuration file utilities"
 repository = "https://github.com/nomad-xyz/rust/configuration"
 license = "MIT OR Apache-2.0"
