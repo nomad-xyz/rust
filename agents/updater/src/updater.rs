@@ -79,7 +79,14 @@ impl NomadAgent for Updater {
     where
         Self: Sized,
     {
-        let signer = Signers::try_from_signer_conf(&settings.agent.attestation_signer).await?;
+        let signer = Signers::try_from_signer_conf(
+            settings
+                .as_ref()
+                .attestation_signer
+                .as_ref()
+                .expect("!signer"),
+        )
+        .await?;
         let interval_seconds = settings.agent.interval;
         let core = settings.as_ref().try_into_core(Self::AGENT_NAME).await?;
         Ok(Self::new(signer, interval_seconds, core))

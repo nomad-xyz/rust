@@ -1,33 +1,13 @@
 //! Configuration
-use nomad_base::{decl_settings, AgentSecrets, AgentSettingsBlock};
-use nomad_xyz_configuration::agent::SignerConf;
+use nomad_base::decl_settings;
+use nomad_xyz_configuration::agent::updater::UpdaterConfig;
 
-#[derive(Debug, Clone, serde::Deserialize)]
-pub struct UpdaterSettingsBlock {
-    pub interval: u64,
-    pub attestation_signer: SignerConf,
-}
-
-impl AgentSettingsBlock for UpdaterSettingsBlock {
-    fn from_config_and_secrets(
-        home_network: &str,
-        config: &nomad_xyz_configuration::NomadConfig,
-        secrets: &AgentSecrets,
-    ) -> Self {
-        let interval = config.agent().get(home_network).unwrap().updater.interval;
-        let attestation_signer = secrets.attestation_signer.clone();
-        Self {
-            interval,
-            attestation_signer,
-        }
-    }
-}
-decl_settings!(Updater, UpdaterSettingsBlock,);
+decl_settings!(Updater, UpdaterConfig,);
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use nomad_base::NomadAgent;
+    use nomad_base::{AgentSecrets, NomadAgent};
 
     const RUN_ENV: &str = "test";
     const AGENT_HOME: &str = "ethereum";
@@ -56,9 +36,6 @@ mod test {
 
         let interval = config.agent().get("ethereum").unwrap().updater.interval;
         assert_eq!(settings.agent.interval, interval);
-        assert_eq!(
-            settings.agent.attestation_signer,
-            secrets.attestation_signer
-        );
+        assert_eq!(settings.base.attestation_signer, secrets.attestation_signer);
     }
 }

@@ -499,7 +499,13 @@ impl NomadAgent for Watcher {
         Self: Sized,
     {
         let mut connection_managers = vec![];
-        for chain_setup in settings.agent.managers.values() {
+        for chain_setup in settings
+            .as_ref()
+            .managers
+            .as_ref()
+            .expect("!managers")
+            .values()
+        {
             let signer = settings.base.get_signer(&chain_setup.name).await;
             let xapp_timelag = None;
 
@@ -527,7 +533,8 @@ impl NomadAgent for Watcher {
         let core = settings.as_ref().try_into_core("watcher").await?;
 
         Ok(Self::new(
-            Signers::try_from_signer_conf(&settings.agent.attestation_signer).await?,
+            Signers::try_from_signer_conf(&settings.base.attestation_signer.expect("signer"))
+                .await?,
             settings.agent.interval,
             connection_managers,
             core,

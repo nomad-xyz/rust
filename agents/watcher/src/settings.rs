@@ -1,61 +1,14 @@
 //! Configuration
 
-use nomad_base::{decl_settings, AgentSecrets, AgentSettingsBlock, ChainSetup, ChainSetupType};
-use nomad_xyz_configuration::agent::SignerConf;
-use std::collections::HashMap;
+use nomad_base::decl_settings;
+use nomad_xyz_configuration::agent::watcher::WatcherConfig;
 
-#[derive(Debug, Clone, serde::Deserialize)]
-pub struct WatcherSettingsBlock {
-    pub interval: u64,
-    pub managers: HashMap<String, ChainSetup>,
-    pub attestation_signer: SignerConf,
-}
-
-impl AgentSettingsBlock for WatcherSettingsBlock {
-    fn from_config_and_secrets(
-        home_network: &str,
-        config: &nomad_xyz_configuration::NomadConfig,
-        secrets: &AgentSecrets,
-    ) -> Self {
-        let interval = config.agent().get(home_network).unwrap().watcher.interval;
-
-        let home_connections = &config
-            .protocol()
-            .networks
-            .get(home_network)
-            .expect("!networks")
-            .connections;
-
-        // Connection manager has one xapp for every home connection
-        let managers: HashMap<String, ChainSetup> = home_connections
-            .iter()
-            .map(|remote_network| {
-                (
-                    remote_network.to_owned(),
-                    ChainSetup::from_config_and_secrets(
-                        ChainSetupType::ConnectionManager { remote_network },
-                        config,
-                        secrets,
-                    ),
-                )
-            })
-            .collect();
-
-        let attestation_signer = secrets.attestation_signer.clone();
-
-        Self {
-            interval,
-            managers,
-            attestation_signer,
-        }
-    }
-}
-decl_settings!(Watcher, WatcherSettingsBlock,);
+decl_settings!(Watcher, WatcherConfig,);
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use nomad_base::NomadAgent;
+    use nomad_base::{AgentSecrets, NomadAgent};
     use nomad_xyz_configuration::contracts::CoreContracts;
 
     const RUN_ENV: &str = "test";
@@ -85,10 +38,7 @@ mod test {
 
         let agent_config = &config.agent().get("ethereum").unwrap().watcher;
         assert_eq!(settings.agent.interval, agent_config.interval);
-        assert_eq!(
-            settings.agent.attestation_signer,
-            secrets.attestation_signer
-        );
+        assert_eq!(settings.base.attestation_signer, secrets.attestation_signer);
 
         let home_connections = &config
             .protocol()
@@ -98,7 +48,13 @@ mod test {
             .connections;
 
         for remote_network in home_connections {
-            let manager_setup = settings.agent.managers.get(remote_network).unwrap();
+            let manager_setup = settings
+                .as_ref()
+                .managers
+                .as_ref()
+                .unwrap()
+                .get(remote_network)
+                .unwrap();
 
             let config_manager_domain = config
                 .protocol()

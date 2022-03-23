@@ -53,7 +53,7 @@ pub struct AgentSecrets {
     /// Transaction signers
     pub transaction_signers: HashMap<String, SignerConf>,
     /// Attestation signers
-    pub attestation_signer: SignerConf,
+    pub attestation_signer: Option<SignerConf>,
 }
 
 impl AgentSecrets {

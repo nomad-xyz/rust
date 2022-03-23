@@ -1,37 +1,10 @@
-/// Trait agent-specific settings must implement to be constructed from
-/// NomadConfig and AgentSecrets blocks. Used in decl_settings! macro.
-pub trait AgentSettingsBlock {
-    /// Describe how to retrieve agent-specific settings from both
-    /// NomadConfig and AgentSecrets blocks
-    fn from_config_and_secrets(
-        home_network: &str,
-        config: &nomad_xyz_configuration::NomadConfig,
-        secrets: &crate::settings::AgentSecrets,
-    ) -> Self;
-}
-
 #[macro_export]
-/// Declare a new agent settings block
+/// Declare a new agent settings block with base settings + agent-specific
+/// settings
 /// ### Usage
 ///
 /// ```ignore
-/// #[derive(Debug, Clone, serde::Deserialize)]
-/// pub struct RelayerSettingsBlock {
-///    pub interval: u64,
-/// }
-///
-/// impl AgentSettingsBlock for RelayerSettingsBlock {
-///     fn from_config_and_secrets(
-///         home_network: &str,
-///         config: &nomad_xyz_configuration::NomadConfig,
-///         _secrets: &AgentSecrets,
-///     ) -> Self {
-///         let interval = config.agent().get(home_network).unwrap().relayer.interval;
-///         Self { interval }
-///     }
-/// }
-///
-/// decl_settings!(Relayer, RelayerSettingsBlock,);
+/// decl_settings!(Relayer, RelayerConfig,);
 /// ```
 macro_rules! decl_settings {
     ($name:ident, $agent_settings:ty,) => {
@@ -62,7 +35,8 @@ macro_rules! decl_settings {
                     let secrets = nomad_base::AgentSecrets::from_file(secrets_path)?;
 
                     let base = nomad_base::Settings::from_config_and_secrets(&agent, &home, &config, &secrets);
-                    let agent = <$agent_settings as AgentSettingsBlock>::from_config_and_secrets(&home, &config, &secrets);
+
+                    let agent = config.agent().get(&home).expect("agent config").[<$name:lower>].clone();
 
                     Ok(Self {
                         base,

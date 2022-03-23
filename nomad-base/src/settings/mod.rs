@@ -152,10 +152,14 @@ pub struct Settings {
     pub home: ChainSetup,
     /// The replica configurations
     pub replicas: HashMap<String, ChainSetup>,
+    /// Optional connection manager configurations (set for watcher only)
+    pub managers: Option<HashMap<String, ChainSetup>>,
     /// The tracing configuration
     pub logging: LogConfig,
     /// Transaction signers
     pub signers: HashMap<String, SignerConf>,
+    /// Optional attestation signer
+    pub attestation_signer: Option<SignerConf>,
 }
 
 impl Settings {
@@ -167,8 +171,10 @@ impl Settings {
             index: self.index.clone(),
             home: self.home.clone(),
             replicas: self.replicas.clone(),
+            managers: self.managers.clone(),
             logging: self.logging,
             signers: self.signers.clone(),
+            attestation_signer: self.attestation_signer.clone(),
         }
     }
 }
@@ -469,14 +475,38 @@ impl Settings {
             })
             .collect();
 
+        // Create connection managers if watcher
+        let managers: Option<HashMap<String, ChainSetup>> =
+            if agent_name.to_lowercase() == "watcher" {
+                Some(
+                    connections
+                        .iter()
+                        .map(|remote_network| {
+                            (
+                                remote_network.to_owned(),
+                                ChainSetup::from_config_and_secrets(
+                                    ChainSetupType::ConnectionManager { remote_network },
+                                    config,
+                                    secrets,
+                                ),
+                            )
+                        })
+                        .collect(),
+                )
+            } else {
+                None
+            };
+
         Self {
             db,
             metrics,
             home,
             replicas,
+            managers,
             index,
             logging: agent.logging,
             signers: secrets.transaction_signers.clone(),
+            attestation_signer: secrets.attestation_signer.clone(),
         }
     }
 

@@ -1,29 +1,14 @@
 //! Configuration
 
-use nomad_base::{decl_settings, AgentSecrets, AgentSettingsBlock};
+use nomad_base::decl_settings;
+use nomad_xyz_configuration::agent::relayer::RelayerConfig;
 
-#[derive(Debug, Clone, serde::Deserialize)]
-pub struct RelayerSettingsBlock {
-    pub interval: u64,
-}
-
-impl AgentSettingsBlock for RelayerSettingsBlock {
-    fn from_config_and_secrets(
-        home_network: &str,
-        config: &nomad_xyz_configuration::NomadConfig,
-        _secrets: &AgentSecrets,
-    ) -> Self {
-        let interval = config.agent().get(home_network).unwrap().relayer.interval;
-        Self { interval }
-    }
-}
-
-decl_settings!(Relayer, RelayerSettingsBlock,);
+decl_settings!(Relayer, RelayerConfig,);
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use nomad_base::NomadAgent;
+    use nomad_base::{AgentSecrets, NomadAgent};
 
     const RUN_ENV: &str = "test";
     const AGENT_HOME: &str = "ethereum";
