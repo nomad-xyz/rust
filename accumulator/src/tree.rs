@@ -1,4 +1,4 @@
-use crate::{full::MerkleTree, merkle_root_from_branch, MerkleTreeError, Proof};
+use crate::{full::MerkleTree, merkle_root_from_branch, LightMerkle, MerkleTreeError, Proof};
 use ethers::core::types::H256;
 
 /// A simplified interface for a full sparse merkle tree
@@ -51,6 +51,11 @@ impl<const N: usize> Tree<N> {
         }
     }
 
+    /// Calculate the initital root of a tree of this depth
+    pub fn initial_root() -> H256 {
+        LightMerkle::<N>::default().root()
+    }
+
     /// Instantiate a new tree with a known depth and no leaves
     pub fn new() -> Self {
         Self::from_leaves(&[])
@@ -98,7 +103,7 @@ impl<const N: usize> Tree<N> {
 
     /// Verify a proof against this tree's root.
     #[allow(dead_code)]
-    pub fn verify(&self, proof: &Proof<32>) -> Result<(), TreeError> {
+    pub fn verify(&self, proof: &Proof<N>) -> Result<(), TreeError> {
         let actual = merkle_root_from_branch(proof.leaf, &proof.path, N, proof.index);
         let expected = self.root();
         if expected == actual {

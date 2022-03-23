@@ -428,7 +428,7 @@ mod tests {
         let leaf = H256::repeat_byte(1);
 
         let mut full = MerkleTree::create(&[], TREE_DEPTH);
-        let mut incr = light::IncrementalMerkle::<32>::default();
+        let mut incr = light::LightMerkle::<32>::default();
         let second = MerkleTree::create(&[leaf], TREE_DEPTH);
 
         full.push_leaf(leaf, TREE_DEPTH).unwrap();

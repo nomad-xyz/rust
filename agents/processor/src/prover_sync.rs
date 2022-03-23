@@ -2,8 +2,7 @@ use color_eyre::eyre::{bail, Result};
 use ethers::core::types::H256;
 use nomad_base::NomadDB;
 use nomad_core::{
-    accumulator::tree::{Tree, TreeError},
-    accumulator::INITIAL_ROOT,
+    accumulator::{tree::TreeError, NomadTree},
     db::DbError,
     ChainCommunicationError,
 };
@@ -18,7 +17,7 @@ use tracing::{debug, error, info, info_span, instrument, instrument::Instrumente
 #[derive(Debug)]
 pub struct ProverSync {
     db: NomadDB,
-    prover: Tree<32>,
+    prover: NomadTree,
 }
 
 impl Display for ProverSync {
@@ -76,7 +75,7 @@ impl ProverSync {
     // prover currently has. If that root is the initial root, it is 0.
     fn local_root(&self) -> H256 {
         let root = self.prover.root();
-        if root == *INITIAL_ROOT {
+        if root == NomadTree::initial_root() {
             H256::zero()
         } else {
             root
@@ -108,7 +107,7 @@ impl ProverSync {
     #[instrument(level = "debug", skip(db))]
     pub fn from_disk(db: NomadDB) -> Self {
         // Ingest all leaves in db into prover tree
-        let mut prover = Tree::default();
+        let mut prover = NomadTree::default();
 
         if let Some(root) = db.retrieve_prover_latest_committed().expect("db error") {
             for i in 0.. {

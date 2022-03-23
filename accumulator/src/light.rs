@@ -4,12 +4,12 @@ use crate::{full::merkle_root_from_branch, hash_concat, Proof, TREE_DEPTH, ZERO_
 
 #[derive(Debug, Clone, Copy)]
 /// An incremental merkle tree, modeled on the eth2 deposit contract
-pub struct IncrementalMerkle<const N: usize> {
+pub struct LightMerkle<const N: usize> {
     branch: [H256; N],
     count: usize,
 }
 
-impl<const N: usize> Default for IncrementalMerkle<N> {
+impl<const N: usize> Default for LightMerkle<N> {
     fn default() -> Self {
         let mut branch: [H256; N] = [Default::default(); N];
         branch
@@ -20,7 +20,12 @@ impl<const N: usize> Default for IncrementalMerkle<N> {
     }
 }
 
-impl<const N: usize> IncrementalMerkle<N> {
+impl<const N: usize> LightMerkle<N> {
+    /// Calculate the initital root of a tree of this depth
+    pub fn initial_root() -> H256 {
+        LightMerkle::<N>::default().root()
+    }
+
     /// Ingest a leaf into the tree.
     pub fn ingest(&mut self, element: H256) {
         let mut node = element;
@@ -71,35 +76,46 @@ impl<const N: usize> IncrementalMerkle<N> {
 
     /// Verify a incremental merkle proof of inclusion
     pub fn verify(&self, proof: &Proof<N>) -> bool {
-        let computed = IncrementalMerkle::branch_root(proof.leaf, proof.path, proof.index as usize);
+        let computed = LightMerkle::branch_root(proof.leaf, proof.path, proof.index as usize);
         computed == self.root()
     }
 }
 
-// #[cfg(test)]
-// mod test {
-//     use ethers::utils::hash_message;
-//     use super::*;
-//     use crate::test_utils;
-//     #[test]
-//     fn it_computes_branch_roots() {
-//         let test_cases = test_utils::load_merkle_test_json();
-//         for test_case in test_cases.iter() {
-//             let mut tree = IncrementalMerkle::default();
-//             // insert the leaves
-//             for leaf in test_case.leaves.iter() {
-//                 let hashed_leaf = hash_message(leaf);
-//                 tree.ingest(hashed_leaf);
-//             }
-//             // assert the tree has the proper leaf count
-//             assert_eq!(tree.count(), test_case.leaves.len());
-//             // assert the tree generates the proper root
-//             let root = tree.root(); // root is type H256
-//             assert_eq!(root, test_case.expected_root);
-//             for n in 0..test_case.leaves.len() {
-//                 // check that the tree can verify the proof for this leaf
-//                 assert!(tree.verify(&test_case.proofs[n]));
-//             }
-//         }
-//     }
-// }
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn it_calculates_the_initial_root() {
+        assert_eq!(
+            LightMerkle::<32>::initial_root(),
+            "0x27ae5ba08d7291c96c8cbddcc148bf48a6d68c7974b94356f53754ef6171d757"
+                .parse()
+                .unwrap()
+        );
+    }
+
+    //     use ethers::utils::hash_message;
+    //     use super::*;
+    //     use crate::test_utils;
+    //     #[test]
+    //     fn it_computes_branch_roots() {
+    //         let test_cases = test_utils::load_merkle_test_json();
+    //         for test_case in test_cases.iter() {
+    //             let mut tree = IncrementalMerkle::default();
+    //             // insert the leaves
+    //             for leaf in test_case.leaves.iter() {
+    //                 let hashed_leaf = hash_message(leaf);
+    //                 tree.ingest(hashed_leaf);
+    //             }
+    //             // assert the tree has the proper leaf count
+    //             assert_eq!(tree.count(), test_case.leaves.len());
+    //             // assert the tree generates the proper root
+    //             let root = tree.root(); // root is type H256
+    //             assert_eq!(root, test_case.expected_root);
+    //             for n in 0..test_case.leaves.len() {
+    //                 // check that the tree can verify the proof for this leaf
+    //                 assert!(tree.verify(&test_case.proofs[n]));
+    //             }
+    //         }
+    //     }
+}

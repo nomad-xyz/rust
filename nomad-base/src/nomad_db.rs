@@ -2,7 +2,7 @@ use color_eyre::Result;
 use ethers::core::types::H256;
 use nomad_core::db::{DbError, TypedDB, DB};
 use nomad_core::{
-    accumulator::Proof, utils, CommittedMessage, Decode, NomadMessage, RawCommittedMessage,
+    accumulator::NomadProof, utils, CommittedMessage, Decode, NomadMessage, RawCommittedMessage,
     SignedUpdate, SignedUpdateWithMeta, UpdateMeta,
 };
 use tokio::time::sleep;
@@ -322,13 +322,13 @@ impl NomadDB {
     ///
     /// Keys --> Values:
     /// - `leaf_index` --> `proof`
-    pub fn store_proof(&self, leaf_index: u32, proof: &Proof<32>) -> Result<(), DbError> {
+    pub fn store_proof(&self, leaf_index: u32, proof: &NomadProof) -> Result<(), DbError> {
         debug!(leaf_index, "storing proof in DB");
         self.store_keyed_encodable(PROOF, &leaf_index, proof)
     }
 
     /// Retrieve a proof by its leaf index
-    pub fn proof_by_leaf_index(&self, leaf_index: u32) -> Result<Option<Proof<32>>, DbError> {
+    pub fn proof_by_leaf_index(&self, leaf_index: u32) -> Result<Option<NomadProof>, DbError> {
         self.retrieve_keyed_decodable(PROOF, &leaf_index)
     }
 

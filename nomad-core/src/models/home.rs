@@ -2,7 +2,7 @@ use ethers::core::types::{Address, H256};
 use std::{collections::VecDeque, io::Write};
 
 use crate::{
-    accumulator::{hash, light::IncrementalMerkle},
+    accumulator::{hash, NomadLightMerkle},
     NomadError, SignedUpdate, Update,
 };
 
@@ -10,14 +10,14 @@ use crate::{
 #[derive(Default, Debug, Clone)]
 pub struct Waiting {
     queue: VecDeque<H256>,
-    accumulator: IncrementalMerkle<32>,
+    accumulator: NomadLightMerkle,
 }
 
 /// Failed state
 #[derive(Debug, Clone)]
 pub struct Failed {
     queue: VecDeque<H256>,
-    accumulator: IncrementalMerkle<32>,
+    accumulator: NomadLightMerkle,
 }
 
 impl Waiting {
@@ -27,7 +27,7 @@ impl Waiting {
     }
 
     /// Return a reference to the incremental merkle tree
-    pub fn accumulator(&self) -> &IncrementalMerkle<32> {
+    pub fn accumulator(&self) -> &NomadLightMerkle {
         &self.accumulator
     }
 }
@@ -39,7 +39,7 @@ impl Failed {
     }
 
     /// Return a reference to the incremental merkle tree
-    pub fn accumulator(&self) -> &IncrementalMerkle<32> {
+    pub fn accumulator(&self) -> &NomadLightMerkle {
         &self.accumulator
     }
 }

@@ -29,6 +29,13 @@ use sha3::{Digest, Keccak256};
 
 /// Tree depth
 pub const TREE_DEPTH: usize = 32;
+/// A Nomad protocol standard-depth tree
+pub type NomadTree = tree::Tree<TREE_DEPTH>;
+/// An incremental Nomad protocol standard-depth tree
+pub type NomadLightMerkle = light::LightMerkle<TREE_DEPTH>;
+/// A Nomad protocol standard-depth proof
+pub type NomadProof = proof::Proof<TREE_DEPTH>;
+
 const EMPTY_SLICE: &[H256] = &[];
 
 pub use full::*;
@@ -61,22 +68,4 @@ lazy_static! {
         }
         hashes
     };
-
-    /// The root of an empty tree
-    pub static ref INITIAL_ROOT: H256 = light::IncrementalMerkle::<32>::default().root();
-}
-
-#[cfg(test)]
-mod test {
-
-    use super::*;
-    #[test]
-    fn it_calculates_the_initial_root() {
-        assert_eq!(
-            *INITIAL_ROOT,
-            "0x27ae5ba08d7291c96c8cbddcc148bf48a6d68c7974b94356f53754ef6171d757"
-                .parse()
-                .unwrap()
-        );
-    }
 }

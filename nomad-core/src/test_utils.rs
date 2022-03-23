@@ -1,4 +1,4 @@
-use crate::accumulator::Proof;
+use crate::accumulator::NomadProof;
 use ethers::core::types::H256;
 use std::{fs::File, io::Read, path::PathBuf};
 
@@ -11,7 +11,7 @@ pub struct MerkleTestCase {
     /// Leaves of merkle tree
     pub leaves: Vec<String>,
     /// Proofs for leaves in tree
-    pub proofs: Vec<Proof<32>>,
+    pub proofs: Vec<NomadProof>,
     /// Root of tree
     pub expected_root: H256,
 }
