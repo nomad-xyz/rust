@@ -23,19 +23,18 @@ rm -rf ./ts
 mkdir -p ./ts
 
 # build
-wasm-pack build  --target browser --scope $SCOPE --out-dir ts/web --out-name configuration
-wasm-pack build  --target nodejs --scope $SCOPE --out-dir ts/node --out-name configuration
+wasm-pack build  --target browser --scope $SCOPE --out-dir ts/web --out-name $PKG_NAME
+wasm-pack build  --target nodejs --scope $SCOPE --out-dir ts/node --out-name $PKG_NAME
 
 # use the browser package.json as a base
 mv ts/web/package.json ts/
-mv ts/web/LICENSE* ts/
-
+# copy in licenses from repo root
+cp ../LICENSE* ts/
 # Get the README in the root, delete the spare
 mv ts/web/README* ts/
 
 # clean redundant files
 rm ts/node/README*
-rm ts/node/LICENSE*
 rm ts/node/package.json
 
 # set the package.json main key (affects how nodejs loads this)
