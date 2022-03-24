@@ -11,6 +11,7 @@
   "rpcs": {
     "rinkeby": ["https://rinkeby.infura.io/v3/"],
     "kovan": ["https://kovan.infura.io/v3/"],
+    "moonbasealpha": ["https://moonbeam-alpha.api.onfinality.io/public"],
     "milkomedaC1testnet": ["http://use-util.cloud.milkomeda.com:8545"],
     "evmostestnet": ["https://evmos-archive-testnet.api.bdnodes.net:8545"]
   },
@@ -583,5 +584,31 @@
       }
     }
   },
-  "bridgeGui": {}
+  "bridgeGui": {
+    "rinkeby": {
+      "displayName": "Rinkeby",
+      "nativeTokenSymbol": "ETH",
+      "chainId": 4
+    },
+    "kovan": {
+      "displayName": "Kovan",
+      "nativeTokenSymbol": "kETH",
+      "chainId": 42
+    },
+    "moonbasealpha": {
+      "displayName": "Moonbase Alpha",
+      "nativeTokenSymbol": "DEV",
+      "chainId": 1287
+    },
+    "milkomedatestnet": {
+      "displayName": "Milkomeda Testnet",
+      "nativeTokenSymbol": "milkADA",
+      "chainId": 200101
+    },
+    "evmostestnet": {
+      "displayName": "Evmos Testnet",
+      "nativeTokenSymbol": "tEVMOS",
+      "chainId": 9000
+    }
+  }
 }

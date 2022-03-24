@@ -349,5 +349,21 @@
       }
     }
   },
-  "bridgeGui": {}
+  "bridgeGui": {
+    "ethereum": {
+      "displayName": "Ethereum",
+      "nativeTokenSymbol": "ETH",
+      "chainId": 1
+    },
+    "moonbeam": {
+      "displayName": "Moonbeam",
+      "nativeTokenSymbol": "GLMR",
+      "chainId": 1284
+    },
+    "milkomedaC1": {
+      "displayName": "Milkomeda C1",
+      "nativeTokenSymbol": "milkADA",
+      "chainId": 2001
+    }
+  }
 }

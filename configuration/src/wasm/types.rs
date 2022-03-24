@@ -10,6 +10,7 @@ export type NameOrDomain = number | string;
 export interface AppConfig {
   displayName: string;
   nativeTokenSymbol: string;
+  chainId: number;
 }
 
 export interface NomadLocator {
