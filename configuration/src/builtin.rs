@@ -8,26 +8,17 @@ use once_cell::sync::OnceCell;
 use crate::NomadConfig;
 
 // built-in config objects
-
-/// config/test.json
 static TEST_JSON: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/configs/test.json"));
-
-/// config/development.json
 static DEVELOPMENT_JSON: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/configs/development.json"
 ));
-
-/// config/staging.json
 static STAGING_JSON: &str =
     include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/configs/staging.json"));
-
-/// config/production.json
 static PRODUCTION_JSON: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/configs/production.json"
 ));
-
 static BUILTINS: OnceCell<HashMap<&'static str, OnceCell<NomadConfig>>> = OnceCell::new();
 
 fn deser(name: &str, json: &str) -> NomadConfig {

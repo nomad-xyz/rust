@@ -38,7 +38,7 @@ fn generate_secrets_template(env: &str) {
         template["rpcs"].as_object_mut().unwrap().insert(
             network.to_owned(),
             json!({
-                "rpcStyle": serde_json::to_string(&rpc_style).expect("!rpcStyle"),
+                "rpcStyle": rpc_style,
                 "connection": {
                     "type": "",
                     "url": ""

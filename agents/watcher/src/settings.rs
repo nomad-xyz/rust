@@ -14,7 +14,7 @@ mod test {
     const RUN_ENV: &str = "test";
     const AGENT_HOME: &str = "ethereum";
     const SECRETS_PATH: &str = "../../fixtures/secrets.json";
-    const CONFIG_PATH: &str = "../../fixtures/config.json";
+    const CONFIG_PATH: &str = "../../configuration/configs/test.json";
 
     #[test]
     fn it_builds_settings_from_config_and_secrets() {
