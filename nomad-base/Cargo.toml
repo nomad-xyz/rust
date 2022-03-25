@@ -48,5 +48,5 @@ name = "example"
 path = "./bin/example.rs"
 
 [[bin]]
-name = "secrets-template"
-path = "./src/bin/secrets_template.rs"
+name = "pre-deploy"
+path = "./src/bin/pre_deploy.rs"

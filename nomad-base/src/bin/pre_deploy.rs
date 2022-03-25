@@ -1,16 +1,40 @@
 use serde_json::json;
 use std::{fs::OpenOptions, io::Write};
 
-#[allow(dead_code)]
 fn main() {
     let env = std::env::var("RUN_ENV").expect("missing RUN_ENV env var");
-    let config = nomad_xyz_configuration::get_builtin(&env).expect("!config");
+    output_overridable_config(&env);
+    generate_secrets_template(&env);
+}
+
+fn output_overridable_config(env: &str) {
+    let json = match env {
+        "test" => nomad_xyz_configuration::builtin::TEST_JSON,
+        "development" => nomad_xyz_configuration::builtin::DEVELOPMENT_JSON,
+        "staging" => nomad_xyz_configuration::builtin::STAGING_JSON,
+        "production" => nomad_xyz_configuration::builtin::PRODUCTION_JSON,
+        _ => panic!("unknown environment {}", env),
+    };
+
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open("config.json")
+        .expect("Failed to open/create config.json");
+
+    file.write_all(json.as_bytes())
+        .expect("Failed to write to config.json");
+}
+
+fn generate_secrets_template(env: &str) {
+    let config = nomad_xyz_configuration::get_builtin(env).expect("!config");
 
     let mut template = json!({
         "rpcs": {},
         "transactionSigners": {},
         "attestationSigner": {
-            "type": "hexKey",
+            "type": "",
             "key": "",
         },
     });
@@ -22,7 +46,7 @@ fn main() {
             json!({
                 "rpcStyle": serde_json::to_string(&rpc_style).expect("!rpcStyle"),
                 "connection": {
-                    "type": "http",
+                    "type": "",
                     "url": ""
                   },
             }),
@@ -34,7 +58,7 @@ fn main() {
             .insert(
                 network.to_owned(),
                 json!({
-                    "type": "hexKey",
+                    "type": "",
                     "key": ""
                 }),
             );
@@ -45,8 +69,8 @@ fn main() {
         .create(true)
         .truncate(true)
         .open("secrets.json")
-        .expect("Failed to open/create file");
+        .expect("Failed to open/create secrets.json");
 
     file.write_all(template.to_string().as_bytes())
-        .expect("Failed to write to file");
+        .expect("Failed to write to secrets.json");
 }
