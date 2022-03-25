@@ -8,13 +8,7 @@ fn main() {
 }
 
 fn output_overridable_config(env: &str) {
-    let json = match env {
-        "test" => nomad_xyz_configuration::builtin::TEST_JSON,
-        "development" => nomad_xyz_configuration::builtin::DEVELOPMENT_JSON,
-        "staging" => nomad_xyz_configuration::builtin::STAGING_JSON,
-        "production" => nomad_xyz_configuration::builtin::PRODUCTION_JSON,
-        _ => panic!("unknown environment {}", env),
-    };
+    let json = nomad_xyz_configuration::get_builtin_json(env);
 
     let mut file = OpenOptions::new()
         .write(true)

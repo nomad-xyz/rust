@@ -10,21 +10,20 @@ use crate::NomadConfig;
 // built-in config objects
 
 /// config/test.json
-pub static TEST_JSON: &str =
-    include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/configs/test.json"));
+static TEST_JSON: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/configs/test.json"));
 
 /// config/development.json
-pub static DEVELOPMENT_JSON: &str = include_str!(concat!(
+static DEVELOPMENT_JSON: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/configs/development.json"
 ));
 
 /// config/staging.json
-pub static STAGING_JSON: &str =
+static STAGING_JSON: &str =
     include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/configs/staging.json"));
 
 /// config/production.json
-pub static PRODUCTION_JSON: &str = include_str!(concat!(
+static PRODUCTION_JSON: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/configs/production.json"
 ));
@@ -35,6 +34,17 @@ fn deser(name: &str, json: &str) -> NomadConfig {
     serde_json::from_str(json)
         .wrap_err_with(|| format!("Configuration {}.json is malformed", name))
         .unwrap()
+}
+
+/// Get a built-in config as JSON string
+pub fn get_builtin_json(name: &str) -> &str {
+    match name {
+        "test" => TEST_JSON,
+        "development" => DEVELOPMENT_JSON,
+        "staging" => STAGING_JSON,
+        "production" => PRODUCTION_JSON,
+        _ => panic!("unknown builtin {}", name),
+    }
 }
 
 /// Get a built-in config object
