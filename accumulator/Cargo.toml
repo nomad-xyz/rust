@@ -2,6 +2,18 @@
 name = "accumulator"
 version = "0.1.0"
 edition = "2021"
+authors = ["James Prestwich <james@nomad.xyz>", "The Nomad Developers <eng@nomad.xyz>"]
+description = "Nomad sparse merle tree"
+repository = "https://github.com/nomad-xyz/rust/accumulator"
+license = "MIT OR Apache-2.0"
+
+exclude = [
+    "*.sh",
+    ".git*"
+]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -11,8 +23,10 @@ lazy_static = "1.4.0"
 sha3 = "0.9.1"
 thiserror = "1.0.30"
 serde = {version = "1.0", features = ["derive"]}
+affix = "0.1.2"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wee_alloc = "0.4.5"
 js-sys = "0.3.56"
 wasm-bindgen = { version = "0.2.79", features = ["serde-serialize"] }
+affix = "0.1.2"
