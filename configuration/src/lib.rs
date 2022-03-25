@@ -4,8 +4,10 @@
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]
 
+use eyre::Result;
 use nomad_types::{NameOrDomain, NomadIdentifier};
 use std::collections::{HashMap, HashSet};
+use std::{fs::File, path::Path};
 
 pub mod agent;
 pub mod bridge;
@@ -56,6 +58,13 @@ pub struct NomadConfig {
 }
 
 impl NomadConfig {
+    /// Instantiate NomadConfig from file
+    pub fn from_file(path: impl AsRef<Path>) -> Result<Self> {
+        let file = File::open(path)?;
+        let config = serde_json::from_reader(file)?;
+        Ok(config)
+    }
+
     /// Resolve a name or domain
     pub fn resolve_domain(&self, domain: NameOrDomain) -> Option<String> {
         self.protocol.resolve_domain(domain)

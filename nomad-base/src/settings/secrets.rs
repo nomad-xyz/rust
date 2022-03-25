@@ -42,7 +42,7 @@ use color_eyre::{eyre, Result};
 use nomad_xyz_configuration::{agent::SignerConf, ethereum, ChainConf};
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::{fs::File, io::BufReader, path::Path};
+use std::{fs::File, path::Path};
 
 /// Agent secrets block
 #[derive(Debug, Deserialize, Default, Clone)]
@@ -60,8 +60,7 @@ impl AgentSecrets {
     /// Get JSON file and deserialize into AgentSecrets
     pub fn from_file(path: impl AsRef<Path>) -> Result<Self> {
         let file = File::open(path)?;
-        let reader = BufReader::new(file);
-        let secrets = serde_json::from_reader(reader)?;
+        let secrets = serde_json::from_reader(file)?;
         Ok(secrets)
     }
 

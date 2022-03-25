@@ -14,12 +14,14 @@ mod test {
     const RUN_ENV: &str = "test";
     const AGENT_HOME: &str = "ethereum";
     const SECRETS_PATH: &str = "../../fixtures/secrets.json";
+    const CONFIG_PATH: &str = "../../fixtures/config.json";
 
     #[test]
     fn it_builds_settings_from_config_and_secrets() {
         std::env::set_var("RUN_ENV", RUN_ENV);
         std::env::set_var("AGENT_HOME", AGENT_HOME);
         std::env::set_var("SECRETS_PATH", SECRETS_PATH);
+        std::env::set_var("CONFIG_PATH", CONFIG_PATH);
 
         let settings = WatcherSettings::new().unwrap();
 
