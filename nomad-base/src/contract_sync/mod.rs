@@ -523,6 +523,7 @@ mod test {
             let metrics = Arc::new(
                 CoreMetrics::new(
                     "contract_sync_test",
+                    "home",
                     None,
                     Arc::new(prometheus::Registry::new()),
                 )

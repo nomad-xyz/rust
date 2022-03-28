@@ -414,6 +414,7 @@ impl Settings {
     pub async fn try_into_core(&self, name: &str) -> Result<AgentCore, Report> {
         let metrics = Arc::new(crate::metrics::CoreMetrics::new(
             name,
+            &self.home.name,
             self.metrics,
             Arc::new(prometheus::Registry::new()),
         )?);

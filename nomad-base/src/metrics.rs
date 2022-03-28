@@ -11,6 +11,7 @@ use tokio::task::JoinHandle;
 /// Metrics for a particular domain
 pub struct CoreMetrics {
     agent_name: String,
+    home_name: String,
     transactions: Box<IntGaugeVec>,
     wallet_balance: Box<IntGaugeVec>,
     channel_faults: Box<IntGaugeVec>,
@@ -27,11 +28,13 @@ impl CoreMetrics {
     /// Track metrics for a particular agent name.
     pub fn new<S: Into<String>>(
         for_agent: S,
+        home_name: S,
         listen_port: Option<u16>,
         registry: Arc<Registry>,
     ) -> prometheus::Result<CoreMetrics> {
         let metrics = CoreMetrics {
             agent_name: for_agent.into(),
+            home_name: home_name.into(),
             transactions: Box::new(IntGaugeVec::new(
                 Opts::new(
                     "transactions_total",
@@ -187,21 +190,21 @@ impl CoreMetrics {
     }
 
     /// Return single gauge for one home <> replica channel
-    pub fn channel_faults_gauge(&self, home: &str, replica: &str) -> IntGauge {
+    pub fn channel_faults_gauge(&self, replica: &str) -> IntGauge {
         self.channel_faults
-            .with_label_values(&[home, replica, &self.agent_name])
+            .with_label_values(&[&self.home_name, replica, &self.agent_name])
     }
 
     /// Return home failure checks gauge
-    pub fn home_failure_checks(&self, home: &str) -> IntGauge {
+    pub fn home_failure_checks(&self) -> IntGauge {
         self.home_failure_checks
-            .with_label_values(&[home, &self.agent_name])
+            .with_label_values(&[&self.home_name, &self.agent_name])
     }
 
     /// Return home failure observations gauge
-    pub fn home_failure_observations(&self, home: &str) -> IntGauge {
+    pub fn home_failure_observations(&self) -> IntGauge {
         self.home_failure_observations
-            .with_label_values(&[home, &self.agent_name])
+            .with_label_values(&[&self.home_name, &self.agent_name])
     }
 
     /// Call with RPC duration after it is complete

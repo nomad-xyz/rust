@@ -698,6 +698,7 @@ mod test {
             let metrics = Arc::new(
                 CoreMetrics::new(
                     "contract_sync_test",
+                    "home",
                     None,
                     Arc::new(prometheus::Registry::new()),
                 )
@@ -791,6 +792,7 @@ mod test {
             let metrics = Arc::new(
                 CoreMetrics::new(
                     "contract_sync_test",
+                    "home",
                     None,
                     Arc::new(prometheus::Registry::new()),
                 )
@@ -891,6 +893,7 @@ mod test {
             let metrics = Arc::new(
                 CoreMetrics::new(
                     "contract_sync_test",
+                    "home",
                     None,
                     Arc::new(prometheus::Registry::new()),
                 )
@@ -1093,6 +1096,7 @@ mod test {
             let metrics = Arc::new(
                 CoreMetrics::new(
                     "contract_sync_test",
+                    "home",
                     None,
                     Arc::new(prometheus::Registry::new()),
                 )
@@ -1171,6 +1175,7 @@ mod test {
                     metrics: Arc::new(
                         nomad_base::CoreMetrics::new(
                             "watcher_test",
+                            "home",
                             None,
                             Arc::new(prometheus::Registry::new()),
                         )
@@ -1284,6 +1289,7 @@ mod test {
             let metrics = Arc::new(
                 CoreMetrics::new(
                     "contract_sync_test",
+                    "home",
                     None,
                     Arc::new(prometheus::Registry::new()),
                 )
@@ -1362,6 +1368,7 @@ mod test {
                     metrics: Arc::new(
                         nomad_base::CoreMetrics::new(
                             "watcher_test",
+                            "home",
                             None,
                             Arc::new(prometheus::Registry::new()),
                         )
