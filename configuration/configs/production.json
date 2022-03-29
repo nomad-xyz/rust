@@ -248,10 +248,10 @@
   "agent": {
     "ethereum": {
       "rpcStyle": "ethereum",
-      "db": "db",
+      "db": "/usr/share/nomad",
       "metrics": 9090,
       "logging": {
-        "level": "debug",
+        "level": "info",
         "fmt": "json"
       },
       "updater": {
@@ -265,7 +265,11 @@
       "processor": {
         "enabled": true,
         "indexOnly": false,
-        "interval": 5
+        "interval": 5,
+        "s3Config": {
+          "bucket": "nomadxyz-production-proofs",
+          "region": "us-west-2"
+        }
       },
       "watcher": {
         "enabled": true,
@@ -278,10 +282,10 @@
     },
     "moonbeam": {
       "rpcStyle": "ethereum",
-      "db": "db",
+      "db": "/usr/share/nomad",
       "metrics": 9090,
       "logging": {
-        "level": "debug",
+        "level": "info",
         "fmt": "json"
       },
       "updater": {
@@ -295,7 +299,11 @@
       "processor": {
         "enabled": true,
         "indexOnly": true,
-        "interval": 5
+        "interval": 5,
+        "s3Config": {
+          "bucket": "nomadxyz-production-proofs",
+          "region": "us-west-2"
+        }
       },
       "watcher": {
         "enabled": true,
@@ -308,10 +316,10 @@
     },
     "milkomedaC1": {
       "rpcStyle": "ethereum",
-      "db": "db",
+      "db": "/usr/share/nomad",
       "metrics": 9090,
       "logging": {
-        "level": "debug",
+        "level": "info",
         "fmt": "json"
       },
       "updater": {
@@ -325,7 +333,11 @@
       "processor": {
         "enabled": true,
         "indexOnly": true,
-        "interval": 5
+        "interval": 5,
+        "s3Config": {
+          "bucket": "nomadxyz-production-proofs",
+          "region": "us-west-2"
+        }
       },
       "watcher": {
         "enabled": true,

@@ -171,10 +171,10 @@
   "agent": {
     "ethereum": {
       "rpcStyle": "ethereum",
-      "db": "db",
+      "db": "/usr/share/nomad",
       "metrics": 9090,
       "logging": {
-        "level": "debug",
+        "level": "info",
         "fmt": "json"
       },
       "updater": {
@@ -201,10 +201,10 @@
     },
     "moonbeam": {
       "rpcStyle": "ethereum",
-      "db": "db",
+      "db": "/usr/share/nomad",
       "metrics": 9090,
       "logging": {
-        "level": "debug",
+        "level": "info",
         "fmt": "json"
       },
       "updater": {

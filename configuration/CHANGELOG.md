@@ -1,5 +1,11 @@
 # Changelog
 
+### Unreleased
+
+- adds processor S3 configs to dev/staging/prod configs
+- change log level to info default
+- change db path to /usr/share/nomad so persistent volumes saved
+
 ### v0.1.0-rc.6
 
 - refactor: move common types (e.g. NomadIdentifier) into rust/nomad-types
