@@ -156,7 +156,7 @@ impl FromEnv for AgentSecrets {
             let network_upper = network.to_uppercase();
             let chain_conf = ChainConf::from_env(&format!("RPCS_{}", network_upper))?;
             let transaction_signer =
-                SignerConf::from_env(&format!("TRANSACTION_SIGNERS_{}", network_upper))?;
+                SignerConf::from_env(&format!("TRANSACTIONSIGNERS_{}", network_upper))?;
 
             secrets.rpcs.insert(network.to_owned(), chain_conf);
             secrets
