@@ -1,35 +1,32 @@
 //! Configuration
 
 use nomad_base::decl_settings;
-use nomad_xyz_configuration::agent::processor::ProcessorConfig;
+use nomad_xyz_configuration::{agent::processor::ProcessorConfig, FromEnv};
 
 decl_settings!(Processor, ProcessorConfig,);
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use nomad_base::{AgentSecrets, NomadAgent};
-
-    const RUN_ENV: &str = "test";
-    const AGENT_HOME: &str = "ethereum";
-    const SECRETS_PATH: &str = "../../fixtures/secrets.json";
+    use nomad_base::NomadAgent;
+    use nomad_xyz_configuration::AgentSecrets;
 
     #[test]
-    fn it_builds_settings_from_config_and_secrets() {
-        std::env::set_var("RUN_ENV", RUN_ENV);
-        std::env::set_var("AGENT_HOME", AGENT_HOME);
-        std::env::set_var("SECRETS_PATH", SECRETS_PATH);
+    fn it_builds_settings_from_env() {
+        dotenv::from_filename("../../fixtures/env.test").unwrap();
+        let run_env = dotenv::var("RUN_ENV").unwrap();
+        let agent_home = dotenv::var("AGENT_HOME").unwrap();
 
         let settings = ProcessorSettings::new().unwrap();
 
-        let config = nomad_xyz_configuration::get_builtin(RUN_ENV).unwrap();
-        let secrets = AgentSecrets::from_file(SECRETS_PATH).unwrap();
+        let config = nomad_xyz_configuration::get_builtin(&run_env).unwrap();
+        let secrets = AgentSecrets::from_env("").unwrap();
 
         settings
             .base
             .validate_against_config_and_secrets(
                 crate::Processor::AGENT_NAME,
-                AGENT_HOME,
+                &agent_home,
                 config,
                 &secrets,
             )

@@ -29,7 +29,7 @@ macro_rules! decl_settings {
                     let agent = std::stringify!($name).to_lowercase();
                     let env = std::env::var("RUN_ENV").expect("missing RUN_ENV env var");
                     let home = std::env::var("AGENT_HOME").expect("missing AGENT_HOME env var");
-                    let secrets_path = std::env::var("SECRETS_PATH").unwrap_or("./secrets.json".to_owned()); // default to ./secrets.json
+                    let secrets_path = std::env::var("SECRETS_PATH").ok();
                     let config_path = std::env::var("CONFIG_PATH").ok();
 
                     let config: nomad_xyz_configuration::NomadConfig = match config_path {
@@ -42,8 +42,11 @@ macro_rules! decl_settings {
                     };
                     config.validate()?;
 
-                    let secrets = nomad_base::AgentSecrets::from_file(&secrets_path)?;
-                    secrets.validate(&agent)?;
+                    let secrets = match secrets_path {
+                        Some(path) =>  nomad_xyz_configuration::AgentSecrets::from_file(path).expect("failed to build AgentSecrets from file"),
+                        None => nomad_xyz_configuration::AgentSecrets::from_env("").expect("failed to build AgentSecrets from env"),
+                    };
+                    secrets.validate(&agent, &env, &home)?;
 
                     let base = nomad_base::Settings::from_config_and_secrets(&agent, &home, &config, &secrets);
                     let agent = config.agent().get(&home).expect("agent config").[<$name:lower>].clone();

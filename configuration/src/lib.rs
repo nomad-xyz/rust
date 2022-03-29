@@ -12,11 +12,17 @@ pub mod bridge;
 pub mod contracts;
 pub mod network;
 
+mod traits;
+pub use traits::*;
+
 pub mod builtin;
 pub use builtin::*;
 
 pub mod chains;
 pub use chains::*;
+
+pub mod secrets;
+pub use secrets::*;
 
 #[cfg(target_arch = "wasm32")]
 /// Wasm bindings for common operations

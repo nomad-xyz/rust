@@ -38,8 +38,8 @@
 //!     }
 //! }
 
-use color_eyre::{eyre, Result};
-use nomad_xyz_configuration::{agent::SignerConf, ethereum, ChainConf};
+use crate::{agent::SignerConf, chains::ethereum, ChainConf, FromEnv};
+use eyre::Result;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::{fs::File, io::BufReader, path::Path};
@@ -66,7 +66,7 @@ impl AgentSecrets {
     }
 
     /// Ensure populated RPCs and transaction signers
-    pub fn validate(&self, agent_name: &str) -> Result<()> {
+    pub fn validate(&self, agent_name: &str, env: &str, home: &str) -> Result<()> {
         // TODO: replace agent name with associated type
         if agent_name == "updater" || agent_name == "watcher" {
             eyre::ensure!(
@@ -76,7 +76,23 @@ impl AgentSecrets {
             )
         }
 
-        for (network, chain_conf) in self.rpcs.iter() {
+        let config = crate::get_builtin(env)
+            .expect("couldn't retrieve config!")
+            .to_owned();
+        let mut networks = config
+            .protocol()
+            .networks
+            .get(home)
+            .expect("!networks")
+            .connections
+            .to_owned();
+        networks.insert(home.to_owned());
+
+        for network in networks.iter() {
+            let chain_conf = self
+                .rpcs
+                .get(network)
+                .unwrap_or_else(|| panic!("no chainconf for {}", network));
             match chain_conf {
                 ChainConf::Ethereum(conn) => match conn {
                     ethereum::Connection::Http { url } => {
@@ -87,9 +103,11 @@ impl AgentSecrets {
                     }
                 },
             }
-        }
 
-        for (network, signer_conf) in self.transaction_signers.iter() {
+            let signer_conf = self
+                .transaction_signers
+                .get(network)
+                .unwrap_or_else(|| panic!("no signerconf for {}", network));
             match signer_conf {
                 SignerConf::HexKey { key } => {
                     eyre::ensure!(
@@ -111,5 +129,68 @@ impl AgentSecrets {
         }
 
         Ok(())
+    }
+}
+
+impl FromEnv for AgentSecrets {
+    fn from_env(_prefix: &str) -> Option<Self> {
+        let env = std::env::var("RUN_ENV").ok()?;
+        let home = std::env::var("AGENT_HOME").ok()?;
+
+        let config = crate::get_builtin(&env)
+            .expect("couldn't retrieve config!")
+            .to_owned();
+
+        let mut networks = config
+            .protocol()
+            .networks
+            .get(&home)
+            .expect("!networks")
+            .connections
+            .to_owned();
+        networks.insert(home);
+
+        let mut secrets = AgentSecrets::default();
+
+        for network in networks.iter() {
+            let network_upper = network.to_uppercase();
+            let chain_conf = ChainConf::from_env(&format!("RPCS_{}", network_upper))?;
+            let transaction_signer =
+                SignerConf::from_env(&format!("TRANSACTIONSIGNERS_{}", network_upper))?;
+
+            secrets.rpcs.insert(network.to_owned(), chain_conf);
+            secrets
+                .transaction_signers
+                .insert(network.to_owned(), transaction_signer);
+        }
+
+        let attestation_signer = SignerConf::from_env("ATTESTATION_SIGNER");
+        secrets.attestation_signer = attestation_signer;
+
+        Some(secrets)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    const RUN_ENV: &str = "test";
+    const AGENT_HOME: &str = "ethereum";
+    const SECRETS_PATH: &str = "../fixtures/secrets.json";
+
+    #[test]
+    fn it_builds_from_env() {
+        dotenv::from_filename("../fixtures/env.test").unwrap();
+        let env = dotenv::var("RUN_ENV").unwrap();
+        let home = dotenv::var("AGENT_HOME").unwrap();
+
+        let secrets = AgentSecrets::from_env("").unwrap();
+        secrets.validate("updater", &env, &home).unwrap();
+    }
+
+    #[test]
+    fn it_builds_from_file() {
+        let secrets = AgentSecrets::from_file(SECRETS_PATH).unwrap();
+        secrets.validate("updater", &RUN_ENV, &AGENT_HOME).unwrap();
     }
 }
