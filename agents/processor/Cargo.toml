@@ -29,7 +29,6 @@ nomad-types = { path = "../../nomad-types" }
 nomad-core = { path = "../../nomad-core" }
 nomad-base = { path = "../../nomad-base" }
 
-
-
 [dev-dependencies]
 nomad-test = { path = "../../nomad-test" }
+dotenv = "0.15.0"

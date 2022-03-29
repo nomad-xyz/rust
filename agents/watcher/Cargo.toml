@@ -30,3 +30,4 @@ affix = "0.1.2"
 [dev-dependencies]
 tokio-test = "0.4.0"
 nomad-test = { path = "../../nomad-test" }
+dotenv = "0.15.0"

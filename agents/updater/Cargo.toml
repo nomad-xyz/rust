@@ -33,3 +33,4 @@ hex = "0.4.3"
 [dev-dependencies]
 mockall = "0.9.1"
 nomad-test = { path = "../../nomad-test" }
+dotenv = "0.15.0"

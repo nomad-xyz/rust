@@ -965,6 +965,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dotenv"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
+
+[[package]]
 name = "downcast"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1924,6 +1930,7 @@ dependencies = [
  "async-trait",
  "color-eyre 0.5.11",
  "config 0.10.1",
+ "dotenv",
  "ethers",
  "futures-util",
  "log",
@@ -3119,6 +3126,7 @@ dependencies = [
  "async-trait",
  "color-eyre 0.5.11",
  "config 0.10.1",
+ "dotenv",
  "ethers",
  "futures-util",
  "log",
@@ -3322,6 +3330,7 @@ dependencies = [
  "async-trait",
  "color-eyre 0.5.11",
  "config 0.10.1",
+ "dotenv",
  "ethers",
  "futures-util",
  "log",
@@ -4589,6 +4598,7 @@ dependencies = [
  "async-trait",
  "color-eyre 0.5.11",
  "config 0.11.0",
+ "dotenv",
  "ethers",
  "futures-util",
  "hex",
@@ -4817,6 +4827,7 @@ dependencies = [
  "async-trait",
  "color-eyre 0.5.11",
  "config 0.10.1",
+ "dotenv",
  "ethers",
  "futures-util",
  "log",

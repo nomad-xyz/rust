@@ -4,10 +4,10 @@ pub trait EnvOverridable {
     fn load_env_overrides(&mut self, require_all: bool);
 }
 
-/// Implemented by structs that are built from environment variables (signers, 
+/// Implemented by structs that are built from environment variables (signers,
 /// connections, etc)
 pub trait FromEnv {
-    /// Optionally load self from env vars. Return None if any necessary env var 
+    /// Optionally load self from env vars. Return None if any necessary env var
     /// is missing.
     fn from_env(prefix: &str) -> Option<Self>
     where
