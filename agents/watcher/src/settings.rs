@@ -12,7 +12,7 @@ mod test {
     use nomad_xyz_configuration::{contracts::CoreContracts, AgentSecrets};
 
     #[test]
-    fn it_builds_settings_from_config_and_secrets() {
+    fn it_builds_settings_from_env() {
         dotenv::from_filename("../../fixtures/env.test").unwrap();
         let run_env = dotenv::var("RUN_ENV").unwrap();
         let agent_home = dotenv::var("AGENT_HOME").unwrap();

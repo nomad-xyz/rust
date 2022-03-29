@@ -174,6 +174,9 @@ impl FromEnv for AgentSecrets {
 #[cfg(test)]
 mod test {
     use super::*;
+    const RUN_ENV: &str = "test";
+    const AGENT_HOME: &str = "ethereum";
+    const SECRETS_PATH: &str = "../fixtures/secrets.json";
 
     #[test]
     fn it_builds_from_env() {
@@ -183,5 +186,11 @@ mod test {
 
         let secrets = AgentSecrets::from_env("").unwrap();
         secrets.validate("updater", &env, &home).unwrap();
+    }
+
+    #[test]
+    fn it_builds_from_file() {
+        let secrets = AgentSecrets::from_file(SECRETS_PATH).unwrap();
+        secrets.validate("updater", &RUN_ENV, &AGENT_HOME).unwrap();
     }
 }
