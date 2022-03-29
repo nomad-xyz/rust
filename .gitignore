@@ -5,3 +5,4 @@ updaterdb
 relayerdb
 kathydb
 *.env
+*.DS_Store
