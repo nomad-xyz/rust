@@ -66,7 +66,7 @@ impl AgentSecrets {
     }
 
     /// Ensure populated RPCs and transaction signers
-    pub fn validate(&self, agent_name: &str) -> Result<()> {
+    pub fn validate(&self, agent_name: &str, env: &str, home: &str) -> Result<()> {
         // TODO: replace agent name with associated type
         if agent_name == "updater" || agent_name == "watcher" {
             eyre::ensure!(
@@ -76,7 +76,23 @@ impl AgentSecrets {
             )
         }
 
-        for (network, chain_conf) in self.rpcs.iter() {
+        let config = crate::get_builtin(env)
+            .expect("couldn't retrieve config!")
+            .to_owned();
+        let mut networks = config
+            .protocol()
+            .networks
+            .get(home)
+            .expect("!networks")
+            .connections
+            .to_owned();
+        networks.insert(home.to_owned());
+
+        for network in networks.iter() {
+            let chain_conf = self
+                .rpcs
+                .get(network)
+                .unwrap_or_else(|| panic!("no chainconf for {}", network));
             match chain_conf {
                 ChainConf::Ethereum(conn) => match conn {
                     ethereum::Connection::Http { url } => {
@@ -87,9 +103,11 @@ impl AgentSecrets {
                     }
                 },
             }
-        }
 
-        for (network, signer_conf) in self.transaction_signers.iter() {
+            let signer_conf = self
+                .transaction_signers
+                .get(network)
+                .unwrap_or_else(|| panic!("no signerconf for {}", network));
             match signer_conf {
                 SignerConf::HexKey { key } => {
                     eyre::ensure!(
@@ -116,8 +134,8 @@ impl AgentSecrets {
 
 impl FromEnv for AgentSecrets {
     fn from_env(_prefix: &str) -> Option<Self> {
-        let env = std::env::var("RUN_ENV").expect("missing RUN_ENV env var");
-        let home = std::env::var("AGENT_HOME").expect("missing AGENT_HOME env var");
+        let env = std::env::var("RUN_ENV").ok()?;
+        let home = std::env::var("AGENT_HOME").ok()?;
 
         let config = crate::get_builtin(&env)
             .expect("couldn't retrieve config!")
@@ -136,11 +154,9 @@ impl FromEnv for AgentSecrets {
 
         for network in networks.iter() {
             let network_upper = network.to_uppercase();
-            let chain_conf = ChainConf::from_env(&format!("RPCS_{}", network_upper))
-                .unwrap_or_else(|| panic!("missing info for {} ChainConf", network));
+            let chain_conf = ChainConf::from_env(&format!("RPCS_{}", network_upper))?;
             let transaction_signer =
-                SignerConf::from_env(&format!("TRANSACTION_SIGNERS_{}", network_upper))
-                    .unwrap_or_else(|| panic!("missing info for {} SignerConf", network));
+                SignerConf::from_env(&format!("TRANSACTION_SIGNERS_{}", network_upper))?;
 
             secrets.rpcs.insert(network.to_owned(), chain_conf);
             secrets
@@ -155,12 +171,17 @@ impl FromEnv for AgentSecrets {
     }
 }
 
-// #[cfg(test)]
-// mod test {
-//     use super::*;
+#[cfg(test)]
+mod test {
+    use super::*;
 
-//     #[test]
-//     fn it_builds_from_env() {
+    #[test]
+    fn it_builds_from_env() {
+        dotenv::from_filename("../fixtures/env.test").unwrap();
+        let env = dotenv::var("RUN_ENV").unwrap();
+        let home = dotenv::var("AGENT_HOME").unwrap();
 
-//     }
-// }
+        let secrets = AgentSecrets::from_env("").unwrap();
+        secrets.validate("updater", &env, &home).unwrap();
+    }
+}

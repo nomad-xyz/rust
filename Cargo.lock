@@ -2552,6 +2552,7 @@ name = "nomad-xyz-configuration"
 version = "0.1.0-rc.6"
 dependencies = [
  "affix",
+ "dotenv",
  "ethers",
  "eyre",
  "js-sys",

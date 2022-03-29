@@ -33,3 +33,6 @@ nomad-types = { path = "../nomad-types" }
 wee_alloc = "0.4.5"
 js-sys = "0.3.56"
 wasm-bindgen = { version = "0.2.79", features = ["serde-serialize"] }
+
+[dev-dependencies]
+dotenv = "0.15.0"

@@ -1,7 +1,7 @@
 /// Implemented by structs overridable through environment variables
 pub trait EnvOverridable {
     /// Override self.fields through env vars
-    fn load_env_overrides(&mut self, require_all: bool);
+    fn load_env_overrides(&mut self);
 }
 
 /// Implemented by structs that are built from environment variables (signers,
