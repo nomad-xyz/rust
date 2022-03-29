@@ -1,5 +1,9 @@
 # Changelog
 
+### Unreleased
+
+- adds processor S3 configs to development.json and production.json
+
 ### v0.1.0-rc.6
 
 - refactor: move common types (e.g. NomadIdentifier) into rust/nomad-types
