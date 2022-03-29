@@ -249,10 +249,10 @@
   "agent": {
     "rinkeby": {
       "rpcStyle": "ethereum",
-      "db": "db",
+      "db": "/usr/share/nomad",
       "metrics": 9090,
       "logging": {
-        "level": "debug",
+        "level": "info",
         "fmt": "json"
       },
       "updater": {
@@ -266,7 +266,11 @@
       "processor": {
         "enabled": true,
         "indexOnly": false,
-        "interval": 5
+        "interval": 5,
+        "s3Config": {
+          "bucket": "nomadxyz-staging-proofs",
+          "region": "us-west-2"
+        }
       },
       "watcher": {
         "enabled": true,
@@ -279,10 +283,10 @@
     },
     "kovan": {
       "rpcStyle": "ethereum",
-      "db": "db",
+      "db": "/usr/share/nomad",
       "metrics": 9090,
       "logging": {
-        "level": "debug",
+        "level": "info",
         "fmt": "json"
       },
       "updater": {
@@ -296,7 +300,11 @@
       "processor": {
         "enabled": true,
         "indexOnly": false,
-        "interval": 5
+        "interval": 5,
+        "s3Config": {
+          "bucket": "nomadxyz-staging-proofs",
+          "region": "us-west-2"
+        }
       },
       "watcher": {
         "enabled": true,
@@ -309,10 +317,10 @@
     },
     "moonbasealpha": {
       "rpcStyle": "ethereum",
-      "db": "db",
+      "db": "/usr/share/nomad",
       "metrics": 9090,
       "logging": {
-        "level": "debug",
+        "level": "info",
         "fmt": "json"
       },
       "updater": {
@@ -326,7 +334,11 @@
       "processor": {
         "enabled": true,
         "indexOnly": false,
-        "interval": 5
+        "interval": 5,
+        "s3Config": {
+          "bucket": "nomadxyz-staging-proofs",
+          "region": "us-west-2"
+        }
       },
       "watcher": {
         "enabled": true,
@@ -339,10 +351,10 @@
     },
     "milkomedaC1testnet": {
       "rpcStyle": "ethereum",
-      "db": "db",
+      "db": "/usr/share/nomad",
       "metrics": 9090,
       "logging": {
-        "level": "debug",
+        "level": "info",
         "fmt": "json"
       },
       "updater": {
@@ -356,7 +368,11 @@
       "processor": {
         "enabled": true,
         "indexOnly": false,
-        "interval": 5
+        "interval": 5,
+        "s3Config": {
+          "bucket": "nomadxyz-staging-proofs",
+          "region": "us-west-2"
+        }
       },
       "watcher": {
         "enabled": true,

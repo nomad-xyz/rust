@@ -414,10 +414,10 @@
   "agent": {
     "rinkeby": {
       "rpcStyle": "ethereum",
-      "db": "db",
+      "db": "/usr/share/nomad",
       "metrics": 9090,
       "logging": {
-        "level": "debug",
+        "level": "info",
         "fmt": "json"
       },
       "updater": {
@@ -448,10 +448,10 @@
     },
     "kovan": {
       "rpcStyle": "ethereum",
-      "db": "db",
+      "db": "/usr/share/nomad",
       "metrics": 9090,
       "logging": {
-        "level": "debug",
+        "level": "info",
         "fmt": "json"
       },
       "updater": {
@@ -482,10 +482,10 @@
     },
     "moonbasealpha": {
       "rpcStyle": "ethereum",
-      "db": "db",
+      "db": "/usr/share/nomad",
       "metrics": 9090,
       "logging": {
-        "level": "debug",
+        "level": "info",
         "fmt": "json"
       },
       "updater": {
@@ -516,10 +516,10 @@
     },
     "milkomedaC1testnet": {
       "rpcStyle": "ethereum",
-      "db": "db",
+      "db": "/usr/share/nomad",
       "metrics": 9090,
       "logging": {
-        "level": "debug",
+        "level": "info",
         "fmt": "json"
       },
       "updater": {
@@ -550,10 +550,10 @@
     },
     "evmostestnet": {
       "rpcStyle": "ethereum",
-      "db": "db",
+      "db": "/usr/share/nomad",
       "metrics": 9090,
       "logging": {
-        "level": "debug",
+        "level": "info",
         "fmt": "json"
       },
       "updater": {
