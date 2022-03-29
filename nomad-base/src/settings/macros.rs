@@ -42,7 +42,7 @@ macro_rules! decl_settings {
                     };
                     config.validate()?;
 
-                    let secrets = nomad_base::AgentSecrets::from_file(&secrets_path)?;
+                    let secrets = nomad_xyz_configuration::AgentSecrets::from_env("").expect("failed to build AgentSecrets from env");
                     secrets.validate(&agent)?;
 
                     let base = nomad_base::Settings::from_config_and_secrets(&agent, &home, &config, &secrets);

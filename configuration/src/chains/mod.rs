@@ -2,6 +2,9 @@
 
 pub mod ethereum;
 
+use crate::FromEnv;
+use serde_json::json;
+
 /// A connection to _some_ blockchain.
 ///
 /// Specify the chain name (enum variant) in toml under the `chain` key
@@ -16,5 +19,26 @@ pub enum ChainConf {
 impl Default for ChainConf {
     fn default() -> Self {
         Self::Ethereum(Default::default())
+    }
+}
+
+impl FromEnv for ChainConf {
+    fn from_env(prefix: &str) -> Option<Self> {
+        let rpc_style = std::env::var(&format!("{}_RPC_STYLE", prefix)).ok()?;
+        let rpc_type = std::env::var(&format!("{}_CONNECTION_TYPE", prefix)).ok()?;
+        let rpc_url = std::env::var(&format!("{}_CONNECTION_URL", prefix)).ok()?;
+
+        let json = json!({
+            "rpcStyle": rpc_style,
+            "connection": {
+                "type": rpc_type,
+                "url": rpc_url,
+            },
+        });
+
+        Some(
+            serde_json::from_value(json)
+                .unwrap_or_else(|_| panic!("malformed json for {} rpc", prefix)),
+        )
     }
 }

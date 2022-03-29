@@ -1,15 +1,15 @@
 //! Configuration
 
 use nomad_base::decl_settings;
-use nomad_xyz_configuration::agent::watcher::WatcherConfig;
+use nomad_xyz_configuration::{agent::watcher::WatcherConfig, FromEnv};
 
 decl_settings!(Watcher, WatcherConfig,);
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use nomad_base::{AgentSecrets, NomadAgent};
-    use nomad_xyz_configuration::contracts::CoreContracts;
+    use nomad_base::NomadAgent;
+    use nomad_xyz_configuration::{contracts::CoreContracts, AgentSecrets};
 
     const RUN_ENV: &str = "test";
     const AGENT_HOME: &str = "ethereum";

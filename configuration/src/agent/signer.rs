@@ -1,4 +1,6 @@
+use crate::FromEnv;
 use nomad_types::HexString;
+use serde_json::json;
 
 /// Ethereum signer types
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
@@ -25,5 +27,22 @@ pub enum SignerConf {
 impl Default for SignerConf {
     fn default() -> Self {
         Self::Node
+    }
+}
+
+impl FromEnv for SignerConf {
+    fn from_env(prefix: &str) -> Option<Self> {
+        let signer_type = std::env::var(&format!("{}_TYPE", prefix)).ok()?;
+        let signer_key = std::env::var(&format!("{}_KEY", prefix)).ok()?;
+
+        let json = json!({
+            "type": signer_type,
+            "key": signer_key,
+        });
+
+        Some(
+            serde_json::from_value(json)
+                .unwrap_or_else(|_| panic!("malformed json for {} signer", prefix)),
+        )
     }
 }

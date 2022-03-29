@@ -2,12 +2,11 @@ use color_eyre::Report;
 use nomad_core::{ContractLocator, Signers};
 use nomad_ethereum::{make_conn_manager, make_home, make_replica};
 use nomad_types::NomadIdentifier;
-use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig};
+use nomad_xyz_configuration::{contracts::CoreContracts, AgentSecrets, ChainConf, NomadConfig};
 use serde::Deserialize;
 
 use crate::{
-    home::Homes, replica::Replicas, xapp::ConnectionManagers, AgentSecrets, HomeVariants,
-    ReplicaVariants,
+    home::Homes, replica::Replicas, xapp::ConnectionManagers, HomeVariants, ReplicaVariants,
 };
 
 /// Chain specific page settings for indexing

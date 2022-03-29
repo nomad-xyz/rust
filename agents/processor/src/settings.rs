@@ -1,14 +1,15 @@
 //! Configuration
 
 use nomad_base::decl_settings;
-use nomad_xyz_configuration::agent::processor::ProcessorConfig;
+use nomad_xyz_configuration::{agent::processor::ProcessorConfig, FromEnv};
 
 decl_settings!(Processor, ProcessorConfig,);
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use nomad_base::{AgentSecrets, NomadAgent};
+    use nomad_base::NomadAgent;
+    use nomad_xyz_configuration::AgentSecrets;
 
     const RUN_ENV: &str = "test";
     const AGENT_HOME: &str = "ethereum";

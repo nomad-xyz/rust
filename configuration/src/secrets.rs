@@ -38,8 +38,8 @@
 //!     }
 //! }
 
-use color_eyre::{eyre, Result};
-use nomad_xyz_configuration::{agent::SignerConf, ethereum, ChainConf};
+use crate::{agent::SignerConf, chains::ethereum, ChainConf, FromEnv};
+use eyre::Result;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::{fs::File, io::BufReader, path::Path};
@@ -113,3 +113,53 @@ impl AgentSecrets {
         Ok(())
     }
 }
+
+impl FromEnv for AgentSecrets {
+    fn from_env(_prefix: &str) -> Option<Self> {
+        let env = std::env::var("RUN_ENV").expect("missing RUN_ENV env var");
+        let home = std::env::var("AGENT_HOME").expect("missing AGENT_HOME env var");
+
+        let config = crate::get_builtin(&env)
+            .expect("couldn't retrieve config!")
+            .to_owned();
+
+        let mut networks = config
+            .protocol()
+            .networks
+            .get(&home)
+            .expect("!networks")
+            .connections
+            .to_owned();
+        networks.insert(home);
+
+        let mut secrets = AgentSecrets::default();
+
+        for network in networks.iter() {
+            let chain_conf = ChainConf::from_env(&format!("RPCS_{}", network))
+                .unwrap_or_else(|| panic!("missing info for {} ChainConf", network));
+            let transaction_signer =
+                SignerConf::from_env(&format!("TRANSACTION_SIGNERS_{}", network))
+                    .unwrap_or_else(|| panic!("missing info for {} SignerConf", network));
+
+            secrets.rpcs.insert(network.to_owned(), chain_conf);
+            secrets
+                .transaction_signers
+                .insert(network.to_owned(), transaction_signer);
+        }
+
+        let attestation_signer = SignerConf::from_env("ATTESTATION_SIGNER");
+        secrets.attestation_signer = attestation_signer;
+
+        Some(secrets)
+    }
+}
+
+// #[cfg(test)]
+// mod test {
+//     use super::*;
+
+//     #[test]
+//     fn it_builds_from_env() {
+
+//     }
+// }
