@@ -33,15 +33,28 @@ impl Default for SignerConf {
 impl FromEnv for SignerConf {
     fn from_env(prefix: &str) -> Option<Self> {
         let signer_type = std::env::var(&format!("{}_TYPE", prefix)).ok()?;
-        let signer_key = std::env::var(&format!("{}_KEY", prefix)).ok()?;
-
-        let json = json!({
-            "type": signer_type,
-            "key": signer_key,
-        });
+        let signer_json = match signer_type.as_ref() {
+            "hexKey" => {
+                let signer_key = std::env::var(&format!("{}_KEY", prefix)).ok()?;
+                json!({
+                    "type": signer_type,
+                    "key": signer_key,
+                })
+            }
+            "aws" => {
+                let id = std::env::var(&format!("{}_ID", prefix)).ok()?;
+                let region = std::env::var(&format!("{}_REGION", prefix)).ok()?;
+                json!({
+                    "type": signer_type,
+                    "id": id,
+                    "region": region,
+                })
+            }
+            _ => panic!("Unknown signer type: {}", signer_type),
+        };
 
         Some(
-            serde_json::from_value(json)
+            serde_json::from_value(signer_json)
                 .unwrap_or_else(|_| panic!("malformed json for {} signer", prefix)),
         )
     }
