@@ -43,12 +43,12 @@ mod xappconnectionmanager_mod {
             address: T,
             client: ::std::sync::Arc<M>,
         ) -> Self {
-            ethers::contract::Contract::new(
+            let contract = ethers::contract::Contract::new(
                 address.into(),
                 XAPPCONNECTIONMANAGER_ABI.clone(),
                 client,
-            )
-            .into()
+            );
+            Self(contract)
         }
         #[doc = "Calls the contract's `domainToReplica` (0xb9cff162) function"]
         pub fn domain_to_replica(
@@ -201,13 +201,6 @@ mod xappconnectionmanager_mod {
         #[doc = r" Returns an [`Event`](#ethers_contract::builders::Event) builder for all events of this contract"]
         pub fn events(&self) -> ethers::contract::builders::Event<M, XAppConnectionManagerEvents> {
             self.0.event_with_filter(Default::default())
-        }
-    }
-    impl<M: ethers::providers::Middleware> From<ethers::contract::Contract<M>>
-        for XAppConnectionManager<M>
-    {
-        fn from(contract: ethers::contract::Contract<M>) -> Self {
-            Self(contract)
         }
     }
     #[derive(
