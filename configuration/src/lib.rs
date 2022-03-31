@@ -149,8 +149,6 @@ impl NomadConfig {
     }
 
     /// Add a network, replacing any previous network by that name.
-    /// If the resulting config is not valid, this function will error and have
-    /// no effect.
     ///
     /// ## Returns
     ///
@@ -160,19 +158,10 @@ impl NomadConfig {
     ///
     /// This function currently clones the config. This is due to lazy
     /// programming. In the future we'll chill out on the memory usage here
-    pub fn add_domain(&mut self, network: Domain) -> eyre::Result<Option<Domain>> {
-        let cache = self.clone();
-
+    pub fn add_domain(&mut self, network: Domain) -> Option<Domain> {
         let name = network.name.clone();
         self.networks.insert(name.clone());
-        let held = self.protocol.networks.insert(name, network);
-
-        let valid = self.validate();
-        // rewind
-        if valid.is_err() {
-            *self = cache;
-        }
-        valid.map(|_| held)
+        self.protocol.networks.insert(name, network)
     }
 
     /// Add a bridge configuration to this config.
