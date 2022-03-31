@@ -62,7 +62,7 @@ To build the wasm library:
 #### Release / Publish
 - Tag newly-merged commit: `git tag -s @nomad-xyz/configuration@<new-package-version>`
 - Push tags: `git push --tags`
-- Publish to NPM: `./publish_it.sh`
+- Publish to NPM: `./publish_npm.sh`
 
 ### Development note
 
