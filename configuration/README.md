@@ -51,10 +51,18 @@ To build the wasm library:
 
 - `$ cargo docs --open`
 
-### Publishing
+### Releasing 
 
-- `$ cargo publish`
-- `$ ./publish_it.sh`
+#### Prepare Release
+- Update Changelog from unreleased to next version
+- Bump package version in `cargo.toml` to  `<new-package-version>`
+- Run the tests locally: `cargo test`
+- Make a PR and merge it
+
+#### Release / Publish
+- Tag newly-merged commit: `git tag -s @nomad-xyz/configuration@<new-package-version>`
+- Push tags: `git push --tags`
+- Publish to NPM: `./publish_it.sh`
 
 ### Development note
 
