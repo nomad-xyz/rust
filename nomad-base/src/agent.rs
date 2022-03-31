@@ -120,9 +120,7 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
     #[tracing::instrument]
     fn run_report_error(&self, replica: String) -> Instrumented<JoinHandle<Result<()>>> {
         let channel = self.build_channel(&replica);
-        let channel_faults_gauge = self
-            .metrics()
-            .channel_faults_gauge(self.home().name(), &replica);
+        let channel_faults_gauge = self.metrics().channel_faults_gauge(&replica);
 
         tokio::spawn(async move {
             let mut exponential = 0;
@@ -232,7 +230,6 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
         let home_failure_observations = self.metrics().home_failure_observations();
 
         tokio::spawn(async move {
-            let home = home.clone();
             loop {
                 if home.state().await? == nomad_core::State::Failed {
                     home_failure_observations.inc();

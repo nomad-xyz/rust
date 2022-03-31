@@ -11,13 +11,14 @@ use tokio::task::JoinHandle;
 /// Metrics for a particular domain
 pub struct CoreMetrics {
     agent_name: String,
+    home_name: String,
     transactions: Box<IntGaugeVec>,
     wallet_balance: Box<IntGaugeVec>,
     channel_faults: Box<IntGaugeVec>,
     rpc_latencies: Box<HistogramVec>,
     span_durations: Box<HistogramVec>,
-    home_failure_checks: Box<IntGauge>,
-    home_failure_observations: Box<IntGauge>,
+    home_failure_checks: Box<IntGaugeVec>,
+    home_failure_observations: Box<IntGaugeVec>,
     listen_port: Option<u16>,
     /// Metrics registry for adding new metrics and gathering reports
     registry: Arc<Registry>,
@@ -27,11 +28,13 @@ impl CoreMetrics {
     /// Track metrics for a particular agent name.
     pub fn new<S: Into<String>>(
         for_agent: S,
+        home_name: S,
         listen_port: Option<u16>,
         registry: Arc<Registry>,
     ) -> prometheus::Result<CoreMetrics> {
         let metrics = CoreMetrics {
             agent_name: for_agent.into(),
+            home_name: home_name.into(),
             transactions: Box::new(IntGaugeVec::new(
                 Opts::new(
                     "transactions_total",
@@ -77,13 +80,23 @@ impl CoreMetrics {
                 .const_label("VERSION", env!("CARGO_PKG_VERSION")),
                 &["span_name", "target"],
             )?),
-            home_failure_checks: Box::new(IntGauge::new(
-                "home_failure_checks",
-                "Number of times agent has checked home for failed state",
+            home_failure_checks: Box::new(IntGaugeVec::new(
+                Opts::new(
+                    "home_failure_checks",
+                    "Number of times agent has checked home for failed state",
+                )
+                .namespace("nomad")
+                .const_label("VERSION", env!("CARGO_PKG_VERSION")),
+                &["home", "agent"]
             )?),
-            home_failure_observations: Box::new(IntGauge::new(
-                "home_failure_observations",
-                "Number of times agent has seen the home failed (anything > 0 is major red flag!)",
+            home_failure_observations: Box::new(IntGaugeVec::new(
+                Opts::new(
+                    "home_failure_observations",
+                    "Number of times agent has seen the home failed (anything > 0 is major red flag!)",
+                )
+                .namespace("nomad")
+                .const_label("VERSION", env!("CARGO_PKG_VERSION")),
+                &["home", "agent"]
             )?),
             registry,
             listen_port,
@@ -104,12 +117,6 @@ impl CoreMetrics {
             .register(metrics.home_failure_observations.clone())?;
 
         Ok(metrics)
-    }
-    /// Register an int gauge
-    pub fn new_int_gauge(&self, metric_name: &str, help: &str) -> Result<prometheus::IntGauge> {
-        let gauge = IntGauge::new(metric_name, help)?;
-        self.registry.register(Box::new(gauge.clone()))?;
-        Ok(gauge)
     }
 
     /// Register an int gauge vec
@@ -183,19 +190,21 @@ impl CoreMetrics {
     }
 
     /// Return single gauge for one home <> replica channel
-    pub fn channel_faults_gauge(&self, home: &str, replica: &str) -> IntGauge {
+    pub fn channel_faults_gauge(&self, replica: &str) -> IntGauge {
         self.channel_faults
-            .with_label_values(&[home, replica, &self.agent_name])
+            .with_label_values(&[&self.home_name, replica, &self.agent_name])
     }
 
     /// Return home failure checks gauge
-    pub fn home_failure_checks(&self) -> Box<IntGauge> {
-        self.home_failure_checks.clone()
+    pub fn home_failure_checks(&self) -> IntGauge {
+        self.home_failure_checks
+            .with_label_values(&[&self.home_name, &self.agent_name])
     }
 
     /// Return home failure observations gauge
-    pub fn home_failure_observations(&self) -> Box<IntGauge> {
-        self.home_failure_observations.clone()
+    pub fn home_failure_observations(&self) -> IntGauge {
+        self.home_failure_observations
+            .with_label_values(&[&self.home_name, &self.agent_name])
     }
 
     /// Call with RPC duration after it is complete
