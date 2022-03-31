@@ -158,10 +158,10 @@ impl NomadConfig {
     ///
     /// This function currently clones the config. This is due to lazy
     /// programming. In the future we'll chill out on the memory usage here
-    pub fn add_domain(&mut self, network: Domain) -> Option<Domain> {
+    pub fn add_domain(&mut self, network: Domain) -> eyre::Result<Option<Domain>> {
         let name = network.name.clone();
         self.networks.insert(name.clone());
-        self.protocol.networks.insert(name, network)
+        Ok(self.protocol.networks.insert(name, network))
     }
 
     /// Add a bridge configuration to this config.
