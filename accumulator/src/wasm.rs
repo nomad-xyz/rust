@@ -4,16 +4,15 @@ macro_rules! export_tree {
             mod [<internal_ $depth>] {
                 use wasm_bindgen::prelude::*;
 
-                #[wasm_bindgen]
+                #[wasm_bindgen(inspectable)]
                 #[derive(Debug, Default, PartialEq)]
                 #[doc = "A sparse merkle tree of depth " $depth]
                 pub struct [<Tree $depth>](pub(crate) crate::Tree<$depth>);
 
-                #[wasm_bindgen]
+                #[wasm_bindgen(inspectable)]
                 #[derive(Debug, Clone, Copy, PartialEq)]
                 #[doc = "A merkle proof of depth " $depth]
                 pub struct [<Proof $depth>](pub(crate) crate::Proof<$depth>);
-
 
                 type Internal = crate::Tree<$depth>;
                 type InternalProof = crate::Proof<$depth>;
@@ -94,6 +93,44 @@ macro_rules! export_tree {
                         self.0
                             .verify(&proof.0)
                             .map_err(|e| JsValue::from(format!("Proof verification failed: {}", e)))
+                    }
+                }
+
+                #[wasm_bindgen]
+                impl [<Proof $depth>] {
+                    #[wasm_bindgen(getter)]
+                    /// Retrieve the root hash of this Merkle proof.
+                    pub fn root(&self) -> String {
+                        format!("{:?}", self.0.root())
+                    }
+
+                    #[wasm_bindgen(getter)]
+                    /// Retrieve the leaf hash of this merkle proof.
+                    pub fn leaf(&self) -> String {
+                        format!("{:?}", self.0.leaf)
+                    }
+
+                    #[wasm_bindgen(getter)]
+                    /// Retrieve the leaf index of this merkle proof.
+                    pub fn index(&self) -> String {
+                        format!("{:?}", self.0.index)
+                    }
+
+                    #[wasm_bindgen(getter)]
+                    /// Get the depth of the tree associated with this proof.
+                    pub fn depth(&self) -> usize {
+                        self.0.path.len()
+                    }
+
+                    #[wasm_bindgen(getter)]
+                    /// Retrieve the intermediate nodes of this merkle proof.
+                    pub fn path(&self) -> js_sys::Array {
+                        self.0
+                            .path
+                            .iter()
+                            .map(|hash| format!("{:?}", hash))
+                            .map(JsValue::from)
+                            .collect()
                     }
                 }
             }
