@@ -10,7 +10,7 @@ license = "Apache-2.0"
 tokio = "1"
 futures = "0.3"
 
-ethers-core = {git = "https://github.com/gakonst/ethers-rs", rev = "de275db"}
+ethers-core = {git = "https://github.com/gakonst/ethers-rs", rev = "2a3fcbb"}
 
 metrics = "0"
 metrics-exporter-prometheus = "0"

@@ -7,9 +7,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ethers = { git = "https://github.com/gakonst/ethers-rs", rev = "de275db", default-features = false, features = ['legacy'] }
-ethers-signers = { git = "https://github.com/gakonst/ethers-rs", rev = "de275db", features=["aws"] }
-ethers-providers = { git = "https://github.com/gakonst/ethers-rs", rev = "de275db", features=["ws", "rustls"] }
+ethers = { git = "https://github.com/gakonst/ethers-rs", rev = "2a3fcbb", default-features = false, features = ['legacy'] }
+ethers-signers = { git = "https://github.com/gakonst/ethers-rs", rev = "2a3fcbb", features=["aws"] }
+ethers-providers = { git = "https://github.com/gakonst/ethers-rs", rev = "2a3fcbb", features=["ws", "rustls"] }
 hex = "0.4.3"
 sha3 = "0.9.1"
 lazy_static = "*"

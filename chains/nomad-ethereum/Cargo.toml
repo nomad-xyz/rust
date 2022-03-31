@@ -10,11 +10,11 @@ edition = "2021"
 # Main block
 serde = "1.0.120"
 serde_json = { version = "1.0.61", default-features = false }
-ethers = {git = "https://github.com/gakonst/ethers-rs", rev = "de275db", features = ["abigen"]}
-ethers-core = {git = "https://github.com/gakonst/ethers-rs", rev = "de275db"}
-ethers-providers = {git = "https://github.com/gakonst/ethers-rs", rev = "de275db"}
-ethers-signers = {git = "https://github.com/gakonst/ethers-rs", rev = "de275db", features = ["aws"]}
-ethers-contract = { git = "https://github.com/gakonst/ethers-rs", rev = "de275db", features=["legacy"] }
+ethers = {git = "https://github.com/gakonst/ethers-rs", rev = "2a3fcbb", features = ["abigen"]}
+ethers-core = {git = "https://github.com/gakonst/ethers-rs", rev = "2a3fcbb"}
+ethers-providers = {git = "https://github.com/gakonst/ethers-rs", rev = "2a3fcbb"}
+ethers-signers = {git = "https://github.com/gakonst/ethers-rs", rev = "2a3fcbb", features = ["aws"]}
+ethers-contract = { git = "https://github.com/gakonst/ethers-rs", rev = "2a3fcbb", features=["legacy"] }
 async-trait = { version = "0.1.42", default-features = false }
 tracing = "0.1.22"
 color-eyre = "0.5.0"
@@ -34,4 +34,4 @@ url = "2.2.2"
 thiserror = "1.0.30"
 
 [build-dependencies]
-ethers = {git = "https://github.com/gakonst/ethers-rs", rev = "de275db", features = ["abigen"]}
+ethers = {git = "https://github.com/gakonst/ethers-rs", rev = "2a3fcbb", features = ["abigen"]}

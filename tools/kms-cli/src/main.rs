@@ -163,7 +163,7 @@ async fn _send_tx(signer: &AwsSigner<'_>, opts: &Opts) -> Result<()> {
 
     let sig = signer.sign_transaction(&typed_tx).await?;
 
-    let rlp = typed_tx.rlp_signed(&sig);
+    let rlp = typed_tx.rlp_signed(signer.chain_id(), &sig);
     println!(
         "Tx request details:\n{}",
         serde_json::to_string_pretty(&typed_tx)?
