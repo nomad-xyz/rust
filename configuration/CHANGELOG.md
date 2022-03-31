@@ -2,9 +2,12 @@
 
 ### Unreleased
 
+### v0.1.0-rc.7
+
 - adds processor S3 configs to dev/staging/prod configs
 - change log level to info default
 - change db path to /usr/share/nomad so persistent volumes saved
+- add_domain no more does a validation
 
 ### v0.1.0-rc.6
 
