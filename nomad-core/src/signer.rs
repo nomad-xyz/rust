@@ -61,7 +61,7 @@ impl Signers {
     /// Try to build Signer from SignerConf object
     pub async fn try_from_signer_conf(conf: &SignerConf) -> Result<Self, Report> {
         match conf {
-            SignerConf::HexKey { key } => Ok(Self::Local(key.as_ref().parse()?)),
+            SignerConf::HexKey(key) => Ok(Self::Local(key.as_ref().parse()?)),
             SignerConf::Aws { id, region } => {
                 let client = KMS_CLIENT.get_or_init(|| {
                     KmsClient::new_with_client(

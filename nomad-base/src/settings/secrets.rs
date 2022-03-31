@@ -79,10 +79,10 @@ impl AgentSecrets {
         for (network, chain_conf) in self.rpcs.iter() {
             match chain_conf {
                 ChainConf::Ethereum(conn) => match conn {
-                    ethereum::Connection::Http { url } => {
+                    ethereum::Connection::Http(url) => {
                         eyre::ensure!(!url.is_empty(), "Http url for {} empty!", network,);
                     }
-                    ethereum::Connection::Ws { url } => {
+                    ethereum::Connection::Ws(url) => {
                         eyre::ensure!(!url.is_empty(), "Ws url for {} empty!", network,);
                     }
                 },
@@ -91,7 +91,7 @@ impl AgentSecrets {
 
         for (network, signer_conf) in self.transaction_signers.iter() {
             match signer_conf {
-                SignerConf::HexKey { key } => {
+                SignerConf::HexKey(key) => {
                     eyre::ensure!(
                         !key.as_ref().is_empty(),
                         "Hex signer key for {} empty!",

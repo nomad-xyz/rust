@@ -1,17 +1,14 @@
 use nomad_types::HexString;
-use serde::{
-    de::{self},
-    Deserialize,
-};
 
 /// Ethereum signer types
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
+#[serde(untagged)]
 pub enum SignerConf {
     /// A local hex key
-    HexKey {
+    HexKey(
         /// Hex string of private key, without 0x prefix
-        key: HexString<64>,
-    },
+        HexString<64>,
+    ),
     /// An AWS signer. Note that AWS credentials must be inserted into the env
     /// separately.
     Aws {
@@ -24,80 +21,43 @@ pub enum SignerConf {
     Node,
 }
 
-impl<'de> serde::Deserialize<'de> for SignerConf {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        #[derive(Deserialize)]
-        #[serde(field_identifier, rename_all = "lowercase")]
-        enum AwsField {
-            Id,
-            Region,
-        }
-
-        struct SignerConfVisitor;
-
-        impl<'de> de::Visitor<'de> for SignerConfVisitor {
-            type Value = SignerConf;
-
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                formatter.write_str(
-                    "A 32-byte 0x-prefixed hex-key, OR an aws key id and regior OR nothing",
-                )
-            }
-
-            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                let key = HexString::<64>::from_string(v).map_err(de::Error::custom)?;
-                Ok(SignerConf::HexKey { key })
-            }
-
-            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
-            where
-                A: de::MapAccess<'de>,
-            {
-                let mut id: Option<String> = None;
-                let mut region: Option<String> = None;
-
-                while let Some(key) = map.next_key()? {
-                    match key {
-                        AwsField::Id => {
-                            if id.is_some() {
-                                return Err(de::Error::duplicate_field("id"));
-                            }
-                            id = Some(map.next_value()?);
-                        }
-                        AwsField::Region => {
-                            if region.is_some() {
-                                return Err(de::Error::duplicate_field("region"));
-                            }
-                            region = Some(map.next_value()?);
-                        }
-                    }
-                }
-                let id = id.ok_or_else(|| de::Error::missing_field("id"))?;
-                let region = region.ok_or_else(|| de::Error::missing_field("region"))?;
-                Ok(SignerConf::Aws { id, region })
-            }
-
-            fn visit_none<E>(self) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                Ok(SignerConf::Node)
-            }
-        }
-
-        const VARIANTS: &'static [&'static str] = &["hexkey", "aws", "node"];
-        deserializer.deserialize_enum("SignerConf", VARIANTS, SignerConfVisitor)
-    }
-}
-
 impl Default for SignerConf {
     fn default() -> Self {
         Self::Node
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use serde_json::{json, Value};
+
+    use super::SignerConf;
+
+    #[test]
+    fn it_deserializes_signer_confs() {
+        let k = "0x3232323232323232323232323232323232323232323232323232323232323232";
+        let value = json! { "0x3232323232323232323232323232323232323232323232323232323232323232" };
+
+        dbg!(&value);
+
+        let signer_conf: SignerConf = serde_json::from_value(value).unwrap();
+        assert_eq!(signer_conf, SignerConf::HexKey(k.parse().unwrap()));
+
+        let value = Value::Null;
+        let signer_conf: SignerConf = serde_json::from_value(value).unwrap();
+        assert_eq!(signer_conf, SignerConf::Node);
+
+        let value = json!({
+            "id": "",
+            "region": ""
+        });
+        let signer_conf: SignerConf = serde_json::from_value(value).unwrap();
+        assert_eq!(
+            signer_conf,
+            SignerConf::Aws {
+                id: "".to_owned(),
+                region: "".to_owned()
+            }
+        );
     }
 }
