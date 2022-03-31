@@ -53,3 +53,15 @@ jobs:
       
       - name: Clippy
         run: cargo clippy -- -D warnings
+
+  wasm-build: 
+    runs-on: ubuntu-latest
+    steps: 
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@v1
+      - uses: jetli/wasm-pack-action@v0.3.0
+      - name: wasm-build
+        run: cd configuration && bash package_it.sh
