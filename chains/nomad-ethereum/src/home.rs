@@ -236,11 +236,14 @@ where
 
     #[tracing::instrument(err, skip(self, update), fields(update = %update))]
     async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self.contract.update(
-            update.update.previous_root.to_fixed_bytes(),
-            update.update.new_root.to_fixed_bytes(),
-            update.signature.to_vec().into(),
-        );
+        let tx = self
+            .contract
+            .update(
+                update.update.previous_root.to_fixed_bytes(),
+                update.update.new_root.to_fixed_bytes(),
+                update.signature.to_vec().into(),
+            )
+            .gas(100_000);
 
         report_tx!(tx, &self.provider).try_into()
     }
