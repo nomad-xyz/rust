@@ -128,6 +128,7 @@ where
     committed_root: H256,
     tx: mpsc::Sender<SignedUpdate>,
     contract: Arc<C>,
+    updates_inspected_for_double: IntGauge,
 }
 
 impl<C> HistorySync<C>
@@ -139,12 +140,14 @@ where
         from: H256,
         tx: mpsc::Sender<SignedUpdate>,
         contract: Arc<C>,
+        updates_inspected_for_double: IntGauge,
     ) -> Self {
         Self {
             committed_root: from,
             tx,
             contract,
             interval,
+            updates_inspected_for_double,
         }
     }
 
@@ -165,6 +168,7 @@ where
         // Dispatch to the handler
         let previous_update = previous_update.unwrap();
         self.tx.send(previous_update.clone()).await?;
+        self.updates_inspected_for_double.inc();
 
         // set up for next loop iteration
         self.committed_root = previous_update.update.previous_root;
@@ -361,6 +365,12 @@ impl Watcher {
                 info!("Spawning watch and sync tasks for replica {}.", name);
                 let from = replica.committed_root().await?;
 
+                let inspected = updates_inspected_for_double.with_label_values(&[
+                    home.name(),
+                    replica.name(),
+                    Self::AGENT_NAME,
+                ]);
+
                 watch_tasks.write().await.insert(
                     (*name).to_owned(),
                     ContractWatcher::new(
@@ -368,18 +378,14 @@ impl Watcher {
                         from,
                         tx.clone(),
                         replica.clone(),
-                        updates_inspected_for_double.with_label_values(&[
-                            home.name(),
-                            replica.name(),
-                            Self::AGENT_NAME,
-                        ]),
+                        inspected.clone(),
                     )
                     .spawn()
                     .in_current_span(),
                 );
                 sync_tasks.write().await.insert(
                     (*name).to_owned(),
-                    HistorySync::new(interval_seconds, from, tx.clone(), replica)
+                    HistorySync::new(interval_seconds, from, tx.clone(), replica, inspected)
                         .spawn()
                         .in_current_span(),
                 );
@@ -388,20 +394,22 @@ impl Watcher {
             // Spawn polling and history syncing tasks for home
             info!("Starting watch and sync tasks for home {}.", home.name());
             let from = home.committed_root().await?;
+            let inspected = updates_inspected_for_double.with_label_values(&[
+                home.name(),
+                home.name(),
+                Self::AGENT_NAME,
+            ]);
+
             let home_watcher = ContractWatcher::new(
                 interval_seconds,
                 from,
                 tx.clone(),
                 home.clone(),
-                updates_inspected_for_double.with_label_values(&[
-                    home.name(),
-                    home.name(),
-                    Self::AGENT_NAME,
-                ]),
+                inspected.clone(),
             )
             .spawn()
             .in_current_span();
-            let home_sync = HistorySync::new(interval_seconds, from, tx.clone(), home)
+            let home_sync = HistorySync::new(interval_seconds, from, tx.clone(), home, inspected)
                 .spawn()
                 .in_current_span();
 
@@ -826,7 +834,13 @@ mod test {
                 CachingHome::new(mock_home.into(), home_sync, nomad_db.clone()).into();
 
             let (tx, mut rx) = mpsc::channel(200);
-            let mut history_sync = HistorySync::new(3, second_root, tx.clone(), home.clone());
+            let inspected = IntGauge::new(
+                "updates_inspected_for_double",
+                "Number of updates inspected for double",
+            )
+            .unwrap();
+            let mut history_sync =
+                HistorySync::new(3, second_root, tx.clone(), home.clone(), inspected);
 
             // First update_history call returns first -> second update
             history_sync
