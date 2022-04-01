@@ -177,27 +177,17 @@ impl FromEnv for AgentSecrets {
 #[cfg(test)]
 mod test {
     use super::*;
-    const AGENT_HOME: &str = "ethereum";
-    const TEST_SECRETS_PATH: &str = "../fixtures/secrets.json";
+    const SECRETS_JSON_PATH: &str = "../fixtures/test_secrets.json";
+    const SECRETS_ENV_PATH: &str = "../fixtures/env.test";
 
     #[test]
     fn it_builds_from_env() {
-        dotenv::from_filename("../fixtures/env.test").unwrap();
-        let secrets = AgentSecrets::from_env("").unwrap();
-
-        let config = crate::get_builtin("test").unwrap();
-        secrets
-            .validate_against_config("updater", &AGENT_HOME, config)
-            .unwrap();
+        dotenv::from_filename(SECRETS_ENV_PATH).unwrap();
+        AgentSecrets::from_env("").expect("Failed to load secrets from env");
     }
 
     #[test]
     fn it_builds_from_file() {
-        let secrets = AgentSecrets::from_file(TEST_SECRETS_PATH).unwrap();
-
-        let config = crate::get_builtin("test").unwrap();
-        secrets
-            .validate_against_config("updater", &AGENT_HOME, config)
-            .unwrap();
+        AgentSecrets::from_file(SECRETS_JSON_PATH).expect("Failed to load secrets from file");
     }
 }

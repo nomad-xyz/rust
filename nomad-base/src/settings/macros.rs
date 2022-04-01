@@ -33,11 +33,7 @@ macro_rules! decl_settings {
                     let config_path = std::env::var("CONFIG_PATH").ok();
 
                     let config: nomad_xyz_configuration::NomadConfig = match config_path {
-                        Some(path) => {
-                            let file = std::fs::File::open(&path)?;
-                            let reader = std::io::BufReader::new(file);
-                            serde_json::from_reader(reader).expect("json malformed")
-                        }
+                        Some(path) => nomad_xyz_configuration::NomadConfig::from_file(path).expect("!config"),
                         None => nomad_xyz_configuration::get_builtin(&env).expect("!config").to_owned(),
                     };
                     config.validate()?;
