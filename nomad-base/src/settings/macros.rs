@@ -46,7 +46,7 @@ macro_rules! decl_settings {
                         Some(path) =>  nomad_xyz_configuration::AgentSecrets::from_file(path).expect("failed to build AgentSecrets from file"),
                         None => nomad_xyz_configuration::AgentSecrets::from_env("").expect("failed to build AgentSecrets from env"),
                     };
-                    secrets.validate(&agent, &env, &home)?;
+                    secrets.validate_against_config(&agent, &home, &config)?;
 
                     let base = nomad_base::Settings::from_config_and_secrets(&agent, &home, &config, &secrets);
                     base.validate_against_config_and_secrets(&agent, &home, &config, &secrets)?;

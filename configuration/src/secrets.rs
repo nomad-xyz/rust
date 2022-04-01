@@ -38,6 +38,7 @@
 //!     }
 //! }
 
+use crate::NomadConfig;
 use crate::{agent::SignerConf, chains::ethereum, ChainConf, FromEnv};
 use eyre::Result;
 use serde::Deserialize;
@@ -66,7 +67,12 @@ impl AgentSecrets {
     }
 
     /// Ensure populated RPCs and transaction signers
-    pub fn validate(&self, agent_name: &str, env: &str, home: &str) -> Result<()> {
+    pub fn validate_against_config(
+        &self,
+        agent_name: &str,
+        home: &str,
+        config: &NomadConfig,
+    ) -> Result<()> {
         // TODO: replace agent name with associated type
         if agent_name == "updater" || agent_name == "watcher" {
             eyre::ensure!(
@@ -76,9 +82,6 @@ impl AgentSecrets {
             )
         }
 
-        let config = crate::get_builtin(env)
-            .expect("couldn't retrieve config!")
-            .to_owned();
         let mut networks = config
             .protocol()
             .networks
@@ -174,23 +177,27 @@ impl FromEnv for AgentSecrets {
 #[cfg(test)]
 mod test {
     use super::*;
-    const RUN_ENV: &str = "test";
     const AGENT_HOME: &str = "ethereum";
-    const SECRETS_PATH: &str = "../fixtures/secrets.json";
+    const TEST_SECRETS_PATH: &str = "../fixtures/secrets.json";
 
     #[test]
     fn it_builds_from_env() {
         dotenv::from_filename("../fixtures/env.test").unwrap();
-        let env = dotenv::var("RUN_ENV").unwrap();
-        let home = dotenv::var("AGENT_HOME").unwrap();
-
         let secrets = AgentSecrets::from_env("").unwrap();
-        secrets.validate("updater", &env, &home).unwrap();
+
+        let config = crate::get_builtin("test").unwrap();
+        secrets
+            .validate_against_config("updater", &AGENT_HOME, config)
+            .unwrap();
     }
 
     #[test]
     fn it_builds_from_file() {
-        let secrets = AgentSecrets::from_file(SECRETS_PATH).unwrap();
-        secrets.validate("updater", RUN_ENV, AGENT_HOME).unwrap();
+        let secrets = AgentSecrets::from_file(TEST_SECRETS_PATH).unwrap();
+
+        let config = crate::get_builtin("test").unwrap();
+        secrets
+            .validate_against_config("updater", &AGENT_HOME, config)
+            .unwrap();
     }
 }
