@@ -19,13 +19,7 @@ mod test {
             let run_env = dotenv::var("RUN_ENV").unwrap();
             let agent_home = dotenv::var("AGENT_HOME").unwrap();
 
-            let env_vars = std::env::vars();
-            for (key, value) in env_vars.into_iter() {
-                println!("{} = {:?}", key, value);
-            }
-
             let settings = KathySettings::new().unwrap();
-            println!("Settings: {:?}", settings);
 
             let config = nomad_xyz_configuration::get_builtin(&run_env).unwrap();
             let secrets = AgentSecrets::from_env(&config.networks).unwrap();
