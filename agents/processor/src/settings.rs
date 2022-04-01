@@ -1,7 +1,7 @@
 //! Configuration
 
 use nomad_base::decl_settings;
-use nomad_xyz_configuration::{agent::processor::ProcessorConfig, FromEnv};
+use nomad_xyz_configuration::agent::processor::ProcessorConfig;
 
 decl_settings!(Processor, ProcessorConfig,);
 
@@ -20,7 +20,7 @@ mod test {
         let settings = ProcessorSettings::new().unwrap();
 
         let config = nomad_xyz_configuration::get_builtin(&run_env).unwrap();
-        let secrets = AgentSecrets::from_env("").unwrap();
+        let secrets = AgentSecrets::from_env(&config.networks).unwrap();
 
         settings
             .base

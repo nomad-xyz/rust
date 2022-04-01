@@ -42,7 +42,7 @@ use crate::NomadConfig;
 use crate::{agent::SignerConf, chains::ethereum, ChainConf, FromEnv};
 use eyre::Result;
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::{fs::File, io::BufReader, path::Path};
 
 /// Agent secrets block
@@ -64,6 +64,28 @@ impl AgentSecrets {
         let reader = BufReader::new(file);
         let secrets = serde_json::from_reader(reader)?;
         Ok(secrets)
+    }
+
+    /// Build AgentSecrets from environment variables
+    pub fn from_env(networks: &HashSet<String>) -> Option<Self> {
+        let mut secrets = AgentSecrets::default();
+
+        for network in networks.iter() {
+            let network_upper = network.to_uppercase();
+            let chain_conf = ChainConf::from_env(&format!("RPCS_{}", network_upper))?;
+            let transaction_signer =
+                SignerConf::from_env(&format!("TRANSACTIONSIGNERS_{}", network_upper))?;
+
+            secrets.rpcs.insert(network.to_owned(), chain_conf);
+            secrets
+                .transaction_signers
+                .insert(network.to_owned(), transaction_signer);
+        }
+
+        let attestation_signer = SignerConf::from_env("ATTESTATION_SIGNER");
+        secrets.attestation_signer = attestation_signer;
+
+        Some(secrets)
     }
 
     /// Ensure populated RPCs and transaction signers
@@ -135,45 +157,6 @@ impl AgentSecrets {
     }
 }
 
-impl FromEnv for AgentSecrets {
-    fn from_env(_prefix: &str) -> Option<Self> {
-        let env = std::env::var("RUN_ENV").ok()?;
-        let home = std::env::var("AGENT_HOME").ok()?;
-
-        let config = crate::get_builtin(&env)
-            .expect("couldn't retrieve config!")
-            .to_owned();
-
-        let mut networks = config
-            .protocol()
-            .networks
-            .get(&home)
-            .expect("!networks")
-            .connections
-            .to_owned();
-        networks.insert(home);
-
-        let mut secrets = AgentSecrets::default();
-
-        for network in networks.iter() {
-            let network_upper = network.to_uppercase();
-            let chain_conf = ChainConf::from_env(&format!("RPCS_{}", network_upper))?;
-            let transaction_signer =
-                SignerConf::from_env(&format!("TRANSACTIONSIGNERS_{}", network_upper))?;
-
-            secrets.rpcs.insert(network.to_owned(), chain_conf);
-            secrets
-                .transaction_signers
-                .insert(network.to_owned(), transaction_signer);
-        }
-
-        let attestation_signer = SignerConf::from_env("ATTESTATION_SIGNER");
-        secrets.attestation_signer = attestation_signer;
-
-        Some(secrets)
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -182,8 +165,9 @@ mod test {
 
     #[test]
     fn it_builds_from_env() {
+        let networks = &crate::get_builtin("test").unwrap().networks;
         dotenv::from_filename(SECRETS_ENV_PATH).unwrap();
-        AgentSecrets::from_env("").expect("Failed to load secrets from env");
+        AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
     }
 
     #[test]

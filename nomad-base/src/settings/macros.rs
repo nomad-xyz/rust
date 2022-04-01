@@ -27,20 +27,23 @@ macro_rules! decl_settings {
             impl [<$name Settings>] {
                 pub fn new() -> color_eyre::Result<Self>{
                     let agent = std::stringify!($name).to_lowercase();
-                    let env = std::env::var("RUN_ENV").expect("missing RUN_ENV env var");
-                    let home = std::env::var("AGENT_HOME").expect("missing AGENT_HOME env var");
+                    let home = std::env::var("AGENT_HOME").expect("missing AGENT_HOME");
+
                     let secrets_path = std::env::var("SECRETS_PATH").ok();
                     let config_path = std::env::var("CONFIG_PATH").ok();
 
                     let config: nomad_xyz_configuration::NomadConfig = match config_path {
                         Some(path) => nomad_xyz_configuration::NomadConfig::from_file(path).expect("!config"),
-                        None => nomad_xyz_configuration::get_builtin(&env).expect("!config").to_owned(),
+                        None => {
+                            let env = std::env::var("RUN_ENV").expect("missing RUN_ENV");
+                            nomad_xyz_configuration::get_builtin(&env).expect("!config").to_owned()
+                        }
                     };
                     config.validate()?;
 
                     let secrets = match secrets_path {
                         Some(path) =>  nomad_xyz_configuration::AgentSecrets::from_file(path).expect("failed to build AgentSecrets from file"),
-                        None => nomad_xyz_configuration::AgentSecrets::from_env("").expect("failed to build AgentSecrets from env"),
+                        None => nomad_xyz_configuration::AgentSecrets::from_env(&config.networks).expect("failed to build AgentSecrets from env"),
                     };
                     secrets.validate_against_config(&agent, &home, &config)?;
 
