@@ -555,7 +555,6 @@ impl Settings {
             .expect("!networks")
             .connections;
         for remote_network in home_connections {
-            println!("REMOTE {}", remote_network);
             let replica_setup = self.replicas.get(remote_network).unwrap();
             let config_replica_domain = config
                 .protocol()
