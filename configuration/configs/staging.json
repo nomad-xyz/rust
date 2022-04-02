@@ -267,7 +267,7 @@
         "enabled": true,
         "indexOnly": false,
         "interval": 5,
-        "s3Config": {
+        "s3": {
           "bucket": "nomadxyz-staging-proofs",
           "region": "us-west-2"
         }
@@ -301,7 +301,7 @@
         "enabled": true,
         "indexOnly": false,
         "interval": 5,
-        "s3Config": {
+        "s3": {
           "bucket": "nomadxyz-staging-proofs",
           "region": "us-west-2"
         }
@@ -335,7 +335,7 @@
         "enabled": true,
         "indexOnly": false,
         "interval": 5,
-        "s3Config": {
+        "s3": {
           "bucket": "nomadxyz-staging-proofs",
           "region": "us-west-2"
         }
@@ -369,7 +369,7 @@
         "enabled": true,
         "indexOnly": false,
         "interval": 5,
-        "s3Config": {
+        "s3": {
           "bucket": "nomadxyz-staging-proofs",
           "region": "us-west-2"
         }

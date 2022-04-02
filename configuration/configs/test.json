@@ -188,7 +188,11 @@
       "processor": {
         "indexOnly": false,
         "enabled": true,
-        "interval": 5
+        "interval": 5,
+        "s3": {
+          "bucket": "dummy-bucket",
+          "region": "dummy-region"
+        }
       },
       "watcher": {
         "enabled": true,
@@ -218,7 +222,11 @@
       "processor": {
         "indexOnly": true,
         "enabled": true,
-        "interval": 5
+        "interval": 5,
+        "s3": {
+          "bucket": "dummy-bucket",
+          "region": "dummy-region"
+        }
       },
       "watcher": {
         "enabled": true,
