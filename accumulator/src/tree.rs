@@ -1,39 +1,11 @@
-use crate::{full::MerkleTree, merkle_root_from_branch, LightMerkle, MerkleTreeError, Proof};
-use ethers::core::types::H256;
+use crate::{error::TreeError, full::MerkleTree, merkle_root_from_branch, LightMerkle, Proof};
+use ethers::{core::types::H256, prelude::U256};
 
 /// A simplified interface for a full sparse merkle tree
 #[derive(Debug, PartialEq)]
 pub struct Tree<const N: usize> {
     count: usize,
     tree: Box<MerkleTree>,
-}
-
-/// Tree Errors
-#[derive(Debug, thiserror::Error, Clone, Copy)]
-pub enum TreeError {
-    /// Index is above tree max size
-    #[error("Requested proof for index above u32::MAX: {0}")]
-    IndexTooHigh(usize),
-    /// Requested proof for a zero element
-    #[error("Requested proof for a zero element. Requested: {index}. Tree has: {count}")]
-    ZeroProof {
-        /// The index requested
-        index: usize,
-        /// The number of leaves
-        count: usize,
-    },
-    /// Bubbled up from underlying
-    #[error(transparent)]
-    MerkleTreeError(#[from] MerkleTreeError),
-    /// Failed proof verification
-    #[error("Proof verification failed. Root is {expected}, produced is {actual}")]
-    #[allow(dead_code)]
-    VerificationFailed {
-        /// The expected root (this tree's current root)
-        expected: H256,
-        /// The root produced by branch evaluation
-        actual: H256,
-    },
 }
 
 impl<const N: usize> Default for Tree<N> {
@@ -43,6 +15,11 @@ impl<const N: usize> Default for Tree<N> {
 }
 
 impl<const N: usize> Tree<N> {
+    /// Return the maximum number of leaves in this tree
+    pub fn max_leaves() -> U256 {
+        crate::utils::max_leaves(N)
+    }
+
     /// Instantiate a new tree with a known depth and a starting leaf-set
     pub fn from_leaves(leaves: &[H256]) -> Self {
         Self {
@@ -80,6 +57,11 @@ impl<const N: usize> Tree<N> {
         N
     }
 
+    /// Get the tree's leaf count.
+    pub fn count(&self) -> usize {
+        self.count
+    }
+
     /// Return the leaf at `index` and a Merkle proof of its inclusion.
     ///
     /// The Merkle proof is in "bottom-up" order, starting with a leaf node
@@ -111,11 +93,6 @@ impl<const N: usize> Tree<N> {
         } else {
             Err(TreeError::VerificationFailed { expected, actual })
         }
-    }
-
-    /// Get the tree's leaf count.
-    pub fn count(&self) -> usize {
-        self.count
     }
 }
 

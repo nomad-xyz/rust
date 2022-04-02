@@ -1,6 +1,6 @@
-use ethers::core::types::H256;
+use ethers::{core::types::H256, prelude::U256};
 
-use crate::{full::merkle_root_from_branch, hash_concat, Proof, TREE_DEPTH, ZERO_HASHES};
+use crate::{error::IngestionError, utils::hash_concat, Proof, TREE_DEPTH, ZERO_HASHES};
 
 #[derive(Debug, Clone, Copy)]
 /// An incremental merkle tree, modeled on the eth2 deposit contract
@@ -21,25 +21,50 @@ impl<const N: usize> Default for LightMerkle<N> {
 }
 
 impl<const N: usize> LightMerkle<N> {
+    /// Return the maximum number of leaves in this tree
+    pub fn max_leaves() -> U256 {
+        crate::utils::max_leaves(N)
+    }
+
+    /// Instantiate a new tree with a known depth and a starting leaf-set
+    pub fn from_leaves(leaves: &[H256]) -> Self {
+        let mut tree = Self::default();
+
+        for leaf in leaves.iter() {
+            tree.ingest(*leaf).unwrap();
+        }
+
+        tree
+    }
+
     /// Calculate the initital root of a tree of this depth
     pub fn initial_root() -> H256 {
         LightMerkle::<N>::default().root()
     }
 
+    /// Instantiate a new tree with a known depth and no leaves
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// Ingest a leaf into the tree.
-    pub fn ingest(&mut self, element: H256) {
+    pub fn ingest(&mut self, element: H256) -> Result<H256, IngestionError> {
         let mut node = element;
+        if Self::max_leaves() <= self.count.into() {
+            return Err(IngestionError::MerkleTreeFull);
+        }
         assert!(self.count < u32::MAX as usize);
         self.count += 1;
         let mut size = self.count;
         for i in 0..TREE_DEPTH {
             if (size & 1) == 1 {
                 self.branch[i] = node;
-                return;
+                return Ok(self.root());
             }
             node = hash_concat(self.branch[i], node);
             size /= 2;
         }
+        unreachable!()
     }
 
     /// Calculate the current tree root
@@ -49,14 +74,19 @@ impl<const N: usize> LightMerkle<N> {
 
         self.branch.iter().enumerate().for_each(|(i, elem)| {
             node = if (size & 1) == 1 {
-                hash_concat(elem, node)
+                crate::utils::hash_concat(elem, node)
             } else {
-                hash_concat(node, ZERO_HASHES[i])
+                crate::utils::hash_concat(node, ZERO_HASHES[i])
             };
             size /= 2;
         });
 
         node
+    }
+
+    /// Get the tree's depth.
+    pub fn depth(&self) -> usize {
+        N
     }
 
     /// Get the number of items in the tree
@@ -69,15 +99,9 @@ impl<const N: usize> LightMerkle<N> {
         &self.branch
     }
 
-    /// Calculate the root of a branch for incremental given the index
-    pub fn branch_root(item: H256, branch: [H256; N], index: usize) -> H256 {
-        merkle_root_from_branch(item, &branch, 32, index)
-    }
-
     /// Verify a incremental merkle proof of inclusion
     pub fn verify(&self, proof: &Proof<N>) -> bool {
-        let computed = LightMerkle::branch_root(proof.leaf, proof.path, proof.index as usize);
-        computed == self.root()
+        proof.root() == self.root()
     }
 }
 

@@ -2,7 +2,7 @@ use color_eyre::eyre::{bail, Result};
 use ethers::core::types::H256;
 use nomad_base::NomadDB;
 use nomad_core::{
-    accumulator::{tree::TreeError, NomadTree},
+    accumulator::{NomadTree, TreeError},
     db::DbError,
     ChainCommunicationError,
 };

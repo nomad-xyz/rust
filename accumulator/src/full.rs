@@ -1,8 +1,7 @@
 use ethers::core::types::H256;
 use lazy_static::lazy_static;
-use thiserror::Error;
 
-use crate::{hash_concat, EMPTY_SLICE, TREE_DEPTH, ZERO_HASHES};
+use crate::{error::IngestionError, hash_concat, EMPTY_SLICE, TREE_DEPTH, ZERO_HASHES};
 
 // Some code has been derived from
 // https://github.com/sigp/lighthouse/blob/c6baa0eed131c5e8ecc5860778ffc7d4a4c18d2d/consensus/merkle_proof/src/lib.rs#L25
@@ -34,23 +33,6 @@ pub enum MerkleTree {
     ///
     /// It represents a Merkle tree of 2^depth zero leaves.
     Zero(usize),
-}
-
-/// Error type for merkle tree ops.
-#[derive(Debug, PartialEq, Clone, Copy, Error)]
-pub enum MerkleTreeError {
-    /// Trying to push in a leaf
-    #[error("Trying to push in a leaf")]
-    LeafReached,
-    /// No more space in the MerkleTree
-    #[error("No more space in the MerkleTree")]
-    MerkleTreeFull,
-    /// MerkleTree is invalid
-    #[error("MerkleTree is invalid")]
-    Invalid,
-    /// Incorrect Depth provided
-    #[error("Incorrect Depth provided")]
-    DepthTooSmall,
 }
 
 impl MerkleTree {
@@ -96,15 +78,15 @@ impl MerkleTree {
 
     /// Push an element in the MerkleTree.
     /// MerkleTree and depth must be correct, as the algorithm expects valid data.
-    pub fn push_leaf(&mut self, elem: H256, depth: usize) -> Result<(), MerkleTreeError> {
+    pub fn push_leaf(&mut self, elem: H256, depth: usize) -> Result<(), IngestionError> {
         use MerkleTree::*;
 
         if depth == 0 {
-            return Err(MerkleTreeError::DepthTooSmall);
+            return Err(IngestionError::DepthTooSmall);
         }
 
         match self {
-            Leaf(_) => return Err(MerkleTreeError::LeafReached),
+            Leaf(_) => return Err(IngestionError::LeafReached),
             Zero(_) => {
                 *self = MerkleTree::create(&[elem], depth);
             }
@@ -113,7 +95,7 @@ impl MerkleTree {
                 let right: &mut MerkleTree = &mut *right;
                 match (&*left, &*right) {
                     // Tree is full
-                    (Leaf(_), Leaf(_)) => return Err(MerkleTreeError::MerkleTreeFull),
+                    (Leaf(_), Leaf(_)) => return Err(IngestionError::MerkleTreeFull),
                     // There is a right node so insert in right node
                     (Node(_, _, _), Node(_, _, _)) => {
                         if let Err(e) = right.push_leaf(elem, depth - 1) {
@@ -133,14 +115,14 @@ impl MerkleTree {
                         match left.push_leaf(elem, depth - 1) {
                             Ok(_) => (),
                             // Left node is full, insert in right node
-                            Err(MerkleTreeError::MerkleTreeFull) => {
+                            Err(IngestionError::MerkleTreeFull) => {
                                 *right = MerkleTree::create(&[elem], depth - 1);
                             }
                             Err(e) => return Err(e),
                         };
                     }
                     // All other possibilities are invalid MerkleTrees
-                    (_, _) => return Err(MerkleTreeError::Invalid),
+                    (_, _) => return Err(IngestionError::Invalid),
                 };
                 hash.assign_from_slice(hash_concat(left.hash(), right.hash()).as_ref());
             }
@@ -197,24 +179,6 @@ impl MerkleTree {
     }
 }
 
-/// Verify a proof that `leaf` exists at `index` in a Merkle tree rooted at `root`.
-///
-/// The `branch` argument is the main component of the proof: it should be a list of internal
-/// node hashes such that the root can be reconstructed (in bottom-up order).
-pub fn verify_merkle_proof(
-    leaf: H256,
-    branch: &[H256],
-    depth: usize,
-    index: usize,
-    root: H256,
-) -> bool {
-    if branch.len() == depth {
-        merkle_root_from_branch(leaf, branch, depth, index) == root
-    } else {
-        false
-    }
-}
-
 /// Compute a root hash from a leaf and a Merkle proof.
 pub fn merkle_root_from_branch(leaf: H256, branch: &[H256], depth: usize, index: usize) -> H256 {
     assert_eq!(branch.len(), depth, "proof length should equal depth");
@@ -238,6 +202,24 @@ mod tests {
     use crate::light;
 
     use super::*;
+
+    /// Verify a proof that `leaf` exists at `index` in a Merkle tree rooted at `root`.
+    ///
+    /// The `branch` argument is the main component of the proof: it should be a list of internal
+    /// node hashes such that the root can be reconstructed (in bottom-up order).
+    pub fn verify_merkle_proof(
+        leaf: H256,
+        branch: &[H256],
+        depth: usize,
+        index: usize,
+        root: H256,
+    ) -> bool {
+        if branch.len() == depth {
+            merkle_root_from_branch(leaf, branch, depth, index) == root
+        } else {
+            false
+        }
+    }
 
     #[test]
     fn sparse_zero_correct() {
@@ -363,7 +345,7 @@ mod tests {
         let leaf_b00 = H256::from([0xAA; 32]);
 
         let res = tree.push_leaf(leaf_b00, 0);
-        assert_eq!(res, Err(MerkleTreeError::DepthTooSmall));
+        assert_eq!(res, Err(IngestionError::DepthTooSmall));
         let expected_tree = MerkleTree::create(&[], depth);
         assert_eq!(tree.hash(), expected_tree.hash());
 
@@ -392,7 +374,7 @@ mod tests {
 
         let leaf_b12 = H256::from([0xEE; 32]);
         let res = tree.push_leaf(leaf_b12, depth);
-        assert_eq!(res, Err(MerkleTreeError::MerkleTreeFull));
+        assert_eq!(res, Err(IngestionError::MerkleTreeFull));
         assert_eq!(tree.hash(), expected_tree.hash());
     }
 
@@ -432,7 +414,7 @@ mod tests {
         let second = MerkleTree::create(&[leaf], TREE_DEPTH);
 
         full.push_leaf(leaf, TREE_DEPTH).unwrap();
-        incr.ingest(leaf);
+        incr.ingest(leaf).unwrap();
         assert_eq!(second.hash(), incr.root());
         assert_eq!(full.hash(), incr.root());
     }
