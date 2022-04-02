@@ -63,7 +63,7 @@ macro_rules! export_tree {
                             .map_err(|e| format!("Unable to ingest element: {}", e).into())
                     }
 
-                    #[wasm_bindgen(getter)]
+                    #[wasm_bindgen]
                     /// Retrieve the root hash of this Merkle tree.
                     pub fn root(&self) -> String {
                         format!("{:?}", self.0.root())
@@ -98,7 +98,7 @@ macro_rules! export_tree {
 
                 #[wasm_bindgen]
                 impl [<Proof $depth>] {
-                    #[wasm_bindgen(getter)]
+                    #[wasm_bindgen]
                     /// Retrieve the root hash of this Merkle proof.
                     pub fn root(&self) -> String {
                         format!("{:?}", self.0.root())
@@ -112,8 +112,8 @@ macro_rules! export_tree {
 
                     #[wasm_bindgen(getter)]
                     /// Retrieve the leaf index of this merkle proof.
-                    pub fn index(&self) -> String {
-                        format!("{:?}", self.0.index)
+                    pub fn index(&self) -> usize {
+                        self.0.index
                     }
 
                     #[wasm_bindgen(getter)]
