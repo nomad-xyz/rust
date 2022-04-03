@@ -3,7 +3,7 @@
 use async_trait::async_trait;
 use mockall::*;
 
-use ethers::core::types::H256;
+use ethers::core::types::{H256, U256};
 
 use nomad_core::*;
 
@@ -34,6 +34,8 @@ mock! {
         pub fn _nonces(&self, destination: u32) -> Result<u32, ChainCommunicationError> {}
 
         pub fn _dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {}
+
+        pub fn _queue_length(&self) -> Result<U256, ChainCommunicationError> {}
 
         pub fn _queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError> {}
 
@@ -86,6 +88,10 @@ impl Home for MockHomeContract {
 
     async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
         self._dispatch(message)
+    }
+
+    async fn queue_length(&self) -> Result<U256, ChainCommunicationError> {
+        self._queue_length()
     }
 
     async fn queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError> {

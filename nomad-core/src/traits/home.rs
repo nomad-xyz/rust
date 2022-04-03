@@ -8,7 +8,10 @@ use crate::{
 };
 use async_trait::async_trait;
 use color_eyre::Result;
-use ethers::{core::types::H256, utils::keccak256};
+use ethers::{
+    core::types::{H256, U256},
+    utils::keccak256,
+};
 
 /// A Stamped message that has been committed at some leaf index
 #[derive(Debug, Default, Clone, PartialEq)]
@@ -120,6 +123,9 @@ pub trait Home: Common + Send + Sync + std::fmt::Debug {
 
     /// Dispatch a message.
     async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError>;
+
+    /// Return length of queue.
+    async fn queue_length(&self) -> Result<U256, ChainCommunicationError>;
 
     /// Check if queue contains root.
     async fn queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError>;

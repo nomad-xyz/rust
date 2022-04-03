@@ -3,7 +3,7 @@
 
 use async_trait::async_trait;
 use color_eyre::Result;
-use ethers::core::types::{Signature, H256};
+use ethers::core::types::{Signature, H256, U256};
 use futures_util::future::join_all;
 use nomad_core::{
     ChainCommunicationError, Common, CommonIndexer, ContractLocator, DoubleUpdate, Home,
@@ -236,6 +236,8 @@ where
 
     #[tracing::instrument(err, skip(self, update), fields(update = %update))]
     async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+        let queue_length = self.queue_length().await?;
+
         let tx = self
             .contract
             .update(
@@ -243,7 +245,7 @@ where
                 update.update.new_root.to_fixed_bytes(),
                 update.signature.to_vec().into(),
             )
-            .gas(100_000);
+            .gas(U256::from(100_000) + (queue_length * 10_000));
 
         report_tx!(tx, &self.provider).try_into()
     }
@@ -290,6 +292,10 @@ where
         );
 
         report_tx!(tx, &self.provider).try_into()
+    }
+
+    async fn queue_length(&self) -> Result<U256, ChainCommunicationError> {
+        Ok(self.contract.queue_length().call().await?)
     }
 
     async fn queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError> {
