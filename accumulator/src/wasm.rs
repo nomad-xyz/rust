@@ -1,3 +1,6 @@
+#![allow(missing_copy_implementations)]
+#![allow(clippy::unused_unit)]
+
 macro_rules! export_tree {
     ($depth:literal) => {
         affix::paste! {
@@ -11,7 +14,7 @@ macro_rules! export_tree {
                 pub struct [<Tree $depth>](pub(crate) crate::Tree<$depth>);
 
                 #[wasm_bindgen(inspectable)]
-                #[derive(Debug, Clone, Copy, PartialEq)]
+                #[derive(Debug, Clone, PartialEq)]
                 #[doc = "A merkle proof of depth " $depth]
                 pub struct [<Proof $depth>](pub(crate) crate::Proof<$depth>);
 
