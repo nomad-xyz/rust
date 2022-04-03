@@ -199,7 +199,7 @@ pub fn merkle_root_from_branch(leaf: H256, branch: &[H256], depth: usize, index:
 
 #[cfg(test)]
 mod tests {
-    use crate::light;
+    use crate::{light, Merkle};
 
     use super::*;
 

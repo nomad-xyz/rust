@@ -1,4 +1,4 @@
-use crate::{error::TreeError, full::MerkleTree, merkle_root_from_branch, LightMerkle, Proof};
+use crate::{full::MerkleTree, IngestionError, LightMerkle, Merkle, Proof, ProvingError};
 use ethers::{core::types::H256, prelude::U256};
 
 /// A simplified interface for a full sparse merkle tree
@@ -10,16 +10,38 @@ pub struct Tree<const N: usize> {
 
 impl<const N: usize> Default for Tree<N> {
     fn default() -> Self {
-        Self::new()
+        Self::from_leaves(&[])
+    }
+}
+
+impl<const N: usize> Merkle for Tree<N> {
+    type Proof = Proof<N>;
+
+    /// Return the maximum number of leaves in this tree
+    fn max_elements() -> U256 {
+        crate::utils::max_leaves(N)
+    }
+
+    fn count(&self) -> usize {
+        self.count
+    }
+
+    fn root(&self) -> H256 {
+        self.tree.hash()
+    }
+
+    fn depth(&self) -> usize {
+        N
+    }
+
+    fn ingest(&mut self, element: H256) -> Result<H256, IngestionError> {
+        self.count += 1;
+        self.tree.push_leaf(element, N)?;
+        Ok(self.tree.hash())
     }
 }
 
 impl<const N: usize> Tree<N> {
-    /// Return the maximum number of leaves in this tree
-    pub fn max_leaves() -> U256 {
-        crate::utils::max_leaves(N)
-    }
-
     /// Instantiate a new tree with a known depth and a starting leaf-set
     pub fn from_leaves(leaves: &[H256]) -> Self {
         Self {
@@ -33,47 +55,18 @@ impl<const N: usize> Tree<N> {
         LightMerkle::<N>::default().root()
     }
 
-    /// Instantiate a new tree with a known depth and no leaves
-    pub fn new() -> Self {
-        Self::from_leaves(&[])
-    }
-
-    /// Push a leaf to the tree. Appends it to the first unoccupied slot
-    ///
-    /// This will fail if the underlying tree is full.
-    pub fn ingest(&mut self, element: H256) -> Result<H256, TreeError> {
-        self.count += 1;
-        self.tree.push_leaf(element, N)?;
-        Ok(self.tree.hash())
-    }
-
-    /// Retrieve the root hash of this Merkle tree.
-    pub fn root(&self) -> H256 {
-        self.tree.hash()
-    }
-
-    /// Get the tree's depth.
-    pub fn depth(&self) -> usize {
-        N
-    }
-
-    /// Get the tree's leaf count.
-    pub fn count(&self) -> usize {
-        self.count
-    }
-
     /// Return the leaf at `index` and a Merkle proof of its inclusion.
     ///
     /// The Merkle proof is in "bottom-up" order, starting with a leaf node
     /// and moving up the tree. Its length will be exactly equal to `depth`.
-    pub fn prove(&self, index: usize) -> Result<Proof<N>, TreeError> {
+    pub fn prove(&self, index: usize) -> Result<Proof<N>, ProvingError> {
         if index > 2usize.pow(N.try_into().unwrap()) - 1 {
-            return Err(TreeError::IndexTooHigh(index));
+            return Err(ProvingError::IndexTooHigh(index));
         }
 
         let count = self.count();
         if index >= count {
-            return Err(TreeError::ZeroProof { index, count });
+            return Err(ProvingError::ZeroProof { index, count });
         }
 
         let (leaf, nodes) = self.tree.generate_proof(index, N);
@@ -81,18 +74,6 @@ impl<const N: usize> Tree<N> {
         let mut path = [H256::default(); N];
         path.copy_from_slice(&nodes[..N]);
         Ok(Proof { leaf, index, path })
-    }
-
-    /// Verify a proof against this tree's root.
-    #[allow(dead_code)]
-    pub fn verify(&self, proof: &Proof<N>) -> Result<(), TreeError> {
-        let actual = merkle_root_from_branch(proof.leaf, &proof.path, N, proof.index);
-        let expected = self.root();
-        if expected == actual {
-            Ok(())
-        } else {
-            Err(TreeError::VerificationFailed { expected, actual })
-        }
     }
 }
 

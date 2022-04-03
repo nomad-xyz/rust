@@ -29,7 +29,7 @@ pub mod wasm;
 #[cfg_attr(target_arch = "wasm32", global_allocator)]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-use ethers::core::types::H256;
+use ethers::{core::types::H256, prelude::U256};
 use lazy_static::lazy_static;
 
 /// Tree depth
@@ -60,4 +60,42 @@ lazy_static! {
         }
         hashes
     };
+}
+
+/// A merkle proof
+pub trait MerkleProof {
+    /// Calculate the merkle root of this proof's branch
+    fn root(&self) -> H256;
+}
+
+/// A simple trait for merkle-based accumulators
+pub trait Merkle: std::fmt::Debug + Default {
+    /// A proof of some leaf in this tree
+    type Proof: MerkleProof;
+
+    /// The maximum number of elements the tree can ingest
+    fn max_elements() -> U256;
+
+    /// The number of elements currently in the tree
+    fn count(&self) -> usize;
+
+    /// Calculate the root hash of this Merkle tree.
+    fn root(&self) -> H256;
+
+    /// Get the tree's depth.
+    fn depth(&self) -> usize;
+
+    /// Push a leaf to the tree
+    fn ingest(&mut self, element: H256) -> Result<H256, IngestionError>;
+
+    /// Verify a proof against this tree's root.
+    fn verify(&self, proof: &Self::Proof) -> Result<(), VerifyingError> {
+        let actual = proof.root();
+        let expected = self.root();
+        if expected == actual {
+            Ok(())
+        } else {
+            Err(VerifyingError::VerificationFailed { expected, actual })
+        }
+    }
 }

@@ -2,7 +2,7 @@ use color_eyre::eyre::{bail, Result};
 use ethers::core::types::H256;
 use nomad_base::NomadDB;
 use nomad_core::{
-    accumulator::{NomadTree, TreeError},
+    accumulator::{Merkle, NomadTree, ProvingError},
     db::DbError,
     ChainCommunicationError,
 };
@@ -59,9 +59,9 @@ pub enum ProverSyncError {
         /// Leaf index for missing leaf
         leaf_index: usize,
     },
-    /// ProverSync attempts Prover operation and receives TreeError
+    /// ProverSync attempts Prover operation and receives ProvingError
     #[error(transparent)]
-    TreeError(#[from] TreeError),
+    ProvingError(#[from] ProvingError),
     /// ProverSync receives ChainCommunicationError from chain API
     #[error(transparent)]
     ChainCommunicationError(#[from] ChainCommunicationError),
@@ -96,7 +96,7 @@ impl ProverSync {
             }
             // ignore the storage request if it's out of range (e.g. leaves
             // up-to-date but no update containing leaves produced yet)
-            Err(TreeError::ZeroProof { index: _, count: _ }) => Ok(()),
+            Err(ProvingError::ZeroProof { index: _, count: _ }) => Ok(()),
             // bubble up any other errors
             Err(e) => Err(e.into()),
         }

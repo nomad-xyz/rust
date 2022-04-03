@@ -16,7 +16,8 @@ use nomad_base::{
     NomadDB, ProcessorError,
 };
 use nomad_core::{
-    accumulator::NomadProof, CommittedMessage, Common, Home, HomeEvents, MessageStatus,
+    accumulator::{MerkleProof, NomadProof},
+    CommittedMessage, Common, Home, HomeEvents, MessageStatus,
 };
 
 use crate::{prover_sync::ProverSync, push::Pusher, settings::ProcessorSettings as Settings};

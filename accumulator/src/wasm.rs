@@ -3,6 +3,7 @@ macro_rules! export_tree {
         affix::paste! {
             mod [<internal_ $depth>] {
                 use wasm_bindgen::prelude::*;
+                use crate::{Merkle, MerkleProof};
 
                 #[wasm_bindgen(inspectable)]
                 #[derive(Debug, Default, PartialEq)]

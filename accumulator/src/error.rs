@@ -3,11 +3,7 @@ use thiserror;
 
 /// Tree Errors
 #[derive(Debug, thiserror::Error, Clone, Copy)]
-pub enum TreeError {
-    /// Bubbled up from underlying
-    #[error(transparent)]
-    IngestionError(#[from] IngestionError),
-
+pub enum ProvingError {
     /// Index is above tree max size
     #[error("Requested proof for index above u32::MAX: {0}")]
     IndexTooHigh(usize),
@@ -19,6 +15,11 @@ pub enum TreeError {
         /// The number of leaves
         count: usize,
     },
+}
+
+/// Tree Errors
+#[derive(Debug, thiserror::Error, Clone, Copy)]
+pub enum VerifyingError {
     /// Failed proof verification
     #[error("Proof verification failed. Root is {expected}, produced is {actual}")]
     #[allow(dead_code)]
