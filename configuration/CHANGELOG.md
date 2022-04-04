@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- Add bridge gui AppConfigs to JSON config files
+
 ### v0.1.0-rc.7
 
 - adds processor S3 configs to dev/staging/prod configs

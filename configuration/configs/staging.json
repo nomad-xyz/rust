@@ -3,9 +3,9 @@
   "environment": "staging",
   "networks": ["rinkeby", "kovan", "moonbasealpha"],
   "rpcs": {
-    "rinkeby": [],
-    "kovan": [],
-    "moonbasealpha": []
+    "rinkeby": ["https://rinkeby.infura.io/v3/"],
+    "kovan": ["https://kovan.infura.io/v3/"],
+    "moonbasealpha": ["https://moonbeam-alpha.api.onfinality.io/public"]
   },
   "protocol": {
     "governor": {
@@ -384,5 +384,18 @@
       }
     }
   },
-  "bridgeGui": {}
+  "bridgeGui": {
+    "rinkeby": {
+      "displayName": "Rinkeby",
+      "nativeTokenSymbol": "ETH"
+    },
+    "kovan": {
+      "displayName": "Kovan",
+      "nativeTokenSymbol": "kETH"
+    },
+    "moonbasealpha": {
+      "displayName": "Moonbase Alpha",
+      "nativeTokenSymbol": "DEV"
+    }
+  }
 }
