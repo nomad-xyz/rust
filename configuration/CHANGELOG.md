@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+### v0.1.0-rc.8
+
 - Add bridge gui AppConfigs to JSON config files
 
 ### v0.1.0-rc.7
