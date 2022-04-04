@@ -56,7 +56,7 @@
           "supports1559": true,
           "confirmations": 3,
           "blockExplorer": "https://moonbeam.moonscan.io",
-          "indexPageSize": 2000
+          "indexPageSize": 500
         },
         "configuration": {
           "optimisticSeconds": 1800,
