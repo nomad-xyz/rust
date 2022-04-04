@@ -1,8 +1,0 @@
-{
-  "interval": "100",
-  "watcher": {
-    "key": "",
-    "type": "hexKey"
-  },
-  "managers": {}
-}
