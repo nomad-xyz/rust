@@ -352,18 +352,15 @@
   "bridgeGui": {
     "ethereum": {
       "displayName": "Ethereum",
-      "nativeTokenSymbol": "ETH",
-      "chainId": 1
+      "nativeTokenSymbol": "ETH"
     },
     "moonbeam": {
       "displayName": "Moonbeam",
-      "nativeTokenSymbol": "GLMR",
-      "chainId": 1284
+      "nativeTokenSymbol": "GLMR"
     },
     "milkomedaC1": {
       "displayName": "Milkomeda C1",
-      "nativeTokenSymbol": "milkADA",
-      "chainId": 2001
+      "nativeTokenSymbol": "milkADA"
     }
   }
 }

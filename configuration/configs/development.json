@@ -587,28 +587,23 @@
   "bridgeGui": {
     "rinkeby": {
       "displayName": "Rinkeby",
-      "nativeTokenSymbol": "ETH",
-      "chainId": 4
+      "nativeTokenSymbol": "ETH"
     },
     "kovan": {
       "displayName": "Kovan",
-      "nativeTokenSymbol": "kETH",
-      "chainId": 42
+      "nativeTokenSymbol": "kETH"
     },
     "moonbasealpha": {
       "displayName": "Moonbase Alpha",
-      "nativeTokenSymbol": "DEV",
-      "chainId": 1287
+      "nativeTokenSymbol": "DEV"
     },
     "milkomedatestnet": {
       "displayName": "Milkomeda Testnet",
-      "nativeTokenSymbol": "milkADA",
-      "chainId": 200101
+      "nativeTokenSymbol": "milkADA"
     },
     "evmostestnet": {
       "displayName": "Evmos Testnet",
-      "nativeTokenSymbol": "tEVMOS",
-      "chainId": 9000
+      "nativeTokenSymbol": "tEVMOS"
     }
   }
 }

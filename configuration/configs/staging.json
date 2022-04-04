@@ -387,18 +387,15 @@
   "bridgeGui": {
     "rinkeby": {
       "displayName": "Rinkeby",
-      "nativeTokenSymbol": "ETH",
-      "chainId": 4
+      "nativeTokenSymbol": "ETH"
     },
     "kovan": {
       "displayName": "Kovan",
-      "nativeTokenSymbol": "kETH",
-      "chainId": 42
+      "nativeTokenSymbol": "kETH"
     },
     "moonbasealpha": {
       "displayName": "Moonbase Alpha",
-      "nativeTokenSymbol": "DEV",
-      "chainId": 1287
+      "nativeTokenSymbol": "DEV"
     }
   }
 }
