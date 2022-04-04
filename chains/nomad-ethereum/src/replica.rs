@@ -264,7 +264,7 @@ where
         let tx = self
             .contract
             .process(message.to_vec().into())
-            .gas(1_500_000);
+            .gas(1_700_000);
 
         report_tx!(tx, &self.provider).try_into()
     }
@@ -284,7 +284,7 @@ where
         let tx = self
             .contract
             .prove_and_process(message.to_vec().into(), sol_proof, proof.index.into())
-            .gas(1_700_000);
+            .gas(1_900_000);
 
         report_tx!(tx, &self.provider).try_into()
     }

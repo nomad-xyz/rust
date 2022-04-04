@@ -1,7 +1,7 @@
 use crate::{ContractSync, HomeIndexers, NomadDB};
 use async_trait::async_trait;
 use color_eyre::eyre::Result;
-use ethers::core::types::H256;
+use ethers::core::types::{H256, U256};
 use nomad_core::{
     db::DbError, ChainCommunicationError, Common, CommonEvents, DoubleUpdate, Home, HomeEvents,
     Message, RawCommittedMessage, SignedUpdate, State, TxOutcome, Update,
@@ -71,6 +71,10 @@ impl Home for CachingHome {
 
     async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
         self.home.dispatch(message).await
+    }
+
+    async fn queue_length(&self) -> Result<U256, ChainCommunicationError> {
+        self.home.queue_length().await
     }
 
     async fn queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError> {
@@ -293,6 +297,15 @@ impl Home for HomeVariants {
             HomeVariants::Ethereum(home) => home.dispatch(message).await,
             HomeVariants::Mock(mock_home) => mock_home.dispatch(message).await,
             HomeVariants::Other(home) => home.dispatch(message).await,
+        }
+    }
+
+    #[instrument(level = "trace", err)]
+    async fn queue_length(&self) -> Result<U256, ChainCommunicationError> {
+        match self {
+            HomeVariants::Ethereum(home) => home.queue_length().await,
+            HomeVariants::Mock(mock_home) => mock_home.queue_length().await,
+            HomeVariants::Other(home) => home.queue_length().await,
         }
     }
 
