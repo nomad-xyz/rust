@@ -465,7 +465,7 @@
       },
       "processor": {
         "enabled": true,
-        "indexOnly": false,
+        "indexOnly": true,
         "interval": 5,
         "s3": {
           "bucket": "nomadxyz-development-proofs",
