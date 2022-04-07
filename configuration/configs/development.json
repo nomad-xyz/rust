@@ -3,9 +3,9 @@
   "environment": "development",
   "networks": ["goerli", "kovan", "xdai", "rinkeby"],
   "rpcs": {
-    "goerli": ["https://goerli.infura.io/v3/[API_KEY]"],
-    "kovan": ["https://eth-kovan.alchemyapi.io/v2/[API_KEY]"],
-    "rinkeby": ["https://eth-rinkeby.alchemyapi.io/v2/[API_KEY]"],
+    "goerli": ["https://goerli-light.eth.linkpool.io"],
+    "kovan": ["https://kovan.poa.network"],
+    "rinkeby": ["https://rinkeby-light.eth.linkpool.io"],
     "xdai": ["https://dai.poa.network/"]
   },
   "protocol": {
