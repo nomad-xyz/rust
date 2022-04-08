@@ -238,5 +238,89 @@
       }
     }
   },
+  "gas": {
+    "ethereum": {
+      "home": {
+        "update": {
+          "limit": 100000,
+          "perMessage": 10000
+        },
+        "improperUpdate": {
+          "limit": 0,
+          "price": 0
+        },
+        "doubleUpdate": {
+          "limit": 0,
+          "price": 0
+        }
+      },
+      "replica": {
+        "update": {
+          "limit": 140000
+        },
+        "prove": {
+          "limit": 200000
+        },
+        "process": {
+          "limit": 1700000
+        },
+        "doubleUpdate": {
+          "limit": 0,
+          "price": 0
+        }
+      },
+      "connectionManager": {
+        "ownerUnenrollReplica": {
+          "limit": 0,
+          "price": 0
+        },
+        "unenrollReplica": {
+          "limit": 0,
+          "price": 0
+        }
+      }
+    },
+    "moonbeam": {
+      "home": {
+        "update": {
+          "limit": 100000,
+          "perMessage": 10000
+        },
+        "improperUpdate": {
+          "limit": 0,
+          "price": 0
+        },
+        "doubleUpdate": {
+          "limit": 0,
+          "price": 0
+        }
+      },
+      "replica": {
+        "update": {
+          "limit": 140000
+        },
+        "prove": {
+          "limit": 200000
+        },
+        "process": {
+          "limit": 1700000
+        },
+        "doubleUpdate": {
+          "limit": 0,
+          "price": 0
+        }
+      },
+      "connectionManager": {
+        "ownerUnenrollReplica": {
+          "limit": 0,
+          "price": 0
+        },
+        "unenrollReplica": {
+          "limit": 0,
+          "price": 0
+        }
+      }
+    }
+  },
   "bridgeGui": {}
 }

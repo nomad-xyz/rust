@@ -693,6 +693,7 @@
       }
     }
   },
+  "gas": {},
   "bridgeGui": {
     "moonbeam": {
       "displayName": "Moonbeam",

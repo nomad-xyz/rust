@@ -24,6 +24,9 @@ pub use chains::*;
 pub mod secrets;
 pub use secrets::*;
 
+pub mod gas;
+pub use gas::*;
+
 #[cfg(target_arch = "wasm32")]
 /// Wasm bindings for common operations
 pub mod wasm;
@@ -57,6 +60,8 @@ pub struct NomadConfig {
     bridge: HashMap<String, BridgeContracts>,
     /// Agent configuration
     agent: HashMap<String, AgentConfig>,
+    /// Optional per-chain gas configurations
+    gas: HashMap<String, Option<CoreGasConfig>>,
     /// Bridge application GUI configuration
     pub bridge_gui: HashMap<String, AppConfig>,
 }

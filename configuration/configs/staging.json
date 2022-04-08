@@ -381,6 +381,7 @@
       }
     }
   },
+  "gas": {},
   "bridgeGui": {
     "kovan": {
       "displayName": "Kovan",
