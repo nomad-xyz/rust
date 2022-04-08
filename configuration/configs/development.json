@@ -417,7 +417,6 @@
         "allowed": null,
         "denied": null,
         "indexOnly": true,
-        "interval": 5,
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
