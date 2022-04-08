@@ -4,51 +4,67 @@
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct GasSettings {
-    limit: u64,
-    price: Option<u64>,
+    /// Gas limit
+    pub limit: u64,
+    /// Gas price
+    pub price: Option<u64>,
 }
 
 /// Gas settings specifically for a home update call
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct HomeUpdateGasSettings {
-    per_message: u64,
+    /// Per message additional gas cost
+    pub per_message: u64,
+    /// Base gas settings
     #[serde(flatten)]
-    base: GasSettings,
+    pub base: GasSettings,
 }
 
 /// Home gas settings
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct HomeGasSettings {
-    update: HomeUpdateGasSettings,
-    improper_update: GasSettings,
-    double_update: GasSettings,
+    /// Update
+    pub update: HomeUpdateGasSettings,
+    /// Improper update
+    pub improper_update: GasSettings,
+    /// Double update
+    pub double_update: GasSettings,
 }
 
 /// Replica gas settings
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ReplicaGasSettings {
-    update: GasSettings,
-    prove: GasSettings,
-    process: GasSettings,
-    double_update: GasSettings,
+    /// Update
+    pub update: GasSettings,
+    /// Prove
+    pub prove: GasSettings,
+    /// Process
+    pub process: GasSettings,
+    /// Double update
+    pub double_update: GasSettings,
 }
 
 /// Connection manager gas settings
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ConnectionManagerGasSettings {
-    owner_unenroll_replica: GasSettings,
-    unenroll_replica: GasSettings,
+    /// Owner unenroll replica
+    pub owner_unenroll_replica: GasSettings,
+    /// Unenroll replica
+    pub unenroll_replica: GasSettings,
 }
 
 /// Gas configuration for core contract methods
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct CoreGasConfig {
-    home: HomeGasSettings,
-    replica: ReplicaGasSettings,
-    connection_manager: ConnectionManagerGasSettings,
+    /// Home gas settings
+    pub home: HomeGasSettings,
+    /// Replica Gas settings
+    pub replica: ReplicaGasSettings,
+    /// Connection manager gas settings
+    pub connection_manager: ConnectionManagerGasSettings,
 }

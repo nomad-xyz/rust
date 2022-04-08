@@ -61,7 +61,7 @@ pub struct NomadConfig {
     /// Agent configuration
     agent: HashMap<String, AgentConfig>,
     /// Optional per-chain gas configurations
-    gas: HashMap<String, Option<CoreGasConfig>>,
+    gas: HashMap<String, CoreGasConfig>,
     /// Bridge application GUI configuration
     pub bridge_gui: HashMap<String, AppConfig>,
 }
@@ -280,6 +280,11 @@ impl NomadConfig {
     /// Get a reference to the nomad config's bridge map.
     pub fn bridge(&self) -> &HashMap<String, BridgeContracts> {
         &self.bridge
+    }
+
+    /// Get a reference to the nomad config's gas map.
+    pub fn gas(&self) -> &HashMap<String, CoreGasConfig> {
+        &self.gas
     }
 
     /// Get a reference to the nomad config's agent.
