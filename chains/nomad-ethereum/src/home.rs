@@ -13,6 +13,7 @@ use nomad_core::{
     HomeIndexer, Message, RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State,
     TxOutcome, Update, UpdateMeta,
 };
+use nomad_xyz_configuration::HomeGasSettings;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
 use tracing::instrument;
 
@@ -169,6 +170,7 @@ where
     read_contract: Arc<EthereumHomeInternal<R>>,
     domain: u32,
     name: String,
+    gas: Option<HomeGasSettings>,
 }
 
 impl<W, R> EthereumHome<W, R>
@@ -186,6 +188,7 @@ where
             domain,
             address,
         }: &ContractLocator,
+        gas: Option<HomeGasSettings>,
     ) -> Self {
         Self {
             write_contract: Arc::new(EthereumHomeInternal::new(
@@ -198,6 +201,7 @@ where
             )),
             domain: *domain,
             name: name.to_owned(),
+            gas,
         }
     }
 }
@@ -248,14 +252,18 @@ where
     async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
         let queue_length = self.queue_length().await?;
 
-        let tx = self
-            .write_contract
-            .update(
-                update.update.previous_root.to_fixed_bytes(),
-                update.update.new_root.to_fixed_bytes(),
-                update.signature.to_vec().into(),
-            )
-            .gas(U256::from(100_000) + (queue_length * 10_000));
+        let mut tx = self.write_contract.update(
+            update.update.previous_root.to_fixed_bytes(),
+            update.update.new_root.to_fixed_bytes(),
+            update.signature.to_vec().into(),
+        );
+
+        if let Some(settings) = self.gas {
+            tx.tx.set_gas(
+                U256::from(settings.update.base.limit)
+                    + U256::from(settings.update.per_message) * queue_length,
+            );
+        }
 
         report_tx!(tx, &self.provider).try_into()
     }

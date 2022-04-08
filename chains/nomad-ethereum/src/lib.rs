@@ -7,7 +7,7 @@
 use color_eyre::eyre::Result;
 use ethers::prelude::*;
 use nomad_core::*;
-use nomad_xyz_configuration::chains::ethereum::Connection;
+use nomad_xyz_configuration::{chains::ethereum::Connection, HomeGasSettings};
 use num::Num;
 use std::sync::Arc;
 

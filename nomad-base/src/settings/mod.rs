@@ -22,7 +22,7 @@ use color_eyre::{eyre::bail, Result};
 use nomad_core::{db::DB, Common, ContractLocator, Signers};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
 use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets};
-use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig};
+use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, CoreGasConfig, NomadConfig};
 use serde::Deserialize;
 use std::{collections::HashMap, sync::Arc};
 
@@ -159,6 +159,8 @@ pub struct Settings {
     pub replicas: HashMap<String, ChainSetup>,
     /// Optional connection manager configurations (set for watcher only)
     pub managers: Option<HashMap<String, ChainSetup>>,
+    /// Per-chain gas settings
+    pub gas: HashMap<String, CoreGasConfig>,
     /// The tracing configuration
     pub logging: LogConfig,
     /// Transaction signers
@@ -177,6 +179,7 @@ impl Settings {
             home: self.home.clone(),
             replicas: self.replicas.clone(),
             managers: self.managers.clone(),
+            gas: self.gas.clone(),
             logging: self.logging,
             signers: self.signers.clone(),
             attestation_signer: self.attestation_signer.clone(),
@@ -226,9 +229,10 @@ impl Settings {
 
     /// Try to get a Homes object
     pub async fn try_home(&self) -> Result<Homes> {
-        let signer = self.get_signer(&self.home.name).await.transpose()?;
-        let opt_home_timelag = self.home_timelag();
-        self.home.try_into_home(signer, opt_home_timelag).await
+        let name = &self.home.name;
+        let signer = self.get_signer(name).await;
+        let gas = self.gas.get(name).map(|c| c.home);
+        self.home.try_into_home(signer, opt_home_timelag, gas).await
     }
 
     /// Try to get a home ContractSync
@@ -503,6 +507,7 @@ impl Settings {
             home,
             replicas,
             managers,
+            gas: config.gas().clone(),
             index,
             logging: agent.logging,
             signers: secrets.transaction_signers.clone(),
