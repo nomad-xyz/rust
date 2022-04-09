@@ -3,13 +3,14 @@
 
 use async_trait::async_trait;
 use color_eyre::Result;
-use ethers::core::types::{Signature, H256};
+use ethers::core::types::{Signature, H256, U256};
 use futures_util::future::join_all;
 use nomad_core::{
     accumulator::NomadProof, ChainCommunicationError, Common, CommonIndexer, ContractLocator,
     DoubleUpdate, Encode, MessageStatus, NomadMessage, Replica, SignedUpdate, SignedUpdateWithMeta,
     State, TxOutcome, Update, UpdateMeta,
 };
+use nomad_xyz_configuration::ReplicaGasSettings;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
 use tracing::instrument;
 
@@ -129,6 +130,7 @@ where
     read_contract: Arc<EthereumReplicaInternal<R>>,
     domain: u32,
     name: String,
+    gas: Option<ReplicaGasSettings>,
 }
 
 impl<W, R> EthereumReplica<W, R>
@@ -146,6 +148,7 @@ where
             domain,
             address,
         }: &ContractLocator,
+        gas: Option<ReplicaGasSettings>,
     ) -> Self {
         Self {
             write_contract: Arc::new(EthereumReplicaInternal::new(
@@ -158,6 +161,7 @@ where
             )),
             domain: *domain,
             name: name.to_owned(),
+            gas,
         }
     }
 
@@ -226,14 +230,18 @@ where
 
     #[tracing::instrument(err)]
     async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self
-            .write_contract
-            .update(
-                update.update.previous_root.to_fixed_bytes(),
-                update.update.new_root.to_fixed_bytes(),
-                update.signature.to_vec().into(),
-            )
-            .gas(140_000);
+        let mut tx = self.write_contract.update(
+            update.update.previous_root.to_fixed_bytes(),
+            update.update.new_root.to_fixed_bytes(),
+            update.signature.to_vec().into(),
+        );
+
+        if let Some(settings) = &self.gas {
+            tx.tx.set_gas(U256::from(settings.update.limit));
+            if let Some(price) = settings.update.price {
+                tx.tx.set_gas_price(U256::from(price));
+            }
+        }
 
         report_tx!(tx, &self.provider).try_into()
     }
@@ -243,7 +251,7 @@ where
         &self,
         double: &DoubleUpdate,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self.write_contract.double_update(
+        let mut tx = self.write_contract.double_update(
             double.0.update.previous_root.to_fixed_bytes(),
             [
                 double.0.update.new_root.to_fixed_bytes(),
@@ -252,6 +260,13 @@ where
             double.0.signature.to_vec().into(),
             double.1.signature.to_vec().into(),
         );
+
+        if let Some(settings) = &self.gas {
+            tx.tx.set_gas(U256::from(settings.double_update.limit));
+            if let Some(price) = settings.double_update.price {
+                tx.tx.set_gas_price(U256::from(price));
+            }
+        }
 
         report_tx!(tx, &self.provider).try_into()
     }
@@ -279,20 +294,30 @@ where
             .enumerate()
             .for_each(|(i, elem)| *elem = proof.path[i].to_fixed_bytes());
 
-        let tx = self
+        let mut tx = self
             .write_contract
-            .prove(proof.leaf.into(), sol_proof, proof.index.into())
-            .gas(200_000);
+            .prove(proof.leaf.into(), sol_proof, proof.index.into());
+
+        if let Some(settings) = &self.gas {
+            tx.tx.set_gas(U256::from(settings.prove.limit));
+            if let Some(price) = settings.prove.price {
+                tx.tx.set_gas_price(U256::from(price));
+            }
+        }
 
         report_tx!(tx, &self.provider).try_into()
     }
 
     #[tracing::instrument(err)]
     async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self
-            .write_contract
-            .process(message.to_vec().into())
-            .gas(1_700_000);
+        let mut tx = self.write_contract.process(message.to_vec().into());
+
+        if let Some(settings) = &self.gas {
+            tx.tx.set_gas(U256::from(settings.process.limit));
+            if let Some(price) = settings.process.price {
+                tx.tx.set_gas_price(U256::from(price));
+            }
+        }
 
         report_tx!(tx, &self.provider).try_into()
     }

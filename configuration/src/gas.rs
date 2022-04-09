@@ -43,6 +43,8 @@ pub struct ReplicaGasSettings {
     pub prove: GasSettings,
     /// Process
     pub process: GasSettings,
+    /// Prove and process
+    pub prove_and_process: GasSettings,
     /// Double update
     pub double_update: GasSettings,
 }

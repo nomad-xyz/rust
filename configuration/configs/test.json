@@ -264,6 +264,9 @@
         "process": {
           "limit": 1700000
         },
+        "proveAndProcess": {
+          "limit": 1900000
+        },
         "doubleUpdate": {
           "limit": 0,
           "price": 0
@@ -304,6 +307,9 @@
         },
         "process": {
           "limit": 1700000
+        },
+        "proveAndProcess": {
+          "limit": 1900000
         },
         "doubleUpdate": {
           "limit": 0,

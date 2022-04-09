@@ -258,11 +258,14 @@ where
             update.signature.to_vec().into(),
         );
 
-        if let Some(settings) = self.gas {
+        if let Some(settings) = &self.gas {
             tx.tx.set_gas(
                 U256::from(settings.update.base.limit)
                     + U256::from(settings.update.per_message) * queue_length,
             );
+            if let Some(price) = settings.update.base.price {
+                tx.tx.set_gas_price(U256::from(price));
+            }
         }
 
         report_tx!(tx, &self.provider).try_into()
@@ -273,7 +276,7 @@ where
         &self,
         double: &DoubleUpdate,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self.write_contract.double_update(
+        let mut tx = self.write_contract.double_update(
             double.0.update.previous_root.to_fixed_bytes(),
             [
                 double.0.update.new_root.to_fixed_bytes(),
@@ -282,6 +285,13 @@ where
             double.0.signature.to_vec().into(),
             double.1.signature.to_vec().into(),
         );
+
+        if let Some(settings) = &self.gas {
+            tx.tx.set_gas(U256::from(settings.double_update.limit));
+            if let Some(price) = settings.double_update.price {
+                tx.tx.set_gas_price(U256::from(price));
+            }
+        }
 
         report_tx!(tx, &self.provider).try_into()
     }
@@ -330,11 +340,18 @@ where
         &self,
         update: &SignedUpdate,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self.write_contract.improper_update(
+        let mut tx = self.write_contract.improper_update(
             update.update.previous_root.to_fixed_bytes(),
             update.update.new_root.to_fixed_bytes(),
             update.signature.to_vec().into(),
         );
+
+        if let Some(settings) = &self.gas {
+            tx.tx.set_gas(U256::from(settings.improper_update.limit));
+            if let Some(price) = settings.improper_update.price {
+                tx.tx.set_gas_price(U256::from(price));
+            }
+        }
 
         report_tx!(tx, &self.provider).try_into()
     }

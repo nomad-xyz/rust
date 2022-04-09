@@ -2,8 +2,10 @@
 #![allow(missing_docs)]
 
 use async_trait::async_trait;
+use ethers::core::types::U256;
 use nomad_core::*;
 use nomad_types::NomadIdentifier;
+use nomad_xyz_configuration::ConnectionManagerGasSettings;
 use std::sync::Arc;
 
 use crate::bindings::xappconnectionmanager::XAppConnectionManager as EthereumConnectionManagerInternal;
@@ -21,6 +23,7 @@ where
     read_contract: Arc<EthereumConnectionManagerInternal<R>>,
     domain: u32,
     name: String,
+    gas: Option<ConnectionManagerGasSettings>,
 }
 
 impl<W, R> EthereumConnectionManager<W, R>
@@ -39,6 +42,7 @@ where
             domain,
             address,
         }: &ContractLocator,
+        gas: Option<ConnectionManagerGasSettings>,
     ) -> Self {
         Self {
             write_contract: Arc::new(EthereumConnectionManagerInternal::new(
@@ -51,6 +55,7 @@ where
             )),
             domain: *domain,
             name: name.to_owned(),
+            gas,
         }
     }
 }
@@ -105,9 +110,17 @@ where
         &self,
         replica: NomadIdentifier,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self
+        let mut tx = self
             .write_contract
             .owner_unenroll_replica(replica.as_ethereum_address().expect("!eth address"));
+
+        if let Some(settings) = &self.gas {
+            tx.tx
+                .set_gas(U256::from(settings.owner_unenroll_replica.limit));
+            if let Some(price) = settings.owner_unenroll_replica.price {
+                tx.tx.set_gas_price(U256::from(price));
+            }
+        }
 
         report_tx!(tx, &self.provider).try_into()
     }
@@ -142,11 +155,18 @@ where
         &self,
         signed_failure: &SignedFailureNotification,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self.write_contract.unenroll_replica(
+        let mut tx = self.write_contract.unenroll_replica(
             signed_failure.notification.home_domain,
             signed_failure.notification.updater.into(),
             signed_failure.signature.to_vec().into(),
         );
+
+        if let Some(settings) = &self.gas {
+            tx.tx.set_gas(U256::from(settings.unenroll_replica.limit));
+            if let Some(price) = settings.unenroll_replica.price {
+                tx.tx.set_gas_price(U256::from(price));
+            }
+        }
 
         report_tx!(tx, &self.provider).try_into()
     }

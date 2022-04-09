@@ -3,7 +3,8 @@ use nomad_core::{ContractLocator, Signers};
 use nomad_ethereum::{make_conn_manager, make_home, make_replica};
 use nomad_types::NomadIdentifier;
 use nomad_xyz_configuration::{
-    contracts::CoreContracts, AgentSecrets, ChainConf, HomeGasSettings, NomadConfig,
+    contracts::CoreContracts, AgentSecrets, ChainConf, ConnectionManagerGasSettings,
+    HomeGasSettings, NomadConfig, ReplicaGasSettings,
 };
 use serde::Deserialize;
 
@@ -154,7 +155,11 @@ impl ChainSetup {
     }
 
     /// Try to convert the chain setting into a replica contract
-    pub async fn try_into_replica(&self, signer: Option<Signers>) -> Result<Replicas> {
+    pub async fn try_into_replica(
+        &self,
+        signer: Option<Signers>,
+        gas: Option<ReplicaGasSettings>,
+    ) -> Result<Replicas> {
         match &self.chain {
             ChainConf::Ethereum(conf) => Ok(ReplicaVariants::Ethereum(
                 make_replica(
@@ -165,7 +170,7 @@ impl ChainSetup {
                         address: self.address,
                     },
                     signer,
-                    None, // Will never need timelag for replica data/events
+                    gas,
                 )
                 .await?,
             )
@@ -178,6 +183,7 @@ impl ChainSetup {
         &self,
         signer: Option<Signers>,
         timelag: Option<u8>,
+        gas: Option<ConnectionManagerGasSettings>,
     ) -> Result<ConnectionManagers> {
         match &self.chain {
             ChainConf::Ethereum(conf) => Ok(ConnectionManagers::Ethereum(
@@ -190,6 +196,7 @@ impl ChainSetup {
                     },
                     signer,
                     timelag,
+                    gas,
                 )
                 .await?,
             )),
