@@ -2,6 +2,10 @@
 
 ### Unreleased
 
+### v0.1.0-rc.9
+
+- Redeploy dev after improper update during devnet transition
+
 ### v0.1.0-rc.8
 
 - Add bridge gui AppConfigs to JSON config files
