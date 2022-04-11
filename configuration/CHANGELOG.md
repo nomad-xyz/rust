@@ -2,6 +2,10 @@
 
 ### Unreleased
 
+### v0.1.0-rc.9
+- switch kovan processor into index-only mode
+- update dev config with kovan, rinkeby, xdai, goerli
+
 ### v0.1.0-rc.8
 
 - Add bridge gui AppConfigs to JSON config files
