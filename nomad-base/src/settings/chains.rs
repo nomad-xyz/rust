@@ -1,4 +1,4 @@
-use color_eyre::Report;
+use color_eyre::Result;
 use nomad_core::{ContractLocator, Signers};
 use nomad_ethereum::{make_conn_manager, make_home, make_replica};
 use nomad_types::NomadIdentifier;
@@ -131,7 +131,7 @@ impl ChainSetup {
         &self,
         signer: Option<Signers>,
         timelag: Option<u8>,
-    ) -> Result<Homes, Report> {
+    ) -> Result<Homes> {
         match &self.chain {
             ChainConf::Ethereum(conf) => Ok(HomeVariants::Ethereum(
                 make_home(
@@ -151,7 +151,7 @@ impl ChainSetup {
     }
 
     /// Try to convert the chain setting into a replica contract
-    pub async fn try_into_replica(&self, signer: Option<Signers>) -> Result<Replicas, Report> {
+    pub async fn try_into_replica(&self, signer: Option<Signers>) -> Result<Replicas> {
         match &self.chain {
             ChainConf::Ethereum(conf) => Ok(ReplicaVariants::Ethereum(
                 make_replica(
@@ -175,7 +175,7 @@ impl ChainSetup {
         &self,
         signer: Option<Signers>,
         timelag: Option<u8>,
-    ) -> Result<ConnectionManagers, Report> {
+    ) -> Result<ConnectionManagers> {
         match &self.chain {
             ChainConf::Ethereum(conf) => Ok(ConnectionManagers::Ethereum(
                 make_conn_manager(
