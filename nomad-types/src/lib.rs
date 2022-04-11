@@ -9,7 +9,7 @@ pub use macros::*;
 mod utils;
 pub use utils::*;
 
-use color_eyre::{eyre::bail, Report};
+use color_eyre::{eyre::bail, Report, Result};
 use ethers::prelude::{Address, H160, H256};
 use serde::{de, Deserializer};
 use std::{fmt, ops::DerefMut, str::FromStr};
