@@ -49,6 +49,8 @@ macro_rules! decl_settings {
                     secrets.validate(&agent, &env, &home)?;
 
                     let base = nomad_base::Settings::from_config_and_secrets(&agent, &home, &config, &secrets);
+                    base.validate_against_config_and_secrets(&agent, &home, &config, &secrets)?;
+
                     let agent = config.agent().get(&home).expect("agent config").[<$name:lower>].clone();
 
                     Ok(Self {
