@@ -295,7 +295,7 @@ impl Settings {
 
         let finality = self.replicas.get(replica_name).expect("!replica").finality;
         let index_settings = self.index.clone();
-        let page_settings = self.home.page_settings.clone();
+        let page_settings = replica_setup.page_settings.clone();
 
         let indexer = Arc::new(self.try_replica_indexer(replica_setup).await?);
         let replica_name = &replica_setup.name;
