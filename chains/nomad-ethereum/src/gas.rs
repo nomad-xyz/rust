@@ -99,11 +99,8 @@ where
             .await
             .map_err(FromErr::from)?;
 
-        // Increase gas price if not hardcoded
-        if tx.gas_price().is_none() {
-            let adjusted_price = self.get_gas_price().await?;
-            tx.set_gas_price(adjusted_price);
-        }
+        let adjusted_price = self.get_gas_price().await?;
+        tx.set_gas_price(adjusted_price);
 
         Ok(())
     }

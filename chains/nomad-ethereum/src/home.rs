@@ -13,7 +13,7 @@ use nomad_core::{
     HomeIndexer, Message, RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State,
     TxOutcome, Update, UpdateMeta,
 };
-use nomad_xyz_configuration::HomeGasSettings;
+use nomad_xyz_configuration::HomeGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
 use tracing::instrument;
 
@@ -188,7 +188,7 @@ where
             domain,
             address,
         }: &ContractLocator,
-        gas: Option<HomeGasSettings>,
+        gas: Option<HomeGasLimits>,
     ) -> Self {
         Self {
             write_contract: Arc::new(EthereumHomeInternal::new(
@@ -258,14 +258,12 @@ where
             update.signature.to_vec().into(),
         );
 
-        if let Some(settings) = &self.gas {
+        let queue_length = self.queue_length().await?;
+        if let Some(limits) = &self.gas {
             tx.tx.set_gas(
-                U256::from(settings.update.base.limit)
-                    + U256::from(settings.update.per_message) * queue_length,
+                U256::from(limits.update.base)
+                    + U256::from(limits.update.per_message) * queue_length,
             );
-            if let Some(price) = settings.update.base.price {
-                tx.tx.set_gas_price(U256::from(price));
-            }
         }
 
         report_tx!(tx, &self.provider).try_into()
@@ -286,11 +284,8 @@ where
             double.1.signature.to_vec().into(),
         );
 
-        if let Some(settings) = &self.gas {
-            tx.tx.set_gas(U256::from(settings.double_update.limit));
-            if let Some(price) = settings.double_update.price {
-                tx.tx.set_gas_price(U256::from(price));
-            }
+        if let Some(limits) = &self.gas {
+            tx.tx.set_gas(U256::from(limits.double_update));
         }
 
         report_tx!(tx, &self.provider).try_into()
@@ -346,11 +341,12 @@ where
             update.signature.to_vec().into(),
         );
 
-        if let Some(settings) = &self.gas {
-            tx.tx.set_gas(U256::from(settings.improper_update.limit));
-            if let Some(price) = settings.improper_update.price {
-                tx.tx.set_gas_price(U256::from(price));
-            }
+        let queue_length = self.queue_length().await?;
+        if let Some(limits) = &self.gas {
+            tx.tx.set_gas(
+                U256::from(limits.improper_update.base)
+                    + U256::from(limits.improper_update.per_message) * queue_length,
+            );
         }
 
         report_tx!(tx, &self.provider).try_into()

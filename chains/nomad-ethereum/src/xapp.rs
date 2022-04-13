@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use ethers::core::types::U256;
 use nomad_core::*;
 use nomad_types::NomadIdentifier;
-use nomad_xyz_configuration::ConnectionManagerGasSettings;
+use nomad_xyz_configuration::ConnectionManagerGasLimits;
 use std::sync::Arc;
 
 use crate::bindings::xappconnectionmanager::XAppConnectionManager as EthereumConnectionManagerInternal;
@@ -23,7 +23,7 @@ where
     read_contract: Arc<EthereumConnectionManagerInternal<R>>,
     domain: u32,
     name: String,
-    gas: Option<ConnectionManagerGasSettings>,
+    gas: Option<ConnectionManagerGasLimits>,
 }
 
 impl<W, R> EthereumConnectionManager<W, R>
@@ -42,7 +42,7 @@ where
             domain,
             address,
         }: &ContractLocator,
-        gas: Option<ConnectionManagerGasSettings>,
+        gas: Option<ConnectionManagerGasLimits>,
     ) -> Self {
         Self {
             write_contract: Arc::new(EthereumConnectionManagerInternal::new(
@@ -114,12 +114,8 @@ where
             .write_contract
             .owner_unenroll_replica(replica.as_ethereum_address().expect("!eth address"));
 
-        if let Some(settings) = &self.gas {
-            tx.tx
-                .set_gas(U256::from(settings.owner_unenroll_replica.limit));
-            if let Some(price) = settings.owner_unenroll_replica.price {
-                tx.tx.set_gas_price(U256::from(price));
-            }
+        if let Some(limits) = &self.gas {
+            tx.tx.set_gas(U256::from(limits.owner_unenroll_replica));
         }
 
         report_tx!(tx, &self.provider).try_into()
@@ -161,11 +157,8 @@ where
             signed_failure.signature.to_vec().into(),
         );
 
-        if let Some(settings) = &self.gas {
-            tx.tx.set_gas(U256::from(settings.unenroll_replica.limit));
-            if let Some(price) = settings.unenroll_replica.price {
-                tx.tx.set_gas_price(U256::from(price));
-            }
+        if let Some(limits) = &self.gas {
+            tx.tx.set_gas(U256::from(limits.unenroll_replica));
         }
 
         report_tx!(tx, &self.provider).try_into()

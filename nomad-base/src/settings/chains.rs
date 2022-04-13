@@ -3,8 +3,8 @@ use nomad_core::{ContractLocator, Signers};
 use nomad_ethereum::{make_conn_manager, make_home, make_replica};
 use nomad_types::NomadIdentifier;
 use nomad_xyz_configuration::{
-    contracts::CoreContracts, AgentSecrets, ChainConf, ConnectionManagerGasSettings,
-    HomeGasSettings, NomadConfig, ReplicaGasSettings,
+    contracts::CoreContracts, AgentSecrets, ChainConf, ConnectionManagerGasLimits, HomeGasLimits,
+    NomadConfig, ReplicaGasLimits,
 };
 use serde::Deserialize;
 
@@ -134,6 +134,7 @@ impl ChainSetup {
         &self,
         signer: Option<Signers>,
         timelag: Option<u8>,
+        gas: Option<HomeGasLimits>,
     ) -> Result<Homes> {
         match &self.chain {
             ChainConf::Ethereum(conf) => Ok(HomeVariants::Ethereum(
@@ -183,7 +184,7 @@ impl ChainSetup {
         &self,
         signer: Option<Signers>,
         timelag: Option<u8>,
-        gas: Option<ConnectionManagerGasSettings>,
+        gas: Option<ConnectionManagerGasLimits>,
     ) -> Result<ConnectionManagers> {
         match &self.chain {
             ChainConf::Ethereum(conf) => Ok(ConnectionManagers::Ethereum(

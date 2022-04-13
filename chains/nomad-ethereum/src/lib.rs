@@ -8,7 +8,7 @@ use color_eyre::eyre::Result;
 use ethers::prelude::*;
 use nomad_core::*;
 use nomad_xyz_configuration::{
-    chains::ethereum::Connection, ConnectionManagerGasSettings, HomeGasSettings, ReplicaGasSettings,
+    chains::ethereum::Connection, ConnectionManagerGasLimits, HomeGasLimits, ReplicaGasLimits,
 };
 use num::Num;
 use std::sync::Arc;
@@ -70,7 +70,7 @@ boxed_contract!(
     make_conn_manager,
     EthereumConnectionManager,
     ConnectionManager,
-    gas: Option<ConnectionManagerGasSettings>
+    gas: Option<ConnectionManagerGasLimits>
 );
 
 #[async_trait::async_trait]

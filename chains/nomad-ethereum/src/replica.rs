@@ -10,7 +10,7 @@ use nomad_core::{
     DoubleUpdate, Encode, MessageStatus, NomadMessage, Replica, SignedUpdate, SignedUpdateWithMeta,
     State, TxOutcome, Update, UpdateMeta,
 };
-use nomad_xyz_configuration::ReplicaGasSettings;
+use nomad_xyz_configuration::ReplicaGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
 use tracing::instrument;
 
@@ -148,7 +148,7 @@ where
             domain,
             address,
         }: &ContractLocator,
-        gas: Option<ReplicaGasSettings>,
+        gas: Option<ReplicaGasLimits>,
     ) -> Self {
         Self {
             write_contract: Arc::new(EthereumReplicaInternal::new(
@@ -236,11 +236,8 @@ where
             update.signature.to_vec().into(),
         );
 
-        if let Some(settings) = &self.gas {
-            tx.tx.set_gas(U256::from(settings.update.limit));
-            if let Some(price) = settings.update.price {
-                tx.tx.set_gas_price(U256::from(price));
-            }
+        if let Some(limits) = &self.gas {
+            tx.tx.set_gas(U256::from(limits.update));
         }
 
         report_tx!(tx, &self.provider).try_into()
@@ -261,11 +258,8 @@ where
             double.1.signature.to_vec().into(),
         );
 
-        if let Some(settings) = &self.gas {
-            tx.tx.set_gas(U256::from(settings.double_update.limit));
-            if let Some(price) = settings.double_update.price {
-                tx.tx.set_gas_price(U256::from(price));
-            }
+        if let Some(limits) = &self.gas {
+            tx.tx.set_gas(U256::from(limits.double_update));
         }
 
         report_tx!(tx, &self.provider).try_into()
@@ -298,11 +292,8 @@ where
             .write_contract
             .prove(proof.leaf.into(), sol_proof, proof.index.into());
 
-        if let Some(settings) = &self.gas {
-            tx.tx.set_gas(U256::from(settings.prove.limit));
-            if let Some(price) = settings.prove.price {
-                tx.tx.set_gas_price(U256::from(price));
-            }
+        if let Some(limits) = &self.gas {
+            tx.tx.set_gas(U256::from(limits.prove));
         }
 
         report_tx!(tx, &self.provider).try_into()
@@ -312,11 +303,8 @@ where
     async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError> {
         let mut tx = self.write_contract.process(message.to_vec().into());
 
-        if let Some(settings) = &self.gas {
-            tx.tx.set_gas(U256::from(settings.process.limit));
-            if let Some(price) = settings.process.price {
-                tx.tx.set_gas_price(U256::from(price));
-            }
+        if let Some(limits) = &self.gas {
+            tx.tx.set_gas(U256::from(limits.process));
         }
 
         report_tx!(tx, &self.provider).try_into()

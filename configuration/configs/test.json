@@ -242,89 +242,49 @@
     "ethereum": {
       "home": {
         "update": {
-          "limit": 100000,
+          "base": 100000,
           "perMessage": 10000
         },
         "improperUpdate": {
-          "limit": 0,
-          "price": 0
+          "base": 100000,
+          "perMessage": 10000
         },
-        "doubleUpdate": {
-          "limit": 0,
-          "price": 0
-        }
+        "doubleUpdate": 200000
       },
       "replica": {
-        "update": {
-          "limit": 140000
-        },
-        "prove": {
-          "limit": 200000
-        },
-        "process": {
-          "limit": 1700000
-        },
-        "proveAndProcess": {
-          "limit": 1900000
-        },
-        "doubleUpdate": {
-          "limit": 0,
-          "price": 0
-        }
+        "update": 140000,
+        "prove": 200000,
+        "process": 1700000,
+        "proveAndProcess": 1900000,
+        "doubleUpdate": 200000
       },
       "connectionManager": {
-        "ownerUnenrollReplica": {
-          "limit": 0,
-          "price": 0
-        },
-        "unenrollReplica": {
-          "limit": 0,
-          "price": 0
-        }
+        "ownerUnenrollReplica": 120000,
+        "unenrollReplica": 120000
       }
     },
     "moonbeam": {
       "home": {
         "update": {
-          "limit": 100000,
+          "base": 100000,
           "perMessage": 10000
         },
         "improperUpdate": {
-          "limit": 0,
-          "price": 0
+          "base": 100000,
+          "perMessage": 10000
         },
-        "doubleUpdate": {
-          "limit": 0,
-          "price": 0
-        }
+        "doubleUpdate": 200000
       },
       "replica": {
-        "update": {
-          "limit": 140000
-        },
-        "prove": {
-          "limit": 200000
-        },
-        "process": {
-          "limit": 1700000
-        },
-        "proveAndProcess": {
-          "limit": 1900000
-        },
-        "doubleUpdate": {
-          "limit": 0,
-          "price": 0
-        }
+        "update": 140000,
+        "prove": 200000,
+        "process": 1700000,
+        "proveAndProcess": 1900000,
+        "doubleUpdate": 200000
       },
       "connectionManager": {
-        "ownerUnenrollReplica": {
-          "limit": 0,
-          "price": 0
-        },
-        "unenrollReplica": {
-          "limit": 0,
-          "price": 0
-        }
+        "ownerUnenrollReplica": 120000,
+        "unenrollReplica": 120000
       }
     }
   },

@@ -1,62 +1,50 @@
 //! Per-chain gas configurations
-
-/// Gas settings for a given contract method
-#[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct GasSettings {
-    /// Gas limit
-    pub limit: u64,
-    /// Gas price
-    pub price: Option<u64>,
-}
-
 /// Gas settings specifically for a home update call
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct HomeUpdateGasSettings {
+pub struct HomeUpdateGasLimit {
     /// Per message additional gas cost
     pub per_message: u64,
     /// Base gas settings
-    #[serde(flatten)]
-    pub base: GasSettings,
+    pub base: u64,
 }
 
 /// Home gas settings
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct HomeGasSettings {
+pub struct HomeGasLimits {
     /// Update
-    pub update: HomeUpdateGasSettings,
+    pub update: HomeUpdateGasLimit,
     /// Improper update
-    pub improper_update: GasSettings,
+    pub improper_update: HomeUpdateGasLimit,
     /// Double update
-    pub double_update: GasSettings,
+    pub double_update: u64,
 }
 
 /// Replica gas settings
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct ReplicaGasSettings {
+pub struct ReplicaGasLimits {
     /// Update
-    pub update: GasSettings,
+    pub update: u64,
     /// Prove
-    pub prove: GasSettings,
+    pub prove: u64,
     /// Process
-    pub process: GasSettings,
+    pub process: u64,
     /// Prove and process
-    pub prove_and_process: GasSettings,
+    pub prove_and_process: u64,
     /// Double update
-    pub double_update: GasSettings,
+    pub double_update: u64,
 }
 
 /// Connection manager gas settings
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct ConnectionManagerGasSettings {
+pub struct ConnectionManagerGasLimits {
     /// Owner unenroll replica
-    pub owner_unenroll_replica: GasSettings,
+    pub owner_unenroll_replica: u64,
     /// Unenroll replica
-    pub unenroll_replica: GasSettings,
+    pub unenroll_replica: u64,
 }
 
 /// Gas configuration for core contract methods
@@ -64,9 +52,9 @@ pub struct ConnectionManagerGasSettings {
 #[serde(rename_all = "camelCase")]
 pub struct CoreGasConfig {
     /// Home gas settings
-    pub home: HomeGasSettings,
+    pub home: HomeGasLimits,
     /// Replica Gas settings
-    pub replica: ReplicaGasSettings,
+    pub replica: ReplicaGasLimits,
     /// Connection manager gas settings
-    pub connection_manager: ConnectionManagerGasSettings,
+    pub connection_manager: ConnectionManagerGasLimits,
 }
