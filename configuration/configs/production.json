@@ -4,7 +4,7 @@
   "networks": ["ethereum", "moonbeam", "milkomedaC1", "xdai"],
   "rpcs": {
     "ethereum": ["https://main-light.eth.linkpool.io/"],
-    "moonbeam": ["https://moonriver.api.onfinality.io/public"],
+    "moonbeam": ["https://rpc.api.moonbeam.network"],
     "milkomedaC1": ["https://rpc.c1.milkomeda.com:8545"],
     "xdai": ["https://dai.poa.network/"]
   },
