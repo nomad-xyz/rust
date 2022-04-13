@@ -17,7 +17,7 @@
       "ethereum": {
         "name": "ethereum",
         "domain": 6648936,
-        "connections": ["moonbeam", "xdai", "milkomedaC1"],
+        "connections": ["moonbeam", "milkomedaC1", "xdai"],
         "specs": {
           "chainId": 1,
           "blockTime": 15,
@@ -32,12 +32,12 @@
           "processGas": 850000,
           "reserveGas": 25000,
           "maximumGas": 1000000,
-          "updater": "0x71dc76c07e92325e7cc09117ab94310da63fc2b9",
-          "watchers": ["0x297bbc2f2eaaeb17ee53f514020bc8173f0570dc"],
           "governance": {
             "recoveryManager": "0xda2f881f7f4e9d2b9559f97c7670472a85c1986a",
             "recoveryTimelock": 86400
-          }
+          },
+          "updater": "0x71dc76c07e92325e7cc09117ab94310da63fc2b9",
+          "watchers": ["0x297bbc2f2eaaeb17ee53f514020bc8173f0570dc"]
         },
         "bridgeConfiguration": {
           "weth": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
@@ -49,7 +49,7 @@
       "moonbeam": {
         "name": "moonbeam",
         "domain": 1650811245,
-        "connections": ["xdai", "milkomedaC1", "ethereum"],
+        "connections": ["milkomedaC1", "ethereum", "xdai"],
         "specs": {
           "chainId": 1284,
           "blockTime": 15,
@@ -64,12 +64,12 @@
           "processGas": 850000,
           "reserveGas": 25000,
           "maximumGas": 1000000,
-          "updater": "0x40fd91557b318bd5d52d12535795265c88702681",
-          "watchers": ["0x9782a3c8128f5d1bd3c9655d03181ba5b420883e"],
           "governance": {
             "recoveryManager": "0x2d23b3865d5b7cd88ce9ce7514a13545672d9ef7",
             "recoveryTimelock": 86400
-          }
+          },
+          "updater": "0x40fd91557b318bd5d52d12535795265c88702681",
+          "watchers": ["0x9782a3c8128f5d1bd3c9655d03181ba5b420883e"]
         },
         "bridgeConfiguration": {
           "customs": [],
@@ -80,7 +80,7 @@
       "milkomedaC1": {
         "name": "milkomedaC1",
         "domain": 25393,
-        "connections": ["xdai", "moonbeam", "ethereum"],
+        "connections": ["moonbeam", "ethereum", "xdai"],
         "specs": {
           "chainId": 2001,
           "blockTime": 4,
@@ -95,12 +95,12 @@
           "processGas": 850000,
           "reserveGas": 25000,
           "maximumGas": 1000000,
-          "updater": "0xe293d129d9fd291a8115cb373bb934586055427d",
-          "watchers": ["0x06d8902cfae8235047dc7783875279311798c715"],
           "governance": {
             "recoveryManager": "0xea24ac04defb338ca8595c3750e20166f3b4998a",
             "recoveryTimelock": 86400
-          }
+          },
+          "updater": "0xe293d129d9fd291a8115cb373bb934586055427d",
+          "watchers": ["0x06d8902cfae8235047dc7783875279311798c715"]
         },
         "bridgeConfiguration": {
           "weth": "0xae83571000af4499798d1e3b0fa0070eb3a3e3f9",
@@ -127,12 +127,12 @@
           "processGas": 850000,
           "reserveGas": 25000,
           "maximumGas": 1000000,
-          "updater": "0x777a89f8cba8fa632268e8f3c6789cdadada3482",
-          "watchers": ["0xce941bbad38b35bd7f6b039af5ae67f8f0c99960"],
           "governance": {
             "recoveryManager": "0x5a07b875c618dcf69ec9681eccf147cf0ce84d11",
             "recoveryTimelock": 86400
-          }
+          },
+          "updater": "0x777a89f8cba8fa632268e8f3c6789cdadada3482",
+          "watchers": ["0xce941bbad38b35bd7f6b039af5ae67f8f0c99960"]
         },
         "bridgeConfiguration": {
           "weth": "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d",
