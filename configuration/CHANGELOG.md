@@ -2,6 +2,10 @@
 
 ### Unreleased
 
+### v0.1.0-rc.10
+
+- Update production config to include xDai enrollment
+
 ### v0.1.0-rc.9
 
 - Redeploy dev after improper update during devnet transition
