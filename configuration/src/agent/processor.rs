@@ -10,7 +10,7 @@ decl_config!(Processor {
     /// Deny list
     denied: Option<HashSet<H256>>,
     /// Index only mode
-    index_only: bool,
+    subsidized_remotes: Vec<String>,
     /// S3 config
     s3: Option<S3Config>,
 });

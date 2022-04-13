@@ -265,7 +265,7 @@
       },
       "processor": {
         "enabled": true,
-        "indexOnly": false,
+        "subsidizedRemotes": ["kovan", "moonbasealpha", "milkomedaC1testnet"],
         "interval": 5,
         "s3": {
           "bucket": "nomadxyz-staging-proofs",
@@ -299,7 +299,7 @@
       },
       "processor": {
         "enabled": true,
-        "indexOnly": false,
+        "subsidizedRemotes": ["rinkeby", "moonbasealpha", "milkomedaC1testnet"],
         "interval": 5,
         "s3": {
           "bucket": "nomadxyz-staging-proofs",
@@ -333,7 +333,7 @@
       },
       "processor": {
         "enabled": true,
-        "indexOnly": false,
+        "subsidizedRemotes": ["rinkeby", "kovan", "milkomedaC1testnet"],
         "interval": 5,
         "s3": {
           "bucket": "nomadxyz-staging-proofs",
@@ -367,7 +367,7 @@
       },
       "processor": {
         "enabled": true,
-        "indexOnly": false,
+        "subsidizedRemotes": ["rinkeby", "kovan", "moonbasealpha"],
         "interval": 5,
         "s3": {
           "bucket": "nomadxyz-staging-proofs",

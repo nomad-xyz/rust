@@ -3,7 +3,7 @@
   "environment": "test",
   "networks": ["ethereum", "moonbeam"],
   "rpcs": {
-    "moonbeam": ["https://moonriver.api.onfinality.io/public"],
+    "moonbeam": ["https://rpc.api.moonbeam.network"],
     "ethereum": ["https://main-light.eth.linkpool.io/"]
   },
   "protocol": {
@@ -186,7 +186,7 @@
         "interval": 10
       },
       "processor": {
-        "indexOnly": false,
+        "subsidizedRemotes": ["moonbeam"],
         "enabled": true,
         "interval": 5,
         "s3": {
@@ -220,7 +220,7 @@
         "interval": 10
       },
       "processor": {
-        "indexOnly": true,
+        "subsidizedRemotes": [],
         "enabled": true,
         "interval": 5,
         "s3": {
