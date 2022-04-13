@@ -1,12 +1,12 @@
 {
   "version": 0,
   "environment": "production",
-  "networks": ["ethereum", "milkomedaC1", "moonbeam", "xdai"],
+  "networks": ["ethereum", "moonbeam", "milkomedaC1", "xdai"],
   "rpcs": {
+    "ethereum": ["https://main-light.eth.linkpool.io/"],
     "moonbeam": ["https://moonriver.api.onfinality.io/public"],
-    "xdai": ["https://dai.poa.network/"],
     "milkomedaC1": ["https://rpc.c1.milkomeda.com:8545"],
-    "ethereum": ["https://main-light.eth.linkpool.io/"]
+    "xdai": ["https://dai.poa.network/"]
   },
   "protocol": {
     "governor": {
@@ -18,6 +18,15 @@
         "name": "ethereum",
         "domain": 6648936,
         "connections": ["moonbeam", "xdai", "milkomedaC1"],
+        "specs": {
+          "chainId": 1,
+          "blockTime": 15,
+          "finalizationBlocks": 20,
+          "supports1559": true,
+          "confirmations": 3,
+          "blockExplorer": "https://etherscan.io",
+          "indexPageSize": 2000
+        },
         "configuration": {
           "optimisticSeconds": 1800,
           "processGas": 850000,
@@ -30,15 +39,6 @@
             "recoveryTimelock": 86400
           }
         },
-        "specs": {
-          "chainId": 1,
-          "blockTime": 15,
-          "finalizationBlocks": 20,
-          "supports1559": true,
-          "confirmations": 3,
-          "blockExplorer": "https://etherscan.io",
-          "indexPageSize": 2000
-        },
         "bridgeConfiguration": {
           "weth": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
           "customs": [],
@@ -50,6 +50,15 @@
         "name": "moonbeam",
         "domain": 1650811245,
         "connections": ["xdai", "milkomedaC1", "ethereum"],
+        "specs": {
+          "chainId": 1284,
+          "blockTime": 15,
+          "finalizationBlocks": 20,
+          "supports1559": true,
+          "confirmations": 3,
+          "blockExplorer": "https://moonbeam.moonscan.io",
+          "indexPageSize": 500
+        },
         "configuration": {
           "optimisticSeconds": 1800,
           "processGas": 850000,
@@ -62,15 +71,6 @@
             "recoveryTimelock": 86400
           }
         },
-        "specs": {
-          "chainId": 1284,
-          "blockTime": 15,
-          "finalizationBlocks": 20,
-          "supports1559": true,
-          "confirmations": 3,
-          "blockExplorer": "https://moonbeam.moonscan.io",
-          "indexPageSize": 500
-        },
         "bridgeConfiguration": {
           "customs": [],
           "mintGas": 200000,
@@ -81,6 +81,15 @@
         "name": "milkomedaC1",
         "domain": 25393,
         "connections": ["xdai", "moonbeam", "ethereum"],
+        "specs": {
+          "chainId": 2001,
+          "blockTime": 4,
+          "finalizationBlocks": 15,
+          "supports1559": false,
+          "confirmations": 2,
+          "blockExplorer": "https://rpc.c1.milkomeda.com:4000/",
+          "indexPageSize": 2000
+        },
         "configuration": {
           "optimisticSeconds": 1800,
           "processGas": 850000,
@@ -93,15 +102,6 @@
             "recoveryTimelock": 86400
           }
         },
-        "specs": {
-          "chainId": 2001,
-          "blockTime": 4,
-          "finalizationBlocks": 15,
-          "supports1559": false,
-          "confirmations": 2,
-          "blockExplorer": "https://rpc.c1.milkomeda.com:4000/",
-          "indexPageSize": 2000
-        },
         "bridgeConfiguration": {
           "weth": "0xae83571000af4499798d1e3b0fa0070eb3a3e3f9",
           "customs": [],
@@ -113,6 +113,15 @@
         "name": "xdai",
         "domain": 2019844457,
         "connections": ["ethereum", "milkomedaC1", "moonbeam"],
+        "specs": {
+          "chainId": 100,
+          "blockTime": 5,
+          "finalizationBlocks": 3,
+          "supports1559": true,
+          "confirmations": 5,
+          "blockExplorer": "https://blockscout.com/xdai/mainnet/",
+          "indexPageSize": 2000
+        },
         "configuration": {
           "optimisticSeconds": 1800,
           "processGas": 850000,
@@ -124,15 +133,6 @@
             "recoveryManager": "0x5a07b875c618dcf69ec9681eccf147cf0ce84d11",
             "recoveryTimelock": 86400
           }
-        },
-        "specs": {
-          "chainId": 100,
-          "blockTime": 5,
-          "finalizationBlocks": 3,
-          "supports1559": true,
-          "confirmations": 5,
-          "blockExplorer": "https://blockscout.com/xdai/mainnet/",
-          "indexPageSize": 2000
         },
         "bridgeConfiguration": {
           "weth": "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d",
