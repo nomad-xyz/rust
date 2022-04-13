@@ -258,8 +258,8 @@ where
             update.signature.to_vec().into(),
         );
 
-        let queue_length = self.queue_length().await?;
         if let Some(limits) = &self.gas {
+            let queue_length = self.queue_length().await?;
             tx.tx.set_gas(
                 U256::from(limits.update.base)
                     + U256::from(limits.update.per_message) * queue_length,
@@ -341,8 +341,8 @@ where
             update.signature.to_vec().into(),
         );
 
-        let queue_length = self.queue_length().await?;
         if let Some(limits) = &self.gas {
+            let queue_length = self.queue_length().await?;
             tx.tx.set_gas(
                 U256::from(limits.improper_update.base)
                     + U256::from(limits.improper_update.per_message) * queue_length,

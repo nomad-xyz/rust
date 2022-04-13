@@ -9,7 +9,6 @@ type GasPolicy = Box<dyn Fn(U256) -> U256 + Send + Sync>;
 /// Middleware used for adjusting gas using predefined policy
 pub struct GasAdjusterMiddleware<M> {
     inner: M,
-    gas_estimate_policy: GasPolicy,
     gas_price_policy: GasPolicy,
 }
 
@@ -30,18 +29,14 @@ where
 {
     /// Instantiates the gas multiplier middleware. Policy takes gas
     /// estimate to calculates new gas which will be used for transaction
-    pub fn new(inner: M, gas_estimate_policy: GasPolicy, gas_price_policy: GasPolicy) -> Self {
+    pub fn new(inner: M, gas_price_policy: GasPolicy) -> Self {
         Self {
             inner,
-            gas_estimate_policy,
             gas_price_policy,
         }
     }
 
     pub fn with_default_policy(inner: M, chain_id: u64) -> Self {
-        // triple gas estimate
-        let gas_estimate_policy = move |gas| gas * 3;
-
         // 1.5x gas price for ethereum, 2x elsewhere
         let is_ethereum = chain_id == 1;
         let gas_price_policy = move |price| {
@@ -52,11 +47,7 @@ where
             }
         };
 
-        Self::new(
-            inner,
-            Box::new(gas_estimate_policy),
-            Box::new(gas_price_policy),
-        )
+        Self::new(inner, Box::new(gas_price_policy))
     }
 }
 
@@ -110,14 +101,6 @@ where
             .get_gas_price()
             .await
             .map(&self.gas_price_policy)
-            .map_err(FromErr::from)
-    }
-
-    async fn estimate_gas(&self, tx: &TypedTransaction) -> Result<U256, Self::Error> {
-        self.inner()
-            .estimate_gas(tx)
-            .await
-            .map(&self.gas_estimate_policy)
             .map_err(FromErr::from)
     }
 }
