@@ -476,6 +476,45 @@
         "interval": 100,
         "enabled": false
       }
+    },
+    "xdai": {
+      "rpcStyle": "ethereum",
+      "db": "/usr/share/nomad",
+      "metrics": 9090,
+      "logging": {
+        "fmt": "json",
+        "level": "info"
+      },
+      "updater": {
+        "interval": 5,
+        "enabled": true
+      },
+      "relayer": {
+        "interval": 10,
+        "enabled": true
+      },
+      "processor": {
+        "allowed": null,
+        "denied": null,
+        "indexOnly": true,
+        "s3": {
+          "bucket": "nomadxyz-production-proofs",
+          "region": "us-west-2"
+        },
+        "interval": 5,
+        "enabled": true
+      },
+      "watcher": {
+        "interval": 10,
+        "enabled": true
+      },
+      "kathy": {
+        "chat": {
+          "type": "default"
+        },
+        "interval": 100,
+        "enabled": false
+      }
     }
   },
   "bridgeGui": {
@@ -490,6 +529,10 @@
     "ethereum": {
       "displayName": "Ethereum",
       "nativeTokenSymbol": "ETH"
+    },
+    "xdai": {
+      "displayName": "xDai",
+      "nativeTokenSymbol": "xDAI"
     }
   }
 }
