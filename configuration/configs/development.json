@@ -380,7 +380,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "indexOnly": false,
+        "subsidizedRemotes": ["kovan", "xdai", "goerli"],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
@@ -416,7 +416,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "indexOnly": true,
+        "subsidizedRemotes": ["rinkeby", "xdai", "goerli"],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
@@ -452,7 +452,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "indexOnly": false,
+        "subsidizedRemotes": ["rinkeby", "kovan", "goerli"],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
@@ -488,7 +488,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "indexOnly": false,
+        "subsidizedRemotes": ["rinkeby", "kovan", "xdai"],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"

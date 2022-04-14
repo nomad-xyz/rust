@@ -379,7 +379,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "indexOnly": false,
+        "subsidizedRemotes": ["moonbeam", "milkomedaC1", "xdai"],
         "s3": {
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
@@ -418,7 +418,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "indexOnly": true,
+        "subsidizedRemotes": ["milkomedaC1", "xdai"],
         "s3": {
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
@@ -457,7 +457,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "indexOnly": true,
+        "subsidizedRemotes": ["moonbeam", "xdai"],
         "s3": {
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
@@ -496,7 +496,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "indexOnly": true,
+        "subsidizedRemotes": ["moonbeam", "milkomedaC1"],
         "s3": {
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"

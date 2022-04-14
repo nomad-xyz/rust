@@ -36,7 +36,10 @@ mod test {
         assert_eq!(settings.agent.interval, agent_config.interval);
         assert_eq!(settings.agent.allowed, agent_config.allowed);
         assert_eq!(settings.agent.denied, agent_config.denied);
-        assert_eq!(settings.agent.index_only, agent_config.index_only);
+        assert_eq!(
+            settings.agent.subsidized_remotes,
+            agent_config.subsidized_remotes
+        );
         assert_eq!(settings.agent.s3, agent_config.s3);
     }
 }

@@ -282,7 +282,7 @@ decl_agent!(
         replica_tasks: RwLock<HashMap<String, JoinHandle<Result<()>>>>,
         allowed: Option<Arc<HashSet<H256>>>,
         denied: Option<Arc<HashSet<H256>>>,
-        index_only: bool,
+        subsidized_remotes: Vec<String>,
         next_message_nonces: prometheus::IntGaugeVec,
         config: Option<S3Config>,
     }
@@ -295,7 +295,7 @@ impl Processor {
         core: AgentCore,
         allowed: Option<HashSet<H256>>,
         denied: Option<HashSet<H256>>,
-        index_only: bool,
+        subsidized_remotes: Vec<String>,
         config: Option<S3Config>,
     ) -> Self {
         let next_message_nonces = core
@@ -314,7 +314,7 @@ impl Processor {
             allowed: allowed.map(Arc::new),
             denied: denied.map(Arc::new),
             next_message_nonces,
-            index_only,
+            subsidized_remotes,
             config,
         }
     }
@@ -345,7 +345,7 @@ impl NomadAgent for Processor {
             settings.as_ref().try_into_core(AGENT_NAME).await?,
             settings.agent.allowed,
             settings.agent.denied,
-            settings.agent.index_only,
+            settings.agent.subsidized_remotes,
             settings.agent.s3,
         ))
     }
@@ -406,10 +406,10 @@ impl NomadAgent for Processor {
             // instantiate task array here so we can optionally push run_task
             let mut tasks = vec![home_sync_task, prover_sync_task, home_fail_watch_task];
 
-            if !self.index_only {
-                // this is the unused must use
-                let names: Vec<&str> = self.replicas().keys().map(|k| k.as_str()).collect();
-                tasks.push(self.run_many(&names));
+            if !self.subsidized_remotes.is_empty() {
+                let remotes: Vec<&str> =
+                    self.subsidized_remotes.iter().map(|r| r.as_str()).collect();
+                tasks.push(self.run_many(&remotes));
             }
 
             // if we have a bucket, add a task to push to it
