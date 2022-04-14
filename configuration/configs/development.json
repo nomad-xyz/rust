@@ -506,5 +506,34 @@
       }
     }
   },
-  "bridgeGui": {}
+  "bridgeGui": {
+    "goerli": {
+      "displayName": "Goerli",
+      "nativeTokenSymbol": "gETH",
+      "connections": ["rinkeby"],
+      "manualProcessing": false,
+      "connextEnabled": true
+    },
+    "kovan": {
+      "displayName": "Kovan",
+      "nativeTokenSymbol": "kETH",
+      "connections": ["rinkeby"],
+      "manualProcessing": false,
+      "connextEnabled": true
+    },
+    "rinkeby": {
+      "displayName": "Rinkeby",
+      "nativeTokenSymbol": "rETH",
+      "connections": ["rinkeby", "kovan", "goerli", "xdai"],
+      "manualProcessing": true,
+      "connextEnabled": true
+    },
+    "xdai": {
+      "displayName": "xDai",
+      "nativeTokenSymbol": "xDai",
+      "connections": ["rinkeby"],
+      "manualProcessing": false,
+      "connextEnabled": true
+    }
+  }
 }

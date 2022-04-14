@@ -4,6 +4,9 @@ export type NameOrDomain = number | string;
 export interface AppConfig {
   displayName: string;
   nativeTokenSymbol: string;
+  connections: string[];
+  manualProcessing: boolean;
+  connextEnabled: boolean;
 }
 
 export interface NomadLocator {

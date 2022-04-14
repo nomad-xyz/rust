@@ -520,19 +520,31 @@
   "bridgeGui": {
     "moonbeam": {
       "displayName": "Moonbeam",
-      "nativeTokenSymbol": "GLMR"
+      "nativeTokenSymbol": "GLMR",
+      "connections": ["ethereum"],
+      "manualProcessing": false,
+      "connextEnabled": true
     },
     "milkomedaC1": {
       "displayName": "Milkomeda C1",
-      "nativeTokenSymbol": "milkADA"
+      "nativeTokenSymbol": "milkADA",
+      "connections": ["ethereum"],
+      "manualProcessing": false,
+      "connextEnabled": false
     },
     "ethereum": {
       "displayName": "Ethereum",
-      "nativeTokenSymbol": "ETH"
+      "nativeTokenSymbol": "ETH",
+      "connections": ["ethereum", "moonbeam", "milkomedaC1", "xDai"],
+      "manualProcessing": true,
+      "connextEnabled": true
     },
     "xdai": {
       "displayName": "xDai",
-      "nativeTokenSymbol": "xDAI"
+      "nativeTokenSymbol": "xDAI",
+      "connections": ["ethereum"],
+      "manualProcessing": false,
+      "connextEnabled": true
     }
   }
 }
