@@ -41,32 +41,39 @@ impl UpdateSubmitter {
             loop {
                 sleep(Duration::from_secs(self.interval_seconds)).await;
 
-                // if we have produced an update building off the committed root
-                // submit it
-                if let Some(signed) = self.db.retrieve_produced_update(committed_root)? {
-                    let hex_signature = format!("0x{}", hex::encode(signed.signature.to_vec()));
-                    info!(
-                        previous_root = ?signed.update.previous_root,
-                        new_root = ?signed.update.new_root,
-                        hex_signature = %hex_signature,
-                        "Submitting update to chain"
-                    );
+                let signed_opt = self.db.retrieve_produced_update(committed_root)?;
 
-                    // Submit update and let the home indexer pick up the
-                    // update once it is confirmed state in the chain
-                    self.home.update(&signed).await?;
-
-                    self.submitted_update_count.inc();
-
-                    // continue from local state
-                    committed_root = signed.update.new_root;
-                } else {
+                // if no signed update, shortcut to top of loop
+                if signed_opt.is_none() {
                     info!(
                         committed_root = ?committed_root,
-                        "No produced update to submit for committed_root {}.",
-                        committed_root,
-                    )
+                        "No produced update to submit for committed_root.",
+                    );
+                    continue;
                 }
+
+                // if we have produced an update building off the committed root
+                // submit it
+                let signed = signed_opt.expect("checked");
+
+                // Log out the signature
+                let hex_signature = format!("0x{}", hex::encode(signed.signature.to_vec()));
+                info!(
+                    previous_root = ?signed.update.previous_root,
+                    new_root = ?signed.update.new_root,
+                    hex_signature = %hex_signature,
+                    "Submitting update to chain"
+                );
+
+                // Submit update and let the home indexer pick up the
+                // update once it is confirmed state in the chain
+                self.home.update(&signed).await?;
+
+                // update metrics
+                self.submitted_update_count.inc();
+
+                // continue from local state
+                committed_root = signed.update.new_root;
             }
         })
         .instrument(span)

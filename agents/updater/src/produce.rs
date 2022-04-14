@@ -79,59 +79,70 @@ impl UpdateProducer {
                 // We sleep at the top to make continues work fine
                 sleep(Duration::from_secs(self.interval_seconds)).await;
 
-                // Get home indexer's latest seen update from home. This call 
-                // will only return a root from an update that is confirmed in 
+                // Get home indexer's latest seen update from home. This call
+                // will only return a root from an update that is confirmed in
                 // the chain, as the updater indexer's timelag will ensure this.
                 let current_root = self.find_latest_root()?;
 
-                // The produced update is also confirmed state in the chain, as 
+                // The produced update is also confirmed state in the chain, as
                 // updater home timelag ensures this.
-                if let Some(suggested) = self.home.produce_update().await? {
-                    if suggested.previous_root != current_root {
-                        // This either indicates that the indexer is catching
-                        // up or that the chain is awaiting a new update. We 
-                        // should ignore it.
-                        debug!(
-                            local = ?suggested.previous_root,
-                            remote = ?current_root,
-                            "Local root not equal to chain root. Skipping update."
-                        );
-                        continue;
-                    }
 
-                    // Ensure we have not already signed a conflicting update.
-                    // Ignore suggested if we have.
-                    if let Some(existing) = self.db.retrieve_produced_update(suggested.previous_root)? {
-                        if existing.update.new_root != suggested.new_root {
-                            info!("Updater ignoring conflicting suggested update. Indicates chain awaiting already produced update. Existing update: {:?}. Suggested conflicting update: {:?}.", &existing, &suggested);
-                        }
+                let suggested_opt = self.home.produce_update().await?;
 
-                        continue;
-                    }
-
-                    // If the suggested matches our local view, sign an update
-                    // and store it as locally produced
-                    let signed = suggested.sign_with(self.signer.as_ref()).await?;
-
-                    self.signed_attestation_count.inc();
-
-                    let hex_signature = format!("0x{}", hex::encode(signed.signature.to_vec()));
-                    info!(
-                        previous_root = ?signed.update.previous_root,
-                        new_root = ?signed.update.new_root,
-                        hex_signature = %hex_signature,
-                        "Storing new update in DB for broadcast"
-                    );
-
-                    // Once we have stored signed update in db, updater can 
-                    // never produce a double update building off the same 
-                    // previous root (we check db each time we produce new 
-                    // signed update)
-                    self.store_produced_update(&signed)?
-                } else {
+                // Shortcut to top of loop if none
+                if suggested_opt.is_none() {
                     let committed_root = self.home.committed_root().await?;
                     info!("No updates to sign. Waiting for new root building off of current root {:?}.", committed_root);
+                    continue;
                 }
+
+                // If there is a suggest update, see if we should sign it
+                let suggested = suggested_opt.expect("checked");
+
+
+                // This either indicates that the indexer is catching
+                // up or that the chain is awaiting a new update. We
+                // should ignore it.
+                if suggested.previous_root != current_root {
+                    debug!(
+                        local = ?suggested.previous_root,
+                        remote = ?current_root,
+                        "Local root not equal to chain root. Skipping update."
+                    );
+                    continue;
+                }
+
+                // Ensure we have not already signed a conflicting update.
+                // Ignore suggested if we have.
+                if let Some(existing) = self.db.retrieve_produced_update(suggested.previous_root)? {
+                    if existing.update.new_root != suggested.new_root {
+                        info!("Updater ignoring conflicting suggested update. Indicates chain awaiting already produced update. Existing update: {:?}. Suggested conflicting update: {:?}.", &existing, &suggested);
+                    }
+
+                    continue;
+                }
+
+                // If the suggested matches our local view, sign an update
+                // and store it as locally produced
+                let signed = suggested.sign_with(self.signer.as_ref()).await?;
+
+                // Update metrics
+                self.signed_attestation_count.inc();
+
+                // Log out the signature
+                let hex_signature = format!("0x{}", hex::encode(signed.signature.to_vec()));
+                info!(
+                    previous_root = ?signed.update.previous_root,
+                    new_root = ?signed.update.new_root,
+                    hex_signature = %hex_signature,
+                    "Storing new update in DB for broadcast"
+                );
+
+                // Once we have stored signed update in db, updater can
+                // never produce a double update building off the same
+                // previous root (we check db each time we produce new
+                // signed update)
+                self.store_produced_update(&signed)?
             }
         })
         .instrument(span)
