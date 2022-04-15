@@ -112,11 +112,13 @@ impl NomadAgent for Updater {
         let home = self.home();
         let address = self.signer.address();
         let db = NomadDB::new(self.home().name(), self.db());
+        let update_pause = self.as_ref().settings.home.block_time;
 
         let produce = UpdateProducer::new(
             self.home(),
             db.clone(),
             self.signer.clone(),
+            update_pause,
             self.interval_seconds,
             self.signed_attestation_count.clone(),
         );

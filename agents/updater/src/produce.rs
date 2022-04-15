@@ -13,6 +13,7 @@ pub(crate) struct UpdateProducer {
     home: Arc<CachingHome>,
     db: NomadDB,
     signer: Arc<Signers>,
+    update_pause_seconds: u64,
     interval_seconds: u64,
     signed_attestation_count: IntCounter,
 }
@@ -22,6 +23,7 @@ impl UpdateProducer {
         home: Arc<CachingHome>,
         db: NomadDB,
         signer: Arc<Signers>,
+        update_pause_seconds: u64,
         interval_seconds: u64,
         signed_attestation_count: IntCounter,
     ) -> Self {
@@ -29,6 +31,7 @@ impl UpdateProducer {
             home,
             db,
             signer,
+            update_pause_seconds,
             interval_seconds,
             signed_attestation_count,
         }
@@ -106,6 +109,31 @@ impl UpdateProducer {
                             info!("Updater ignoring conflicting suggested update. Indicates chain awaiting already produced update. Existing update: {:?}. Suggested conflicting update: {:?}.", &existing, &suggested);
                         }
 
+                        continue;
+                    }
+
+                    // Sleep for `update_pause` seconds so we can check for 
+                    // unwanted state changes afterwards
+                    sleep(Duration::from_secs(self.update_pause_seconds)).await;
+
+                    // If HomeIndexer found new root from that doesn't 
+                    // match our most current root, continue
+                    if self.find_latest_root()? != current_root {
+                        continue;
+                    }
+
+                    // Have home suggest an update again
+                    if let Some(check_suggested) = self.home.produce_update().await? {
+                        if check_suggested.previous_root != suggested.previous_root {
+                            // If newly suggested update no longer builds on 
+                            // same previous root as original suggested, reorg 
+                            // occurred or home received new in flight update. 
+                            // Ignore and continue.
+                            continue;
+                        }
+                    } else {
+                        // If no longer a suggested update, reorg or new update 
+                        // was received during pause. Ignore and continue.
                         continue;
                     }
 
