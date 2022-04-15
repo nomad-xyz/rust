@@ -16,6 +16,7 @@ dependencies = [
 name = "accumulator"
 version = "0.1.0"
 dependencies = [
+ "affix",
  "ethers",
  "js-sys",
  "lazy_static",
