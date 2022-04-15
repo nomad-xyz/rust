@@ -116,3 +116,29 @@ impl Decode for u64 {
         Ok(u64::from_be_bytes(buf))
     }
 }
+
+impl Encode for Vec<u8> {
+    fn write_to<W>(&self, writer: &mut W) -> std::io::Result<usize>
+    where
+        W: std::io::Write,
+    {
+        let prefix = (self.len() as u64).to_be_bytes();
+
+        writer.write_all(&prefix)?;
+        writer.write_all(&self)?;
+        Ok(8 + self.len())
+    }
+}
+
+impl Decode for Vec<u8> {
+    fn read_from<R>(reader: &mut R) -> Result<Self, NomadError>
+    where
+        R: std::io::Read,
+        Self: Sized,
+    {
+        let prefix = <u64 as Decode>::read_from(reader)? as usize;
+        let mut buf = Vec::with_capacity(prefix as usize);
+        reader.read_exact(&mut buf)?;
+        Ok(buf)
+    }
+}

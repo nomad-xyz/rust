@@ -37,8 +37,11 @@ mod xapp;
 /// Gas increasing Middleware
 mod gas;
 
+/// Transaction Manager
+mod tx_man;
+
 #[cfg(not(doctest))]
-pub use crate::{home::*, replica::*, xapp::*};
+pub use crate::{home::*, replica::*, tx_man::*, xapp::*};
 
 #[allow(dead_code)]
 /// A live connection to an ethereum-compatible chain.
