@@ -67,7 +67,7 @@ impl IncrementalMerkleSync {
     }
 
     /// Start syncing merkle tree with DB
-    pub fn sync(&mut self) -> Instrumented<JoinHandle<Result<()>>> {
+    pub fn sync(&self) -> Instrumented<JoinHandle<Result<()>>> {
         let tree = self.tree.clone();
         let db = self.db.clone();
 
