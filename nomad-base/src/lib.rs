@@ -27,6 +27,10 @@ pub use macros::*;
 mod nomad_db;
 pub use nomad_db::*;
 
+/// Syncing incremental merkle tree
+mod merkle_sync;
+pub use merkle_sync::*;
+
 /// Base errors
 mod error;
 pub use error::*;
