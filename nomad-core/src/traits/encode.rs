@@ -125,7 +125,7 @@ impl Encode for Vec<u8> {
         let prefix = (self.len() as u64).to_be_bytes();
 
         writer.write_all(&prefix)?;
-        writer.write_all(&self)?;
+        writer.write_all(self)?;
         Ok(8 + self.len())
     }
 }

@@ -18,7 +18,10 @@ fn log_tx(tx: &TypedTransaction) -> (String, String) {
         NameOrAddress::Name(name) => name.to_owned(),
         NameOrAddress::Address(address) => hex::encode(address),
     };
-    let data = tx.data().map(hex::encode).unwrap_or("0x".to_owned());
+    let data = tx
+        .data()
+        .map(hex::encode)
+        .unwrap_or_else(|| "0x".to_owned());
 
     (to, data)
 }
@@ -71,10 +74,10 @@ where
         Ok(())
     }
 
-    async fn handle_new<'a>(
-        &'a self,
+    async fn handle_new(
+        &self,
         mut tx: TypedTransaction,
-    ) -> Result<EscalatingPending<'a, M::Provider>> {
+    ) -> Result<EscalatingPending<'_, M::Provider>> {
         // logging setup
         let to_opt = tx.to();
         ensure!(to_opt.is_some(), "No to on transaction request");
