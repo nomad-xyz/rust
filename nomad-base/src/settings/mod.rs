@@ -89,7 +89,7 @@ impl IndexSettings {
                 use_timelag: true,
             },
             "updater" => Self {
-                data_types: IndexDataTypes::Updates,
+                data_types: IndexDataTypes::UpdatesAndMessages,
                 use_timelag: true,
             },
             "relayer" => Self {
