@@ -2,8 +2,8 @@ use color_eyre::Result;
 use nomad_core::{
     accumulator::incremental::IncrementalMerkle, db::DbError, ChainCommunicationError,
 };
-use std::time::Duration;
-use tokio::{task::JoinHandle, time::sleep};
+use std::{sync::Arc, time::Duration};
+use tokio::{sync::RwLock, task::JoinHandle, time::sleep};
 use tracing::{debug, error, info, info_span, instrument::Instrumented, Instrument};
 
 use crate::NomadDB;
@@ -12,7 +12,7 @@ use crate::NomadDB;
 #[derive(Debug, Clone)]
 pub struct IncrementalMerkleSync {
     /// Light merkle tree
-    pub tree: IncrementalMerkle,
+    pub tree: Arc<RwLock<IncrementalMerkle>>,
     /// DB with home name key prefix
     pub db: NomadDB,
 }
@@ -32,7 +32,7 @@ impl IncrementalMerkleSync {
     /// Instantiate new IncrementalMerkleSync
     pub fn new(db: NomadDB) -> Self {
         Self {
-            tree: Default::default(),
+            tree: Arc::new(RwLock::new(Default::default())),
             db,
         }
     }
@@ -60,18 +60,21 @@ impl IncrementalMerkleSync {
             info!(target_latest_root = ?root, root = ?tree.root(), "Reloaded IncrementalMerkleSync from_disk");
         }
 
-        Self { tree, db }
+        Self {
+            tree: Arc::new(RwLock::new(tree)),
+            db,
+        }
     }
 
     /// Start syncing merkle tree with DB
-    pub fn sync(&self) -> Instrumented<JoinHandle<Result<()>>> {
-        let mut tree = self.tree.clone();
+    pub fn sync(&mut self) -> Instrumented<JoinHandle<Result<()>>> {
+        let tree = self.tree.clone();
         let db = self.db.clone();
 
         let span = info_span!("IncrementalMerkleSync");
         tokio::spawn(async move {
             loop {
-                let tree_size = tree.count();
+                let tree_size = tree.read().await.count();
 
                 info!("Waiting for leaf at index {}...", tree_size);
                 let leaf = db.wait_for_leaf(tree_size as u32).await?;
@@ -83,7 +86,7 @@ impl IncrementalMerkleSync {
                     tree_size,
                     leaf
                 );
-                tree.ingest(leaf);
+                tree.write().await.ingest(leaf);
                 sleep(Duration::from_secs(5)).await;
             }
         })

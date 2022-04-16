@@ -91,7 +91,7 @@ impl UpdateProducer {
 
                 // The produced update is also confirmed state in the chain, as 
                 // home indexing timelag for dispatched messages ensures this.
-                let new_root = self.merkle_sync.tree.root();
+                let new_root = self.merkle_sync.tree.read().await.root();
 
                 // If last committed root is same as current merkle root,
                 // no update to produce
