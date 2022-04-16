@@ -70,6 +70,8 @@ where
             "Storing receipt in DB",
         );
 
+        // TODO: put receipt in db lol
+
         Ok(())
     }
 
@@ -106,17 +108,37 @@ where
         Ok(escalating)
     }
 
+    async fn resume(&self) -> FuturesUnordered<EscalatingPending<'_, M::Provider>> {
+        // TODO:
+        // - poll chain for confirmed transaction count
+        // - if that is less than the next_nonce
+        //   - check DB for the intermediate txns
+        //     - if they're not found,.... do what? TODO
+        //   - rebroadcast
+        //   - return the list of futures unordered of pending escalators
+        // - if that is more than next_nonce..... do what? TODO
+
+        Default::default()
+    }
+
     /// Spawn the task
-    pub async fn spawn(self, mut inbound: Receiver<TypedTransaction>) -> JoinHandle<Result<()>> {
+    pub fn spawn(self, mut inbound: Receiver<TypedTransaction>) -> JoinHandle<Result<()>> {
         tokio::spawn(async move {
-            let mut escalators = FuturesUnordered::new();
+            let mut escalators = self.resume().await;
             loop {
                 sleep(std::time::Duration::from_millis(500)).await;
 
                 // See: https://tokio.rs/tokio/tutorial/select
                 select! {
                     // pattern = operation => handler
-                    Some(next) = inbound.recv() => {
+                    next_opt = inbound.recv() => {
+                        // indicates that the sender has been dropped
+                        if next_opt.is_none() {
+                            tracing::info!("Inbound channel has closed. Shutting down TxManager task");
+                            break;
+                        }
+
+                        let next = next_opt.expect("checked");
                         let esc = self.handle_new(next).await?;
                         escalators.push(esc);
                         continue;
@@ -137,6 +159,7 @@ where
                     else => continue
                 }
             }
+            Ok(())
         })
     }
 }
