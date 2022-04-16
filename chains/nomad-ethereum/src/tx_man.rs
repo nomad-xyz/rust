@@ -29,7 +29,6 @@ fn log_tx(tx: &TypedTransaction) -> (String, String) {
 /// A transaction lifecycle manager
 #[derive(Debug)]
 pub struct TxStorer<S, M> {
-    inbound: Receiver<TypedTransaction>,
     next_nonce: AtomicU64,
     db: Arc<TypedDB>,
     signer: Arc<S>,
@@ -108,24 +107,25 @@ where
     }
 
     /// Spawn the task
-    pub async fn spawn(mut self) -> JoinHandle<Result<()>> {
+    pub async fn spawn(self, mut inbound: Receiver<TypedTransaction>) -> JoinHandle<Result<()>> {
         tokio::spawn(async move {
             let mut escalators = FuturesUnordered::new();
-
             loop {
                 sleep(std::time::Duration::from_millis(500)).await;
 
                 // See: https://tokio.rs/tokio/tutorial/select
                 select! {
                     // pattern = operation => handler
-                    Some(next) = self.inbound.recv() => {
+                    Some(next) = inbound.recv() => {
                         let esc = self.handle_new(next).await?;
                         escalators.push(esc);
+                        continue;
                     }
                     // pattern = operation => handler
                     Some(result) = escalators.next() => {
                         let result = result?;
                         self.store_receipt(&result).await?;
+                        continue;
                     }
                     // This path is reached if both of the above are disabled
                     // select paths are disabled when the operation returns a
