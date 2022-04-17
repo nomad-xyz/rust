@@ -1,4 +1,5 @@
 use color_eyre::Result;
+use ethers::types::H256;
 use nomad_core::{
     accumulator::incremental::IncrementalMerkle, db::DbError, ChainCommunicationError,
 };
@@ -64,6 +65,11 @@ impl IncrementalMerkleSync {
             tree: Arc::new(RwLock::new(tree)),
             db,
         }
+    }
+
+    /// Fetch the current root of the tree
+    pub async fn root(&self) -> H256 {
+        self.tree.read().await.root()
     }
 
     /// Start syncing merkle tree with DB
