@@ -3,10 +3,11 @@ use prometheus::IntCounter;
 use std::{sync::Arc, time::Duration};
 
 use color_eyre::Result;
-use nomad_base::{CachingHome, IncrementalMerkleSync, NomadDB, UpdaterError};
+use futures_util::future::select_all;
+use nomad_base::{cancel_task, CachingHome, IncrementalMerkleSync, NomadDB, UpdaterError};
 use nomad_core::{Home, SignedUpdate, Signers, Update};
 use tokio::{task::JoinHandle, time::sleep};
-use tracing::{error, info, info_span, instrument::Instrumented, Instrument};
+use tracing::{error, info, instrument::Instrumented, Instrument};
 
 #[derive(Debug)]
 pub(crate) struct UpdateProducer {
@@ -77,8 +78,7 @@ impl UpdateProducer {
     /// Note that all data retrieved from either contract calls or the
     /// updater's db are confirmed state in the chain, as both indexed data and
     /// contract state are retrieved with a timelag.
-    pub(crate) fn spawn(self) -> Instrumented<JoinHandle<Result<()>>> {
-        let span = info_span!("UpdateProducer");
+    pub(crate) fn spawn_production(self) -> Instrumented<JoinHandle<Result<()>>> {
         tokio::spawn(async move {
             loop {
                 // We sleep at the top to make continues work fine
@@ -136,6 +136,21 @@ impl UpdateProducer {
                 self.store_produced_update(&signed)?
             }
         })
-        .instrument(span)
+        .in_current_span()
+    }
+
+    pub fn spawn(self) -> Instrumented<JoinHandle<Result<()>>> {
+        tokio::spawn(async move {
+            let merkle_sync_task = self.merkle_sync.sync();
+            let produce_task = self.spawn_production();
+
+            let (res, _, rem) = select_all(vec![merkle_sync_task, produce_task]).await;
+
+            for task in rem.into_iter() {
+                cancel_task!(task);
+            }
+            res?
+        })
+        .in_current_span()
     }
 }

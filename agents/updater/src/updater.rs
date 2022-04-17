@@ -11,7 +11,7 @@ use tracing::{info, instrument::Instrumented, Instrument};
 use crate::{
     produce::UpdateProducer, settings::UpdaterSettings as Settings, submit::UpdateSubmitter,
 };
-use nomad_base::{AgentCore, IncrementalMerkleSync, NomadAgent, NomadDB};
+use nomad_base::{cancel_task, AgentCore, NomadAgent, NomadDB};
 use nomad_core::{Common, Signers};
 
 /// An updater agent
@@ -112,7 +112,6 @@ impl NomadAgent for Updater {
         let home = self.home();
         let address = self.signer.address();
         let db = NomadDB::new(self.home().name(), self.db());
-        let merkle_sync = IncrementalMerkleSync::from_disk(db.clone());
 
         let produce = UpdateProducer::new(
             self.home(),
@@ -146,9 +145,6 @@ impl NomadAgent for Updater {
             info!("Spawning home contract task...");
             let home_sync_task = home.sync();
 
-            info!("Spawning merkle sync task...");
-            let merkle_sync_task = merkle_sync.sync();
-
             // Only spawn updater tasks once syncing has finished
             info!("Spawning produce and submit tasks...");
             let produce_task = produce.spawn();
@@ -156,7 +152,6 @@ impl NomadAgent for Updater {
 
             let (res, _, rem) = select_all(vec![
                 home_sync_task,
-                merkle_sync_task,
                 produce_task,
                 submit_task,
                 home_fail_watch_task,
@@ -164,7 +159,7 @@ impl NomadAgent for Updater {
             .await;
 
             for task in rem.into_iter() {
-                task.into_inner().abort();
+                cancel_task!(task);
             }
             res?
         })
