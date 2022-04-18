@@ -13,19 +13,6 @@ use std::sync::{
 };
 use tokio::{select, sync::mpsc::Receiver, task::JoinHandle, time::sleep};
 
-fn log_tx(tx: &TypedTransaction) -> (String, String) {
-    let to = match tx.to().expect("checked") {
-        NameOrAddress::Name(name) => name.to_owned(),
-        NameOrAddress::Address(address) => hex::encode(address),
-    };
-    let data = tx
-        .data()
-        .map(hex::encode)
-        .unwrap_or_else(|| "0x".to_owned());
-
-    (to, data)
-}
-
 /// A transaction lifecycle manager
 #[derive(Debug)]
 pub struct TxStorer<S, M> {
@@ -56,17 +43,15 @@ where
         let block_number = receipt
             .block_number
             .expect("escalating only returns confirmed txns");
-        let to = tx.to.map(hex::encode).unwrap_or_else(|| "0x".to_owned());
-        let data = hex::encode(&tx.input);
 
         tracing::info!(
             tx_index = receipt.transaction_index.as_u64(),
-            block = hex::encode(&block_hash).as_str(),
+            block = ?block_hash,
             block_height = block_number.as_u64(),
-            tx_hash = hex::encode(&tx_hash).as_str(),
+            tx_hash = ?tx_hash,
             nonce = tx.nonce.as_u64(),
-            to = to.as_str(),
-            data = data.as_str(),
+            to = ?tx.to,
+            data = %hex::encode(tx.input),
             "Storing receipt in DB",
         );
 
@@ -85,12 +70,11 @@ where
 
         let next_nonce = self.next_nonce.fetch_add(1, Ordering::SeqCst);
         tx.set_nonce(next_nonce);
-        let (to, data) = log_tx(&tx);
 
         tracing::info!(
             nonce = next_nonce,
-            to = to.as_str(),
-            data = data.as_str(),
+            to = ?tx.to(),
+            data = ?tx.data().map(hex::encode),
             "Storing tx request in DB"
         );
 
