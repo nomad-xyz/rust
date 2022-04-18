@@ -341,7 +341,9 @@ impl NomadDB {
                 if let Some(leaf) = slf.leaf_by_leaf_index(leaf_index)? {
                     return Ok(leaf);
                 }
-                sleep(Duration::from_millis(100)).await
+
+                info!("Waiting on leaf at index {}.", leaf_index);
+                sleep(Duration::from_secs(3)).await
             }
         }
     }
