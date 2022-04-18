@@ -61,12 +61,22 @@ impl Default for BridgeContracts {
     }
 }
 
+const fn is_false(b: &bool) -> bool {
+    !*b
+}
+
 /// EVM Bridge Contracts
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppConfig {
     display_name: String,
     native_token_symbol: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    connections: Vec<String>,
+    #[serde(default, skip_serializing_if = "is_false")]
+    manual_processing: bool,
+    #[serde(default, skip_serializing_if = "is_false")]
+    connext_enabled: bool,
 }
 
 /// Configuration for bridge contracts
