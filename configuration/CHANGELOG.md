@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- add new optional fields to bridge gui specific configs, update types
+
 ### v0.1.0-rc.10
 
 - Update production config to include xDai enrollment
