@@ -342,8 +342,26 @@ impl NomadDB {
                     return Ok(leaf);
                 }
 
-                info!("Waiting on leaf at index {}.", leaf_index);
-                sleep(Duration::from_secs(3)).await
+                debug!("Waiting on leaf at index {}.", leaf_index);
+                sleep(Duration::from_millis(100)).await
+            }
+        }
+    }
+
+    /// Poll db every 100 ms for new message by leaf index
+    pub fn wait_for_message(
+        &self,
+        leaf_index: u32,
+    ) -> impl Future<Output = Result<RawCommittedMessage, DbError>> {
+        let slf = self.clone();
+        async move {
+            loop {
+                if let Some(msg) = slf.message_by_leaf_index(leaf_index)? {
+                    return Ok(msg);
+                }
+
+                info!("Waiting on message at index {}.", leaf_index);
+                sleep(Duration::from_millis(100)).await
             }
         }
     }
