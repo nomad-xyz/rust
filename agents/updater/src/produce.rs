@@ -43,7 +43,10 @@ impl UpdateProducer {
     fn latest_committed_root(&self) -> Result<H256> {
         // If db latest root is empty, this will produce `H256::default()`
         // which is equal to `H256::zero()`
-        Ok(self.db.retrieve_latest_root()?.unwrap_or_default())
+        Ok(self
+            .db
+            .retrieve_latest_committed_root()?
+            .unwrap_or_default())
     }
 
     /// Store a pending update in the DB for potential submission.

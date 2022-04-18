@@ -200,13 +200,13 @@ impl NomadDB {
     }
 
     /// Store the latest committed
-    fn store_latest_root(&self, root: H256) -> Result<(), DbError> {
+    fn store_latest_committed_root(&self, root: H256) -> Result<(), DbError> {
         debug!(root = ?root, "storing new latest root in DB");
         self.store_encodable("", LATEST_ROOT, &root)
     }
 
     /// Retrieve the latest committed
-    pub fn retrieve_latest_root(&self) -> Result<Option<H256>, DbError> {
+    pub fn retrieve_latest_committed_root(&self) -> Result<Option<H256>, DbError> {
         self.retrieve_decodable("", LATEST_ROOT)
     }
 
@@ -264,10 +264,10 @@ impl NomadDB {
 
         // If there is no latest root, or if this update is on the latest root
         // update latest root
-        match self.retrieve_latest_root()? {
+        match self.retrieve_latest_committed_root()? {
             Some(root) => {
                 if root == update.update.previous_root {
-                    self.store_latest_root(update.update.new_root)?;
+                    self.store_latest_committed_root(update.update.new_root)?;
                 } else {
                     debug!(
                         "Attempted to store update not building off latest root: {:?}",
@@ -275,7 +275,7 @@ impl NomadDB {
                     )
                 }
             }
-            None => self.store_latest_root(update.update.new_root)?,
+            None => self.store_latest_committed_root(update.update.new_root)?,
         }
 
         self.store_update(update)

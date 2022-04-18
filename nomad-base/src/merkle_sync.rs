@@ -84,7 +84,7 @@ impl IncrementalMerkleSync {
         let mut tree = IncrementalMerkle::default();
         let mut last_committed_root = H256::default();
 
-        if let Some(latest_root) = db.retrieve_latest_root().expect("db error") {
+        if let Some(latest_root) = db.retrieve_latest_committed_root().expect("db error") {
             for i in 0.. {
                 match db.message_by_leaf_index(i) {
                     Ok(Some(message)) => {
@@ -120,15 +120,6 @@ impl IncrementalMerkleSync {
             db,
         }
     }
-
-    // /// Fetch the current root of the tree
-    // pub async fn root(&self) -> H256 {
-    //     self.merkle.read().await.root()
-    // }
-
-    // pub async fn last_committed_root(&self) -> H256 {
-    //     self.merkle.read().await.last_committed_root()
-    // }
 
     /// Start syncing merkle tree with DB
     pub fn sync(&self) -> Instrumented<JoinHandle<Result<()>>> {
