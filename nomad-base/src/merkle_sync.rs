@@ -20,6 +20,7 @@ pub struct NomadIncrementalMerkle {
 }
 
 impl NomadIncrementalMerkle {
+    /// Instantiate new NomadIncrementalMerkle from tree and last committed root
     pub fn new(tree: IncrementalMerkle, last_committed_root: H256) -> Self {
         Self {
             tree,
@@ -120,14 +121,14 @@ impl IncrementalMerkleSync {
         }
     }
 
-    /// Fetch the current root of the tree
-    pub async fn root(&self) -> H256 {
-        self.merkle.read().await.root()
-    }
+    // /// Fetch the current root of the tree
+    // pub async fn root(&self) -> H256 {
+    //     self.merkle.read().await.root()
+    // }
 
-    pub async fn last_committed_root(&self) -> H256 {
-        self.merkle.read().await.last_committed_root()
-    }
+    // pub async fn last_committed_root(&self) -> H256 {
+    //     self.merkle.read().await.last_committed_root()
+    // }
 
     /// Start syncing merkle tree with DB
     pub fn sync(&self) -> Instrumented<JoinHandle<Result<()>>> {

@@ -89,9 +89,17 @@ impl UpdateProducer {
                 // the chain, as the updater indexer's timelag will ensure this.
                 let last_committed = self.latest_committed_root()?;
 
+                let merkle_read = self.merkle_sync.merkle.read().await;
+                let merkle_last_committed = merkle_read.last_committed_root();
+
+                if last_committed != merkle_last_committed {
+                    info!("Syncing merkle tree is still catching up to indexed events. Db last committed: {:?}. Merkle last committed: {:?}.", last_committed, merkle_last_committed);
+                    continue;
+                }
+
                 // The produced update is also confirmed state in the chain, as 
                 // home indexing timelag for dispatched messages ensures this.
-                let new_root = self.merkle_sync.root().await;
+                let new_root = merkle_read.root();
 
                 // If last committed root is same as current merkle root,
                 // no update to produce
