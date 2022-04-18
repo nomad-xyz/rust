@@ -1,6 +1,6 @@
 use color_eyre::{eyre::ensure, Result};
 use ethers::{
-    prelude::{NameOrAddress, TransactionReceipt},
+    prelude::TransactionReceipt,
     providers::{EscalatingPending, Middleware, StreamExt},
     signers::Signer,
     types::transaction::eip2718::TypedTransaction,
