@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+### v0.1.0-rc.11
+
 - add new optional fields to bridge gui specific configs, update types
 
 ### v0.1.0-rc.10
