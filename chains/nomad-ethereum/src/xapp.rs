@@ -31,6 +31,7 @@ where
     #[allow(dead_code)]
     pub fn new(
         provider: Arc<M>,
+        read_provider: Arc<M>,
         ContractLocator {
             name,
             domain,

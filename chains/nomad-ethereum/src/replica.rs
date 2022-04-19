@@ -34,6 +34,7 @@ where
     /// Create new EthereumHomeIndexer
     pub fn new(
         provider: Arc<M>,
+        _read_provider: Arc<M>,
         ContractLocator {
             name: _,
             domain: _,
@@ -138,6 +139,7 @@ where
     /// chain
     pub fn new(
         provider: Arc<M>,
+        read_provider: Arc<M>,
         ContractLocator {
             name,
             domain,

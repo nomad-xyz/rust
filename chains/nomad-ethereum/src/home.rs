@@ -3,7 +3,7 @@
 
 use async_trait::async_trait;
 use color_eyre::Result;
-use ethers::core::types::{Signature, H256, U256};
+use ethers::{middleware::TimeLag, providers::Middleware, core::types::{Signature, H256, U256}};
 use futures_util::future::join_all;
 use nomad_core::{
     ChainCommunicationError, Common, CommonIndexer, ContractLocator, DoubleUpdate, Home,
@@ -43,6 +43,7 @@ where
     /// Create new EthereumHomeIndexer
     pub fn new(
         provider: Arc<M>,
+        _read_provider: Arc<M>,
         ContractLocator {
             name: _,
             domain: _,
@@ -175,6 +176,7 @@ where
     /// chain
     pub fn new(
         provider: Arc<M>,
+        read_provider: Arc<M>,
         ContractLocator {
             name,
             domain,
@@ -184,7 +186,7 @@ where
         Self {
             contract: Arc::new(EthereumHomeInternal::new(
                 address.as_ethereum_address().expect("!eth address"),
-                provider.clone(),
+                read_provider,
             )),
             domain: *domain,
             name: name.to_owned(),
