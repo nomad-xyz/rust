@@ -201,11 +201,12 @@ impl ReplicaVariants {
     }
 }
 
-impl<M> From<EthereumReplica<M>> for Replicas
+impl<W, R> From<EthereumReplica<W, R>> for Replicas
 where
-    M: ethers::providers::Middleware + 'static,
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
 {
-    fn from(replica: EthereumReplica<M>) -> Self {
+    fn from(replica: EthereumReplica<W, R>) -> Self {
         ReplicaVariants::Ethereum(Box::new(replica)).into()
     }
 }

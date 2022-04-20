@@ -31,11 +31,12 @@ impl ConnectionManagers {
     }
 }
 
-impl<M> From<EthereumConnectionManager<M>> for ConnectionManagers
+impl<W, R> From<EthereumConnectionManager<W, R>> for ConnectionManagers
 where
-    M: ethers::providers::Middleware + 'static,
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
 {
-    fn from(connection_manager: EthereumConnectionManager<M>) -> Self {
+    fn from(connection_manager: EthereumConnectionManager<W, R>) -> Self {
         ConnectionManagers::Ethereum(Box::new(connection_manager))
     }
 }
