@@ -150,11 +150,11 @@ where
         Self {
             write_contract: Arc::new(EthereumReplicaInternal::new(
                 address.as_ethereum_address().expect("!eth address"),
-                write_provider.clone(),
+                write_provider,
             )),
             read_contract: Arc::new(EthereumReplicaInternal::new(
                 address.as_ethereum_address().expect("!eth address"),
-                read_provider.clone(),
+                read_provider,
             )),
             domain: *domain,
             name: name.to_owned(),
