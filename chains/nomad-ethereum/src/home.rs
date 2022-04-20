@@ -13,7 +13,7 @@ use nomad_core::{
     HomeIndexer, Message, RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State,
     TxOutcome, Update, UpdateMeta,
 };
-use std::{convert::TryFrom, error::Error as StdError, marker::PhantomData, sync::Arc};
+use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
 use tracing::instrument;
 
 use crate::{bindings::home::Home as EthereumHomeInternal, report_tx};
@@ -29,27 +29,23 @@ where
 
 #[derive(Debug)]
 /// Struct that retrieves event data for an Ethereum home
-pub struct EthereumHomeIndexer<W, R>
+pub struct EthereumHomeIndexer<R>
 where
-    W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
     contract: Arc<EthereumHomeInternal<R>>,
     provider: Arc<R>,
     from_height: u32,
     chunk_size: u32,
-    _phantom: PhantomData<W>,
 }
 
-impl<W, R> EthereumHomeIndexer<W, R>
+impl<R> EthereumHomeIndexer<R>
 where
-    W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
     /// Create new EthereumHomeIndexer
     pub fn new(
-        _write_provider: Arc<W>,
-        read_provider: Arc<R>,
+        provider: Arc<R>,
         ContractLocator {
             name: _,
             domain: _,
@@ -61,20 +57,18 @@ where
         Self {
             contract: Arc::new(EthereumHomeInternal::new(
                 address.as_ethereum_address().expect("!eth address"),
-                read_provider.clone(),
+                provider.clone(),
             )),
-            provider: read_provider,
+            provider,
             from_height,
             chunk_size,
-            _phantom: Default::default(),
         }
     }
 }
 
 #[async_trait]
-impl<W, R> CommonIndexer for EthereumHomeIndexer<W, R>
+impl<R> CommonIndexer for EthereumHomeIndexer<R>
 where
-    W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
     #[instrument(err, skip(self))]
@@ -137,9 +131,8 @@ where
 }
 
 #[async_trait]
-impl<W, R> HomeIndexer for EthereumHomeIndexer<W, R>
+impl<R> HomeIndexer for EthereumHomeIndexer<R>
 where
-    W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
     #[instrument(err, skip(self))]

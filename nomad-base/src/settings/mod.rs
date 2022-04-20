@@ -360,7 +360,6 @@ impl Settings {
     /// instantiated with a built in timelag. The timelag is handled by the
     /// ContractSync.
     pub async fn try_home_indexer(&self) -> Result<HomeIndexers, Report> {
-        let signer = self.get_signer(&self.home.name).await;
         let timelag = self.home_timelag();
 
         match &self.home.chain {
@@ -372,7 +371,6 @@ impl Settings {
                         domain: self.home.domain,
                         address: self.home.address,
                     },
-                    signer,
                     timelag,
                     self.home.page_settings.from,
                     self.home.page_settings.page_size,
@@ -387,7 +385,6 @@ impl Settings {
     /// instantiated with a built in timelag. The timelag is handled by the
     /// ContractSync.
     pub async fn try_replica_indexer(&self, setup: &ChainSetup) -> Result<CommonIndexers, Report> {
-        let signer = self.get_signer(&setup.name).await;
         let timelag = self.replica_timelag(&setup.name);
 
         match &setup.chain {
@@ -399,7 +396,6 @@ impl Settings {
                         domain: setup.domain,
                         address: setup.address,
                     },
-                    signer,
                     timelag,
                     setup.page_settings.from,
                     setup.page_settings.page_size,

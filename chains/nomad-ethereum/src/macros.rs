@@ -71,7 +71,42 @@ macro_rules! log_tx_details {
     };
 }
 
-macro_rules! boxed_trait {
+macro_rules! boxed_indexer {
+    (@timelag $provider:expr, $abi:ident, $timelag:ident, $($tail:tt)*) => {{
+        if let Some(lag) = $timelag {
+            let provider: Arc<_> = ethers::middleware::TimeLag::new($provider, lag).into();
+            Box::new(crate::$abi::new(provider, $($tail)*))
+        } else {
+            Box::new(crate::$abi::new($provider, $($tail)*))
+        }
+    }};
+    (@ws $url:expr, $($tail:tt)*) => {{
+        let ws = ethers::providers::Ws::connect($url).await?;
+        let provider = Arc::new(ethers::providers::Provider::new(ws));
+        boxed_indexer!(@timelag provider, $($tail)*)
+    }};
+    (@http $url:expr, $($tail:tt)*) => {{
+        let provider: crate::retrying::RetryingProvider<ethers::providers::Http> = $url.parse()?;
+        let provider = Arc::new(ethers::providers::Provider::new(provider));
+        boxed_indexer!(@timelag provider, $($tail)*)
+    }};
+    ($name:ident, $abi:ident, $trait:ident, $($n:ident:$t:ty),*)  => {
+        #[doc = "Cast a contract locator to a live contract handle"]
+        pub async fn $name(conn: nomad_xyz_configuration::chains::ethereum::Connection, locator: &ContractLocator, timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
+            let b: Box<dyn $trait> = match conn {
+                nomad_xyz_configuration::chains::ethereum::Connection::Http { url } => {
+                    boxed_indexer!(@http url, $abi, timelag, locator, $($n),*)
+                }
+                nomad_xyz_configuration::chains::ethereum::Connection::Ws { url } => {
+                    boxed_indexer!(@ws url, $abi, timelag, locator, $($n),*)
+                }
+            };
+            Ok(b)
+        }
+    };
+}
+
+macro_rules! boxed_contract {
     (@timelag $provider:expr, $abi:ident, $timelag:ident, $($tail:tt)*) => {{
         let write_provider: Arc<_> = $provider.clone();
             if let Some(lag) = $timelag {
@@ -102,30 +137,30 @@ macro_rules! boxed_trait {
             // Manage signing locally
             let signing_provider = Arc::new(ethers::middleware::SignerMiddleware::new(provider, signer));
 
-            boxed_trait!(@timelag signing_provider, $($tail)*)
+            boxed_contract!(@timelag signing_provider, $($tail)*)
         } else {
-            boxed_trait!(@timelag $provider, $($tail)*)
+            boxed_contract!(@timelag $provider, $($tail)*)
         }
     }};
     (@ws $url:expr, $($tail:tt)*) => {{
         let ws = ethers::providers::Ws::connect($url).await?;
         let provider = Arc::new(ethers::providers::Provider::new(ws));
-        boxed_trait!(@signer provider, $($tail)*)
+        boxed_contract!(@signer provider, $($tail)*)
     }};
     (@http $url:expr, $($tail:tt)*) => {{
         let provider: crate::retrying::RetryingProvider<ethers::providers::Http> = $url.parse()?;
         let provider = Arc::new(ethers::providers::Provider::new(provider));
-        boxed_trait!(@signer provider, $($tail)*)
+        boxed_contract!(@signer provider, $($tail)*)
     }};
     ($name:ident, $abi:ident, $trait:ident, $($n:ident:$t:ty),*)  => {
         #[doc = "Cast a contract locator to a live contract handle"]
         pub async fn $name(conn: nomad_xyz_configuration::chains::ethereum::Connection, locator: &ContractLocator, signer: Option<Signers>, timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
             let b: Box<dyn $trait> = match conn {
                 nomad_xyz_configuration::chains::ethereum::Connection::Http { url } => {
-                    boxed_trait!(@http url, signer, $abi, timelag, locator, $($n),*)
+                    boxed_contract!(@http url, signer, $abi, timelag, locator, $($n),*)
                 }
                 nomad_xyz_configuration::chains::ethereum::Connection::Ws { url } => {
-                    boxed_trait!(@ws url, signer, $abi, timelag, locator, $($n),*)
+                    boxed_contract!(@ws url, signer, $abi, timelag, locator, $($n),*)
                 }
             };
             Ok(b)

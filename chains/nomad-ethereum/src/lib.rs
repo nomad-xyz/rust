@@ -47,23 +47,24 @@ pub struct Chain {
     ethers: ethers::providers::Provider<ethers::providers::Http>,
 }
 
-boxed_trait!(
+boxed_indexer!(
     make_home_indexer,
     EthereumHomeIndexer,
     HomeIndexer,
     from_height: u32,
     chunk_size: u32
 );
-boxed_trait!(
+boxed_indexer!(
     make_replica_indexer,
     EthereumReplicaIndexer,
     CommonIndexer,
     from_height: u32,
     chunk_size: u32
 );
-boxed_trait!(make_replica, EthereumReplica, Replica,);
-boxed_trait!(make_home, EthereumHome, Home,);
-boxed_trait!(
+
+boxed_contract!(make_replica, EthereumReplica, Replica,);
+boxed_contract!(make_home, EthereumHome, Home,);
+boxed_contract!(
     make_conn_manager,
     EthereumConnectionManager,
     ConnectionManager,
