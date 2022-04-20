@@ -4,7 +4,6 @@
 use async_trait::async_trait;
 use nomad_core::*;
 use nomad_types::NomadIdentifier;
-use std::marker::PhantomData;
 use std::sync::Arc;
 
 use crate::bindings::xappconnectionmanager::XAppConnectionManager as EthereumConnectionManagerInternal;
@@ -22,7 +21,6 @@ where
     read_contract: Arc<EthereumConnectionManagerInternal<R>>,
     domain: u32,
     name: String,
-    _phantom: PhantomData<W>,
 }
 
 impl<W, R> EthereumConnectionManager<W, R>
@@ -53,7 +51,6 @@ where
             )),
             domain: *domain,
             name: name.to_owned(),
-            _phantom: Default::default(),
         }
     }
 }
