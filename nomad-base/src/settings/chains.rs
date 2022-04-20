@@ -54,6 +54,8 @@ pub struct ChainSetup {
     pub page_settings: PageSettings,
     /// Network specific finality in blocks
     pub finality: u8,
+    /// Network specific block time in seconds
+    pub block_time: u64,
     /// The chain connection details
     #[serde(flatten)]
     pub chain: ChainConf,
@@ -82,6 +84,7 @@ impl ChainSetup {
             .expect("!domain");
         let domain_number = domain.domain;
         let finality = domain.specs.finalization_blocks;
+        let block_time = domain.specs.block_time;
         let core = config.core().get(&resident_network).expect("!core");
         let (address, page_settings) = match core {
             CoreContracts::Evm(core) => {
@@ -117,6 +120,7 @@ impl ChainSetup {
             address,
             page_settings,
             finality,
+            block_time,
             chain,
             disabled: None,
         }

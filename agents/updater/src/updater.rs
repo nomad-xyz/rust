@@ -19,6 +19,7 @@ use nomad_core::{Common, Signers};
 pub struct Updater {
     signer: Arc<Signers>,
     interval_seconds: u64,
+    finalization_seconds: u64,
     pub(crate) core: AgentCore,
     signed_attestation_count: IntCounter,
     submitted_update_count: IntCounter,
@@ -32,7 +33,12 @@ impl AsRef<AgentCore> for Updater {
 
 impl Updater {
     /// Instantiate a new updater
-    pub fn new(signer: Signers, interval_seconds: u64, core: AgentCore) -> Self {
+    pub fn new(
+        signer: Signers,
+        interval_seconds: u64,
+        finalization_seconds: u64,
+        core: AgentCore,
+    ) -> Self {
         let home_name = core.home.name();
         let signed_attestation_count = core
             .metrics
@@ -57,6 +63,7 @@ impl Updater {
         Self {
             signer: Arc::new(signer),
             interval_seconds,
+            finalization_seconds,
             core,
             signed_attestation_count,
             submitted_update_count,
@@ -88,8 +95,18 @@ impl NomadAgent for Updater {
         )
         .await?;
         let interval_seconds = settings.agent.interval;
+
+        let block_time = settings.as_ref().home.block_time;
+        let finality_blocks = settings.as_ref().home.finality as u64;
+        let finalization_seconds = finality_blocks * block_time;
+
         let core = settings.as_ref().try_into_core(Self::AGENT_NAME).await?;
-        Ok(Self::new(signer, interval_seconds, core))
+        Ok(Self::new(
+            signer,
+            interval_seconds,
+            finalization_seconds,
+            core,
+        ))
     }
 
     fn build_channel(&self, _replica: &str) -> Self::Channel {
@@ -125,6 +142,7 @@ impl NomadAgent for Updater {
             self.home(),
             db,
             self.interval_seconds,
+            self.finalization_seconds,
             self.submitted_update_count.clone(),
         );
 
