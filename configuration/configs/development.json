@@ -1,30 +1,29 @@
 {
   "version": 0,
   "environment": "development",
-  "networks": ["goerli", "kovan", "xdai", "rinkeby"],
+  "networks": ["rinkeby", "goerli", "kovan"],
   "rpcs": {
-    "goerli": ["https://goerli-light.eth.linkpool.io"],
-    "kovan": ["https://kovan.poa.network"],
     "rinkeby": ["https://rinkeby-light.eth.linkpool.io"],
-    "xdai": ["https://dai.poa.network/"]
+    "goerli": ["https://goerli-light.eth.linkpool.io"],
+    "kovan": ["https://kovan.poa.network"]
   },
   "protocol": {
     "governor": {
-      "domain": 2000,
+      "domain": 1001,
       "id": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec"
     },
     "networks": {
       "rinkeby": {
         "name": "rinkeby",
-        "domain": 2000,
-        "connections": ["xdai", "kovan", "goerli"],
+        "domain": 1001,
+        "connections": ["goerli", "kovan"],
         "configuration": {
           "optimisticSeconds": 10,
           "processGas": 850000,
           "reserveGas": 15000,
           "maximumGas": 1000000,
-          "updater": "0x4177372fd9581ceb2367e0ce84adc5dad9df8d55",
-          "watchers": ["0x20ac2fd664ba5406a7262967c34107e708dcb18e"],
+          "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4c",
+          "watchers": ["0x8ad65ba028cae9e3932959d5c167a09ede941d2c"],
           "governance": {
             "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
             "recoveryTimelock": 180
@@ -35,7 +34,7 @@
           "blockTime": 15,
           "finalizationBlocks": 80,
           "supports1559": true,
-          "confirmations": 2,
+          "confirmations": 4,
           "blockExplorer": "https://rinkeby.etherscan.io/",
           "indexPageSize": 2000
         },
@@ -48,15 +47,15 @@
       },
       "goerli": {
         "name": "goerli",
-        "domain": 8000,
-        "connections": ["xdai", "rinkeby", "kovan"],
+        "domain": 3001,
+        "connections": ["rinkeby", "kovan"],
         "configuration": {
           "optimisticSeconds": 10,
           "processGas": 850000,
           "reserveGas": 15000,
           "maximumGas": 1000000,
-          "updater": "0x4177372fd9581ceb2367e0ce84adc5dad9df8d55",
-          "watchers": ["0x20ac2fd664ba5406a7262967c34107e708dcb18e"],
+          "updater": "0xd16bdbbc56090156ec609ebebc8bace1240fa22e",
+          "watchers": ["0x69520f1cec6199fe93c6c77881b5de701e0efeff"],
           "governance": {
             "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
             "recoveryTimelock": 180
@@ -67,7 +66,7 @@
           "blockTime": 15,
           "finalizationBlocks": 100,
           "supports1559": true,
-          "confirmations": 5,
+          "confirmations": 4,
           "blockExplorer": "https://goerli.etherscan.io/",
           "indexPageSize": 2000
         },
@@ -78,49 +77,17 @@
           "deployGas": 850000
         }
       },
-      "xdai": {
-        "name": "xdai",
-        "domain": 9000,
-        "connections": ["kovan", "rinkeby", "goerli"],
-        "configuration": {
-          "optimisticSeconds": 10,
-          "processGas": 850000,
-          "reserveGas": 15000,
-          "maximumGas": 1000000,
-          "updater": "0x4177372fd9581ceb2367e0ce84adc5dad9df8d55",
-          "watchers": ["0x20ac2fd664ba5406a7262967c34107e708dcb18e"],
-          "governance": {
-            "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
-            "recoveryTimelock": 180
-          }
-        },
-        "specs": {
-          "chainId": 100,
-          "blockTime": 5,
-          "finalizationBlocks": 3,
-          "supports1559": true,
-          "confirmations": 8,
-          "blockExplorer": "https://blockscout.com/xdai/mainnet/",
-          "indexPageSize": 2000
-        },
-        "bridgeConfiguration": {
-          "weth": "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d",
-          "customs": [],
-          "mintGas": 200000,
-          "deployGas": 850000
-        }
-      },
       "kovan": {
         "name": "kovan",
-        "domain": 3000,
-        "connections": ["xdai", "goerli", "rinkeby"],
+        "domain": 2001,
+        "connections": ["rinkeby", "goerli"],
         "configuration": {
           "optimisticSeconds": 10,
           "processGas": 850000,
           "reserveGas": 15000,
           "maximumGas": 1000000,
-          "updater": "0x4177372fd9581ceb2367e0ce84adc5dad9df8d55",
-          "watchers": ["0x20ac2fd664ba5406a7262967c34107e708dcb18e"],
+          "updater": "0x45818549c1e7d16c915fe23c1524b524507a184b",
+          "watchers": ["0xe8c6bf61d5f5744f465865772e1de88059267bac"],
           "governance": {
             "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
             "recoveryTimelock": 180
@@ -129,9 +96,9 @@
         "specs": {
           "chainId": 42,
           "blockTime": 4,
-          "finalizationBlocks": 5,
+          "finalizationBlocks": 10,
           "supports1559": false,
-          "confirmations": 2,
+          "confirmations": 15,
           "blockExplorer": "https://kovan.etherscan.io/",
           "indexPageSize": 2000
         },
@@ -145,218 +112,150 @@
     }
   },
   "core": {
-    "xdai": {
-      "deployHeight": 21589273,
-      "upgradeBeaconController": "0x9eb1a4075c8484eb3dcf67da7ee87b2093218cfe",
-      "xAppConnectionManager": "0x75f5a07e565915442bcc7f98962714fec4ccf05d",
-      "updaterManager": "0x66daa391ef8679b08246ab9a5f56ebc5eb6489c8",
-      "governanceRouter": {
-        "implementation": "0x0aa0bdd64c0c06bf05d9a21cc1b77be3687033a9",
-        "proxy": "0xadb29b47156ef7ce5200c9a1fc84bc83f2d97a50",
-        "beacon": "0x2bc28a1321f51ca147f5916a3c0841b8f7d816cf"
-      },
-      "home": {
-        "implementation": "0x6a5f9531d1877ebe96bc0631dbf64bbcf1f7421c",
-        "proxy": "0x53e7f6afbecbb18a8e4989b89adb1f0ce85272f5",
-        "beacon": "0x2b64cac924047e240a894e93a38f7ddfa82296a2"
-      },
-      "replicas": {
-        "rinkeby": {
-          "implementation": "0x23cf8d606b51852251dafd8246ba67c22de67ffa",
-          "proxy": "0x6560683e75d8ba788c53f9bc1d570b5b43120cdc",
-          "beacon": "0x702fe1484584d8e6b7b4d3037a4a151380d12e11"
-        },
-        "goerli": {
-          "implementation": "0x23cf8d606b51852251dafd8246ba67c22de67ffa",
-          "proxy": "0x8054173b34bc56a4bc9195966730f7d2ce4e814d",
-          "beacon": "0x702fe1484584d8e6b7b4d3037a4a151380d12e11"
-        },
-        "kovan": {
-          "implementation": "0x23cf8d606b51852251dafd8246ba67c22de67ffa",
-          "proxy": "0xb45424ac6f5f2f23433d078827f5d8b4e3996211",
-          "beacon": "0x702fe1484584d8e6b7b4d3037a4a151380d12e11"
-        }
-      }
-    },
     "rinkeby": {
-      "deployHeight": 10487582,
-      "upgradeBeaconController": "0xc2a35e27f9f30ffc918e49ab66183985760b943b",
-      "xAppConnectionManager": "0xef2f784eccc723b6991b599150f84583310e5a13",
-      "updaterManager": "0x21e956543645dc57ff769751427e80ae10a8f629",
+      "deployHeight": 10537248,
+      "upgradeBeaconController": "0xffc73f39f22ebfbe4643c7abcd972edc62bfb371",
+      "xAppConnectionManager": "0xb26806b76540348d655a12a5b8427ee088459625",
+      "updaterManager": "0xd7191ef96218836fd73f58c7579e88062e162321",
       "governanceRouter": {
-        "implementation": "0x16d3482523bdda46f6a553e8eb0facdec5ae25ce",
-        "proxy": "0xa588ea16cd9b18528e8e27477d15954da796ea0c",
-        "beacon": "0xb2de8f610f4a8c369031a167b076db023b69ca72"
+        "implementation": "0xebedb3243a24a940f086de8cadc96883df56e9de",
+        "proxy": "0xfbb2fec4fcb5738c739b9705e723117581cbabeb",
+        "beacon": "0x0574d16015f9eef1d228c3c02d551ca8a7458036"
       },
       "home": {
-        "implementation": "0x4ab996a5842825f3b7ca008323216ad64d624356",
-        "proxy": "0x1964829c8b41e1992b6fbba74d6053eadce25313",
-        "beacon": "0x44487dc2d1d3f63ae3196f95c92c2212fec8fcdc"
+        "implementation": "0x87787132ad6282c156ed3e3aaeebbfbc35728f15",
+        "proxy": "0x0977fc99b94fd769ea4fbbfa14777434f773ced2",
+        "beacon": "0x8c49b91b307cd9d00838b947cf7f4a25bc051152"
       },
       "replicas": {
-        "goerli": {
-          "implementation": "0xd486c03943ae54ba1a7f4103cd11b2f15f77effb",
-          "proxy": "0xc4b49e76cb08db8fc3ef95daca098bead01238ff",
-          "beacon": "0x4e34523f5058cbcd9fdfad5e0a21644eca98ed3d"
-        },
-        "xdai": {
-          "implementation": "0xd486c03943ae54ba1a7f4103cd11b2f15f77effb",
-          "proxy": "0x123bda43d72b1c5655ee229320a9b95cfbcf1249",
-          "beacon": "0x4e34523f5058cbcd9fdfad5e0a21644eca98ed3d"
-        },
         "kovan": {
-          "implementation": "0xd486c03943ae54ba1a7f4103cd11b2f15f77effb",
-          "proxy": "0xd343f7e830c8c8218a6aab9d2217028c324388ac",
-          "beacon": "0x4e34523f5058cbcd9fdfad5e0a21644eca98ed3d"
-        }
-      }
-    },
-    "kovan": {
-      "deployHeight": 30961672,
-      "upgradeBeaconController": "0x3039c8c30cd415fa73726fa9837298067d4c3445",
-      "xAppConnectionManager": "0xbb0170d6a855b6ab613c5ee2bfda3a04f154849a",
-      "updaterManager": "0x02536b18beb3971b38395ad155687d5695230dd9",
-      "governanceRouter": {
-        "implementation": "0x3c1f39958548e76b3a31e671b9b9f9c074e51f7a",
-        "proxy": "0xf8af4ddf1c6701f98c8105eea781e594e64e7583",
-        "beacon": "0xec2dbf0496a3c977e93a34069a6e9e3f4374a29a"
-      },
-      "home": {
-        "implementation": "0x378e66c2e50a1efba337ea4e004e9b752030f0a7",
-        "proxy": "0x2a1909f13335f7df2ece92d93765746e5ef1f991",
-        "beacon": "0xb935edad32cd15e7a60313daf3674a882c245fcb"
-      },
-      "replicas": {
+          "implementation": "0xad74bef73458ddb8646af7a2e9a56734fa44694c",
+          "proxy": "0x097a3eb6cd351ab28de67a0a0bda9e0e32733da7",
+          "beacon": "0x8dc1c77718b6f97f4a1e06e234ba2c8defd9cf9a"
+        },
         "goerli": {
-          "implementation": "0x8a8145802dd190e9ca10981afe43887f403c8da1",
-          "proxy": "0xe50d7a5205d165b53b17bc5daa0d99f1f3c9bd77",
-          "beacon": "0xc9bd9d853678fd4481dd6aa3a28ea62e0191fda0"
-        },
-        "rinkeby": {
-          "implementation": "0x8a8145802dd190e9ca10981afe43887f403c8da1",
-          "proxy": "0x791cabf8f10e683b7fbe7186bf672729d8ebf1d4",
-          "beacon": "0xc9bd9d853678fd4481dd6aa3a28ea62e0191fda0"
-        },
-        "xdai": {
-          "implementation": "0x8a8145802dd190e9ca10981afe43887f403c8da1",
-          "proxy": "0xfd04f8ba72a90e29e4d914bffaa2e36901226f19",
-          "beacon": "0xc9bd9d853678fd4481dd6aa3a28ea62e0191fda0"
+          "implementation": "0xad74bef73458ddb8646af7a2e9a56734fa44694c",
+          "proxy": "0x96ee295d2c96ea0353b25ff0b8e8e0b8e64db60f",
+          "beacon": "0x8dc1c77718b6f97f4a1e06e234ba2c8defd9cf9a"
         }
       }
     },
     "goerli": {
-      "deployHeight": 6698560,
-      "upgradeBeaconController": "0xe28c6dd9c6b317bc5167a21982042f9d77573527",
-      "xAppConnectionManager": "0x0a0f48f421764f213c389cda3278b8d31bea2ccf",
-      "updaterManager": "0x82ba84e987bb96bc071ce2412b81d96dd0eb261e",
+      "deployHeight": 6748555,
+      "upgradeBeaconController": "0x5bba73ef76bf303c0b48ade5d611bb2f80471653",
+      "xAppConnectionManager": "0x859943879f79ce8d2e9e1d8c848c7ce9f6eb63d8",
+      "updaterManager": "0x75bd8ab02238dca52f303013f038d4e2d834e8fc",
       "governanceRouter": {
-        "implementation": "0x91928afb9bd78dfce1ee021137e6b4accec82067",
-        "proxy": "0x047d113f76f945b44ddc5a93bd42d01a421f2f2a",
-        "beacon": "0x95bbc7bdb8bcf5750e742f4a374a654493f5cf13"
+        "implementation": "0x79ea0091b38cb6a95bef2ae3bdbf28af49ba1c28",
+        "proxy": "0x66d093d20b3dd088397695c65df980c014da5e3e",
+        "beacon": "0xaabd0850ab63a1e856521b900b40b496a99e8560"
       },
       "home": {
-        "implementation": "0x6d19a2f1d1c4afd6f37209cc9fd971c5f22d6a8f",
-        "proxy": "0x12d837396e5cd6b0e244a83e7559ad211d7b274f",
-        "beacon": "0x486612b71af4e558d653d2b8f0696e24b1363302"
+        "implementation": "0x0ef8ad9603f15127916e2d4777453ac885ae4669",
+        "proxy": "0x454f1ec431470063a1792ead14c1f10876796e5f",
+        "beacon": "0x25ec670059754b859fdcbdb6802c7644fd0a1af5"
       },
       "replicas": {
-        "kovan": {
-          "implementation": "0x81d5197b73bd0a8f055bee524bb20f56a9e03d15",
-          "proxy": "0x370c271ae1d8fc8abb7e96cbf07680832be45bca",
-          "beacon": "0xd3cbbd9fe9fa81850e2e083c4fe05cc18b11a4b6"
-        },
         "rinkeby": {
-          "implementation": "0x81d5197b73bd0a8f055bee524bb20f56a9e03d15",
-          "proxy": "0x8cf35efe596010280dc202774465233002917a2e",
-          "beacon": "0xd3cbbd9fe9fa81850e2e083c4fe05cc18b11a4b6"
+          "implementation": "0x8a36fbccc8d844aaacbca71e7ec8847215bb82f2",
+          "proxy": "0xf405c58d95a8f2617505841bdacef6de27006d74",
+          "beacon": "0x4a455cbabd96dc9b0dba2f0ccbb58a2dad403df2"
         },
-        "xdai": {
-          "implementation": "0x81d5197b73bd0a8f055bee524bb20f56a9e03d15",
-          "proxy": "0x8dbc0ae3c0301807c4a70f4e7af1e1d261ca8547",
-          "beacon": "0xd3cbbd9fe9fa81850e2e083c4fe05cc18b11a4b6"
+        "kovan": {
+          "implementation": "0x8a36fbccc8d844aaacbca71e7ec8847215bb82f2",
+          "proxy": "0x9df21c4a016b8bd84000b29a3ba51980ddd7b37a",
+          "beacon": "0x4a455cbabd96dc9b0dba2f0ccbb58a2dad403df2"
+        }
+      }
+    },
+    "kovan": {
+      "deployHeight": 31134284,
+      "upgradeBeaconController": "0xb0aefe5a88eeda7af7171c57430b153251275c33",
+      "xAppConnectionManager": "0x5240cc5f271f6dcbcc5ec67be04fd9de0f50f91f",
+      "updaterManager": "0x8bd3e4b2ef10491fcc9153840a8ca54c7e7738bf",
+      "governanceRouter": {
+        "implementation": "0xf4a442eeecc3e275d5ed4d91ec6231c7ab8e2386",
+        "proxy": "0x3f7754a3e178acc32ff8d5887b38f4e7b1673d8b",
+        "beacon": "0xd3bd51f18b7a77f2d16364ec0e7a8e499f86c8e9"
+      },
+      "home": {
+        "implementation": "0x397a0edbdd4c89d1dad557ae5bac75f585d77b7d",
+        "proxy": "0x4730144aa70a22bd04338e4589ec8f55618e73bf",
+        "beacon": "0x1c29678a918b8b4823a76b542b199b82cf4629ba"
+      },
+      "replicas": {
+        "rinkeby": {
+          "implementation": "0x18f4019f6620e1593059b5a0518ceed6a6634373",
+          "proxy": "0x523c830c9007b595609a7e5f4885eeae6a4d2318",
+          "beacon": "0x6c6b091665520088dbfe8ccb1ecb1d0556814e0d"
+        },
+        "goerli": {
+          "implementation": "0x18f4019f6620e1593059b5a0518ceed6a6634373",
+          "proxy": "0x9969e1b2a9f81fc9066897b4865b58443967024b",
+          "beacon": "0x6c6b091665520088dbfe8ccb1ecb1d0556814e0d"
         }
       }
     }
   },
   "bridge": {
     "rinkeby": {
-      "deployHeight": 10487664,
+      "deployHeight": 10537318,
       "bridgeRouter": {
-        "implementation": "0xc1b768bf60f3a9567c7cdd2eb6757faad6b9e8f4",
-        "proxy": "0xaa448504df49b7e2da7dd98eeb07428f0dbf87ff",
-        "beacon": "0xa6235da4e04e77b6d80149456b19f5c81094dd3b"
+        "implementation": "0x4e103edd1971e2721105a1cb090d81821b70aa1e",
+        "proxy": "0x5731f3581d139e9a697448a34f55a89b781aac9a",
+        "beacon": "0xa778962b0ffbe7bc4449c308513a196bfa344232"
       },
       "tokenRegistry": {
-        "implementation": "0x9acf344d7bbf7ba9a702befdf5ef352a3dc52d3a",
-        "proxy": "0x3d6d35aa69b98d61d4142d58b2fc5eb92fedc510",
-        "beacon": "0xd562d8aa4c09b852653837dc65e1a7eeb55a139a"
+        "implementation": "0x2b91b5ce301bfc7b42927f40f9cef10b0c64f2f4",
+        "proxy": "0x7975a69a1fbccd03693e1ebec3e494be09d0604a",
+        "beacon": "0xa38175d60e5f3b08989694af084abdb9d86efba7"
       },
       "bridgeToken": {
-        "implementation": "0x43446fb97c6fdaf75a354f31216b8e0ef22eec04",
+        "implementation": "0x4fc8561f45da09098b0fe0f983a16202bf03106a",
         "proxy": "0x0000000000000000000000000000000000000000",
-        "beacon": "0x3e9cb6b14a8f09ce30310b9d857f4faf20bf3bff"
+        "beacon": "0xc19123a2afcc71220f603aec6228bc527db39fd0"
       },
-      "ethHelper": "0x619c76a9f02dd5aae46b71887f9f3bb1c7fbffec",
-      "customs": []
-    },
-    "xdai": {
-      "deployHeight": 21589528,
-      "bridgeRouter": {
-        "implementation": "0xf00614613d94e77dfbd00d4170587d01e7d0a373",
-        "proxy": "0x49eec77b2a47250309316c6552b028196fbdf403",
-        "beacon": "0xdb93126357979d2456c86f82f479804df95de0ac"
-      },
-      "tokenRegistry": {
-        "implementation": "0x3693ba1993ff46e39af54ee76650f3c12d905801",
-        "proxy": "0x2d5df41069865ff9b85fd3d11fd0361c78bd3ae8",
-        "beacon": "0x8ae5bd0e9350740e201fa30acac10a930bf0deb4"
-      },
-      "bridgeToken": {
-        "implementation": "0x8f53a12c92799d151c9fcbbc90968a559b10ccbd",
-        "proxy": "0x0000000000000000000000000000000000000000",
-        "beacon": "0xf915a97655daf08d1a4cb0486aea5a4dadd0fc4c"
-      },
-      "ethHelper": "0xe31ca9e09b506a75ed87bd822555761fa608ddd3",
-      "customs": []
-    },
-    "kovan": {
-      "deployHeight": 30961938,
-      "bridgeRouter": {
-        "implementation": "0x7945d6adc674e27351adea114077173a602cc3dd",
-        "proxy": "0x975622c7d9c217c1f0673d3e559e032993516077",
-        "beacon": "0xe17f06067062e8bdfabbf81b7141441657adaa42"
-      },
-      "tokenRegistry": {
-        "implementation": "0x10f0dae0e185e58404f6fad1dcd0a640da70ab25",
-        "proxy": "0xcf3499dc21c5754ecfb4d57331ffd930b666f255",
-        "beacon": "0x14a59c7d0e89a74d0fd02f714c82dfb56c104160"
-      },
-      "bridgeToken": {
-        "implementation": "0x2abf5c58efbaaf83e463e305e391a426a66a70ef",
-        "proxy": "0x0000000000000000000000000000000000000000",
-        "beacon": "0x0669536b22bc5954d2089a382fc08957fa4a39de"
-      },
-      "ethHelper": "0xab1884ad8b7165a67b771f76da5c32f62221efd4",
+      "ethHelper": "0x64586c361748e1973efdccda47c43bfd255d5238",
       "customs": []
     },
     "goerli": {
-      "deployHeight": 6698644,
+      "deployHeight": 6748625,
       "bridgeRouter": {
-        "implementation": "0x5affc0aa97af0e5de401b156de38cee7b34cfca0",
-        "proxy": "0xec61a85f851833da177c1ca39ece1ae9f6566947",
-        "beacon": "0xce6db382fc785eb6bc90d751081cb79f64d8ae77"
+        "implementation": "0x9b68006a0740411a315ceeda30f160a5263af005",
+        "proxy": "0x17e9b5d4fbd4359875e19bd06359ded7fba33f4c",
+        "beacon": "0x1e0db0d3361c6e7e78b68079cad63daf5e337c49"
       },
       "tokenRegistry": {
-        "implementation": "0xe5222901e25cb334bfb08a15c68d3bb65e273e30",
-        "proxy": "0x19ca8373e802c527e12dd9c3a5b45f73abef86c3",
-        "beacon": "0x8c025aee15bc475991d6b6d645043fc9c4d73463"
+        "implementation": "0xe195d2e4c247b5cce1630cb0b39d8bfedf66c0f3",
+        "proxy": "0xcaca3358fd90c8e7ae9689ac4d21a8a7ec58c030",
+        "beacon": "0x20d53a6835d201fcf9cceab9309a044f75388b83"
       },
       "bridgeToken": {
-        "implementation": "0xa78f972dca619b6c8af2cec8aa3293931a4cac80",
+        "implementation": "0xa42a96cfd0ecdb41514908d8e0a0a55b14ec199d",
         "proxy": "0x0000000000000000000000000000000000000000",
-        "beacon": "0x4ed8c9b40fabccfeca732d920bc4877d78d32e77"
+        "beacon": "0xa0f7bd4594dacc63a91b3c7857dbc789309aabe8"
       },
-      "ethHelper": "0xedc1bcb5a6b47483ed9640bbe4c91c3d2a9a6286",
+      "ethHelper": "0x6f646837e542b47a7c982da5ceb3676caabc00bf",
+      "customs": []
+    },
+    "kovan": {
+      "deployHeight": 31134545,
+      "bridgeRouter": {
+        "implementation": "0x2b56f51f74917852d19ec0b127358122a461dee3",
+        "proxy": "0xff3ecfa871d0419abf55ba5395c10c3c321c108c",
+        "beacon": "0xa3ff2c100c10fa34f3f79c79dd39aa86bc54326e"
+      },
+      "tokenRegistry": {
+        "implementation": "0x1d734e5897e8c98a25436bb85780e001310d5f34",
+        "proxy": "0xbedbb76cea6a3dc28ec3afbc137ec3b4749f4467",
+        "beacon": "0x4b6771cbd12526cba501b9e14cf98c391c4c8fdf"
+      },
+      "bridgeToken": {
+        "implementation": "0x9b5f25ae3edaf2ec85c484f425dce0dbe9ba7c98",
+        "proxy": "0x0000000000000000000000000000000000000000",
+        "beacon": "0x7af50c002a7e9e6fc683d8ca1d6840d3b5c285b7"
+      },
+      "ethHelper": "0xd71410e8f988ba97e95e2833ebf8d6c42cbcaa2d",
       "customs": []
     }
   },
@@ -378,9 +277,10 @@
         "enabled": true
       },
       "processor": {
+        "indexOnly": false,
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": ["kovan", "xdai", "goerli"],
+        "subsidizedRemotes": ["kovan", "goerli"],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
@@ -393,78 +293,9 @@
         "enabled": true
       },
       "kathy": {
-        "interval": 500,
-        "enabled": true
-      }
-    },
-    "kovan": {
-      "rpcStyle": "ethereum",
-      "db": "/usr/share/nomad",
-      "metrics": 9090,
-      "logging": {
-        "fmt": "json",
-        "level": "info"
-      },
-      "updater": {
-        "interval": 5,
-        "enabled": true
-      },
-      "relayer": {
-        "interval": 10,
-        "enabled": true
-      },
-      "processor": {
-        "allowed": null,
-        "denied": null,
-        "subsidizedRemotes": ["rinkeby", "xdai", "goerli"],
-        "s3": {
-          "bucket": "nomadxyz-development-proofs",
-          "region": "us-west-2"
+        "chat": {
+          "type": "default"
         },
-        "interval": 5,
-        "enabled": true
-      },
-      "watcher": {
-        "interval": 5,
-        "enabled": true
-      },
-      "kathy": {
-        "interval": 500,
-        "enabled": true
-      }
-    },
-    "xdai": {
-      "rpcStyle": "ethereum",
-      "db": "/usr/share/nomad",
-      "metrics": 9090,
-      "logging": {
-        "fmt": "json",
-        "level": "info"
-      },
-      "updater": {
-        "interval": 5,
-        "enabled": true
-      },
-      "relayer": {
-        "interval": 10,
-        "enabled": true
-      },
-      "processor": {
-        "allowed": null,
-        "denied": null,
-        "subsidizedRemotes": ["rinkeby", "kovan", "goerli"],
-        "s3": {
-          "bucket": "nomadxyz-development-proofs",
-          "region": "us-west-2"
-        },
-        "interval": 5,
-        "enabled": true
-      },
-      "watcher": {
-        "interval": 5,
-        "enabled": true
-      },
-      "kathy": {
         "interval": 500,
         "enabled": true
       }
@@ -486,9 +317,10 @@
         "enabled": true
       },
       "processor": {
+        "indexOnly": false,
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": ["rinkeby", "kovan", "xdai"],
+        "subsidizedRemotes": ["rinkeby", "kovan"],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
@@ -501,38 +333,72 @@
         "enabled": true
       },
       "kathy": {
+        "chat": {
+          "type": "default"
+        },
+        "interval": 500,
+        "enabled": true
+      }
+    },
+    "kovan": {
+      "rpcStyle": "ethereum",
+      "db": "/usr/share/nomad",
+      "metrics": 9090,
+      "logging": {
+        "fmt": "json",
+        "level": "info"
+      },
+      "updater": {
+        "interval": 5,
+        "enabled": true
+      },
+      "relayer": {
+        "interval": 10,
+        "enabled": true
+      },
+      "processor": {
+        "indexOnly": false,
+        "allowed": null,
+        "denied": null,
+        "subsidizedRemotes": ["rinkeby", "goerli"],
+        "s3": {
+          "bucket": "nomadxyz-development-proofs",
+          "region": "us-west-2"
+        },
+        "interval": 5,
+        "enabled": true
+      },
+      "watcher": {
+        "interval": 5,
+        "enabled": true
+      },
+      "kathy": {
+        "chat": {
+          "type": "default"
+        },
         "interval": 500,
         "enabled": true
       }
     }
   },
   "bridgeGui": {
-    "goerli": {
-      "displayName": "Goerli",
-      "nativeTokenSymbol": "gETH",
-      "connections": ["rinkeby"],
-      "manualProcessing": false,
-      "connextEnabled": true
-    },
     "kovan": {
       "displayName": "Kovan",
       "nativeTokenSymbol": "kETH",
       "connections": ["rinkeby"],
-      "manualProcessing": false,
+      "connextEnabled": true
+    },
+    "goerli": {
+      "displayName": "Goerli",
+      "nativeTokenSymbol": "gETH",
+      "connections": ["rinkeby"],
       "connextEnabled": true
     },
     "rinkeby": {
       "displayName": "Rinkeby",
       "nativeTokenSymbol": "rETH",
-      "connections": ["rinkeby", "kovan", "goerli", "xdai"],
+      "connections": ["rinkeby", "kovan", "goerli"],
       "manualProcessing": true,
-      "connextEnabled": true
-    },
-    "xdai": {
-      "displayName": "xDai",
-      "nativeTokenSymbol": "xDai",
-      "connections": ["rinkeby"],
-      "manualProcessing": false,
       "connextEnabled": true
     }
   }
