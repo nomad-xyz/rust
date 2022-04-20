@@ -38,6 +38,9 @@ impl UpdateSubmitter {
         let span = info_span!("UpdateSubmitter");
 
         tokio::spawn(async move {
+            info!("Sleeping for {} seconds waiting for timelagged reader to catch up.", self.finalization_seconds);
+            sleep(Duration::from_secs(self.finalization_seconds)).await;
+
             // start from the chain state
             let mut committed_root = self.home.committed_root().await?;
 
@@ -64,9 +67,12 @@ impl UpdateSubmitter {
                     // Continue from local state
                     committed_root = signed.update.new_root;
 
-                    // Sleep for finality x blocktime seconds to wait for 
+                    // Sleep for finality x blocktime seconds to wait for
                     // timelag reader to catch up
-                    info!("Submitted update with tx hash: {:?}. Waiting {} seconds before attempting next update submission.", tx.txid, self.finalization_seconds);
+                    info!(
+                        tx_hash = ?tx.txid,
+                        "Submitted update with tx hash {:?}. Sleeping for {} seconds before next tx submission.", tx.txid, self.finalization_seconds,
+                    );
                     sleep(Duration::from_secs(self.finalization_seconds)).await;
                 } else {
                     info!(
