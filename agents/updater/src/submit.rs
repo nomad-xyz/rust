@@ -38,7 +38,7 @@ impl UpdateSubmitter {
         let span = info_span!("UpdateSubmitter");
 
         tokio::spawn(async move {
-            info!("Sleeping for {} seconds waiting for timelagged reader to catch up.", self.finalization_seconds);
+            info!(sleep = self.finalization_seconds, "Sleeping, waiting for timelagged reader to catch up.");
             sleep(Duration::from_secs(self.finalization_seconds)).await;
 
             // start from the chain state
@@ -56,7 +56,7 @@ impl UpdateSubmitter {
                         new_root = ?signed.update.new_root,
                         hex_signature = %hex_signature,
                         "Submitting update to chain"
-                    );
+                );
 
                     // Submit update and let the home indexer pick up the
                     // update once it is confirmed state in the chain
@@ -71,14 +71,14 @@ impl UpdateSubmitter {
                     // timelag reader to catch up
                     info!(
                         tx_hash = ?tx.txid,
-                        "Submitted update with tx hash {:?}. Sleeping for {} seconds before next tx submission.", tx.txid, self.finalization_seconds,
+                        sleep = self.finalization_seconds,
+                        "Submitted update with tx hash {:?}. Sleeping before next tx submission.", tx.txid,
                     );
                     sleep(Duration::from_secs(self.finalization_seconds)).await;
                 } else {
                     info!(
                         committed_root = ?committed_root,
-                        "No produced update to submit for committed_root {}.",
-                        committed_root,
+                        "No produced update to submit for committed_root.",
                     )
                 }
             }
