@@ -397,7 +397,7 @@
     "rinkeby": {
       "displayName": "Rinkeby",
       "nativeTokenSymbol": "rETH",
-      "connections": ["rinkeby", "kovan", "goerli"],
+      "connections": ["kovan", "goerli"],
       "manualProcessing": true,
       "connextEnabled": true
     }
