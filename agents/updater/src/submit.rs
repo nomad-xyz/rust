@@ -13,6 +13,7 @@ pub(crate) struct UpdateSubmitter {
     home: Arc<CachingHome>,
     db: NomadDB,
     interval_seconds: u64,
+    finalization_seconds: u64,
     submitted_update_count: IntCounter,
 }
 
@@ -21,12 +22,14 @@ impl UpdateSubmitter {
         home: Arc<CachingHome>,
         db: NomadDB,
         interval_seconds: u64,
+        finalization_seconds: u64,
         submitted_update_count: IntCounter,
     ) -> Self {
         Self {
             home,
             db,
             interval_seconds,
+            finalization_seconds,
             submitted_update_count,
         }
     }
@@ -50,21 +53,29 @@ impl UpdateSubmitter {
                         new_root = ?signed.update.new_root,
                         hex_signature = %hex_signature,
                         "Submitting update to chain"
-                    );
+                );
 
                     // Submit update and let the home indexer pick up the
                     // update once it is confirmed state in the chain
-                    self.home.update(&signed).await?;
+                    let tx = self.home.update(&signed).await?;
 
                     self.submitted_update_count.inc();
 
-                    // continue from local state
+                    // Continue from local state
                     committed_root = signed.update.new_root;
+
+                    // Sleep for finality x blocktime seconds to wait for
+                    // timelag reader to catch up
+                    info!(
+                        tx_hash = ?tx.txid,
+                        sleep = self.finalization_seconds,
+                        "Submitted update with tx hash {:?}. Sleeping before next tx submission.", tx.txid,
+                    );
+                    sleep(Duration::from_secs(self.finalization_seconds)).await;
                 } else {
                     info!(
                         committed_root = ?committed_root,
-                        "No produced update to submit for committed_root {}.",
-                        committed_root,
+                        "No produced update to submit for committed_root.",
                     )
                 }
             }

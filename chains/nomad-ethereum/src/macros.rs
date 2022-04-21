@@ -71,8 +71,52 @@ macro_rules! log_tx_details {
     };
 }
 
-macro_rules! boxed_trait {
-    (@finish $provider:expr, $abi:ident, $signer:ident, $($tail:tt)*) => {{
+macro_rules! boxed_indexer {
+    (@timelag $provider:expr, $abi:ident, $timelag:ident, $($tail:tt)*) => {{
+        if let Some(lag) = $timelag {
+            let provider: Arc<_> = ethers::middleware::TimeLag::new($provider, lag).into();
+            Box::new(crate::$abi::new(provider, $($tail)*))
+        } else {
+            Box::new(crate::$abi::new($provider, $($tail)*))
+        }
+    }};
+    (@ws $url:expr, $($tail:tt)*) => {{
+        let ws = ethers::providers::Ws::connect($url).await?;
+        let provider = Arc::new(ethers::providers::Provider::new(ws));
+        boxed_indexer!(@timelag provider, $($tail)*)
+    }};
+    (@http $url:expr, $($tail:tt)*) => {{
+        let provider: crate::retrying::RetryingProvider<ethers::providers::Http> = $url.parse()?;
+        let provider = Arc::new(ethers::providers::Provider::new(provider));
+        boxed_indexer!(@timelag provider, $($tail)*)
+    }};
+    ($name:ident, $abi:ident, $trait:ident, $($n:ident:$t:ty),*)  => {
+        #[doc = "Cast a contract locator to a live contract handle"]
+        pub async fn $name(conn: nomad_xyz_configuration::chains::ethereum::Connection, locator: &ContractLocator, timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
+            let b: Box<dyn $trait> = match conn {
+                nomad_xyz_configuration::chains::ethereum::Connection::Http { url } => {
+                    boxed_indexer!(@http url, $abi, timelag, locator, $($n),*)
+                }
+                nomad_xyz_configuration::chains::ethereum::Connection::Ws { url } => {
+                    boxed_indexer!(@ws url, $abi, timelag, locator, $($n),*)
+                }
+            };
+            Ok(b)
+        }
+    };
+}
+
+macro_rules! boxed_contract {
+    (@timelag $provider:expr, $abi:ident, $timelag:ident, $($tail:tt)*) => {{
+        let write_provider: Arc<_> = $provider.clone();
+            if let Some(lag) = $timelag {
+                let read_provider: Arc<_> = ethers::middleware::TimeLag::new($provider, lag).into();
+                Box::new(crate::$abi::new(write_provider, read_provider, $($tail)*))
+            } else {
+                Box::new(crate::$abi::new(write_provider, $provider, $($tail)*))
+            }
+    }};
+    (@signer $provider:expr, $signer:ident, $($tail:tt)*) => {{
         if let Some(signer) = $signer {
             // If there's a provided signer, we want to manage every aspect
             // locally
@@ -91,45 +135,32 @@ macro_rules! boxed_trait {
             let provider = crate::gas::GasAdjusterMiddleware::with_default_policy(provider, provider_chain_id.as_u64());
 
             // Manage signing locally
-            let signing_provider = ethers::middleware::SignerMiddleware::new(provider, signer);
+            let signing_provider = Arc::new(ethers::middleware::SignerMiddleware::new(provider, signer));
 
-            Box::new(crate::$abi::new(signing_provider.into(), $($tail)*))
+            boxed_contract!(@timelag signing_provider, $($tail)*)
         } else {
-            Box::new(crate::$abi::new($provider, $($tail)*))
+            boxed_contract!(@timelag $provider, $($tail)*)
         }
     }};
-    (@timelag $provider:ident, $lag:ident, $($tail:tt)*) => {{
-        let provider: Arc<_> = ethers::middleware::TimeLag::new($provider, $lag).into();
-        boxed_trait!(@finish provider, $($tail)*)
-    }};
-    (@ws $url:expr, $timelag:ident, $($tail:tt)*) => {{
+    (@ws $url:expr, $($tail:tt)*) => {{
         let ws = ethers::providers::Ws::connect($url).await?;
         let provider = Arc::new(ethers::providers::Provider::new(ws));
-        if let Some(lag) = $timelag {
-            boxed_trait!(@timelag provider, lag, $($tail)*)
-        } else {
-            boxed_trait!(@finish provider, $($tail)*)
-        }
+        boxed_contract!(@signer provider, $($tail)*)
     }};
-    (@http $url:expr, $timelag:ident, $($tail:tt)*) => {{
+    (@http $url:expr, $($tail:tt)*) => {{
         let provider: crate::retrying::RetryingProvider<ethers::providers::Http> = $url.parse()?;
-        let provider = ethers::providers::Provider::new(provider);
-        let provider = Arc::new(provider);
-        if let Some(lag) = $timelag {
-            boxed_trait!(@timelag provider, lag, $($tail)*)
-        } else {
-            boxed_trait!(@finish provider, $($tail)*)
-        }
+        let provider = Arc::new(ethers::providers::Provider::new(provider));
+        boxed_contract!(@signer provider, $($tail)*)
     }};
     ($name:ident, $abi:ident, $trait:ident, $($n:ident:$t:ty),*)  => {
         #[doc = "Cast a contract locator to a live contract handle"]
         pub async fn $name(conn: nomad_xyz_configuration::chains::ethereum::Connection, locator: &ContractLocator, signer: Option<Signers>, timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
             let b: Box<dyn $trait> = match conn {
                 nomad_xyz_configuration::chains::ethereum::Connection::Http { url } => {
-                    boxed_trait!(@http url, timelag, $abi, signer, locator, $($n),*)
+                    boxed_contract!(@http url, signer, $abi, timelag, locator, $($n),*)
                 }
                 nomad_xyz_configuration::chains::ethereum::Connection::Ws { url } => {
-                    boxed_trait!(@ws url, timelag, $abi, signer, locator, $($n),*)
+                    boxed_contract!(@ws url, signer, $abi, timelag, locator, $($n),*)
                 }
             };
             Ok(b)

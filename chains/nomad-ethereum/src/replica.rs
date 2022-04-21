@@ -17,23 +17,23 @@ use crate::{bindings::replica::Replica as EthereumReplicaInternal, report_tx};
 
 #[derive(Debug)]
 /// Struct that retrieves indexes event data for Ethereum replica
-pub struct EthereumReplicaIndexer<M>
+pub struct EthereumReplicaIndexer<R>
 where
-    M: ethers::providers::Middleware,
+    R: ethers::providers::Middleware + 'static,
 {
-    contract: Arc<EthereumReplicaInternal<M>>,
-    provider: Arc<M>,
+    contract: Arc<EthereumReplicaInternal<R>>,
+    provider: Arc<R>,
     from_height: u32,
     chunk_size: u32,
 }
 
-impl<M> EthereumReplicaIndexer<M>
+impl<R> EthereumReplicaIndexer<R>
 where
-    M: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
 {
     /// Create new EthereumHomeIndexer
     pub fn new(
-        provider: Arc<M>,
+        provider: Arc<R>,
         ContractLocator {
             name: _,
             domain: _,
@@ -55,9 +55,9 @@ where
 }
 
 #[async_trait]
-impl<M> CommonIndexer for EthereumReplicaIndexer<M>
+impl<R> CommonIndexer for EthereumReplicaIndexer<R>
 where
-    M: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
 {
     #[instrument(err, skip(self))]
     async fn get_block_number(&self) -> Result<u32> {
@@ -120,24 +120,27 @@ where
 
 /// A struct that provides access to an Ethereum replica contract
 #[derive(Debug)]
-pub struct EthereumReplica<M>
+pub struct EthereumReplica<W, R>
 where
-    M: ethers::providers::Middleware,
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
 {
-    contract: Arc<EthereumReplicaInternal<M>>,
+    write_contract: Arc<EthereumReplicaInternal<W>>,
+    read_contract: Arc<EthereumReplicaInternal<R>>,
     domain: u32,
     name: String,
-    provider: Arc<M>,
 }
 
-impl<M> EthereumReplica<M>
+impl<W, R> EthereumReplica<W, R>
 where
-    M: ethers::providers::Middleware,
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
 {
     /// Create a reference to a Replica at a specific Ethereum address on some
     /// chain
     pub fn new(
-        provider: Arc<M>,
+        write_provider: Arc<W>,
+        read_provider: Arc<R>,
         ContractLocator {
             name,
             domain,
@@ -145,128 +148,17 @@ where
         }: &ContractLocator,
     ) -> Self {
         Self {
-            contract: Arc::new(EthereumReplicaInternal::new(
+            write_contract: Arc::new(EthereumReplicaInternal::new(
                 address.as_ethereum_address().expect("!eth address"),
-                provider.clone(),
+                write_provider,
+            )),
+            read_contract: Arc::new(EthereumReplicaInternal::new(
+                address.as_ethereum_address().expect("!eth address"),
+                read_provider,
             )),
             domain: *domain,
             name: name.to_owned(),
-            provider,
         }
-    }
-}
-
-#[async_trait]
-impl<M> Common for EthereumReplica<M>
-where
-    M: ethers::providers::Middleware + 'static,
-{
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    #[tracing::instrument(err)]
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
-        self.contract
-            .client()
-            .get_transaction_receipt(txid)
-            .await
-            .map_err(|e| Box::new(e) as Box<dyn StdError + Send + Sync>)?
-            .map(|receipt| receipt.try_into())
-            .transpose()
-    }
-
-    #[tracing::instrument(err)]
-    async fn updater(&self) -> Result<H256, ChainCommunicationError> {
-        Ok(self.contract.updater().call().await?.into())
-    }
-
-    #[tracing::instrument(err)]
-    async fn state(&self) -> Result<State, ChainCommunicationError> {
-        let state = self.contract.state().call().await?;
-        match state {
-            0 => Ok(State::Uninitialized),
-            1 => Ok(State::Active),
-            2 => Ok(State::Failed),
-            _ => unreachable!(),
-        }
-    }
-
-    #[tracing::instrument(err)]
-    async fn committed_root(&self) -> Result<H256, ChainCommunicationError> {
-        Ok(self.contract.committed_root().call().await?.into())
-    }
-
-    #[tracing::instrument(err)]
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self
-            .contract
-            .update(
-                update.update.previous_root.to_fixed_bytes(),
-                update.update.new_root.to_fixed_bytes(),
-                update.signature.to_vec().into(),
-            )
-            .gas(140_000);
-
-        report_tx!(tx, &self.provider).try_into()
-    }
-
-    #[tracing::instrument(err)]
-    async fn double_update(
-        &self,
-        double: &DoubleUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self.contract.double_update(
-            double.0.update.previous_root.to_fixed_bytes(),
-            [
-                double.0.update.new_root.to_fixed_bytes(),
-                double.1.update.new_root.to_fixed_bytes(),
-            ],
-            double.0.signature.to_vec().into(),
-            double.1.signature.to_vec().into(),
-        );
-
-        report_tx!(tx, &self.provider).try_into()
-    }
-}
-
-#[async_trait]
-impl<M> Replica for EthereumReplica<M>
-where
-    M: ethers::providers::Middleware + 'static,
-{
-    fn local_domain(&self) -> u32 {
-        self.domain
-    }
-
-    async fn remote_domain(&self) -> Result<u32, ChainCommunicationError> {
-        Ok(self.contract.remote_domain().call().await?)
-    }
-
-    #[tracing::instrument(err)]
-    async fn prove(&self, proof: &Proof) -> Result<TxOutcome, ChainCommunicationError> {
-        let mut sol_proof: [[u8; 32]; 32] = Default::default();
-        sol_proof
-            .iter_mut()
-            .enumerate()
-            .for_each(|(i, elem)| *elem = proof.path[i].to_fixed_bytes());
-
-        let tx = self
-            .contract
-            .prove(proof.leaf.into(), sol_proof, proof.index.into())
-            .gas(200_000);
-
-        report_tx!(tx, &self.provider).try_into()
-    }
-
-    #[tracing::instrument(err)]
-    async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self
-            .contract
-            .process(message.to_vec().into())
-            .gas(1_700_000);
-
-        report_tx!(tx, &self.provider).try_into()
     }
 
     #[tracing::instrument(err)]
@@ -282,16 +174,132 @@ where
             .for_each(|(i, elem)| *elem = proof.path[i].to_fixed_bytes());
 
         let tx = self
-            .contract
+            .write_contract
             .prove_and_process(message.to_vec().into(), sol_proof, proof.index.into())
             .gas(1_900_000);
+
+        report_tx!(tx, &self.provider).try_into()
+    }
+}
+
+#[async_trait]
+impl<W, R> Common for EthereumReplica<W, R>
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
+{
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    #[tracing::instrument(err)]
+    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+        self.read_contract
+            .client()
+            .get_transaction_receipt(txid)
+            .await
+            .map_err(|e| Box::new(e) as Box<dyn StdError + Send + Sync>)?
+            .map(|receipt| receipt.try_into())
+            .transpose()
+    }
+
+    #[tracing::instrument(err)]
+    async fn updater(&self) -> Result<H256, ChainCommunicationError> {
+        Ok(self.read_contract.updater().call().await?.into())
+    }
+
+    #[tracing::instrument(err)]
+    async fn state(&self) -> Result<State, ChainCommunicationError> {
+        let state = self.read_contract.state().call().await?;
+        match state {
+            0 => Ok(State::Uninitialized),
+            1 => Ok(State::Active),
+            2 => Ok(State::Failed),
+            _ => unreachable!(),
+        }
+    }
+
+    #[tracing::instrument(err)]
+    async fn committed_root(&self) -> Result<H256, ChainCommunicationError> {
+        Ok(self.read_contract.committed_root().call().await?.into())
+    }
+
+    #[tracing::instrument(err)]
+    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+        let tx = self
+            .write_contract
+            .update(
+                update.update.previous_root.to_fixed_bytes(),
+                update.update.new_root.to_fixed_bytes(),
+                update.signature.to_vec().into(),
+            )
+            .gas(140_000);
+
+        report_tx!(tx, &self.provider).try_into()
+    }
+
+    #[tracing::instrument(err)]
+    async fn double_update(
+        &self,
+        double: &DoubleUpdate,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
+        let tx = self.write_contract.double_update(
+            double.0.update.previous_root.to_fixed_bytes(),
+            [
+                double.0.update.new_root.to_fixed_bytes(),
+                double.1.update.new_root.to_fixed_bytes(),
+            ],
+            double.0.signature.to_vec().into(),
+            double.1.signature.to_vec().into(),
+        );
+
+        report_tx!(tx, &self.provider).try_into()
+    }
+}
+
+#[async_trait]
+impl<W, R> Replica for EthereumReplica<W, R>
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
+{
+    fn local_domain(&self) -> u32 {
+        self.domain
+    }
+
+    async fn remote_domain(&self) -> Result<u32, ChainCommunicationError> {
+        Ok(self.read_contract.remote_domain().call().await?)
+    }
+
+    #[tracing::instrument(err)]
+    async fn prove(&self, proof: &Proof) -> Result<TxOutcome, ChainCommunicationError> {
+        let mut sol_proof: [[u8; 32]; 32] = Default::default();
+        sol_proof
+            .iter_mut()
+            .enumerate()
+            .for_each(|(i, elem)| *elem = proof.path[i].to_fixed_bytes());
+
+        let tx = self
+            .write_contract
+            .prove(proof.leaf.into(), sol_proof, proof.index.into())
+            .gas(200_000);
+
+        report_tx!(tx, &self.provider).try_into()
+    }
+
+    #[tracing::instrument(err)]
+    async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError> {
+        let tx = self
+            .write_contract
+            .process(message.to_vec().into())
+            .gas(1_700_000);
 
         report_tx!(tx, &self.provider).try_into()
     }
 
     #[tracing::instrument(err)]
     async fn message_status(&self, leaf: H256) -> Result<MessageStatus, ChainCommunicationError> {
-        let status = self.contract.messages(leaf.into()).call().await?;
+        let status = self.read_contract.messages(leaf.into()).call().await?;
         match status {
             0 => Ok(MessageStatus::None),
             1 => Ok(MessageStatus::Proven),
@@ -301,6 +309,10 @@ where
     }
 
     async fn acceptable_root(&self, root: H256) -> Result<bool, ChainCommunicationError> {
-        Ok(self.contract.acceptable_root(root.into()).call().await?)
+        Ok(self
+            .read_contract
+            .acceptable_root(root.into())
+            .call()
+            .await?)
     }
 }

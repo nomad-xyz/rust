@@ -12,25 +12,28 @@ use crate::report_tx;
 
 /// A reference to a XAppConnectionManager contract on some Ethereum chain
 #[derive(Debug)]
-pub struct EthereumConnectionManager<M>
+pub struct EthereumConnectionManager<W, R>
 where
-    M: ethers::providers::Middleware,
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
 {
-    contract: EthereumConnectionManagerInternal<M>,
-    provider: Arc<M>,
+    write_contract: Arc<EthereumConnectionManagerInternal<W>>,
+    read_contract: Arc<EthereumConnectionManagerInternal<R>>,
     domain: u32,
     name: String,
 }
 
-impl<M> EthereumConnectionManager<M>
+impl<W, R> EthereumConnectionManager<W, R>
 where
-    M: ethers::providers::Middleware,
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
 {
     /// Create a reference to a XAppConnectionManager at a specific Ethereum
     /// address on some chain
     #[allow(dead_code)]
     pub fn new(
-        provider: Arc<M>,
+        write_provider: Arc<W>,
+        read_provider: Arc<R>,
         ContractLocator {
             name,
             domain,
@@ -38,11 +41,14 @@ where
         }: &ContractLocator,
     ) -> Self {
         Self {
-            contract: EthereumConnectionManagerInternal::new(
+            write_contract: Arc::new(EthereumConnectionManagerInternal::new(
                 address.as_ethereum_address().expect("!eth address"),
-                provider.clone(),
-            ),
-            provider,
+                write_provider,
+            )),
+            read_contract: Arc::new(EthereumConnectionManagerInternal::new(
+                address.as_ethereum_address().expect("!eth address"),
+                read_provider,
+            )),
             domain: *domain,
             name: name.to_owned(),
         }
@@ -50,9 +56,10 @@ where
 }
 
 #[async_trait]
-impl<M> ConnectionManager for EthereumConnectionManager<M>
+impl<W, R> ConnectionManager for EthereumConnectionManager<W, R>
 where
-    M: ethers::providers::Middleware + 'static,
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
 {
     fn local_domain(&self) -> u32 {
         self.domain
@@ -61,7 +68,7 @@ where
     #[tracing::instrument(err)]
     async fn is_replica(&self, address: NomadIdentifier) -> Result<bool, ChainCommunicationError> {
         Ok(self
-            .contract
+            .read_contract
             .is_replica(address.as_ethereum_address().expect("!eth address"))
             .call()
             .await?)
@@ -74,7 +81,7 @@ where
         domain: u32,
     ) -> Result<bool, ChainCommunicationError> {
         Ok(self
-            .contract
+            .read_contract
             .watcher_permission(address.as_ethereum_address().expect("!eth address"), domain)
             .call()
             .await?)
@@ -87,7 +94,7 @@ where
         domain: u32,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         let tx = self
-            .contract
+            .write_contract
             .owner_enroll_replica(replica.as_ethereum_address().expect("!eth address"), domain);
 
         report_tx!(tx, &self.provider).try_into()
@@ -99,7 +106,7 @@ where
         replica: NomadIdentifier,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         let tx = self
-            .contract
+            .write_contract
             .owner_unenroll_replica(replica.as_ethereum_address().expect("!eth address"));
 
         report_tx!(tx, &self.provider).try_into()
@@ -108,7 +115,7 @@ where
     #[tracing::instrument(err)]
     async fn set_home(&self, home: NomadIdentifier) -> Result<TxOutcome, ChainCommunicationError> {
         let tx = self
-            .contract
+            .write_contract
             .set_home(home.as_ethereum_address().expect("!eth address"));
 
         report_tx!(tx, &self.provider).try_into()
@@ -121,7 +128,7 @@ where
         domain: u32,
         access: bool,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self.contract.set_watcher_permission(
+        let tx = self.write_contract.set_watcher_permission(
             watcher.as_ethereum_address().expect("!eth address"),
             domain,
             access,
@@ -135,7 +142,7 @@ where
         &self,
         signed_failure: &SignedFailureNotification,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self.contract.unenroll_replica(
+        let tx = self.write_contract.unenroll_replica(
             signed_failure.notification.home_domain,
             signed_failure.notification.updater.into(),
             signed_failure.signature.to_vec().into(),

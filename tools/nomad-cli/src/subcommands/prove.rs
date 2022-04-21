@@ -25,7 +25,10 @@ use rusoto_kms::KmsClient;
 
 static KMS_CLIENT: OnceCell<KmsClient> = OnceCell::new();
 
-type ConcreteReplica = EthereumReplica<SignerMiddleware<Provider<Http>, Signers>>;
+type ConcreteReplica = EthereumReplica<
+    SignerMiddleware<Provider<Http>, Signers>,
+    SignerMiddleware<Provider<Http>, Signers>,
+>;
 
 #[derive(StructOpt, Debug)]
 pub struct ProveCommand {
@@ -140,7 +143,7 @@ impl ProveCommand {
 
         let chain_id = provider.get_chainid().await?;
         let signer = self.signer().await?.with_chain_id(chain_id.low_u64());
-        let middleware = SignerMiddleware::new(provider, signer);
+        let middleware = Arc::new(SignerMiddleware::new(provider, signer));
 
         // bit ugly. Tries passed-in address first, then defaults to lookup by
         // domain
@@ -152,7 +155,8 @@ impl ProveCommand {
             .unwrap_or_else(|| replicas::address_by_domain_pair(origin, destination).unwrap());
 
         Ok(EthereumReplica::new(
-            Arc::new(middleware),
+            middleware.clone(),
+            middleware,
             &ContractLocator {
                 name: "".into(),
                 domain: 0,

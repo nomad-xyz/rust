@@ -243,11 +243,12 @@ impl HomeVariants {
     }
 }
 
-impl<M> From<EthereumHome<M>> for Homes
+impl<W, R> From<EthereumHome<W, R>> for Homes
 where
-    M: ethers::providers::Middleware + 'static,
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
 {
-    fn from(home: EthereumHome<M>) -> Self {
+    fn from(home: EthereumHome<W, R>) -> Self {
         HomeVariants::Ethereum(Box::new(home)).into()
     }
 }
