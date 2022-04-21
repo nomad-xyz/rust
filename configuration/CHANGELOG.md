@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- remove connections to self for GUI configs
+
 ### v0.1.0-rc.12
 
 - add redeployed dev/staging with rinkeby, goerli, kovan (no xDai)
