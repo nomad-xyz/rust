@@ -38,9 +38,6 @@ impl UpdateSubmitter {
         let span = info_span!("UpdateSubmitter");
 
         tokio::spawn(async move {
-            info!(sleep = self.finalization_seconds, "Sleeping, waiting for timelagged reader to catch up.");
-            sleep(Duration::from_secs(self.finalization_seconds)).await;
-
             // start from the chain state
             let mut committed_root = self.home.committed_root().await?;
 
