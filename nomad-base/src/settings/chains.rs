@@ -151,11 +151,7 @@ impl ChainSetup {
     }
 
     /// Try to convert the chain setting into a replica contract
-    pub async fn try_into_replica(
-        &self,
-        signer: Option<Signers>,
-        timelag: Option<u8>,
-    ) -> Result<Replicas, Report> {
+    pub async fn try_into_replica(&self, signer: Option<Signers>) -> Result<Replicas, Report> {
         match &self.chain {
             ChainConf::Ethereum(conf) => Ok(ReplicaVariants::Ethereum(
                 make_replica(
@@ -166,7 +162,7 @@ impl ChainSetup {
                         address: self.address,
                     },
                     signer,
-                    timelag,
+                    None, // Will never need timelag for replica data/events
                 )
                 .await?,
             )

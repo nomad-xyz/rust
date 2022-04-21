@@ -276,11 +276,8 @@ impl Settings {
     pub async fn try_replica(&self, replica_name: &str) -> Result<Replicas, Report> {
         let replica_setup = self.replicas.get(replica_name).expect("!replica");
         let signer = self.get_signer(replica_name).await;
-        let opt_replica_timelag = self.replica_timelag(replica_name);
 
-        replica_setup
-            .try_into_replica(signer, opt_replica_timelag)
-            .await
+        replica_setup.try_into_replica(signer).await
     }
 
     /// Try to get a replica ContractSync
@@ -385,8 +382,6 @@ impl Settings {
     /// instantiated with a built in timelag. The timelag is handled by the
     /// ContractSync.
     pub async fn try_replica_indexer(&self, setup: &ChainSetup) -> Result<CommonIndexers, Report> {
-        let timelag = self.replica_timelag(&setup.name);
-
         match &setup.chain {
             ChainConf::Ethereum(conn) => Ok(CommonIndexerVariants::Ethereum(
                 make_replica_indexer(
@@ -396,7 +391,7 @@ impl Settings {
                         domain: setup.domain,
                         address: setup.address,
                     },
-                    timelag,
+                    None, // Will never need timelag for replica data/events
                     setup.page_settings.from,
                     setup.page_settings.page_size,
                 )
