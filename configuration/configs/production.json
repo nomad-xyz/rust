@@ -535,7 +535,7 @@
     "ethereum": {
       "displayName": "Ethereum",
       "nativeTokenSymbol": "ETH",
-      "connections": ["ethereum", "moonbeam", "milkomedaC1", "xDai"],
+      "connections": ["moonbeam", "milkomedaC1", "xDai"],
       "manualProcessing": true,
       "connextEnabled": true
     },
