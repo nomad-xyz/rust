@@ -34,14 +34,16 @@ mod test {
                 )
                 .unwrap();
 
-        let agent_config = &config.agent().get("ethereum").unwrap().processor;
-        assert_eq!(settings.agent.interval, agent_config.interval);
-        assert_eq!(settings.agent.allowed, agent_config.allowed);
-        assert_eq!(settings.agent.denied, agent_config.denied);
-        assert_eq!(
-            settings.agent.subsidized_remotes,
-            agent_config.subsidized_remotes
-        );
-        assert_eq!(settings.agent.s3, agent_config.s3);
+            let agent_config = &config.agent().get("ethereum").unwrap().processor;
+            assert_eq!(settings.agent.interval, agent_config.interval);
+            assert_eq!(settings.agent.allowed, agent_config.allowed);
+            assert_eq!(settings.agent.denied, agent_config.denied);
+            assert_eq!(
+                settings.agent.subsidized_remotes,
+                agent_config.subsidized_remotes
+            );
+            assert_eq!(settings.agent.s3, agent_config.s3);
+        })
+        .await
     }
 }

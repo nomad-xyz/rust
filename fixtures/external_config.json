@@ -186,7 +186,7 @@
         "interval": 10
       },
       "processor": {
-        "indexOnly": false,
+        "subsidizedRemotes": ["polygon"],
         "enabled": true,
         "interval": 5
       },
@@ -216,7 +216,7 @@
         "interval": 10
       },
       "processor": {
-        "indexOnly": true,
+        "subsidizedRemotes": [],
         "enabled": true,
         "interval": 5
       },
