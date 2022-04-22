@@ -159,8 +159,8 @@ impl ChainSetup {
     pub async fn try_into_replica(
         &self,
         signer: Option<Signers>,
-        gas: Option<ReplicaGasSettings>,
-    ) -> Result<Replicas> {
+        gas: Option<ReplicaGasLimits>,
+    ) -> Result<Replicas, Report> {
         match &self.chain {
             ChainConf::Ethereum(conf) => Ok(ReplicaVariants::Ethereum(
                 make_replica(
@@ -171,6 +171,7 @@ impl ChainSetup {
                         address: self.address,
                     },
                     signer,
+                    None, // never need timelag for replica
                     gas,
                 )
                 .await?,

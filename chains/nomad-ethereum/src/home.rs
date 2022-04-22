@@ -170,7 +170,7 @@ where
     read_contract: Arc<EthereumHomeInternal<R>>,
     domain: u32,
     name: String,
-    gas: Option<HomeGasSettings>,
+    gas: Option<HomeGasLimits>,
 }
 
 impl<W, R> EthereumHome<W, R>
@@ -250,8 +250,6 @@ where
 
     #[tracing::instrument(err, skip(self, update), fields(update = %update))]
     async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
-        let queue_length = self.queue_length().await?;
-
         let mut tx = self.write_contract.update(
             update.update.previous_root.to_fixed_bytes(),
             update.update.new_root.to_fixed_bytes(),
@@ -262,7 +260,7 @@ where
             let queue_length = self.queue_length().await?;
             tx.tx.set_gas(
                 U256::from(limits.update.base)
-                    + U256::from(limits.update.per_message) * queue_length,
+                    + (U256::from(limits.update.per_message) * queue_length),
             );
         }
 

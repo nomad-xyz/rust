@@ -130,7 +130,7 @@ where
     read_contract: Arc<EthereumReplicaInternal<R>>,
     domain: u32,
     name: String,
-    gas: Option<ReplicaGasSettings>,
+    gas: Option<ReplicaGasLimits>,
 }
 
 impl<W, R> EthereumReplica<W, R>
@@ -163,26 +163,6 @@ where
             name: name.to_owned(),
             gas,
         }
-    }
-
-    #[tracing::instrument(err)]
-    async fn prove_and_process(
-        &self,
-        message: &NomadMessage,
-        proof: &NomadProof,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
-        let mut sol_proof: [[u8; 32]; 32] = Default::default();
-        sol_proof
-            .iter_mut()
-            .enumerate()
-            .for_each(|(i, elem)| *elem = proof.path[i].to_fixed_bytes());
-
-        let tx = self
-            .write_contract
-            .prove_and_process(message.to_vec().into(), sol_proof, proof.index.into())
-            .gas(1_900_000);
-
-        report_tx!(tx, &self.provider).try_into()
     }
 }
 
@@ -305,6 +285,30 @@ where
 
         if let Some(limits) = &self.gas {
             tx.tx.set_gas(U256::from(limits.process));
+        }
+
+        report_tx!(tx, &self.provider).try_into()
+    }
+
+    #[tracing::instrument(err)]
+    async fn prove_and_process(
+        &self,
+        message: &NomadMessage,
+        proof: &Proof,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
+        let mut sol_proof: [[u8; 32]; 32] = Default::default();
+        sol_proof
+            .iter_mut()
+            .enumerate()
+            .for_each(|(i, elem)| *elem = proof.path[i].to_fixed_bytes());
+
+        let mut tx = self
+            .write_contract
+            .prove_and_process(message.to_vec().into(), sol_proof, proof.index.into())
+            .gas(1_900_000);
+
+        if let Some(limits) = &self.gas {
+            tx.tx.set_gas(U256::from(limits.prove_and_process));
         }
 
         report_tx!(tx, &self.provider).try_into()
