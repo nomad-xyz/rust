@@ -188,7 +188,10 @@ async fn _print_info(signer: &AwsSigner<'_>, opts: &Opts) -> Result<()> {
     Ok(())
 }
 
-async fn _main() -> Result<()> {
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> Result<()> {
+    color_eyre::install()?;
+
     let opts: Opts = Opts::parse();
     init_kms(opts.region.to_owned());
     let chain_id = match opts.sub {
@@ -204,14 +207,4 @@ async fn _main() -> Result<()> {
         SubCommands::Transaction(_) => _send_tx(&signer, &opts).await,
         SubCommands::Info(_) => _print_info(&signer, &opts).await,
     }
-}
-
-fn main() -> Result<()> {
-    color_eyre::install()?;
-
-    tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap()
-        .block_on(_main())
 }
