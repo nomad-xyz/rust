@@ -191,6 +191,6 @@ mod test {
     #[test]
     fn it_builds_from_file() {
         let secrets = AgentSecrets::from_file(SECRETS_PATH).unwrap();
-        secrets.validate("updater", &RUN_ENV, &AGENT_HOME).unwrap();
+        secrets.validate("updater", RUN_ENV, AGENT_HOME).unwrap();
     }
 }

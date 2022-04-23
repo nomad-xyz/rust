@@ -165,8 +165,10 @@ mod test {
             "Turning failed transaction receipt into errored tx outcome not succeeded"
         );
 
-        let mut receipt = TransactionReceipt::default();
-        receipt.status = Some(U64::from(1));
+        let mut receipt = TransactionReceipt {
+            status: Some(U64::from(1)),
+            ..Default::default()
+        };
         let tx_outcome: Result<TxOutcome, ChainCommunicationError> = receipt.try_into();
         assert!(
             tx_outcome.is_ok(),
