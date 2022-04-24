@@ -4,6 +4,7 @@
 
 ### v0.1.0-rc.13
 
+- add avalanche to production config
 - add evmostestnet to dev config
 - remove connections to self for GUI configs
 
