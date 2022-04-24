@@ -1,12 +1,29 @@
 {
   "version": 0,
   "environment": "production",
-  "networks": ["ethereum", "moonbeam", "milkomedaC1", "xdai"],
+  "networks": [
+    "ethereum",
+    "moonbeam",
+    "milkomedaC1",
+    "xdai",
+    "avalanche"
+  ],
   "rpcs": {
-    "ethereum": ["https://main-light.eth.linkpool.io/"],
-    "moonbeam": ["https://rpc.api.moonbeam.network"],
-    "milkomedaC1": ["https://rpc.c1.milkomeda.com:8545"],
-    "xdai": ["https://dai.poa.network/"]
+    "ethereum": [
+      "https://main-light.eth.linkpool.io/"
+    ],
+    "moonbeam": [
+      "https://moonriver.api.onfinality.io/public"
+    ],
+    "milkomedaC1": [
+      "https://rpc.c1.milkomeda.com:8545"
+    ],
+    "xdai": [
+      "https://dai.poa.network/"
+    ],
+    "avalanche": [
+      "https://api.avax.network/ext/bc/C/rpc"
+    ]
   },
   "protocol": {
     "governor": {
@@ -17,7 +34,26 @@
       "ethereum": {
         "name": "ethereum",
         "domain": 6648936,
-        "connections": ["moonbeam", "milkomedaC1", "xdai"],
+        "connections": [
+          "milkomedaC1",
+          "moonbeam",
+          "avalanche",
+          "xdai"
+        ],
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 25000,
+          "maximumGas": 1000000,
+          "updater": "0x71dc76c07e92325e7cc09117ab94310da63fc2b9",
+          "watchers": [
+            "0x297bbc2f2eaaeb17ee53f514020bc8173f0570dc"
+          ],
+          "governance": {
+            "recoveryManager": "0xda2f881f7f4e9d2b9559f97c7670472a85c1986a",
+            "recoveryTimelock": 86400
+          }
+        },
         "specs": {
           "chainId": 1,
           "blockTime": 15,
@@ -26,18 +62,6 @@
           "confirmations": 3,
           "blockExplorer": "https://etherscan.io",
           "indexPageSize": 2000
-        },
-        "configuration": {
-          "optimisticSeconds": 1800,
-          "processGas": 850000,
-          "reserveGas": 25000,
-          "maximumGas": 1000000,
-          "governance": {
-            "recoveryManager": "0xda2f881f7f4e9d2b9559f97c7670472a85c1986a",
-            "recoveryTimelock": 86400
-          },
-          "updater": "0x71dc76c07e92325e7cc09117ab94310da63fc2b9",
-          "watchers": ["0x297bbc2f2eaaeb17ee53f514020bc8173f0570dc"]
         },
         "bridgeConfiguration": {
           "weth": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
@@ -49,7 +73,26 @@
       "moonbeam": {
         "name": "moonbeam",
         "domain": 1650811245,
-        "connections": ["milkomedaC1", "ethereum", "xdai"],
+        "connections": [
+          "ethereum",
+          "xdai",
+          "milkomedaC1",
+          "avalanche"
+        ],
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 25000,
+          "maximumGas": 1000000,
+          "updater": "0x40fd91557b318bd5d52d12535795265c88702681",
+          "watchers": [
+            "0x9782a3c8128f5d1bd3c9655d03181ba5b420883e"
+          ],
+          "governance": {
+            "recoveryManager": "0x2d23b3865d5b7cd88ce9ce7514a13545672d9ef7",
+            "recoveryTimelock": 86400
+          }
+        },
         "specs": {
           "chainId": 1284,
           "blockTime": 15,
@@ -58,18 +101,6 @@
           "confirmations": 3,
           "blockExplorer": "https://moonbeam.moonscan.io",
           "indexPageSize": 500
-        },
-        "configuration": {
-          "optimisticSeconds": 1800,
-          "processGas": 850000,
-          "reserveGas": 25000,
-          "maximumGas": 1000000,
-          "governance": {
-            "recoveryManager": "0x2d23b3865d5b7cd88ce9ce7514a13545672d9ef7",
-            "recoveryTimelock": 86400
-          },
-          "updater": "0x40fd91557b318bd5d52d12535795265c88702681",
-          "watchers": ["0x9782a3c8128f5d1bd3c9655d03181ba5b420883e"]
         },
         "bridgeConfiguration": {
           "customs": [],
@@ -80,7 +111,26 @@
       "milkomedaC1": {
         "name": "milkomedaC1",
         "domain": 25393,
-        "connections": ["moonbeam", "ethereum", "xdai"],
+        "connections": [
+          "xdai",
+          "ethereum",
+          "avalanche",
+          "moonbeam"
+        ],
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 25000,
+          "maximumGas": 1000000,
+          "updater": "0xe293d129d9fd291a8115cb373bb934586055427d",
+          "watchers": [
+            "0x06d8902cfae8235047dc7783875279311798c715"
+          ],
+          "governance": {
+            "recoveryManager": "0xea24ac04defb338ca8595c3750e20166f3b4998a",
+            "recoveryTimelock": 86400
+          }
+        },
         "specs": {
           "chainId": 2001,
           "blockTime": 4,
@@ -89,18 +139,6 @@
           "confirmations": 2,
           "blockExplorer": "https://rpc.c1.milkomeda.com:4000/",
           "indexPageSize": 2000
-        },
-        "configuration": {
-          "optimisticSeconds": 1800,
-          "processGas": 850000,
-          "reserveGas": 25000,
-          "maximumGas": 1000000,
-          "governance": {
-            "recoveryManager": "0xea24ac04defb338ca8595c3750e20166f3b4998a",
-            "recoveryTimelock": 86400
-          },
-          "updater": "0xe293d129d9fd291a8115cb373bb934586055427d",
-          "watchers": ["0x06d8902cfae8235047dc7783875279311798c715"]
         },
         "bridgeConfiguration": {
           "weth": "0xae83571000af4499798d1e3b0fa0070eb3a3e3f9",
@@ -112,7 +150,26 @@
       "xdai": {
         "name": "xdai",
         "domain": 2019844457,
-        "connections": ["ethereum", "milkomedaC1", "moonbeam"],
+        "connections": [
+          "milkomedaC1",
+          "moonbeam",
+          "ethereum",
+          "avalanche"
+        ],
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 25000,
+          "maximumGas": 1000000,
+          "updater": "0x777a89f8cba8fa632268e8f3c6789cdadada3482",
+          "watchers": [
+            "0xce941bbad38b35bd7f6b039af5ae67f8f0c99960"
+          ],
+          "governance": {
+            "recoveryManager": "0x5a07b875c618dcf69ec9681eccf147cf0ce84d11",
+            "recoveryTimelock": 86400
+          }
+        },
         "specs": {
           "chainId": 100,
           "blockTime": 5,
@@ -122,20 +179,47 @@
           "blockExplorer": "https://blockscout.com/xdai/mainnet/",
           "indexPageSize": 2000
         },
+        "bridgeConfiguration": {
+          "weth": "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d",
+          "customs": [],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
+      },
+      "avalanche": {
+        "name": "avalanche",
+        "domain": 1635148152,
+        "connections": [
+          "moonbeam",
+          "milkomedaC1",
+          "xdai",
+          "ethereum"
+        ],
         "configuration": {
           "optimisticSeconds": 1800,
           "processGas": 850000,
           "reserveGas": 25000,
           "maximumGas": 1000000,
+          "updater": "0xb93d4dbb87b80f0869a5ce0839fb75acdbeb1b77",
+          "watchers": [
+            "0x499b1fa18e3cac1c8cdf2b14c458aa70a6a2b68f"
+          ],
           "governance": {
-            "recoveryManager": "0x5a07b875c618dcf69ec9681eccf147cf0ce84d11",
+            "recoveryManager": "0x91dba25187b85ada9111bb2ed92006c10c543741",
             "recoveryTimelock": 86400
-          },
-          "updater": "0x777a89f8cba8fa632268e8f3c6789cdadada3482",
-          "watchers": ["0xce941bbad38b35bd7f6b039af5ae67f8f0c99960"]
+          }
+        },
+        "specs": {
+          "chainId": 43114,
+          "blockTime": 2,
+          "finalizationBlocks": 2,
+          "supports1559": true,
+          "confirmations": 20,
+          "blockExplorer": "https://snowtrace.io/",
+          "indexPageSize": 2000
         },
         "bridgeConfiguration": {
-          "weth": "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d",
+          "weth": "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
           "customs": [],
           "mintGas": 200000,
           "deployGas": 850000
@@ -174,6 +258,11 @@
           "implementation": "0x7f58bb8311db968ab110889f2dfa04ab7e8e831b",
           "proxy": "0x0a627a6398f429b62969cd475fb5ba8e04a4eb70",
           "beacon": "0x0876dfe4acae0e1c0a43302716483f5752298b71"
+        },
+        "avalanche": {
+          "implementation": "0x7f58bb8311db968ab110889f2dfa04ab7e8e831b",
+          "proxy": "0x5d94309e5a0090b165fa4181519701637b6daeba",
+          "beacon": "0x0876dfe4acae0e1c0a43302716483f5752298b71"
         }
       }
     },
@@ -206,6 +295,11 @@
         "ethereum": {
           "implementation": "0x67833a48b3f509d4252ac2c19cd604556ed6c981",
           "proxy": "0x7f58bb8311db968ab110889f2dfa04ab7e8e831b",
+          "beacon": "0x3009c99d370b780304d2098196f1ebf779a4777a"
+        },
+        "avalanche": {
+          "implementation": "0x67833a48b3f509d4252ac2c19cd604556ed6c981",
+          "proxy": "0xb92336759618f55bd0f8313bd843604592e27bd8",
           "beacon": "0x3009c99d370b780304d2098196f1ebf779a4777a"
         }
       }
@@ -240,6 +334,11 @@
           "implementation": "0x51e44ffad5c2b122c8b635671fcc8139dc636e82",
           "proxy": "0xddaa63f070215ce0ef9d29537cb96b64cb0819aa",
           "beacon": "0xbbb0efa9e6a57b906bba5ad9a656abcf2db5da3c"
+        },
+        "avalanche": {
+          "implementation": "0x51e44ffad5c2b122c8b635671fcc8139dc636e82",
+          "proxy": "0x252b12005b6427f87411d9dd2fa9943cb42a394f",
+          "beacon": "0xbbb0efa9e6a57b906bba5ad9a656abcf2db5da3c"
         }
       }
     },
@@ -273,6 +372,49 @@
           "implementation": "0x263c732f614380e570fc9810ad162aff59978510",
           "proxy": "0x295f1ef8e4e5a26190e986a40637f3d8354baf34",
           "beacon": "0xab42ebd10f77db551632d88300ea4e52882b045f"
+        },
+        "avalanche": {
+          "implementation": "0x263c732f614380e570fc9810ad162aff59978510",
+          "proxy": "0x1e562508b3d2b76d3e73a7d6971c0e455fcc6414",
+          "beacon": "0xab42ebd10f77db551632d88300ea4e52882b045f"
+        }
+      }
+    },
+    "avalanche": {
+      "deployHeight": 13718798,
+      "upgradeBeaconController": "0x2e09edd238eeaea6e4da705fbe5922b1979e03ac",
+      "xAppConnectionManager": "0xdb378579c2af11817eea21474a39f95b5b9dfd7e",
+      "updaterManager": "0x9272c9d5fa902ef3804ec81e0333ae420d57f715",
+      "governanceRouter": {
+        "implementation": "0xa84e233a12b36125a731e1362121d8d4ea030c91",
+        "proxy": "0x67833a48b3f509d4252ac2c19cd604556ed6c981",
+        "beacon": "0x569d80f7fc17316b4c83f072b92ef37b72819de0"
+      },
+      "home": {
+        "implementation": "0xfe8874778f946ac2990a29eba3cfd50760593b2f",
+        "proxy": "0x063e871f8db991cead34b557a00b157b360084cc",
+        "beacon": "0x8f184d6aa1977fd2f9d9024317d0ea5cf5815b6f"
+      },
+      "replicas": {
+        "xdai": {
+          "implementation": "0x3009c99d370b780304d2098196f1ebf779a4777a",
+          "proxy": "0x4b5e220c1ef9e81d1025558e5f0a049a39572f7b",
+          "beacon": "0x7f58bb8311db968ab110889f2dfa04ab7e8e831b"
+        },
+        "ethereum": {
+          "implementation": "0x3009c99d370b780304d2098196f1ebf779a4777a",
+          "proxy": "0x6792e656d84476b875d370b25492f9efc7246376",
+          "beacon": "0x7f58bb8311db968ab110889f2dfa04ab7e8e831b"
+        },
+        "moonbeam": {
+          "implementation": "0x3009c99d370b780304d2098196f1ebf779a4777a",
+          "proxy": "0x0876dfe4acae0e1c0a43302716483f5752298b71",
+          "beacon": "0x7f58bb8311db968ab110889f2dfa04ab7e8e831b"
+        },
+        "milkomedaC1": {
+          "implementation": "0x3009c99d370b780304d2098196f1ebf779a4777a",
+          "proxy": "0xeaa8b3805a0b14c127c688cc3e35bfb560a3ce47",
+          "beacon": "0x7f58bb8311db968ab110889f2dfa04ab7e8e831b"
         }
       }
     }
@@ -357,6 +499,26 @@
       },
       "ethHelper": "0xd08233e42db1f8879bafaf88f2d4bd4c10d99c27",
       "customs": []
+    },
+    "avalanche": {
+      "deployHeight": 13719132,
+      "bridgeRouter": {
+        "implementation": "0x964301c4a9d02837cc595b6d5f66740fa6acfa1c",
+        "proxy": "0x5e5ea959686c73ed32c1bc71892f7f317d13a267",
+        "beacon": "0xa7df9630db34f761a066536ed6faeb1b77b9e520"
+      },
+      "tokenRegistry": {
+        "implementation": "0xb70588b1a51f847d13158ff18e9cac861df5fb00",
+        "proxy": "0x2d6775c1673d4ce55e1f827a0d53e62c43d1f304",
+        "beacon": "0x88a69b4e698a4b090df6cf5bd7b2d47325ad30a3"
+      },
+      "bridgeToken": {
+        "implementation": "0x0a6f564c5c9bebd66f1595f1b51d1f3de6ef3b79",
+        "proxy": "0x0000000000000000000000000000000000000000",
+        "beacon": "0xd3dfd3ede74e0dcebc1aa685e151332857efce2d"
+      },
+      "ethHelper": "0x0a39868c583a62093c23130093d2426688b7aa2f",
+      "customs": []
     }
   },
   "agent": {
@@ -379,7 +541,12 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": ["moonbeam", "milkomedaC1", "xdai"],
+        "subsidizedRemotes": [
+          "moonbeam",
+          "milkomedaC1",
+          "xdai",
+          "avalanche"
+        ],
         "s3": {
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
@@ -418,7 +585,11 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": ["milkomedaC1", "xdai"],
+        "subsidizedRemotes": [
+          "milkomedaC1",
+          "xdai",
+          "avalanche"
+        ],
         "s3": {
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
@@ -457,7 +628,11 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": ["moonbeam", "xdai"],
+        "subsidizedRemotes": [
+          "moonbeam",
+          "xdai",
+          "avalanche"
+        ],
         "s3": {
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
@@ -496,7 +671,54 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": ["moonbeam", "milkomedaC1"],
+        "subsidizedRemotes": [
+          "moonbeam",
+          "milkomedaC1",
+          "avalanche"
+        ],
+        "s3": {
+          "bucket": "nomadxyz-production-proofs",
+          "region": "us-west-2"
+        },
+        "interval": 5,
+        "enabled": true
+      },
+      "watcher": {
+        "interval": 10,
+        "enabled": true
+      },
+      "kathy": {
+        "chat": {
+          "type": "default"
+        },
+        "interval": 100,
+        "enabled": false
+      }
+    },
+    "avalanche": {
+      "rpcStyle": "ethereum",
+      "db": "/usr/share/nomad",
+      "metrics": 9090,
+      "logging": {
+        "fmt": "json",
+        "level": "info"
+      },
+      "updater": {
+        "interval": 5,
+        "enabled": true
+      },
+      "relayer": {
+        "interval": 10,
+        "enabled": true
+      },
+      "processor": {
+        "allowed": null,
+        "denied": null,
+        "subsidizedRemotes": [
+          "moonbeam",
+          "milkomedaC1",
+          "xdai"
+        ],
         "s3": {
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
@@ -521,29 +743,47 @@
     "moonbeam": {
       "displayName": "Moonbeam",
       "nativeTokenSymbol": "GLMR",
-      "connections": ["ethereum"],
+      "connections": [
+        "ethereum"
+      ],
       "manualProcessing": false,
       "connextEnabled": true
     },
     "milkomedaC1": {
       "displayName": "Milkomeda C1",
       "nativeTokenSymbol": "milkADA",
-      "connections": ["ethereum"],
+      "connections": [
+        "ethereum"
+      ],
       "manualProcessing": false,
       "connextEnabled": false
     },
     "ethereum": {
       "displayName": "Ethereum",
       "nativeTokenSymbol": "ETH",
-      "connections": ["moonbeam", "milkomedaC1", "xDai"],
+      "connections": [
+        "avalanche",
+        "moonbeam",
+        "milkomedaC1",
+        "xDai"
+      ],
       "manualProcessing": true,
       "connextEnabled": true
     },
     "xdai": {
       "displayName": "xDai",
       "nativeTokenSymbol": "xDAI",
-      "connections": ["ethereum"],
-      "manualProcessing": false,
+      "connections": [
+        "ethereum"
+      ],
+      "connextEnabled": true
+    },
+    "avalanche": {
+      "displayName": "Avalanche",
+      "nativeTokenSymbol": "AVAX",
+      "connections": [
+        "ethereum"
+      ],
       "connextEnabled": true
     }
   }
