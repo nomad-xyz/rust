@@ -444,7 +444,7 @@
     "moonbeam": {
       "deployHeight": 171256,
       "bridgeRouter": {
-        "implementation": "0x4d5ff8a01ed833e11aba43821d2881a5f2911f98",
+        "implementation": "0xEf989866b66a491e7B6c7473D73b589450D0f766",
         "proxy": "0xd3dfd3ede74e0dcebc1aa685e151332857efce2d",
         "beacon": "0x0a6f564c5c9bebd66f1595f1b51d1f3de6ef3b79"
       },
