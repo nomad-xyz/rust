@@ -538,13 +538,6 @@
       "connections": ["moonbeam", "milkomedaC1", "xDai"],
       "manualProcessing": true,
       "connextEnabled": true
-    },
-    "xdai": {
-      "displayName": "xDai",
-      "nativeTokenSymbol": "xDAI",
-      "connections": ["ethereum"],
-      "manualProcessing": false,
-      "connextEnabled": true
     }
   }
 }
