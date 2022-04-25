@@ -229,8 +229,9 @@ impl Settings {
 
     /// Try to get a Homes object
     pub async fn try_home(&self) -> Result<Homes> {
+        let opt_home_timelag = self.home_timelag();
         let name = &self.home.name;
-        let signer = self.get_signer(name).await;
+        let signer = self.get_signer(name).await.transpose()?;
         let gas = self.gas.get(name).map(|c| c.home);
         self.home.try_into_home(signer, opt_home_timelag, gas).await
     }
@@ -282,7 +283,7 @@ impl Settings {
     /// Try to get a Replicas object
     pub async fn try_replica(&self, replica_name: &str) -> Result<Replicas> {
         let replica_setup = self.replicas.get(replica_name).expect("!replica");
-        let signer = self.get_signer(replica_name).await;
+        let signer = self.get_signer(replica_name).await.transpose()?;
         let gas = self.gas.get(replica_name).map(|c| c.replica);
         replica_setup.try_into_replica(signer, gas).await
     }

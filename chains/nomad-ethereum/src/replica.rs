@@ -294,7 +294,7 @@ where
     async fn prove_and_process(
         &self,
         message: &NomadMessage,
-        proof: &Proof,
+        proof: &NomadProof,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         let mut sol_proof: [[u8; 32]; 32] = Default::default();
         sol_proof

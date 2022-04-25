@@ -160,7 +160,7 @@ impl ChainSetup {
         &self,
         signer: Option<Signers>,
         gas: Option<ReplicaGasLimits>,
-    ) -> Result<Replicas, Report> {
+    ) -> Result<Replicas> {
         match &self.chain {
             ChainConf::Ethereum(conf) => Ok(ReplicaVariants::Ethereum(
                 make_replica(
