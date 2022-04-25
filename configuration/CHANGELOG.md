@@ -2,6 +2,10 @@
 
 ### Unreleased
 
+### v0.1.0-rc.14
+
+- remove xDai from production bridge gui
+
 ### v0.1.0-rc.13
 
 - add evmostestnet to dev config
