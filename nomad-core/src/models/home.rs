@@ -1,8 +1,9 @@
+use accumulator::Merkle;
 use ethers::core::types::{Address, H256};
 use std::{collections::VecDeque, io::Write};
 
 use crate::{
-    accumulator::{hash, incremental::IncrementalMerkle},
+    accumulator::{utils::hash, NomadLightMerkle},
     NomadError, SignedUpdate, Update,
 };
 
@@ -10,14 +11,14 @@ use crate::{
 #[derive(Default, Debug, Clone)]
 pub struct Waiting {
     queue: VecDeque<H256>,
-    accumulator: IncrementalMerkle,
+    accumulator: NomadLightMerkle,
 }
 
 /// Failed state
 #[derive(Debug, Clone)]
 pub struct Failed {
     queue: VecDeque<H256>,
-    accumulator: IncrementalMerkle,
+    accumulator: NomadLightMerkle,
 }
 
 impl Waiting {
@@ -27,7 +28,7 @@ impl Waiting {
     }
 
     /// Return a reference to the incremental merkle tree
-    pub fn accumulator(&self) -> &IncrementalMerkle {
+    pub fn accumulator(&self) -> &NomadLightMerkle {
         &self.accumulator
     }
 }
@@ -39,7 +40,7 @@ impl Failed {
     }
 
     /// Return a reference to the incremental merkle tree
-    pub fn accumulator(&self) -> &IncrementalMerkle {
+    pub fn accumulator(&self) -> &NomadLightMerkle {
         &self.accumulator
     }
 }
@@ -124,7 +125,7 @@ impl Home<Waiting> {
     pub fn dispatch(&mut self, sender: H256, destination: u32, recipient: H256, body: &[u8]) {
         let message = format_message(self.local, sender, destination, recipient, body);
         let message_hash = hash(&message);
-        self.state.accumulator.ingest(message_hash);
+        self.state.accumulator.ingest(message_hash).unwrap();
         self.state.queue.push_back(self.state.accumulator.root());
     }
 

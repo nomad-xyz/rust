@@ -1,8 +1,11 @@
-use crate::prover::{Prover, ProverError};
 use color_eyre::eyre::{bail, Result};
 use ethers::core::types::H256;
 use nomad_base::NomadDB;
-use nomad_core::{accumulator::INITIAL_ROOT, db::DbError, ChainCommunicationError};
+use nomad_core::{
+    accumulator::{Merkle, NomadTree, ProvingError},
+    db::DbError,
+    ChainCommunicationError,
+};
 use std::{fmt::Display, time::Duration};
 use tokio::{
     task::JoinHandle,
@@ -14,7 +17,7 @@ use tracing::{debug, error, info, info_span, instrument, instrument::Instrumente
 #[derive(Debug)]
 pub struct ProverSync {
     db: NomadDB,
-    prover: Prover,
+    prover: NomadTree,
 }
 
 impl Display for ProverSync {
@@ -56,9 +59,9 @@ pub enum ProverSyncError {
         /// Leaf index for missing leaf
         leaf_index: usize,
     },
-    /// ProverSync attempts Prover operation and receives ProverError
+    /// ProverSync attempts Prover operation and receives ProvingError
     #[error(transparent)]
-    ProverError(#[from] ProverError),
+    ProvingError(#[from] ProvingError),
     /// ProverSync receives ChainCommunicationError from chain API
     #[error(transparent)]
     ChainCommunicationError(#[from] ChainCommunicationError),
@@ -72,7 +75,7 @@ impl ProverSync {
     // prover currently has. If that root is the initial root, it is 0.
     fn local_root(&self) -> H256 {
         let root = self.prover.root();
-        if root == *INITIAL_ROOT {
+        if root == NomadTree::initial_root() {
             H256::zero()
         } else {
             root
@@ -93,7 +96,7 @@ impl ProverSync {
             }
             // ignore the storage request if it's out of range (e.g. leaves
             // up-to-date but no update containing leaves produced yet)
-            Err(ProverError::ZeroProof { index: _, count: _ }) => Ok(()),
+            Err(ProvingError::ZeroProof { index: _, count: _ }) => Ok(()),
             // bubble up any other errors
             Err(e) => Err(e.into()),
         }
@@ -104,7 +107,7 @@ impl ProverSync {
     #[instrument(level = "debug", skip(db))]
     pub fn from_disk(db: NomadDB) -> Self {
         // Ingest all leaves in db into prover tree
-        let mut prover = Prover::default();
+        let mut prover = NomadTree::default();
 
         if let Some(root) = db.retrieve_prover_latest_committed().expect("db error") {
             for i in 0.. {

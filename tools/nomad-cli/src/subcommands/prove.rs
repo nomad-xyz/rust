@@ -4,8 +4,8 @@ use structopt::StructOpt;
 use crate::{replicas, rpc};
 
 use nomad_core::{
-    accumulator::merkle::Proof, db::DB, ContractLocator, Decode, MessageStatus, NomadMessage,
-    Replica, Signers,
+    accumulator::NomadProof, db::DB, ContractLocator, Decode, MessageStatus, NomadMessage, Replica,
+    Signers,
 };
 
 use nomad_base::NomadDB;
@@ -114,7 +114,7 @@ impl ProveCommand {
         }
     }
 
-    fn fetch_proof(&self, db: NomadDB) -> Result<(NomadMessage, Proof)> {
+    fn fetch_proof(&self, db: NomadDB) -> Result<(NomadMessage, NomadProof)> {
         let idx = match (self.leaf_index, self.leaf) {
             (Some(idx), _) => idx,
             (None, Some(digest)) => match db.message_by_leaf(digest)? {

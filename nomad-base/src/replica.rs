@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use ethers::core::types::H256;
 use nomad_core::{
-    accumulator::merkle::Proof, db::DbError, ChainCommunicationError, Common, CommonEvents,
+    accumulator::NomadProof, db::DbError, ChainCommunicationError, Common, CommonEvents,
     DoubleUpdate, MessageStatus, NomadMessage, Replica, SignedUpdate, State, TxOutcome,
 };
 
@@ -73,7 +73,7 @@ impl Replica for CachingReplica {
         self.replica.remote_domain().await
     }
 
-    async fn prove(&self, proof: &Proof) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn prove(&self, proof: &NomadProof) -> Result<TxOutcome, ChainCommunicationError> {
         self.replica.prove(proof).await
     }
 
@@ -241,7 +241,7 @@ impl Replica for ReplicaVariants {
         }
     }
 
-    async fn prove(&self, proof: &Proof) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn prove(&self, proof: &NomadProof) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
             ReplicaVariants::Ethereum(replica) => replica.prove(proof).await,
             ReplicaVariants::Mock(mock_replica) => mock_replica.prove(proof).await,
@@ -268,7 +268,7 @@ impl Replica for ReplicaVariants {
     async fn prove_and_process(
         &self,
         message: &NomadMessage,
-        proof: &Proof,
+        proof: &NomadProof,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
             ReplicaVariants::Ethereum(replica) => replica.prove_and_process(message, proof).await,

@@ -16,7 +16,8 @@ use nomad_base::{
     NomadDB, ProcessorError,
 };
 use nomad_core::{
-    accumulator::merkle::Proof, CommittedMessage, Common, Home, HomeEvents, MessageStatus,
+    accumulator::{MerkleProof, NomadProof},
+    CommittedMessage, Common, Home, HomeEvents, MessageStatus,
 };
 
 use crate::{prover_sync::ProverSync, push::Pusher, settings::ProcessorSettings as Settings};
@@ -234,7 +235,7 @@ impl Replica {
 
     #[instrument(err, level = "trace", skip(self), fields(self = %self))]
     /// Dispatch a message for processing. If the message is already proven, process only.
-    async fn process(&self, message: CommittedMessage, proof: Proof) -> Result<()> {
+    async fn process(&self, message: CommittedMessage, proof: NomadProof) -> Result<()> {
         use nomad_core::Replica;
         let status = self.replica.message_status(message.to_leaf()).await?;
 

@@ -3,7 +3,7 @@ use color_eyre::Result;
 use ethers::core::types::H256;
 
 use crate::{
-    accumulator::merkle::Proof,
+    accumulator::NomadProof,
     traits::{ChainCommunicationError, Common, TxOutcome},
     NomadMessage,
 };
@@ -29,7 +29,7 @@ pub trait Replica: Common + Send + Sync + std::fmt::Debug {
     async fn remote_domain(&self) -> Result<u32, ChainCommunicationError>;
 
     /// Dispatch a transaction to prove inclusion of some leaf in the replica.
-    async fn prove(&self, proof: &Proof) -> Result<TxOutcome, ChainCommunicationError>;
+    async fn prove(&self, proof: &NomadProof) -> Result<TxOutcome, ChainCommunicationError>;
 
     /// Trigger processing of a message
     async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError>;
@@ -38,7 +38,7 @@ pub trait Replica: Common + Send + Sync + std::fmt::Debug {
     async fn prove_and_process(
         &self,
         message: &NomadMessage,
-        proof: &Proof,
+        proof: &NomadProof,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self.prove(proof).await?;
 
