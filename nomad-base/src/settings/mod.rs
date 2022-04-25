@@ -1,8 +1,14 @@
 //! Settings and configuration for Nomad agents
 //!
-//! Agent settings draw heavily on `nomad-xyz-configuration`. All public values
-//! are drawn from this publicly hosted package. All secret values are drawn
-//! from either a environment variables or a secrets.json file.
+//! All public values are drawn from the publicly hosted package
+//! `nomad-xyz-configuration`. All secret values are drawn from either
+//! environment variables OR a secrets.json file.
+//!
+//! If configuring an agent using a custom config JSON file, place a JSON
+//! config file in the working directory and set the CONFIG_PATH environment
+//! variable to match the path to the file. See the "external" files in the
+//! `fixtures` directory for examples of an external config file and their
+//! corresponding env file and/or secrets.json file.
 
 use crate::{
     agent::AgentCore, CachingHome, CachingReplica, CommonIndexerVariants, CommonIndexers,
