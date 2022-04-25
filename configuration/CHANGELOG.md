@@ -2,6 +2,11 @@
 
 ### Unreleased
 
+### v0.1.0-rc.15
+
+- change connext enabled to false for evmos testnet
+- add missing evmos testnet connection to rinkeby
+
 ### v0.1.0-rc.14
 
 - remove xDai from production bridge gui

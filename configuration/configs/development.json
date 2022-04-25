@@ -537,7 +537,7 @@
     "rinkeby": {
       "displayName": "Rinkeby",
       "nativeTokenSymbol": "rETH",
-      "connections": ["kovan", "goerli"],
+      "connections": ["kovan", "goerli", "evmostestnet"],
       "manualProcessing": true,
       "connextEnabled": true
     },
@@ -545,7 +545,7 @@
       "displayName": "Evmos Testnet",
       "nativeTokenSymbol": "tEVMOS",
       "connections": ["rinkeby"],
-      "connextEnabled": true
+      "connextEnabled": false
     }
   }
 }
