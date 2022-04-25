@@ -12,14 +12,12 @@ mod settings;
 mod submit;
 mod updater;
 
+use crate::{settings::UpdaterSettings as Settings, updater::Updater};
 use color_eyre::Result;
-
 use nomad_base::NomadAgent;
 
-use crate::{settings::UpdaterSettings as Settings, updater::Updater};
-
-#[allow(unused_must_use)]
-async fn _main() -> Result<()> {
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> Result<()> {
     color_eyre::install()?;
     let settings = Settings::new()?;
 
@@ -31,12 +29,4 @@ async fn _main() -> Result<()> {
 
     agent.run_all().await??;
     Ok(())
-}
-
-fn main() -> Result<()> {
-    tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap()
-        .block_on(_main())
 }
