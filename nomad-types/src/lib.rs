@@ -9,7 +9,7 @@ pub use macros::*;
 mod utils;
 pub use utils::*;
 
-use color_eyre::{eyre::bail, Report};
+use color_eyre::{eyre::bail, Report, Result};
 use ethers::prelude::{Address, H160, H256};
 use serde::{de, Deserializer};
 use std::{fmt, ops::DerefMut, str::FromStr};
@@ -28,7 +28,7 @@ impl<const N: usize> HexString<N> {
     /// Instantiate a new HexString from any `AsRef<str>`. Tolerates 0x
     /// prefixing. A succesful instantiation will create an owned copy of the
     /// string.
-    pub fn from_string<S: AsRef<str>>(candidate: S) -> Result<Self, Report> {
+    pub fn from_string<S: AsRef<str>>(candidate: S) -> Result<Self> {
         let s = strip_0x_prefix(candidate.as_ref());
 
         if s.len() != N {

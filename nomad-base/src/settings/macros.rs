@@ -25,7 +25,7 @@ macro_rules! decl_settings {
             }
 
             impl [<$name Settings>] {
-                pub fn new() -> Result<Self, color_eyre::Report>{
+                pub fn new() -> color_eyre::Result<Self>{
                     let agent = std::stringify!($name).to_lowercase();
                     let env = std::env::var("RUN_ENV").expect("missing RUN_ENV env var");
                     let home = std::env::var("AGENT_HOME").expect("missing AGENT_HOME env var");

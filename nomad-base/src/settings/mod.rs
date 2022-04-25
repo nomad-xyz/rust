@@ -18,7 +18,7 @@ use crate::{
     agent::AgentCore, CachingHome, CachingReplica, CommonIndexerVariants, CommonIndexers,
     ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes, NomadDB, Replicas,
 };
-use color_eyre::{eyre::bail, Report};
+use color_eyre::{eyre::bail, Result};
 use nomad_core::{db::DB, Common, ContractLocator, Signers};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
 use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets};
@@ -186,10 +186,13 @@ impl Settings {
 
 impl Settings {
     /// Try to get a signer instance by name
-    pub async fn get_signer(&self, name: &str) -> Option<Signers> {
-        Signers::try_from_signer_conf(self.signers.get(name)?)
-            .await
-            .ok()
+    pub async fn get_signer(&self, name: &str) -> Option<Result<Signers>> {
+        let conf = self.signers.get(name);
+        if let Some(conf) = conf {
+            Some(Signers::try_from_signer_conf(conf).await)
+        } else {
+            None
+        }
     }
 
     /// Set agent-specific index data types
@@ -222,8 +225,8 @@ impl Settings {
     }
 
     /// Try to get a Homes object
-    pub async fn try_home(&self) -> Result<Homes, Report> {
-        let signer = self.get_signer(&self.home.name).await;
+    pub async fn try_home(&self) -> Result<Homes> {
+        let signer = self.get_signer(&self.home.name).await.transpose()?;
         let opt_home_timelag = self.home_timelag();
         self.home.try_into_home(signer, opt_home_timelag).await
     }
@@ -234,7 +237,7 @@ impl Settings {
         agent_name: &str,
         db: DB,
         metrics: ContractSyncMetrics,
-    ) -> Result<ContractSync<HomeIndexers>, Report> {
+    ) -> Result<ContractSync<HomeIndexers>> {
         let finality = self.home.finality;
         let index_settings = self.index.clone();
         let page_settings = self.home.page_settings.clone();
@@ -262,7 +265,7 @@ impl Settings {
         agent_name: &str,
         db: DB,
         metrics: ContractSyncMetrics,
-    ) -> Result<CachingHome, Report> {
+    ) -> Result<CachingHome> {
         let home = self.try_home().await?;
         let contract_sync = self
             .try_home_contract_sync(agent_name, db.clone(), metrics)
@@ -273,9 +276,9 @@ impl Settings {
     }
 
     /// Try to get a Replicas object
-    pub async fn try_replica(&self, replica_name: &str) -> Result<Replicas, Report> {
+    pub async fn try_replica(&self, replica_name: &str) -> Result<Replicas> {
         let replica_setup = self.replicas.get(replica_name).expect("!replica");
-        let signer = self.get_signer(replica_name).await;
+        let signer = self.get_signer(replica_name).await.transpose()?;
 
         replica_setup.try_into_replica(signer).await
     }
@@ -287,7 +290,7 @@ impl Settings {
         agent_name: &str,
         db: DB,
         metrics: ContractSyncMetrics,
-    ) -> Result<ContractSync<CommonIndexers>, Report> {
+    ) -> Result<ContractSync<CommonIndexers>> {
         let replica_setup = self.replicas.get(replica_name).expect("!replica");
 
         let finality = self.replicas.get(replica_name).expect("!replica").finality;
@@ -318,7 +321,7 @@ impl Settings {
         agent_name: &str,
         db: DB,
         metrics: ContractSyncMetrics,
-    ) -> Result<CachingReplica, Report> {
+    ) -> Result<CachingReplica> {
         let replica = self.try_replica(replica_name).await?;
         let contract_sync = self
             .try_replica_contract_sync(replica_name, agent_name, db.clone(), metrics)
@@ -334,7 +337,7 @@ impl Settings {
         agent_name: &str,
         db: DB,
         metrics: ContractSyncMetrics,
-    ) -> Result<HashMap<String, Arc<CachingReplica>>, Report> {
+    ) -> Result<HashMap<String, Arc<CachingReplica>>> {
         let mut result = HashMap::default();
         for (k, v) in self.replicas.iter().filter(|(_, v)| v.disabled.is_none()) {
             if k != &v.name {
@@ -356,7 +359,7 @@ impl Settings {
     /// Try to get an indexer object for a home. Note that indexers are NOT
     /// instantiated with a built in timelag. The timelag is handled by the
     /// ContractSync.
-    pub async fn try_home_indexer(&self) -> Result<HomeIndexers, Report> {
+    pub async fn try_home_indexer(&self) -> Result<HomeIndexers> {
         let timelag = self.home_timelag();
 
         match &self.home.chain {
@@ -381,7 +384,7 @@ impl Settings {
     /// Try to get an indexer object for a replica. Note that indexers are NOT
     /// instantiated with a built in timelag. The timelag is handled by the
     /// ContractSync.
-    pub async fn try_replica_indexer(&self, setup: &ChainSetup) -> Result<CommonIndexers, Report> {
+    pub async fn try_replica_indexer(&self, setup: &ChainSetup) -> Result<CommonIndexers> {
         match &setup.chain {
             ChainConf::Ethereum(conn) => Ok(CommonIndexerVariants::Ethereum(
                 make_replica_indexer(
@@ -402,7 +405,7 @@ impl Settings {
     }
 
     /// Try to generate an agent core for a named agent
-    pub async fn try_into_core(&self, name: &str) -> Result<AgentCore, Report> {
+    pub async fn try_into_core(&self, name: &str) -> Result<AgentCore> {
         let metrics = Arc::new(crate::metrics::CoreMetrics::new(
             name,
             &self.home.name,
