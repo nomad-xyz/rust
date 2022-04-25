@@ -392,7 +392,7 @@ impl NomadAgent for Processor {
 
             // tree sync
             info!("Starting ProverSync");
-            let db = NomadDB::new(self.home().name().to_owned(), self.db());
+            let db = NomadDB::new(self.home().name(), self.db());
             let sync = ProverSync::from_disk(db.clone());
             let prover_sync_task = sync.spawn();
 

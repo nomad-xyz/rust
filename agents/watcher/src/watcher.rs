@@ -899,7 +899,7 @@ mod test {
                 )
                 .expect("could not make metrics"),
             );
-            let sync_metrics = ContractSyncMetrics::new(metrics.clone());
+            let sync_metrics = ContractSyncMetrics::new(metrics);
 
             let mut mock_home = MockHomeContract::new();
             mock_home.expect__name().return_const("home_1".to_owned());
@@ -910,11 +910,11 @@ mod test {
                 AGENT_NAME.to_owned(),
                 "home_1".to_owned(),
                 nomad_db.clone(),
-                home_indexer.clone(),
+                home_indexer,
                 IndexSettings::default(),
                 PageSettings::default(),
                 Default::default(),
-                sync_metrics.clone(),
+                sync_metrics,
             );
 
             let home: Arc<CachingHome> =
@@ -923,7 +923,7 @@ mod test {
             let (_tx, rx) = mpsc::channel(200);
             let mut handler = UpdateHandler {
                 rx,
-                watcher_db: nomad_db.clone(),
+                watcher_db: nomad_db,
                 home,
             };
 
@@ -1061,7 +1061,7 @@ mod test {
             // Connection manager expectations
             {
                 // connection_manager_1.unenroll_replica called once
-                let signed_failure = signed_failure.clone();
+                let signed_failure = signed_failure;
                 mock_connection_manager_1
                     .expect__unenroll_replica()
                     .withf(move |f: &SignedFailureNotification| *f == signed_failure)
@@ -1074,7 +1074,7 @@ mod test {
             }
             {
                 // connection_manager_2.unenroll_replica called once
-                let signed_failure = signed_failure.clone();
+                let signed_failure = signed_failure;
                 mock_connection_manager_2
                     .expect__unenroll_replica()
                     .withf(move |f: &SignedFailureNotification| *f == signed_failure)
@@ -1254,7 +1254,7 @@ mod test {
             // Connection manager expectations
             {
                 // connection_manager_1.unenroll_replica called once
-                let signed_failure = signed_failure.clone();
+                let signed_failure = signed_failure;
                 mock_connection_manager_1
                     .expect__unenroll_replica()
                     .withf(move |f: &SignedFailureNotification| *f == signed_failure)
@@ -1267,7 +1267,7 @@ mod test {
             }
             {
                 // connection_manager_2.unenroll_replica called once
-                let signed_failure = signed_failure.clone();
+                let signed_failure = signed_failure;
                 mock_connection_manager_2
                     .expect__unenroll_replica()
                     .withf(move |f: &SignedFailureNotification| *f == signed_failure)
@@ -1386,11 +1386,7 @@ mod test {
                     .downcast::<BaseError>()
                     .unwrap();
 
-                assert!(if let BaseError::FailedHome = state {
-                    true
-                } else {
-                    false
-                });
+                assert!(matches!(state, BaseError::FailedHome));
 
                 watcher.handle_improper_update_failure().await;
             }
