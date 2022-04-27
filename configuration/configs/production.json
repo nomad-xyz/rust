@@ -719,7 +719,7 @@
       "displayName": "Evmos",
       "nativeTokenSymbol": "EVMOS",
       "connections": ["ethereum"],
-      "connextEnabled": true
+      "connextEnabled": false
     }
   }
 }
