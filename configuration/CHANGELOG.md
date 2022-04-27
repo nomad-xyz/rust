@@ -1,6 +1,10 @@
 # Changelog
 
-### Unreleased
+# Unreleased
+
+### v0.1.0-rc.16
+
+- add Evmos mainnet to production config
 
 ### v0.1.0-rc.15
 
