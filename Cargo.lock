@@ -1543,6 +1543,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "gelato-relay"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "color-eyre 0.5.11",
+ "ethers",
+ "futures-util",
+ "reqwest",
+ "serde 1.0.136",
+ "serde_json",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2421,7 +2436,6 @@ dependencies = [
  "affix",
  "async-trait",
  "color-eyre 0.5.11",
- "config 0.10.1",
  "ethers",
  "futures-util",
  "lazy_static",
@@ -3419,11 +3433,13 @@ dependencies = [
  "http-body",
  "hyper",
  "hyper-rustls",
+ "hyper-tls",
  "ipnet",
  "js-sys",
  "lazy_static",
  "log",
  "mime",
+ "native-tls",
  "percent-encoding",
  "pin-project-lite",
  "rustls",
@@ -3432,6 +3448,7 @@ dependencies = [
  "serde_json",
  "serde_urlencoded",
  "tokio",
+ "tokio-native-tls",
  "tokio-rustls",
  "url",
  "wasm-bindgen",
