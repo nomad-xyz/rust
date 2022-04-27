@@ -711,7 +711,7 @@
     "ethereum": {
       "displayName": "Ethereum",
       "nativeTokenSymbol": "ETH",
-      "connections": ["moonbeam", "milkomedaC1"],
+      "connections": ["moonbeam", "milkomedaC1", "evmos"],
       "manualProcessing": true,
       "connextEnabled": true
     },
