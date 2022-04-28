@@ -7,7 +7,9 @@
 use color_eyre::eyre::Result;
 use ethers::prelude::*;
 use nomad_core::*;
-use nomad_xyz_configuration::chains::ethereum::Connection;
+use nomad_xyz_configuration::{
+    chains::ethereum::Connection, ConnectionManagerGasLimits, HomeGasLimits, ReplicaGasLimits,
+};
 use num::Num;
 use std::sync::Arc;
 
@@ -62,12 +64,18 @@ boxed_indexer!(
     chunk_size: u32
 );
 
-boxed_contract!(make_replica, EthereumReplica, Replica,);
-boxed_contract!(make_home, EthereumHome, Home,);
+boxed_contract!(make_home, EthereumHome, Home, gas: Option<HomeGasLimits>);
+boxed_contract!(
+    make_replica,
+    EthereumReplica,
+    Replica,
+    gas: Option<ReplicaGasLimits>
+);
 boxed_contract!(
     make_conn_manager,
     EthereumConnectionManager,
     ConnectionManager,
+    gas: Option<ConnectionManagerGasLimits>
 );
 
 #[async_trait::async_trait]

@@ -57,6 +57,33 @@ extern "C" {
     #[wasm_bindgen(typescript_type = "NetworkInfo")]
     pub type NetworkInfo;
 
+    #[wasm_bindgen(typescript_type = "HomeUpdateGasLimit")]
+    pub type HomeUpdateGasLimit;
+    
+    #[wasm_bindgen(typescript_type = "HomeGasLimits")]
+    pub type HomeGasLimits;
+
+    #[wasm_bindgen(typescript_type = "ReplicaGasLimits")]
+    pub type ReplicaGasLimits;
+
+    #[wasm_bindgen(typescript_type = "ConnectionManagerGasLimits")]
+    pub type ConnectionManagerGasLimits;
+
+    #[wasm_bindgen(typescript_type = "CoreGasConfig")]
+    pub type CoreGasConfig;
+
+    #[wasm_bindgen(typescript_type = "BridgeRouterGasLimits")]
+    pub type BridgeRouterGasLimits;
+
+    #[wasm_bindgen(typescript_type = "EthHelperGasLimits")]
+    pub type EthHelperGasLimits;
+
+    #[wasm_bindgen(typescript_type = "BridgeGasConfig")]
+    pub type BridgeGasConfig;
+
+    #[wasm_bindgen(typescript_type = "NomadGasConfig")]
+    pub type NomadGasConfig;
+
     #[wasm_bindgen(typescript_type = "NomadConfig")]
     pub type NomadConfig;
 }

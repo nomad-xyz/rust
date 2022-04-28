@@ -523,16 +523,15 @@ impl NomadAgent for Watcher {
             .expect("!managers")
             .values()
         {
-            let signer = settings
-                .base
-                .get_signer(&chain_setup.name)
-                .await
-                .transpose()?;
-            let xapp_timelag = None;
+            let name = &chain_setup.name;
+            let signer = settings.base.get_signer(name).await.transpose()?;
+            let gas = settings
+                .as_ref()
+                .gas
+                .get(name)
+                .map(|c| c.core.connection_manager);
 
-            let manager = chain_setup
-                .try_into_connection_manager(signer, xapp_timelag)
-                .await;
+            let manager = chain_setup.try_into_connection_manager(signer, gas).await;
             connection_managers.push(manager);
         }
 

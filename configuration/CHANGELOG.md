@@ -1,6 +1,8 @@
 # Changelog
 
-# Unreleased
+### Unreleased
+
+- add gas configs feature
 
 ### v0.1.0-rc.16
 

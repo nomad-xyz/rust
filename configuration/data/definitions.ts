@@ -128,6 +128,55 @@ export interface NetworkInfo {
   networks: Record<string, Domain>;
 }
 
+export interface HomeUpdateGasLimit {
+  perMessage: number;
+  base: number;
+}
+
+export interface HomeGasLimits {
+  update: HomeUpdateGasLimit;
+  improperUpdate: HomeUpdateGasLimit;
+  doubleUpdate: number;
+}
+
+export interface ReplicaGasLimits {
+  update: number;
+  prove: number;
+  process: number;
+  proveAndProcess: number;
+  doubleUpdate: number;
+}
+
+export interface ConnectionManagerGasLimits {
+  ownerUnenrollReplica: number;
+  unenrollReplica: number;
+}
+
+export interface CoreGasConfig {
+  home: HomeGasLimits;
+  replica: ReplicaGasLimits;
+  connectionManager: ConnectionManagerGasLimits;
+}
+
+export interface BridgeRouterGasLimits {
+  send: number;
+}
+
+export interface EthHelperGasLimits {
+  send: number;
+  sendToEvmLike: number;
+}
+
+export interface BridgeGasConfig {
+  bridgeRouter: BridgeRouterGasLimits;
+  ethHelper: EthHelperGasLimits;
+}
+
+export interface NomadGasConfig {
+  core: CoreGasConfig;
+  bridge: BridgeGasConfig;
+}
+
 export interface NomadConfig {
   version: number;
   environment: string;
@@ -137,5 +186,6 @@ export interface NomadConfig {
   core: Record<string, CoreContracts>;
   bridge: Record<string, BridgeContracts>;
   agent: Record<string, AgentConfig>;
+  gas: Record<string, NomadGasConfig>;
   bridgeGui: Record<string, AppConfig>;
 }

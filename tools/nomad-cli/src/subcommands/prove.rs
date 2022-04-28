@@ -162,6 +162,7 @@ impl ProveCommand {
                 domain: 0,
                 address: address.into(),
             },
+            None,
         ))
     }
 }

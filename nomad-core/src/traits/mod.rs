@@ -165,7 +165,7 @@ mod test {
             "Turning failed transaction receipt into errored tx outcome not succeeded"
         );
 
-        let mut receipt = TransactionReceipt {
+        let receipt = TransactionReceipt {
             status: Some(U64::from(1)),
             ..Default::default()
         };

@@ -13,6 +13,7 @@ use nomad_core::{
     HomeIndexer, Message, RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State,
     TxOutcome, Update, UpdateMeta,
 };
+use nomad_xyz_configuration::HomeGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
 use tracing::instrument;
 
@@ -169,6 +170,7 @@ where
     read_contract: Arc<EthereumHomeInternal<R>>,
     domain: u32,
     name: String,
+    gas: Option<HomeGasLimits>,
 }
 
 impl<W, R> EthereumHome<W, R>
@@ -186,6 +188,7 @@ where
             domain,
             address,
         }: &ContractLocator,
+        gas: Option<HomeGasLimits>,
     ) -> Self {
         Self {
             write_contract: Arc::new(EthereumHomeInternal::new(
@@ -198,6 +201,7 @@ where
             )),
             domain: *domain,
             name: name.to_owned(),
+            gas,
         }
     }
 }
@@ -246,16 +250,19 @@ where
 
     #[tracing::instrument(err, skip(self, update), fields(update = %update))]
     async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
-        let queue_length = self.queue_length().await?;
+        let mut tx = self.write_contract.update(
+            update.update.previous_root.to_fixed_bytes(),
+            update.update.new_root.to_fixed_bytes(),
+            update.signature.to_vec().into(),
+        );
 
-        let tx = self
-            .write_contract
-            .update(
-                update.update.previous_root.to_fixed_bytes(),
-                update.update.new_root.to_fixed_bytes(),
-                update.signature.to_vec().into(),
-            )
-            .gas(U256::from(100_000) + (queue_length * 10_000));
+        if let Some(limits) = &self.gas {
+            let queue_length = self.queue_length().await?;
+            tx.tx.set_gas(
+                U256::from(limits.update.base)
+                    + (U256::from(limits.update.per_message) * queue_length),
+            );
+        }
 
         report_tx!(tx, &self.provider).try_into()
     }
@@ -265,7 +272,7 @@ where
         &self,
         double: &DoubleUpdate,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self.write_contract.double_update(
+        let mut tx = self.write_contract.double_update(
             double.0.update.previous_root.to_fixed_bytes(),
             [
                 double.0.update.new_root.to_fixed_bytes(),
@@ -274,6 +281,10 @@ where
             double.0.signature.to_vec().into(),
             double.1.signature.to_vec().into(),
         );
+
+        if let Some(limits) = &self.gas {
+            tx.tx.set_gas(U256::from(limits.double_update));
+        }
 
         report_tx!(tx, &self.provider).try_into()
     }
@@ -322,11 +333,19 @@ where
         &self,
         update: &SignedUpdate,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self.write_contract.improper_update(
+        let mut tx = self.write_contract.improper_update(
             update.update.previous_root.to_fixed_bytes(),
             update.update.new_root.to_fixed_bytes(),
             update.signature.to_vec().into(),
         );
+
+        if let Some(limits) = &self.gas {
+            let queue_length = self.queue_length().await?;
+            tx.tx.set_gas(
+                U256::from(limits.improper_update.base)
+                    + U256::from(limits.improper_update.per_message) * queue_length,
+            );
+        }
 
         report_tx!(tx, &self.provider).try_into()
     }
