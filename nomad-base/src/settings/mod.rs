@@ -22,7 +22,7 @@ use color_eyre::{eyre::bail, Result};
 use nomad_core::{db::DB, Common, ContractLocator, Signers};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
 use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets};
-use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, CoreGasConfig, NomadConfig};
+use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig, NomadGasConfig};
 use serde::Deserialize;
 use std::{collections::HashMap, sync::Arc};
 
@@ -160,7 +160,7 @@ pub struct Settings {
     /// Optional connection manager configurations (set for watcher only)
     pub managers: Option<HashMap<String, ChainSetup>>,
     /// Per-chain gas settings
-    pub gas: HashMap<String, CoreGasConfig>,
+    pub gas: HashMap<String, NomadGasConfig>,
     /// The tracing configuration
     pub logging: LogConfig,
     /// Transaction signers
@@ -232,7 +232,7 @@ impl Settings {
         let opt_home_timelag = self.home_timelag();
         let name = &self.home.name;
         let signer = self.get_signer(name).await.transpose()?;
-        let gas = self.gas.get(name).map(|c| c.home);
+        let gas = self.gas.get(name).map(|c| c.core.home);
         self.home.try_into_home(signer, opt_home_timelag, gas).await
     }
 
@@ -284,7 +284,7 @@ impl Settings {
     pub async fn try_replica(&self, replica_name: &str) -> Result<Replicas> {
         let replica_setup = self.replicas.get(replica_name).expect("!replica");
         let signer = self.get_signer(replica_name).await.transpose()?;
-        let gas = self.gas.get(replica_name).map(|c| c.replica);
+        let gas = self.gas.get(replica_name).map(|c| c.core.replica);
         replica_setup.try_into_replica(signer, gas).await
     }
 

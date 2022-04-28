@@ -530,7 +530,7 @@ impl NomadAgent for Watcher {
                 .as_ref()
                 .gas
                 .get(name)
-                .map(|c| c.connection_manager);
+                .map(|c| c.core.connection_manager);
 
             let manager = chain_setup
                 .try_into_connection_manager(signer, xapp_timelag, gas)
