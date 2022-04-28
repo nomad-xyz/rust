@@ -2526,6 +2526,7 @@ dependencies = [
  "ethers-providers",
  "ethers-signers",
  "futures-util",
+ "gelato-relay",
  "hex",
  "nomad-core",
  "nomad-types",
