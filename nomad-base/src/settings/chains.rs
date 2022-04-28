@@ -184,7 +184,6 @@ impl ChainSetup {
     pub async fn try_into_connection_manager(
         &self,
         signer: Option<Signers>,
-        timelag: Option<u8>,
         gas: Option<ConnectionManagerGasLimits>,
     ) -> Result<ConnectionManagers> {
         match &self.chain {
@@ -197,7 +196,7 @@ impl ChainSetup {
                         address: self.address,
                     },
                     signer,
-                    timelag,
+                    None, // Never need timelag for xapp connection manager
                     gas,
                 )
                 .await?,
