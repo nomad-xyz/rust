@@ -20,10 +20,6 @@ tracing = "0.1.22"
 color-eyre = "0.5.0"
 anyhow = "1"
 num = "0.4"
-
-nomad-xyz-configuration = { path = "../../configuration" }
-nomad-types = { path = "../../nomad-types" }
-nomad-core = { path = "../../nomad-core" }
 tokio = "1.7.1"
 hex = "0.4.3"
 prometheus = "0.12"
@@ -32,6 +28,11 @@ futures-util = "0.3.12"
 tracing-futures = "0.2.5"
 url = "2.2.2"
 thiserror = "1.0.30"
+
+nomad-xyz-configuration = { path = "../../configuration" }
+nomad-types = { path = "../../nomad-types" }
+nomad-core = { path = "../../nomad-core" }
+gelato-relay = { path = "../../gelato-relay" }
 
 [build-dependencies]
 ethers = {git = "https://github.com/gakonst/ethers-rs", branch = "master", features = ["abigen"]}

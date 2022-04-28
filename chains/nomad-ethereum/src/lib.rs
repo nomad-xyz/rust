@@ -20,6 +20,10 @@ mod macros;
 mod retrying;
 pub use retrying::{RetryingProvider, RetryingProviderError};
 
+/// Chain submitter
+mod chain_submitter;
+pub use chain_submitter::*;
+
 /// Contract binding
 #[cfg(not(doctest))]
 pub(crate) mod bindings;
