@@ -134,6 +134,55 @@ export interface NetworkInfo {
   networks: Record<string, Domain>;
 }
 
+export interface HomeUpdateGasLimit {
+  perMessage: number;
+  base: number;
+}
+
+export interface HomeGasLimits {
+  update: HomeUpdateGasLimit;
+  improperUpdate: HomeUpdateGasLimit;
+  doubleUpdate: number;
+}
+
+export interface ReplicaGasLimits {
+  update: number;
+  prove: number;
+  process: number;
+  proveAndProcess: number;
+  doubleUpdate: number;
+}
+
+export interface ConnectionManagerGasLimits {
+  ownerUnenrollReplica: number;
+  unenrollReplica: number;
+}
+
+export interface CoreGasConfig {
+  home: HomeGasLimits;
+  replica: ReplicaGasLimits;
+  connectionManager: ConnectionManagerGasLimits;
+}
+
+export interface BridgeRouterGasLimits {
+  send: number;
+}
+
+export interface EthHelperGasLimits {
+  send: number;
+  sendToEvmLike: number;
+}
+
+export interface BridgeGasConfig {
+  bridgeRouter: BridgeRouterGasLimits;
+  ethHelper: EthHelperGasLimits;
+}
+
+export interface NomadGasConfig {
+  core: CoreGasConfig;
+  bridge: BridgeGasConfig;
+}
+
 export interface NomadConfig {
   version: number;
   environment: string;
@@ -143,6 +192,7 @@ export interface NomadConfig {
   core: Record<string, CoreContracts>;
   bridge: Record<string, BridgeContracts>;
   agent: Record<string, AgentConfig>;
+  gas: Record<string, NomadGasConfig>;
   bridgeGui: Record<string, AppConfig>;
 }
 "#;
@@ -205,6 +255,33 @@ extern "C" {
 
     #[wasm_bindgen(typescript_type = "NetworkInfo")]
     pub type NetworkInfo;
+
+    #[wasm_bindgen(typescript_type = "HomeUpdateGasLimit")]
+    pub type HomeUpdateGasLimit;
+    
+    #[wasm_bindgen(typescript_type = "HomeGasLimits")]
+    pub type HomeGasLimits;
+
+    #[wasm_bindgen(typescript_type = "ReplicaGasLimits")]
+    pub type ReplicaGasLimits;
+
+    #[wasm_bindgen(typescript_type = "ConnectionManagerGasLimits")]
+    pub type ConnectionManagerGasLimits;
+
+    #[wasm_bindgen(typescript_type = "CoreGasConfig")]
+    pub type CoreGasConfig;
+
+    #[wasm_bindgen(typescript_type = "BridgeRouterGasLimits")]
+    pub type BridgeRouterGasLimits;
+
+    #[wasm_bindgen(typescript_type = "EthHelperGasLimits")]
+    pub type EthHelperGasLimits;
+
+    #[wasm_bindgen(typescript_type = "BridgeGasConfig")]
+    pub type BridgeGasConfig;
+
+    #[wasm_bindgen(typescript_type = "NomadGasConfig")]
+    pub type NomadGasConfig;
 
     #[wasm_bindgen(typescript_type = "NomadConfig")]
     pub type NomadConfig;
