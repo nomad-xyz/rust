@@ -1,15 +1,38 @@
 //! Per-chain gas configurations
-/// Gas settings specifically for a home update call
+
+/// Gas configuration for core and bridge contract methods
+#[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct NomadGasConfig {
+    /// Core gas limits
+    pub core: CoreGasConfig,
+    /// Bridge gas limits
+    pub bridge: BridgeGasConfig,
+}
+
+/// Gas configuration for core contract methods
+#[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct CoreGasConfig {
+    /// Home gas limits
+    pub home: HomeGasLimits,
+    /// Replica gas limits
+    pub replica: ReplicaGasLimits,
+    /// Connection manager gas limits
+    pub connection_manager: ConnectionManagerGasLimits,
+}
+
+/// Gas limits specifically for a home update call
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct HomeUpdateGasLimit {
     /// Per message additional gas cost
     pub per_message: u64,
-    /// Base gas settings
+    /// Base gas limits
     pub base: u64,
 }
 
-/// Home gas settings
+/// Home gas limits
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct HomeGasLimits {
@@ -21,7 +44,7 @@ pub struct HomeGasLimits {
     pub double_update: u64,
 }
 
-/// Replica gas settings
+/// Replica gas limits
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ReplicaGasLimits {
@@ -37,7 +60,7 @@ pub struct ReplicaGasLimits {
     pub double_update: u64,
 }
 
-/// Connection manager gas settings
+/// Connection manager gas limits
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ConnectionManagerGasLimits {
@@ -47,14 +70,30 @@ pub struct ConnectionManagerGasLimits {
     pub unenroll_replica: u64,
 }
 
-/// Gas configuration for core contract methods
+/// Gas configuration for bridge contract methods
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct CoreGasConfig {
-    /// Home gas settings
-    pub home: HomeGasLimits,
-    /// Replica Gas settings
-    pub replica: ReplicaGasLimits,
-    /// Connection manager gas settings
-    pub connection_manager: ConnectionManagerGasLimits,
+pub struct BridgeGasConfig {
+    /// BridgeRouter gas limits
+    pub bridge_router: BridgeRouterGasLimits,
+    /// EthHelper gas limits
+    pub eth_helper: EthHelperGasLimits,
+}
+
+/// Gas limits for BridgeRouter
+#[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct BridgeRouterGasLimits {
+    /// Send
+    pub send: u64,
+}
+
+/// Gas limits for EthHelper
+#[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct EthHelperGasLimits {
+    /// Send
+    pub send: u64,
+    /// Send to EVM like
+    pub send_to_evm_like: u64,
 }
