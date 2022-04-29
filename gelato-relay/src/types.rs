@@ -11,8 +11,22 @@ pub struct RelayRequest {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct EstimatedFeeRequest {
+    pub payment_token: String,
+    pub gas_limit: usize,
+    pub is_high_priority: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RelayResponse {
     pub task_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EstimatedFeeResponse {
+    pub estimated_fee: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
