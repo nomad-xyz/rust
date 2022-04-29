@@ -106,6 +106,56 @@ macro_rules! boxed_indexer {
     };
 }
 
+/// Create ethers::SignerMiddleware from http connection
+#[macro_export]
+macro_rules! http_signer_middleware {
+    ($url:expr, $signer:ident) => {{
+        let http: crate::retrying::RetryingProvider<ethers::providers::Http> = $url.parse()?;
+        let provider = Arc::new(ethers::providers::Provider::new(http));
+
+         // First set the chain ID locally
+         let provider_chain_id = provider.get_chainid().await?;
+         let signer = ethers::signers::Signer::with_chain_id($signer, provider_chain_id.as_u64());
+ 
+         // Manage the nonce locally
+         let address = ethers::prelude::Signer::address(&signer);
+         let provider =
+             ethers::middleware::nonce_manager::NonceManagerMiddleware::new(provider, address);
+ 
+         // Kludge. Increase the gas by multiplication of every estimated gas by 
+         // 2, except the gas for chain id 1 (Ethereum Mainnet)
+         let provider = crate::gas::GasAdjusterMiddleware::with_default_policy(provider, provider_chain_id.as_u64());
+ 
+         // Manage signing locally
+         Arc::new(ethers::middleware::SignerMiddleware::new(provider, signer))
+    }};
+}
+
+/// Create ethers::SignerMiddleware from websockets connection
+#[macro_export]
+macro_rules! ws_signer_middleware {
+    ($url:expr, $signer:ident) => {{
+        let ws = ethers::providers::Ws::connect($url).await?;
+        let provider = Arc::new(ethers::providers::Provider::new(ws));
+
+         // First set the chain ID locally
+         let provider_chain_id = provider.get_chainid().await?;
+         let signer = ethers::signers::Signer::with_chain_id($signer, provider_chain_id.as_u64());
+ 
+         // Manage the nonce locally
+         let address = ethers::prelude::Signer::address(&signer);
+         let provider =
+             ethers::middleware::nonce_manager::NonceManagerMiddleware::new(provider, address);
+ 
+         // Kludge. Increase the gas by multiplication of every estimated gas by 
+         // 2, except the gas for chain id 1 (Ethereum Mainnet)
+         let provider = crate::gas::GasAdjusterMiddleware::with_default_policy(provider, provider_chain_id.as_u64());
+ 
+         // Manage signing locally
+         Arc::new(ethers::middleware::SignerMiddleware::new(provider, signer))
+    }};
+}
+
 macro_rules! boxed_contract {
     (@timelag $provider:expr, $abi:ident, $timelag:ident, $($tail:tt)*) => {{
         let write_provider: Arc<_> = $provider.clone();
