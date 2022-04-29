@@ -3,7 +3,7 @@ use std::str::FromStr;
 use crate::FromEnv;
 use nomad_types::HexString;
 
-/// Ethereum signer types
+/// Signer types
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 #[serde(untagged, rename_all = "camelCase")]
 pub enum SignerConf {

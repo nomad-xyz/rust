@@ -1,7 +1,11 @@
 mod types;
 use types::*;
 
+mod client;
+use client::*;
+
 use color_eyre::eyre::Result;
+use std::collections::HashMap;
 
 const DEFAULT_URL: &str = "https://relay.gelato.digital";
 
@@ -26,13 +30,13 @@ impl GelatoClient {
         dest: &str,
         data: &str,
         token: &str,
-        relayer_fee: &str,
+        relayer_fee: usize,
     ) -> Result<RelayResponse, reqwest::Error> {
         let params = RelayRequest {
             dest: dest.to_owned(),
             data: data.to_owned(),
             token: token.to_owned(),
-            relayer_fee: relayer_fee.to_owned(),
+            relayer_fee: relayer_fee.to_string(),
         };
 
         let url = format!("{}/relays/{}", &self.url, chain_id);
@@ -54,6 +58,34 @@ impl GelatoClient {
         let url = format!("{}/relays", &self.url);
         let res = reqwest::get(url).await?;
         Ok(res.json::<RelayChainsResponse>().await?.relays)
+    }
+
+    pub async fn get_estimated_fee(
+        &self,
+        chain_id: usize,
+        payment_token: &str,
+        gas_limit: usize,
+        is_high_priority: bool,
+    ) -> Result<usize, reqwest::Error> {
+        let payment_token = payment_token.to_string();
+        let gas_limit = gas_limit.to_string();
+        let is_high_priority = is_high_priority.to_string();
+        let params = HashMap::from([
+            ("paymentToken", payment_token),
+            ("gasLimit", gas_limit),
+            ("isHighPriority", is_high_priority),
+        ]);
+
+        let base_url = format!("{}/oracles/{}/estimate", &self.url, chain_id);
+        let url = reqwest::Url::parse_with_params(&base_url, params).expect("!url");
+        let res = reqwest::get(url).await?;
+
+        Ok(res
+            .json::<EstimatedFeeResponse>()
+            .await?
+            .estimated_fee
+            .parse()
+            .expect("!string to int"))
     }
 
     pub async fn get_task_status(
