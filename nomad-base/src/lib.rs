@@ -50,3 +50,6 @@ pub use contract_sync::*;
 
 mod indexer;
 pub use indexer::*;
+
+mod submitter;
+pub use submitter::*;
