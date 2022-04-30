@@ -1,9 +1,6 @@
 mod types;
 pub use types::*;
 
-mod client;
-pub use client::*;
-
 use color_eyre::eyre::Result;
 use std::collections::HashMap;
 

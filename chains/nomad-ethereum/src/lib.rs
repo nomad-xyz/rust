@@ -20,6 +20,10 @@ mod macros;
 mod retrying;
 pub use retrying::{RetryingProvider, RetryingProviderError};
 
+/// Gelato client types
+mod gelato;
+pub use gelato::*;
+
 /// Chain submitter
 mod submitter;
 pub use submitter::*;

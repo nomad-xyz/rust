@@ -1,7 +1,8 @@
+use crate::SingleChainGelatoClient;
 use color_eyre::Result;
 use ethers::prelude::*;
 use ethers::types::transaction::eip2718::TypedTransaction;
-use gelato_relay::{RelayResponse, SingleChainGelatoClient};
+use gelato_relay::RelayResponse;
 use std::sync::Arc;
 use tracing::info;
 
