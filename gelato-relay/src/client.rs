@@ -1,19 +1,29 @@
 use crate::{GelatoClient, RelayResponse};
+use ethers::providers::Middleware;
+use std::marker::PhantomData;
 
 /// Gelato client for submitting txs to single chain
-pub struct SingleChainGelatoClient {
+#[derive(Debug, Clone)]
+pub struct SingleChainGelatoClient<M> {
     pub client: GelatoClient,
     pub chain_id: usize,
     pub payment_token: String,
+    _middleware: PhantomData<M>,
 }
 
-impl SingleChainGelatoClient {
+impl<M: Middleware + 'static> SingleChainGelatoClient<M> {
+    /// Get reference to base client
+    pub fn client(&self) -> &GelatoClient {
+        &self.client
+    }
+
     /// Instantiate single chain client with default Gelato url
     pub fn with_default_url(chain_id: usize, payment_token: String) -> Self {
         Self {
             client: GelatoClient::default(),
             chain_id,
             payment_token,
+            _middleware: Default::default(),
         }
     }
 

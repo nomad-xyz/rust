@@ -1,11 +1,11 @@
-use crate::http_signer_middleware;
-use color_eyre::{eyre::bail, Result};
+use color_eyre::Result;
 use ethers::prelude::*;
 use ethers::types::transaction::eip2718::TypedTransaction;
+use gelato_relay::{RelayResponse, SingleChainGelatoClient};
 use nomad_core::Signers;
 use nomad_xyz_configuration::ethereum::Connection;
 use std::sync::Arc;
-use tokio::{sync::mpsc, task::JoinHandle};
+use tracing::info;
 
 /// Configuration for a ethers signing provider
 #[derive(Debug, Clone)]
@@ -34,56 +34,88 @@ pub struct MetaTx {
 /// Component responsible for submitting transactions to the chain. Can
 /// sign/submit locally or use a transaction relay service.
 #[derive(Debug, Clone)]
-pub enum Submitter {
+pub enum Submitter<M: Middleware + 'static> {
     /// Sign/submit txs locally
-    Local(SigningProviderConfig),
+    Local(Arc<M>),
+    /// Pass meta txs to Gelato relay service
+    Gelato(SingleChainGelatoClient<M>),
 }
 
 /// Receives meta txs and submits them to chain
 #[derive(Debug)]
-pub struct ChainSubmitter {
+pub struct ChainSubmitter<M: Middleware + 'static> {
     /// Tx submitter
-    pub submitter: Submitter,
+    pub submitter: Submitter<M>,
     // /// Meta tx receiver
     // pub rx: mpsc::Receiver<MetaTx>,
 }
 
-impl ChainSubmitter {
+impl<M: Middleware + 'static> ChainSubmitter<M> {
     /// Submit transaction to chain
     pub async fn submit(
         &self,
-        _domain: u32,
-        _contract_address: Address,
+        domain: u32,
+        contract_address: Address,
         tx: impl Into<TypedTransaction>,
     ) -> Result<()> {
         let tx: TypedTransaction = tx.into();
 
         match &self.submitter {
-            Submitter::Local(config) => {
-                let signer = config.signer.clone();
-                let client = match &config.connection {
-                    Connection::Http { url } => http_signer_middleware!(url, signer),
-                    Connection::Ws { url: _ } => panic!("not supporting ws"),
-                };
-
+            Submitter::Local(client) => {
                 let dispatched = client.send_transaction(tx, None).await?;
                 let tx_hash: ethers::core::types::H256 = *dispatched;
+                info!("dispatched transaction with tx_hash {:?}", tx_hash);
+
                 let result = dispatched
                     .await?
                     .ok_or_else(|| nomad_core::ChainCommunicationError::DroppedError(tx_hash))?;
 
-                tracing::info!(
+                info!(
                     "confirmed transaction with tx_hash {:?}",
                     result.transaction_hash
                 );
+            }
+            Submitter::Gelato(client) => {
+                let tx_data = tx.data().expect("!tx data");
+                let data = format!("{:x}", tx_data);
+                let address = format!("{:x}", contract_address);
 
-                Ok(())
+                info!(
+                    domain = domain,
+                    contract_address = ?address,
+                    "Dispatching tx to Gelato relay."
+                );
+
+                let RelayResponse { task_id } =
+                    client.send_relay_transaction(&address, &data).await?;
+                info!(task_id = ?task_id, "Submitted tx to Gelato relay.");
+
+                loop {
+                    let status = client
+                        .client()
+                        .get_task_status(&task_id)
+                        .await?
+                        .expect("!task status");
+
+                    if let Some(execution) = &status.execution {
+                        info!(
+                            chain = ?status.chain,
+                            task_id = ?status.task_id,
+                            execution = ?execution,
+                            "Gelato relay executed tx."
+                        );
+
+                        break;
+                    }
+                }
             }
         }
+
+        Ok(())
     }
 
     // /// Spawn ChainSubmitter task. Receives meta txs and submits in loop.
-    // #[tracing::instrument]
+    // #[instrument]
     // pub async fn spawn(mut self) -> JoinHandle<Result<()>> {
     //     tokio::spawn(async move {
     //         loop {
