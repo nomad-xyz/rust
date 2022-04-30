@@ -90,8 +90,10 @@ where
             .await
             .map_err(FromErr::from)?;
 
-        let adjusted_price = self.get_gas_price().await?;
-        tx.set_gas_price(adjusted_price);
+        if tx.gas_price().is_none() {
+            let adjusted_price = self.get_gas_price().await?;
+            tx.set_gas_price(adjusted_price);
+        }
 
         Ok(())
     }

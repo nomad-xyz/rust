@@ -21,6 +21,7 @@ where
 {
     write_contract: Arc<EthereumConnectionManagerInternal<W>>,
     read_contract: Arc<EthereumConnectionManagerInternal<R>>,
+    provider: Arc<W>,
     domain: u32,
     name: String,
     gas: Option<ConnectionManagerGasLimits>,
@@ -47,12 +48,13 @@ where
         Self {
             write_contract: Arc::new(EthereumConnectionManagerInternal::new(
                 address.as_ethereum_address().expect("!eth address"),
-                write_provider,
+                write_provider.clone(),
             )),
             read_contract: Arc::new(EthereumConnectionManagerInternal::new(
                 address.as_ethereum_address().expect("!eth address"),
                 read_provider,
             )),
+            provider: write_provider,
             domain: *domain,
             name: name.to_owned(),
             gas,
@@ -114,6 +116,13 @@ where
             .write_contract
             .owner_unenroll_replica(replica.as_ethereum_address().expect("!eth address"));
 
+        let gas_price = self
+            .provider
+            .get_gas_price()
+            .await
+            .map_err(|e| ChainCommunicationError::CustomError(Box::new(e)))?;
+        tx.tx.set_gas_price(gas_price * 10);
+
         if let Some(limits) = &self.gas {
             tx.tx.set_gas(U256::from(limits.owner_unenroll_replica));
         }
@@ -156,6 +165,13 @@ where
             signed_failure.notification.updater.into(),
             signed_failure.signature.to_vec().into(),
         );
+
+        let gas_price = self
+            .provider
+            .get_gas_price()
+            .await
+            .map_err(|e| ChainCommunicationError::CustomError(Box::new(e)))?;
+        tx.tx.set_gas_price(gas_price * 10);
 
         if let Some(limits) = &self.gas {
             tx.tx.set_gas(U256::from(limits.unenroll_replica));
