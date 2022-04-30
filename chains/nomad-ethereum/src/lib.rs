@@ -21,8 +21,8 @@ mod retrying;
 pub use retrying::{RetryingProvider, RetryingProviderError};
 
 /// Chain submitter
-mod chain_submitter;
-pub use chain_submitter::*;
+mod submitter;
+pub use submitter::*;
 
 /// Contract binding
 #[cfg(not(doctest))]

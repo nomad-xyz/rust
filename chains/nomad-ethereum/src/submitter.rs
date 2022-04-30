@@ -1,12 +1,14 @@
 use crate::http_signer_middleware;
-use color_eyre::Result;
+use color_eyre::{eyre::bail, Result};
 use ethers::prelude::*;
 use ethers::types::transaction::eip2718::TypedTransaction;
 use nomad_core::Signers;
 use nomad_xyz_configuration::ethereum::Connection;
 use std::sync::Arc;
+use tokio::{sync::mpsc, task::JoinHandle};
 
-/// Configuration for creating an ethers::SignerMiddleware
+/// Configuration for a ethers signing provider
+#[derive(Debug, Clone)]
 pub struct SigningProviderConfig {
     /// Signer configuration
     pub signer: Signers,
@@ -21,16 +23,34 @@ impl SigningProviderConfig {
     }
 }
 
+/// Unsigned transaction and metadata
+#[derive(Debug, Clone)]
+pub struct MetaTx {
+    domain: u32,
+    contract_address: Address,
+    tx: TypedTransaction,
+}
+
 /// Component responsible for submitting transactions to the chain. Can
 /// sign/submit locally or use a transaction relay service.
-pub enum ChainSubmitter {
+#[derive(Debug, Clone)]
+pub enum Submitter {
     /// Sign/submit txs locally
     Local(SigningProviderConfig),
 }
 
+/// Receives meta txs and submits them to chain
+#[derive(Debug)]
+pub struct ChainSubmitter {
+    /// Tx submitter
+    pub submitter: Submitter,
+    // /// Meta tx receiver
+    // pub rx: mpsc::Receiver<MetaTx>,
+}
+
 impl ChainSubmitter {
     /// Submit transaction to chain
-    pub async fn submit_to_chain(
+    pub async fn submit(
         &self,
         _domain: u32,
         _contract_address: Address,
@@ -38,8 +58,8 @@ impl ChainSubmitter {
     ) -> Result<()> {
         let tx: TypedTransaction = tx.into();
 
-        match self {
-            ChainSubmitter::Local(config) => {
+        match &self.submitter {
+            Submitter::Local(config) => {
                 let signer = config.signer.clone();
                 let client = match &config.connection {
                     Connection::Http { url } => http_signer_middleware!(url, signer),
@@ -58,15 +78,29 @@ impl ChainSubmitter {
                 );
 
                 Ok(())
-            } // ChainSubmitter::Gelato(client) => {
-              //     client.send_relay_transaction(
-              //         chain_id, // translate util
-              //         dest, // contract address
-              //         data, // TypedTransaction
-              //         token, // configurable fee token
-              //         relayer_fee // configurable fee amount
-              //     ).await?
-              // }
+            }
         }
     }
+
+    // /// Spawn ChainSubmitter task. Receives meta txs and submits in loop.
+    // #[tracing::instrument]
+    // pub async fn spawn(mut self) -> JoinHandle<Result<()>> {
+    //     tokio::spawn(async move {
+    //         loop {
+    //             let tx = self.rx.recv().await;
+
+    //             if tx.is_none() {
+    //                 bail!("Eth ChainSubmitter channel closed.")
+    //             }
+
+    //             let MetaTx {
+    //                 domain,
+    //                 contract_address,
+    //                 tx,
+    //             } = tx.unwrap();
+
+    //             self.submit(domain, contract_address, tx).await?;
+    //         }
+    //     })
+    // }
 }
