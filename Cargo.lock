@@ -2534,6 +2534,7 @@ dependencies = [
  "nomad-xyz-configuration",
  "num",
  "prometheus",
+ "reqwest",
  "rocksdb",
  "serde 1.0.136",
  "serde_json",
