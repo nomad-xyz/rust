@@ -2,52 +2,36 @@ use color_eyre::Result;
 use ethers::prelude::*;
 use ethers::types::transaction::eip2718::TypedTransaction;
 use gelato_relay::{RelayResponse, SingleChainGelatoClient};
-use nomad_core::Signers;
-use nomad_xyz_configuration::ethereum::Connection;
 use std::sync::Arc;
 use tracing::info;
-
-/// Configuration for a ethers signing provider
-#[derive(Debug, Clone)]
-pub struct SigningProviderConfig {
-    /// Signer configuration
-    pub signer: Signers,
-    /// Connection configuration
-    pub connection: Connection,
-}
-
-impl SigningProviderConfig {
-    /// Instantiate new signing provider config
-    pub fn new(signer: Signers, connection: Connection) -> Self {
-        Self { signer, connection }
-    }
-}
-
-/// Unsigned transaction and metadata
-#[derive(Debug, Clone)]
-pub struct MetaTx {
-    domain: u32,
-    contract_address: Address,
-    tx: TypedTransaction,
-}
 
 /// Component responsible for submitting transactions to the chain. Can
 /// sign/submit locally or use a transaction relay service.
 #[derive(Debug, Clone)]
-pub enum Submitter<M: Middleware + 'static> {
+pub enum Submitter<M> {
     /// Sign/submit txs locally
     Local(Arc<M>),
     /// Pass meta txs to Gelato relay service
     Gelato(SingleChainGelatoClient<M>),
 }
 
+impl<M> From<Arc<M>> for Submitter<M> {
+    fn from(client: Arc<M>) -> Self {
+        Self::Local(client)
+    }
+}
+
+impl<M> From<SingleChainGelatoClient<M>> for Submitter<M> {
+    fn from(client: SingleChainGelatoClient<M>) -> Self {
+        Self::Gelato(client)
+    }
+}
+
 /// Receives meta txs and submits them to chain
 #[derive(Debug)]
-pub struct ChainSubmitter<M: Middleware + 'static> {
+pub struct ChainSubmitter<M> {
     /// Tx submitter
     pub submitter: Submitter<M>,
-    // /// Meta tx receiver
-    // pub rx: mpsc::Receiver<MetaTx>,
 }
 
 impl<M: Middleware + 'static> ChainSubmitter<M> {
@@ -113,26 +97,4 @@ impl<M: Middleware + 'static> ChainSubmitter<M> {
 
         Ok(())
     }
-
-    // /// Spawn ChainSubmitter task. Receives meta txs and submits in loop.
-    // #[instrument]
-    // pub async fn spawn(mut self) -> JoinHandle<Result<()>> {
-    //     tokio::spawn(async move {
-    //         loop {
-    //             let tx = self.rx.recv().await;
-
-    //             if tx.is_none() {
-    //                 bail!("Eth ChainSubmitter channel closed.")
-    //             }
-
-    //             let MetaTx {
-    //                 domain,
-    //                 contract_address,
-    //                 tx,
-    //             } = tx.unwrap();
-
-    //             self.submit(domain, contract_address, tx).await?;
-    //         }
-    //     })
-    // }
 }
