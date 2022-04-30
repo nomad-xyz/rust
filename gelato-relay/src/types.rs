@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RelayRequest {
     pub dest: String,
@@ -9,7 +9,7 @@ pub struct RelayRequest {
     pub relayer_fee: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EstimatedFeeRequest {
     pub payment_token: String,
@@ -17,31 +17,31 @@ pub struct EstimatedFeeRequest {
     pub is_high_priority: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RelayResponse {
     pub task_id: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EstimatedFeeResponse {
     pub estimated_fee: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RelayChainsResponse {
     pub relays: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskStatusResponse {
-    data: Vec<TaskStatus>,
+    pub data: Vec<TaskStatus>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskStatus {
     pub service: String,
@@ -55,7 +55,7 @@ pub struct TaskStatus {
     pub last_execution: String, // date
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Execution {
     pub status: String,
@@ -64,7 +64,7 @@ pub struct Execution {
     pub created_at: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Check {
     pub task_state: TaskState,
@@ -73,7 +73,7 @@ pub struct Check {
     pub created_at: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Payload {
     pub to: String,
@@ -81,7 +81,7 @@ pub struct Payload {
     pub fee_data: FeeData,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FeeData {
     pub gas_price: usize,
@@ -89,7 +89,7 @@ pub struct FeeData {
     pub max_priority_fee_per_gas: usize,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TaskState {
     CheckPending,
     ExecPending,

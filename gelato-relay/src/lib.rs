@@ -1,14 +1,15 @@
 mod types;
-use types::*;
+pub use types::*;
 
 mod client;
-use client::*;
+pub use client::*;
 
 use color_eyre::eyre::Result;
 use std::collections::HashMap;
 
 const DEFAULT_URL: &str = "https://relay.gelato.digital";
 
+#[derive(Debug, Clone)]
 pub struct GelatoClient {
     url: String,
 }
@@ -91,9 +92,10 @@ impl GelatoClient {
     pub async fn get_task_status(
         &self,
         task_id: &str,
-    ) -> Result<TaskStatusResponse, reqwest::Error> {
+    ) -> Result<Option<TaskStatus>, reqwest::Error> {
         let url = format!("{}/tasks/{}", &self.url, task_id);
         let res = reqwest::get(url).await?;
-        Ok(res.json().await?)
+        let task_status: TaskStatusResponse = res.json().await?;
+        Ok(task_status.data.first().cloned())
     }
 }
