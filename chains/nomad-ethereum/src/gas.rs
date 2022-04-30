@@ -43,7 +43,7 @@ where
             if is_ethereum {
                 price + price / 2
             } else {
-                price * 2
+                price * 5
             }
         };
 
