@@ -106,21 +106,34 @@ macro_rules! boxed_indexer {
     };
 }
 
+#[macro_export]
+macro_rules! http_provider {
+    ($url:expr) => {{
+        let provider: crate::retrying::RetryingProvider<ethers::providers::Http> = $url.parse()?;
+        Arc::new(ethers::providers::Provider::new(provider))
+    }};
+}
+
+#[macro_export]
+macro_rules! ws_provider {
+    ($url:expr) => {{
+        let ws = ethers::providers::Ws::connect($url).await?;
+        Arc::new(ethers::providers::Provider::new(ws))
+    }};
+}
+
 /// Create ethers::SignerMiddleware from http connection
 #[macro_export]
-macro_rules! http_signer_middleware {
-    ($url:expr, $signer:ident) => {{
-        let http: crate::retrying::RetryingProvider<ethers::providers::Http> = $url.parse()?;
-        let provider = Arc::new(ethers::providers::Provider::new(http));
-
+macro_rules! wrap_http {
+    ($provider:expr, $signer:ident) => {{
         // First set the chain ID locally
-        let provider_chain_id = provider.get_chainid().await?;
+        let provider_chain_id = $provider.get_chainid().await?;
         let signer = ethers::signers::Signer::with_chain_id($signer, provider_chain_id.as_u64());
 
         // Manage the nonce locally
         let address = ethers::prelude::Signer::address(&signer);
         let provider =
-            ethers::middleware::nonce_manager::NonceManagerMiddleware::new(provider, address);
+            ethers::middleware::nonce_manager::NonceManagerMiddleware::new($provider, address);
 
         // Kludge. Increase the gas by multiplication of every estimated gas by
         // 2, except the gas for chain id 1 (Ethereum Mainnet)
@@ -136,19 +149,16 @@ macro_rules! http_signer_middleware {
 
 /// Create ethers::SignerMiddleware from websockets connection
 #[macro_export]
-macro_rules! ws_signer_middleware {
-    ($url:expr, $signer:ident) => {{
-        let ws = ethers::providers::Ws::connect($url).await?;
-        let provider = Arc::new(ethers::providers::Provider::new(ws));
-
+macro_rules! wrap_ws {
+    ($provider:expr, $signer:ident) => {{
         // First set the chain ID locally
-        let provider_chain_id = provider.get_chainid().await?;
+        let provider_chain_id = $provider.get_chainid().await?;
         let signer = ethers::signers::Signer::with_chain_id($signer, provider_chain_id.as_u64());
 
         // Manage the nonce locally
         let address = ethers::prelude::Signer::address(&signer);
         let provider =
-            ethers::middleware::nonce_manager::NonceManagerMiddleware::new(provider, address);
+            ethers::middleware::nonce_manager::NonceManagerMiddleware::new($provider, address);
 
         // Kludge. Increase the gas by multiplication of every estimated gas by
         // 2, except the gas for chain id 1 (Ethereum Mainnet)
@@ -162,8 +172,18 @@ macro_rules! ws_signer_middleware {
     }};
 }
 
+// #[macro_export]
+// macro_rules! chain_submitter_local {
+//     ($url:expr, $signer_conf:ident) => {{
+//         let provider = http_provider!($url);
+//         let signer = Signers::try_from_signer_conf(&$signer_conf).await?;
+//         let signing_provider: Arc<_> = wrap_http!(provider.clone(), signer);
+//         ChainSubmitter::new(Submitter::new_local(signing_provider))
+//     }};
+// }
+
 macro_rules! boxed_contract {
-    (@timelag $provider:expr, $abi:ident, $timelag:ident, $($tail:tt)*) => {{
+    (@timelag $provider:expr, $submitter:expr, $abi:ident, $timelag:ident, $($tail:tt)*) => {{
         let write_provider: Arc<_> = $provider.clone();
             if let Some(lag) = $timelag {
                 let read_provider: Arc<_> = ethers::middleware::TimeLag::new($provider, lag).into();
@@ -172,51 +192,46 @@ macro_rules! boxed_contract {
                 Box::new(crate::$abi::new(write_provider, $provider, $($tail)*))
             }
     }};
-    (@signer $provider:expr, $signer:ident, $($tail:tt)*) => {{
-        if let Some(signer) = $signer {
+    (@submitter $provider:expr, $submitter_conf:ident, $($tail:tt)*) => {{
+        if let Some(conf) = $submitter_conf {
             // If there's a provided signer, we want to manage every aspect
             // locally
+            let submitter = match conf {
+                nomad_xyz_configuration::ethereum::TransactionSubmitterConf::Local(signer_conf) => {
+                    let signer = Signers::try_from_signer_conf(&signer_conf).await?;
+                    let signing_provider = wrap_http!($provider.clone(), signer);
+                    let submitter = signing_provider.into();
+                    ChainSubmitter::new(submitter)
+                }
+                nomad_xyz_configuration::ethereum::TransactionSubmitterConf::Gelato(gelato_conf) => {
+                    let signer = Signers::try_from_signer_conf(&gelato_conf.signer).await?;
+                    let signing_provider = wrap_http!($provider.clone(), signer);
+                    let submitter = signing_provider.into();
+                    ChainSubmitter::new(submitter)
+                }
+            };
 
-            // First set the chain ID locally
-            let provider_chain_id = $provider.get_chainid().await?;
-            let signer = ethers::signers::Signer::with_chain_id(signer, provider_chain_id.as_u64());
-
-            // Manage the nonce locally
-            let address = ethers::prelude::Signer::address(&signer);
-            let provider =
-                ethers::middleware::nonce_manager::NonceManagerMiddleware::new($provider, address);
-
-            // Kludge. Increase the gas by multiplication of every estimated gas by 2
-            // except the gas for chain id 1 (Ethereum Mainnet)
-            let provider = crate::gas::GasAdjusterMiddleware::with_default_policy(provider, provider_chain_id.as_u64());
-
-            // Manage signing locally
-            let signing_provider = Arc::new(ethers::middleware::SignerMiddleware::new(provider, signer));
-
-            boxed_contract!(@timelag signing_provider, $($tail)*)
+            boxed_contract!(@timelag $provider, submitter, $($tail)*)
         } else {
-            boxed_contract!(@timelag $provider, $($tail)*)
+            panic!("Not supporting contracts with tx submitter");
         }
     }};
     (@ws $url:expr, $($tail:tt)*) => {{
-        let ws = ethers::providers::Ws::connect($url).await?;
-        let provider = Arc::new(ethers::providers::Provider::new(ws));
-        boxed_contract!(@signer provider, $($tail)*)
+        let provider = ws_provider!($url);
+        boxed_contract!(@submitter provider, $($tail)*)
     }};
     (@http $url:expr, $($tail:tt)*) => {{
-        let provider: crate::retrying::RetryingProvider<ethers::providers::Http> = $url.parse()?;
-        let provider = Arc::new(ethers::providers::Provider::new(provider));
-        boxed_contract!(@signer provider, $($tail)*)
+        let provider = http_provider!($url);
+        boxed_contract!(@submitter provider, $($tail)*)
     }};
     ($name:ident, $abi:ident, $trait:ident, $($n:ident:$t:ty),*)  => {
         #[doc = "Cast a contract locator to a live contract handle"]
         pub async fn $name(conn: nomad_xyz_configuration::ethereum::Connection, locator: &ContractLocator, submitter_conf: Option<nomad_xyz_configuration::ethereum::TransactionSubmitterConf>, timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
             let b: Box<dyn $trait> = match conn {
                 nomad_xyz_configuration::chains::ethereum::Connection::Http (url) => {
-                    boxed_contract!(@http url, signer, $abi, timelag, locator, $($n),*)
-                }
+                    boxed_contract!(@http url, submitter_conf, $abi, timelag, locator, $($n),*)
                 nomad_xyz_configuration::chains::ethereum::Connection::Ws (url) => {
-                    boxed_contract!(@ws url, signer, $abi, timelag, locator, $($n),*)
+                    boxed_contract!(@ws url, submitter_conf, $abi, timelag, locator, $($n),*)
                 }
             };
             Ok(b)

@@ -18,6 +18,15 @@ pub enum Submitter<M> {
     Gelato(SingleChainGelatoClient<M>),
 }
 
+impl<M> Submitter<M>
+where
+    M: Middleware + 'static,
+{
+    fn new_local(client: Arc<M>) -> Self {
+        Self::Local(client)
+    }
+}
+
 impl<M> From<Arc<M>> for Submitter<M> {
     fn from(client: Arc<M>) -> Self {
         Self::Local(client)
@@ -38,6 +47,19 @@ pub struct ChainSubmitter<M> {
 }
 
 impl<M: Middleware + 'static> ChainSubmitter<M> {
+    pub fn new(submitter: Submitter<M>) -> Self {
+        Self { submitter }
+    }
+
+    // pub async fn local_from_url_and_conf(url: String, conf: TransactionSubmitterConf) -> Result<Self> {
+    //     Ok(match conf {
+    //         TransactionSubmitterConf::Local(signer_conf) => {
+    //             chain_submitter_local!(url, signer_conf)
+    //         }
+    //         _ => panic!("Tried to create local ethereum TransactionSubmitter with non-local conf"),
+    //     })
+    // }
+
     /// Submit transaction to chain
     pub async fn submit(
         &self,
