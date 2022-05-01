@@ -127,7 +127,7 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
             loop {
                 let running_time = SystemTime::now();
 
-                let handle = Self::run(channel.clone()).in_current_span();
+                let handle = Self::run(channel.clone());
                 let res = handle
                     .await?
                     .wrap_err(format!("Task for replica named {} failed", &replica));

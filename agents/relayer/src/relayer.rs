@@ -74,9 +74,13 @@ impl UpdatePoller {
             }
 
             // Relay update and increment counters if tx successful
-            if self.replica.update(&signed_update).await.is_ok() {
-                self.updates_relayed_count.inc();
-            }
+            match self.replica.update(&signed_update).await {
+                Ok(_) => self.updates_relayed_count.inc(),
+                Err(e) => {
+                    drop(lock.unwrap());
+                    return Err(e.into());
+                }
+            };
 
             // lock dropped here
         } else {
