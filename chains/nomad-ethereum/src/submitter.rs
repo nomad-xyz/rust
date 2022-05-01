@@ -3,8 +3,6 @@ use color_eyre::Result;
 use ethers::prelude::*;
 use ethers::types::transaction::eip2718::TypedTransaction;
 use gelato_relay::RelayResponse;
-use nomad_core::Signers;
-use nomad_xyz_configuration::ethereum::TransactionSubmitterConf;
 use std::sync::Arc;
 use tracing::info;
 
@@ -16,15 +14,6 @@ pub enum Submitter<M> {
     Local(Arc<M>),
     /// Pass meta txs to Gelato relay service
     Gelato(SingleChainGelatoClient<M>),
-}
-
-impl<M> Submitter<M>
-where
-    M: Middleware + 'static,
-{
-    fn new_local(client: Arc<M>) -> Self {
-        Self::Local(client)
-    }
 }
 
 impl<M> From<Arc<M>> for Submitter<M> {
@@ -46,19 +35,14 @@ pub struct ChainSubmitter<M> {
     pub submitter: Submitter<M>,
 }
 
-impl<M: Middleware + 'static> ChainSubmitter<M> {
+impl<M> ChainSubmitter<M>
+where
+    M: Middleware + 'static,
+{
+    /// Create new ChainSubmitter from submitter
     pub fn new(submitter: Submitter<M>) -> Self {
         Self { submitter }
     }
-
-    // pub async fn local_from_url_and_conf(url: String, conf: TransactionSubmitterConf) -> Result<Self> {
-    //     Ok(match conf {
-    //         TransactionSubmitterConf::Local(signer_conf) => {
-    //             chain_submitter_local!(url, signer_conf)
-    //         }
-    //         _ => panic!("Tried to create local ethereum TransactionSubmitter with non-local conf"),
-    //     })
-    // }
 
     /// Submit transaction to chain
     pub async fn submit(

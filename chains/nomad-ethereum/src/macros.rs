@@ -106,6 +106,7 @@ macro_rules! boxed_indexer {
     };
 }
 
+/// Create base http retrying provider
 #[macro_export]
 macro_rules! http_provider {
     ($url:expr) => {{
@@ -114,6 +115,7 @@ macro_rules! http_provider {
     }};
 }
 
+/// Create base ws provider
 #[macro_export]
 macro_rules! ws_provider {
     ($url:expr) => {{
@@ -172,15 +174,15 @@ macro_rules! wrap_ws {
     }};
 }
 
-// #[macro_export]
-// macro_rules! chain_submitter_local {
-//     ($url:expr, $signer_conf:ident) => {{
-//         let provider = http_provider!($url);
-//         let signer = Signers::try_from_signer_conf(&$signer_conf).await?;
-//         let signing_provider: Arc<_> = wrap_http!(provider.clone(), signer);
-//         ChainSubmitter::new(Submitter::new_local(signing_provider))
-//     }};
-// }
+/// Create ChainSubmitter::Local from base provider and signer configuration
+#[macro_export]
+macro_rules! chain_submitter_local {
+    ($provider:expr, $signer_conf:ident) => {{
+        let signer = Signers::try_from_signer_conf(&$signer_conf).await?;
+        let signing_provider: Arc<_> = wrap_http!($provider.clone(), signer);
+        ChainSubmitter::new(signing_provider.into())
+    }};
+}
 
 macro_rules! boxed_contract {
     (@timelag $provider:expr, $submitter:expr, $abi:ident, $timelag:ident, $($tail:tt)*) => {{
@@ -198,10 +200,7 @@ macro_rules! boxed_contract {
             // locally
             let submitter = match conf {
                 nomad_xyz_configuration::ethereum::TransactionSubmitterConf::Local(signer_conf) => {
-                    let signer = Signers::try_from_signer_conf(&signer_conf).await?;
-                    let signing_provider = wrap_http!($provider.clone(), signer);
-                    let submitter = signing_provider.into();
-                    ChainSubmitter::new(submitter)
+                    chain_submitter_local!($provider, signer_conf)
                 }
                 nomad_xyz_configuration::ethereum::TransactionSubmitterConf::Gelato(gelato_conf) => {
                     let signer = Signers::try_from_signer_conf(&gelato_conf.signer).await?;
