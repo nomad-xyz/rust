@@ -3,8 +3,8 @@ use nomad_core::{ContractLocator, Signers};
 use nomad_ethereum::{make_conn_manager, make_home, make_replica};
 use nomad_types::NomadIdentifier;
 use nomad_xyz_configuration::{
-    contracts::CoreContracts, AgentSecrets, ChainConf, ConnectionManagerGasLimits, HomeGasLimits,
-    NomadConfig, ReplicaGasLimits, ethereum,
+    contracts::CoreContracts, ethereum, AgentSecrets, ChainConf, ConnectionManagerGasLimits,
+    HomeGasLimits, NomadConfig, ReplicaGasLimits,
 };
 use serde::Deserialize;
 
@@ -139,7 +139,7 @@ impl ChainSetup {
         match &self.chain {
             ChainConf::Ethereum(conf) => {
                 let submitter_conf: ethereum::TransactionSubmitterConf = submitter_conf.into();
-                // let submitter = 
+                // let submitter =
 
                 Ok(HomeVariants::Ethereum(
                     make_home(
