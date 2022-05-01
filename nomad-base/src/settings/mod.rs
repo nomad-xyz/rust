@@ -15,7 +15,7 @@ use crate::{
     ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes, NomadDB, Replicas,
 };
 use color_eyre::{eyre::bail, Result};
-use nomad_core::{db::DB, Common, ContractLocator, Signers};
+use nomad_core::{db::DB, Common, ContractLocator};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
 use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets, TransactionSubmitterConf};
 use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig, NomadGasConfig};
@@ -186,8 +186,8 @@ impl Settings {
 
 impl Settings {
     /// Try to get a signer instance by name
-    pub async fn get_submitter_conf(&self, name: &str) -> Option<&TransactionSubmitterConf> {
-        self.submitters.get(name)
+    pub fn get_submitter_conf(&self, name: &str) -> Option<TransactionSubmitterConf> {
+        self.submitters.get(name).cloned()
     }
 
     /// Set agent-specific index data types
@@ -225,7 +225,9 @@ impl Settings {
         let name = &self.home.name;
         let submitter_conf = self.get_submitter_conf(name);
         let gas = self.gas.get(name).map(|c| c.core.home);
-        self.home.try_into_home(signer, opt_home_timelag, gas).await
+        self.home
+            .try_into_home(submitter_conf, opt_home_timelag, gas)
+            .await
     }
 
     /// Try to get a home ContractSync
@@ -275,9 +277,9 @@ impl Settings {
     /// Try to get a Replicas object
     pub async fn try_replica(&self, replica_name: &str) -> Result<Replicas> {
         let replica_setup = self.replicas.get(replica_name).expect("!replica");
-        let submitter_conf = self.get_submitter_conf(name);
+        let submitter_conf = self.get_submitter_conf(replica_name);
         let gas = self.gas.get(replica_name).map(|c| c.core.replica);
-        replica_setup.try_into_replica(signer, gas).await
+        replica_setup.try_into_replica(submitter_conf, gas).await
     }
 
     /// Try to get a replica ContractSync
