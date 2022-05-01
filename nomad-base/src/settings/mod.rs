@@ -186,13 +186,8 @@ impl Settings {
 
 impl Settings {
     /// Try to get a signer instance by name
-    pub async fn get_signer(&self, name: &str) -> Option<Result<Signers>> {
-        let conf = self.submitters.get(name);
-        if let Some(conf) = conf {
-            Some(Signers::try_from_signer_conf(conf).await)
-        } else {
-            None
-        }
+    pub async fn get_submitter_conf(&self, name: &str) -> Option<&TransactionSubmitterConf> {
+        self.submitters.get(name)
     }
 
     /// Set agent-specific index data types
@@ -228,7 +223,7 @@ impl Settings {
     pub async fn try_home(&self) -> Result<Homes> {
         let opt_home_timelag = self.home_timelag();
         let name = &self.home.name;
-        let signer = self.get_signer(name).await.transpose()?;
+        let submitter_conf = self.get_submitter_conf(name);
         let gas = self.gas.get(name).map(|c| c.core.home);
         self.home.try_into_home(signer, opt_home_timelag, gas).await
     }
@@ -280,7 +275,7 @@ impl Settings {
     /// Try to get a Replicas object
     pub async fn try_replica(&self, replica_name: &str) -> Result<Replicas> {
         let replica_setup = self.replicas.get(replica_name).expect("!replica");
-        let signer = self.get_signer(replica_name).await.transpose()?;
+        let submitter_conf = self.get_submitter_conf(name);
         let gas = self.gas.get(replica_name).map(|c| c.core.replica);
         replica_setup.try_into_replica(signer, gas).await
     }
