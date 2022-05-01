@@ -3,7 +3,7 @@
 //! This struct built from environment variables. It is used alongside a
 //! NomadConfig to build an agents `Settings` block (see settings/mod.rs).
 
-use crate::{agent::SignerConf, chains::ethereum, ChainConf, TransactionSubmitter, FromEnv};
+use crate::{agent::SignerConf, chains::ethereum, ChainConf, FromEnv, TransactionSubmitterConf};
 use eyre::Result;
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
@@ -16,7 +16,7 @@ pub struct AgentSecrets {
     /// RPC endpoints
     pub rpcs: HashMap<String, ChainConf>,
     /// Transaction submission variants
-    pub transaction_submitters: HashMap<String, TransactionSubmitter>,
+    pub transaction_submitters: HashMap<String, TransactionSubmitterConf>,
     /// Attestation signers
     pub attestation_signer: Option<SignerConf>,
 }
@@ -129,9 +129,8 @@ impl FromEnv for AgentSecrets {
 
         for network in networks.iter() {
             let network_upper = network.to_uppercase();
-            let chain_conf = ChainConf::from_env(&format!("RPCS_{}", network_upper))?;
-            let transaction_submitter =
-                TransactionSubmitter::from_env(network)?;
+            let chain_conf = ChainConf::from_env(&network_upper)?;
+            let transaction_submitter = TransactionSubmitterConf::from_env(&network_upper)?;
 
             secrets.rpcs.insert(network.to_owned(), chain_conf);
             secrets

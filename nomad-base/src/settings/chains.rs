@@ -4,7 +4,7 @@ use nomad_ethereum::{make_conn_manager, make_home, make_replica};
 use nomad_types::NomadIdentifier;
 use nomad_xyz_configuration::{
     contracts::CoreContracts, AgentSecrets, ChainConf, ConnectionManagerGasLimits, HomeGasLimits,
-    NomadConfig, ReplicaGasLimits,
+    NomadConfig, ReplicaGasLimits, TransactionSubmitterConf,
 };
 use serde::Deserialize;
 
@@ -132,7 +132,7 @@ impl ChainSetup {
     /// Try to convert the chain setting into a Home contract
     pub async fn try_into_home(
         &self,
-        signer: Option<Signers>,
+        submitter: TransactionSubmitterConf,
         timelag: Option<u8>,
         gas: Option<HomeGasLimits>,
     ) -> Result<Homes> {

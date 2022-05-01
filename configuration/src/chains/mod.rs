@@ -34,30 +34,31 @@ impl FromEnv for ChainConf {
 
         Some(
             serde_json::from_value(json)
-                .unwrap_or_else(|_| panic!("malformed json for {} rpc", prefix)),
+                .unwrap_or_else(|_| panic!("malformed json for {} rpc", network)),
         )
     }
 }
 
 /// Transaction submssion configuration for some chain.
 #[derive(Clone, Debug, serde::Deserialize, PartialEq)]
-#[serde(
-    tag = "rpcStyle",
-    content = "transactionSubmission",
-    rename_all = "camelCase"
-)]
-pub enum TransactionSubmitter {
+#[serde(tag = "rpcStyle", rename_all = "camelCase")]
+pub enum TransactionSubmitterConf {
     /// Ethereum configuration
-    Ethereum(ethereum::TransactionSubmitter),
+    Ethereum(ethereum::TransactionSubmitterConf),
 }
 
-impl FromEnv for TransactionSubmitter {
+impl FromEnv for TransactionSubmitterConf {
     fn from_env(network: &str) -> Option<Self> {
-        let rpc_style = std::env::var(&format!("{}_RPCSTYLE", network)).ok()?;
+        let rpc_style =
+            std::env::var(&format!("TRANSACTIONSUBMITTERS_{}_RPCSTYLE", network)).ok()?;
+
         match rpc_style.as_ref() {
-            "ethereum" => Some(Self::Ethereum(ethereum::TransactionSubmitter::from_env(
-                network,
-            )?)),
+            "ethereum" => Some(Self::Ethereum(
+                ethereum::TransactionSubmitterConf::from_env(&format!(
+                    "TRANSACTIONSUBMITTERS_{}",
+                    network
+                ))?,
+            )),
             _ => panic!("Unknown transaction submission rpc style: {}", rpc_style),
         }
     }

@@ -17,7 +17,7 @@ use crate::{
 use color_eyre::{eyre::bail, Result};
 use nomad_core::{db::DB, Common, ContractLocator, Signers};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
-use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets, TransactionSubmitter};
+use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets, TransactionSubmitterConf};
 use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig, NomadGasConfig};
 use serde::Deserialize;
 use std::collections::HashSet;
@@ -161,7 +161,7 @@ pub struct Settings {
     /// The tracing configuration
     pub logging: LogConfig,
     /// Transaction signers
-    pub submitters: HashMap<String, TransactionSubmitter>,
+    pub submitters: HashMap<String, TransactionSubmitterConf>,
     /// Optional attestation signer
     pub attestation_signer: Option<SignerConf>,
 }
