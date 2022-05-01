@@ -17,7 +17,7 @@ use crate::{
 use color_eyre::{eyre::bail, Result};
 use nomad_core::{db::DB, Common, ContractLocator, Signers};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
-use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets};
+use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets, TransactionSubmitter};
 use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig, NomadGasConfig};
 use serde::Deserialize;
 use std::collections::HashSet;
@@ -161,7 +161,7 @@ pub struct Settings {
     /// The tracing configuration
     pub logging: LogConfig,
     /// Transaction signers
-    pub signers: HashMap<String, SignerConf>,
+    pub submitters: HashMap<String, TransactionSubmitter>,
     /// Optional attestation signer
     pub attestation_signer: Option<SignerConf>,
 }
@@ -178,7 +178,7 @@ impl Settings {
             managers: self.managers.clone(),
             gas: self.gas.clone(),
             logging: self.logging,
-            signers: self.signers.clone(),
+            submitters: self.submitters.clone(),
             attestation_signer: self.attestation_signer.clone(),
         }
     }
@@ -187,7 +187,7 @@ impl Settings {
 impl Settings {
     /// Try to get a signer instance by name
     pub async fn get_signer(&self, name: &str) -> Option<Result<Signers>> {
-        let conf = self.signers.get(name);
+        let conf = self.submitters.get(name);
         if let Some(conf) = conf {
             Some(Signers::try_from_signer_conf(conf).await)
         } else {
@@ -504,7 +504,7 @@ impl Settings {
             gas,
             index,
             logging: agent.logging,
-            signers: secrets.transaction_signers.clone(),
+            submitters: secrets.transaction_submitters.clone(),
             attestation_signer: secrets.attestation_signer.clone(),
         }
     }
@@ -585,9 +585,9 @@ impl Settings {
             assert_eq!(&replica_setup.chain, replica_chain_conf);
         }
 
-        for (network, signer) in self.signers.iter() {
-            let secret_signer = secrets.transaction_signers.get(network).unwrap();
-            assert_eq!(signer, secret_signer);
+        for (network, signer) in self.submitters.iter() {
+            let secret_submitter = secrets.transaction_submitters.get(network).unwrap();
+            assert_eq!(signer, secret_submitter);
         }
 
         Ok(())
