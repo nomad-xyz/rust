@@ -31,29 +31,28 @@ impl Default for Connection {
 
 /// Local or relay-based transaction submission
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-#[serde(tag = "submitterType", rename_all = "camelCase")]
-pub enum TransactionSubmitter {
+#[serde(tag = "submitterType", content = "submitter", rename_all = "camelCase")]
+pub enum TransactionSubmitterConf {
     /// Signer configuration for local signer
     Local(SignerConf),
     /// Gelato configuration for Gelato relay
     Gelato(GelatoConf),
 }
 
-impl FromEnv for TransactionSubmitter {
-    fn from_env(network: &str) -> Option<Self> {
-        let submission_type =
-            std::env::var(&format!("TRANSACTIONSUBMITTER_{}_TYPE", network)).ok()?;
+impl FromEnv for TransactionSubmitterConf {
+    fn from_env(prefix: &str) -> Option<Self> {
+        let submitter_type = std::env::var(&format!("{}_SUBMITTERTYPE", prefix)).ok()?;
 
-        match submission_type.as_ref() {
+        match submitter_type.as_ref() {
             "local" => {
-                let signer_conf = SignerConf::from_env(&format!("TRANSACTIONSIGNERS_{}", network))?;
+                let signer_conf = SignerConf::from_env(&format!("{}_SUBMITTER", prefix))?;
                 Some(Self::Local(signer_conf))
             }
             "gelato" => {
-                let gelato_conf = GelatoConf::from_env(network)?;
+                let gelato_conf = GelatoConf::from_env(&format!("{}_SUBMITTER", prefix))?;
                 Some(Self::Gelato(gelato_conf))
             }
-            _ => panic!("Unknown tx submission type: {}", submission_type),
+            _ => panic!("Unknown tx submission type: {}", submitter_type),
         }
     }
 }
