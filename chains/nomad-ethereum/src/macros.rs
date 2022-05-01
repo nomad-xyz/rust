@@ -210,7 +210,7 @@ macro_rules! boxed_contract {
     }};
     ($name:ident, $abi:ident, $trait:ident, $($n:ident:$t:ty),*)  => {
         #[doc = "Cast a contract locator to a live contract handle"]
-        pub async fn $name(conn: nomad_xyz_configuration::chains::ethereum::Connection, locator: &ContractLocator, signer: Option<Signers>, timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
+        pub async fn $name(conn: nomad_xyz_configuration::ethereum::Connection, locator: &ContractLocator, submitter_conf: Option<nomad_xyz_configuration::ethereum::TransactionSubmitterConf>, timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
             let b: Box<dyn $trait> = match conn {
                 nomad_xyz_configuration::chains::ethereum::Connection::Http (url) => {
                     boxed_contract!(@http url, signer, $abi, timelag, locator, $($n),*)

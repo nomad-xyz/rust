@@ -39,6 +39,13 @@ pub enum TransactionSubmitterConf {
     Gelato(GelatoConf),
 }
 
+impl From<super::TransactionSubmitterConf> for TransactionSubmitterConf {
+    fn from(conf: super::TransactionSubmitterConf) -> Self {
+        let super::TransactionSubmitterConf::Ethereum(conf) = conf;
+        conf
+    }
+}
+
 impl FromEnv for TransactionSubmitterConf {
     fn from_env(prefix: &str) -> Option<Self> {
         let submitter_type = std::env::var(&format!("{}_SUBMITTERTYPE", prefix)).ok()?;
