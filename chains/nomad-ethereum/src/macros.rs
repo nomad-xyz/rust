@@ -174,13 +174,24 @@ macro_rules! wrap_ws {
     }};
 }
 
-/// Create ChainSubmitter::Local from base provider and signer configuration
+/// Create ChainSubmitter::Local
 #[macro_export]
 macro_rules! chain_submitter_local {
-    ($provider:expr, $signer_conf:ident) => {{
+    ($base_provider:expr, $signer_conf:ident) => {{
         let signer = Signers::try_from_signer_conf(&$signer_conf).await?;
-        let signing_provider: Arc<_> = wrap_http!($provider.clone(), signer);
+        let signing_provider: Arc<_> = wrap_http!($base_provider.clone(), signer);
         ChainSubmitter::new(signing_provider.into())
+    }};
+}
+
+/// Create ChainSubmitter::Gelato
+#[macro_export]
+macro_rules! chain_submitter_gelato {
+    ($chain_id:expr, $gelato_conf:ident) => {{
+        let sponsor = Signers::try_from_signer_conf(&$gelato_conf.signer).await?;
+        let client =
+            SingleChainGelatoClient::with_default_url(sponsor, $chain_id, $gelato_conf.fee_token);
+        ChainSubmitter::new(client.into())
     }};
 }
 
@@ -203,10 +214,8 @@ macro_rules! boxed_contract {
                     chain_submitter_local!($provider, signer_conf)
                 }
                 nomad_xyz_configuration::ethereum::TransactionSubmitterConf::Gelato(gelato_conf) => {
-                    let signer = Signers::try_from_signer_conf(&gelato_conf.signer).await?;
-                    let signing_provider = wrap_http!($provider.clone(), signer);
-                    let submitter = signing_provider.into();
-                    ChainSubmitter::new(submitter)
+                    let chain_id = $provider.get_chainid().await?.as_usize();
+                    chain_submitter_gelato!(chain_id, gelato_conf)
                 }
             };
 
