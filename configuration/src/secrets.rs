@@ -3,7 +3,7 @@
 //! This struct built from environment variables. It is used alongside a
 //! NomadConfig to build an agents `Settings` block (see settings/mod.rs).
 
-use crate::{agent::SignerConf, chains::ethereum, ChainConf, FromEnv};
+use crate::{agent::SignerConf, chains::ethereum, ChainConf, TransactionSubmitter, FromEnv};
 use eyre::Result;
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
@@ -15,8 +15,8 @@ use std::{fs::File, io::BufReader, path::Path};
 pub struct AgentSecrets {
     /// RPC endpoints
     pub rpcs: HashMap<String, ChainConf>,
-    /// Transaction signers
-    pub transaction_signers: HashMap<String, SignerConf>,
+    /// Transaction submission variants
+    pub transaction_submitters: HashMap<String, TransactionSubmitter>,
     /// Attestation signers
     pub attestation_signer: Option<SignerConf>,
 }
@@ -104,6 +104,45 @@ impl AgentSecrets {
         }
 
         Ok(())
+    }
+}
+
+impl FromEnv for AgentSecrets {
+    fn from_env(_prefix: &str) -> Option<Self> {
+        let env = std::env::var("RUN_ENV").ok()?;
+        let home = std::env::var("AGENT_HOME").ok()?;
+
+        let config = crate::get_builtin(&env)
+            .expect("couldn't retrieve config!")
+            .to_owned();
+
+        let mut networks = config
+            .protocol()
+            .networks
+            .get(&home)
+            .expect("!networks")
+            .connections
+            .to_owned();
+        networks.insert(home);
+
+        let mut secrets = AgentSecrets::default();
+
+        for network in networks.iter() {
+            let network_upper = network.to_uppercase();
+            let chain_conf = ChainConf::from_env(&format!("RPCS_{}", network_upper))?;
+            let transaction_submitter =
+                TransactionSubmitter::from_env(network)?;
+
+            secrets.rpcs.insert(network.to_owned(), chain_conf);
+            secrets
+                .transaction_submitters
+                .insert(network.to_owned(), transaction_submitter);
+        }
+
+        let attestation_signer = SignerConf::from_env("ATTESTATION_SIGNER");
+        secrets.attestation_signer = attestation_signer;
+
+        Some(secrets)
     }
 }
 

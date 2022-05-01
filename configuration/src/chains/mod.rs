@@ -38,3 +38,27 @@ impl FromEnv for ChainConf {
         )
     }
 }
+
+/// Transaction submssion configuration for some chain.
+#[derive(Clone, Debug, serde::Deserialize, PartialEq)]
+#[serde(
+    tag = "rpcStyle",
+    content = "transactionSubmission",
+    rename_all = "camelCase"
+)]
+pub enum TransactionSubmitter {
+    /// Ethereum configuration
+    Ethereum(ethereum::TransactionSubmitter),
+}
+
+impl FromEnv for TransactionSubmitter {
+    fn from_env(network: &str) -> Option<Self> {
+        let rpc_style = std::env::var(&format!("{}_RPCSTYLE", network)).ok()?;
+        match rpc_style.as_ref() {
+            "ethereum" => Some(Self::Ethereum(ethereum::TransactionSubmitter::from_env(
+                network,
+            )?)),
+            _ => panic!("Unknown transaction submission rpc style: {}", rpc_style),
+        }
+    }
+}
