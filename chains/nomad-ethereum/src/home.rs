@@ -17,7 +17,7 @@ use nomad_xyz_configuration::HomeGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
 use tracing::instrument;
 
-use crate::{bindings::home::Home as EthereumHomeInternal, report_tx};
+use crate::{bindings::home::Home as EthereumHomeInternal, ChainSubmitter};
 
 impl<M> std::fmt::Display for EthereumHomeInternal<M>
 where
@@ -166,8 +166,8 @@ where
     W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
-    write_contract: Arc<EthereumHomeInternal<W>>,
-    read_contract: Arc<EthereumHomeInternal<R>>,
+    submitter: ChainSubmitter<W>,
+    contract: Arc<EthereumHomeInternal<R>>,
     domain: u32,
     name: String,
     gas: Option<HomeGasLimits>,
@@ -181,7 +181,7 @@ where
     /// Create a reference to a Home at a specific Ethereum address on some
     /// chain
     pub fn new(
-        write_provider: Arc<W>,
+        submitter: ChainSubmitter<W>,
         read_provider: Arc<R>,
         ContractLocator {
             name,
@@ -191,11 +191,8 @@ where
         gas: Option<HomeGasLimits>,
     ) -> Self {
         Self {
-            write_contract: Arc::new(EthereumHomeInternal::new(
-                address.as_ethereum_address().expect("!eth address"),
-                write_provider,
-            )),
-            read_contract: Arc::new(EthereumHomeInternal::new(
+            submitter,
+            contract: Arc::new(EthereumHomeInternal::new(
                 address.as_ethereum_address().expect("!eth address"),
                 read_provider,
             )),
@@ -218,7 +215,7 @@ where
 
     #[tracing::instrument(err, skip(self))]
     async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
-        self.read_contract
+        self.contract
             .client()
             .get_transaction_receipt(txid)
             .await
@@ -229,12 +226,12 @@ where
 
     #[tracing::instrument(err, skip(self))]
     async fn updater(&self) -> Result<H256, ChainCommunicationError> {
-        Ok(self.read_contract.updater().call().await?.into())
+        Ok(self.contract.updater().call().await?.into())
     }
 
     #[tracing::instrument(err, skip(self))]
     async fn state(&self) -> Result<State, ChainCommunicationError> {
-        let state = self.read_contract.state().call().await?;
+        let state = self.contract.state().call().await?;
         match state {
             0 => Ok(State::Uninitialized),
             1 => Ok(State::Active),
@@ -245,12 +242,12 @@ where
 
     #[tracing::instrument(err, skip(self))]
     async fn committed_root(&self) -> Result<H256, ChainCommunicationError> {
-        Ok(self.read_contract.committed_root().call().await?.into())
+        Ok(self.contract.committed_root().call().await?.into())
     }
 
     #[tracing::instrument(err, skip(self, update), fields(update = %update))]
     async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
-        let mut tx = self.write_contract.update(
+        let mut tx = self.contract.update(
             update.update.previous_root.to_fixed_bytes(),
             update.update.new_root.to_fixed_bytes(),
             update.signature.to_vec().into(),
@@ -264,7 +261,9 @@ where
             );
         }
 
-        report_tx!(tx, &self.provider).try_into()
+        self.submitter
+            .submit(self.domain, self.contract.address(), tx.tx)
+            .await
     }
 
     #[tracing::instrument(err, skip(self, double), fields(double = %double))]
@@ -272,7 +271,7 @@ where
         &self,
         double: &DoubleUpdate,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        let mut tx = self.write_contract.double_update(
+        let mut tx = self.contract.double_update(
             double.0.update.previous_root.to_fixed_bytes(),
             [
                 double.0.update.new_root.to_fixed_bytes(),
@@ -286,7 +285,9 @@ where
             tx.tx.set_gas(U256::from(limits.double_update));
         }
 
-        report_tx!(tx, &self.provider).try_into()
+        self.submitter
+            .submit(self.domain, self.contract.address(), tx.tx)
+            .await
     }
 }
 
@@ -302,30 +303,28 @@ where
 
     #[tracing::instrument(err, skip(self))]
     async fn nonces(&self, destination: u32) -> Result<u32, ChainCommunicationError> {
-        Ok(self.read_contract.nonces(destination).call().await?)
+        Ok(self.contract.nonces(destination).call().await?)
     }
 
     #[tracing::instrument(err, skip(self))]
     async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self.write_contract.dispatch(
+        let tx = self.contract.dispatch(
             message.destination,
             message.recipient.to_fixed_bytes(),
             message.body.clone().into(),
         );
 
-        report_tx!(tx, &self.provider).try_into()
+        self.submitter
+            .submit(self.domain, self.contract.address(), tx.tx)
+            .await
     }
 
     async fn queue_length(&self) -> Result<U256, ChainCommunicationError> {
-        Ok(self.read_contract.queue_length().call().await?)
+        Ok(self.contract.queue_length().call().await?)
     }
 
     async fn queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError> {
-        Ok(self
-            .read_contract
-            .queue_contains(root.into())
-            .call()
-            .await?)
+        Ok(self.contract.queue_contains(root.into()).call().await?)
     }
 
     #[tracing::instrument(err, skip(self), fields(hex_signature = %format!("0x{}", hex::encode(update.signature.to_vec()))))]
@@ -333,7 +332,7 @@ where
         &self,
         update: &SignedUpdate,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        let mut tx = self.write_contract.improper_update(
+        let mut tx = self.contract.improper_update(
             update.update.previous_root.to_fixed_bytes(),
             update.update.new_root.to_fixed_bytes(),
             update.signature.to_vec().into(),
@@ -347,12 +346,14 @@ where
             );
         }
 
-        report_tx!(tx, &self.provider).try_into()
+        self.submitter
+            .submit(self.domain, self.contract.address(), tx.tx)
+            .await
     }
 
     #[tracing::instrument(err, skip(self))]
     async fn produce_update(&self) -> Result<Option<Update>, ChainCommunicationError> {
-        let (a, b) = self.read_contract.suggest_update().call().await?;
+        let (a, b) = self.contract.suggest_update().call().await?;
 
         let previous_root: H256 = a.into();
         let new_root: H256 = b.into();

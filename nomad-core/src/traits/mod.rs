@@ -86,6 +86,9 @@ pub enum ChainCommunicationError {
     /// A transaction was not executed successfully
     #[error("Transaction was not executed successfully {0:?}")]
     NotExecuted(H256),
+    /// General transaction submission error
+    #[error("Transaction was not submitted to chain successfully {0:?}")]
+    TxSubmissionError(Box<dyn StdError + Send + Sync>),
     /// Any other error
     #[error("{0}")]
     CustomError(#[from] Box<dyn StdError + Send + Sync>),

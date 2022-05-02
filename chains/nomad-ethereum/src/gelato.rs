@@ -1,5 +1,5 @@
 use ethers::providers::Middleware;
-use gelato_relay::{GelatoClient, RelayResponse};
+use gelato_relay::{GelatoClient, RelayResponse, TaskState};
 use nomad_core::Signers;
 use std::marker::PhantomData;
 
@@ -17,6 +17,13 @@ use std::marker::PhantomData;
   sponsorSignature: BytesLike;
 }
  */
+
+pub(crate) const ACCEPTABLE_STATES: [TaskState; 4] = [
+    TaskState::CheckPending,
+    TaskState::ExecPending,
+    TaskState::ExecSuccess,
+    TaskState::WaitingForConfirmation,
+];
 
 /// Gelato client for submitting txs to single chain
 #[derive(Debug, Clone)]

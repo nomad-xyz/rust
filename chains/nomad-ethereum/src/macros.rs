@@ -1,5 +1,5 @@
 /// Dispatches a transaction, logs the tx id, and returns the result
-#[macro_export]
+#[allow(unused_macros)]
 macro_rules! report_tx {
     ($tx:expr, $($tail:tt)*) => {{
         // Simple switch between 2 implementations:
@@ -56,6 +56,7 @@ macro_rules! report_tx {
     }};
 }
 
+#[allow(unused_macros)]
 macro_rules! log_tx_details {
     ($tx:expr) => {
         // "0x..."
@@ -196,30 +197,29 @@ macro_rules! chain_submitter_gelato {
 }
 
 macro_rules! boxed_contract {
-    (@timelag $provider:expr, $submitter:expr, $abi:ident, $timelag:ident, $($tail:tt)*) => {{
-        let write_provider: Arc<_> = $provider.clone();
-            if let Some(lag) = $timelag {
-                let read_provider: Arc<_> = ethers::middleware::TimeLag::new($provider, lag).into();
-                Box::new(crate::$abi::new(write_provider, read_provider, $($tail)*))
-            } else {
-                Box::new(crate::$abi::new(write_provider, $provider, $($tail)*))
-            }
+    (@timelag $base_provider:expr, $submitter:expr, $abi:ident, $timelag:ident, $($tail:tt)*) => {{
+        if let Some(lag) = $timelag {
+            let read_provider: Arc<_> = ethers::middleware::TimeLag::new($base_provider, lag).into();
+            Box::new(crate::$abi::new($submitter, read_provider, $($tail)*))
+        } else {
+            Box::new(crate::$abi::new($submitter, $base_provider, $($tail)*))
+        }
     }};
-    (@submitter $provider:expr, $submitter_conf:ident, $($tail:tt)*) => {{
+    (@submitter $base_provider:expr, $submitter_conf:ident, $($tail:tt)*) => {{
         if let Some(conf) = $submitter_conf {
             // If there's a provided signer, we want to manage every aspect
             // locally
             let submitter = match conf {
                 nomad_xyz_configuration::ethereum::TransactionSubmitterConf::Local(signer_conf) => {
-                    chain_submitter_local!($provider, signer_conf)
+                    chain_submitter_local!($base_provider, signer_conf)
                 }
                 nomad_xyz_configuration::ethereum::TransactionSubmitterConf::Gelato(gelato_conf) => {
-                    let chain_id = $provider.get_chainid().await?.as_usize();
+                    let chain_id = $base_provider.get_chainid().await?.as_usize();
                     chain_submitter_gelato!(chain_id, gelato_conf)
                 }
             };
 
-            boxed_contract!(@timelag $provider, submitter, $($tail)*)
+            boxed_contract!(@timelag $base_provider, submitter, $($tail)*)
         } else {
             panic!("Not supporting contracts with tx submitter");
         }
