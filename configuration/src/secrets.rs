@@ -95,10 +95,10 @@ impl AgentSecrets {
                 .unwrap_or_else(|| panic!("no chainconf for {}", network));
             match chain_conf {
                 ChainConf::Ethereum(conn) => match conn {
-                    ethereum::Connection::Http { url } => {
+                    ethereum::Connection::Http(url) => {
                         eyre::ensure!(!url.is_empty(), "Http url for {} empty!", network,);
                     }
-                    ethereum::Connection::Ws { url } => {
+                    ethereum::Connection::Ws(url) => {
                         eyre::ensure!(!url.is_empty(), "Ws url for {} empty!", network,);
                     }
                 },
