@@ -1,10 +1,12 @@
-use crate::SingleChainGelatoClient;
+use crate::{SingleChainGelatoClient, ACCEPTABLE_STATES};
 use color_eyre::Result;
 use ethers::prelude::*;
 use ethers::types::transaction::eip2718::TypedTransaction;
 use gelato_relay::RelayResponse;
-use std::sync::Arc;
-use tracing::info;
+use nomad_core::{ChainCommunicationError, TxOutcome};
+use std::{str::FromStr, sync::Arc};
+use tokio::time::{sleep, Duration};
+use tracing::{debug, info};
 
 /// Component responsible for submitting transactions to the chain. Can
 /// sign/submit locally or use a transaction relay service.
@@ -50,23 +52,29 @@ where
         domain: u32,
         contract_address: Address,
         tx: impl Into<TypedTransaction>,
-    ) -> Result<()> {
+    ) -> Result<TxOutcome, ChainCommunicationError> {
         let tx: TypedTransaction = tx.into();
 
         match &self.submitter {
             Submitter::Local(client) => {
-                let dispatched = client.send_transaction(tx, None).await?;
+                let dispatched = client
+                    .send_transaction(tx, None)
+                    .await
+                    .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?;
                 let tx_hash: ethers::core::types::H256 = *dispatched;
                 info!("dispatched transaction with tx_hash {:?}", tx_hash);
 
                 let result = dispatched
                     .await?
-                    .ok_or_else(|| nomad_core::ChainCommunicationError::DroppedError(tx_hash))?;
+                    .ok_or_else(|| ChainCommunicationError::DroppedError(tx_hash))?;
 
                 info!(
                     "confirmed transaction with tx_hash {:?}",
                     result.transaction_hash
                 );
+
+                let outcome = result.try_into()?;
+                Ok(outcome)
             }
             Submitter::Gelato(client) => {
                 let tx_data = tx.data().expect("!tx data");
@@ -79,16 +87,26 @@ where
                     "Dispatching tx to Gelato relay."
                 );
 
-                let RelayResponse { task_id } =
-                    client.send_relay_transaction(&address, &data).await?;
-                info!(task_id = ?task_id, "Submitted tx to Gelato relay.");
+                let RelayResponse { task_id } = client
+                    .send_relay_transaction(&address, &data)
+                    .await
+                    .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?;
+                info!(task_id = ?task_id, "Submitted tx to Gelato relay. Polling task for completion...");
 
                 loop {
                     let status = client
                         .client()
                         .get_task_status(&task_id)
-                        .await?
+                        .await
+                        .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?
                         .expect("!task status");
+
+                    if !ACCEPTABLE_STATES.contains(&status.task_state) {
+                        return Err(ChainCommunicationError::TxSubmissionError(
+                            format!("Gelato task failed: {:?}", status).into(),
+                        )
+                        .into());
+                    }
 
                     if let Some(execution) = &status.execution {
                         info!(
@@ -98,12 +116,17 @@ where
                             "Gelato relay executed tx."
                         );
 
-                        break;
+                        let tx_hash = &execution.transaction_hash;
+                        let txid = H256::from_str(tx_hash)
+                            .unwrap_or_else(|_| panic!("Malformed tx hash from Gelato"));
+
+                        return Ok(TxOutcome { txid });
                     }
+
+                    debug!(task_id = ?task_id, "Polling Gelato task.");
+                    sleep(Duration::from_millis(500)).await;
                 }
             }
         }
-
-        Ok(())
     }
 }
