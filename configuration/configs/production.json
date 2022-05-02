@@ -161,7 +161,7 @@
         "specs": {
           "chainId": 9001,
           "blockTime": 6,
-          "finalizationBlocks": 3,
+          "finalizationBlocks": 20,
           "supports1559": true,
           "confirmations": 5,
           "blockExplorer": "http://evm.evmos.org",
