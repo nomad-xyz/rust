@@ -77,6 +77,9 @@ pub enum ChainCommunicationError {
     /// Contract Error
     #[error("{0}")]
     ContractError(Box<dyn StdError + Send + Sync>),
+    /// Middleware error
+    #[error("{0}")]
+    MiddlewareError(Box<dyn StdError + Send + Sync>),
     /// Provider Error
     #[error("{0}")]
     ProviderError(#[from] ProviderError),

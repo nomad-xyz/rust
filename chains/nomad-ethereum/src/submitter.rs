@@ -77,6 +77,18 @@ where
                 Ok(outcome)
             }
             SubmitterClient::Gelato(client) => {
+                // If gas limit not hardcoded in tx, eth_estimateGas
+                let gas_limit = tx
+                    .gas()
+                    .unwrap_or(
+                        &client
+                            .eth_client
+                            .estimate_gas(&tx)
+                            .await
+                            .map_err(|e| ChainCommunicationError::MiddlewareError(e.into()))?,
+                    )
+                    .as_usize();
+
                 let tx_data = tx.data().expect("!tx data");
                 let data = format!("{:x}", tx_data);
                 let address = format!("{:x}", contract_address);
@@ -87,7 +99,6 @@ where
                     "Dispatching tx to Gelato relay."
                 );
 
-                let gas_limit = 100_000; // TODO: clear up with Gelato
                 let RelayResponse { task_id } = client
                     .send_relay_transaction(&address, &data, gas_limit)
                     .await
@@ -96,7 +107,7 @@ where
 
                 loop {
                     let status = client
-                        .client()
+                        .gelato()
                         .get_task_status(&task_id)
                         .await
                         .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?

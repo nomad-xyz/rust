@@ -153,7 +153,7 @@ macro_rules! wrap_http {
 /// Create ethers::SignerMiddleware from websockets connection
 #[macro_export]
 macro_rules! wrap_ws {
-    ($provider:expr, $signer:ident) => {{
+    ($provider:expr, $signer:expr) => {{
         // First set the chain ID locally
         let provider_chain_id = $provider.get_chainid().await?;
         let signer = ethers::signers::Signer::with_chain_id($signer, provider_chain_id.as_u64());
@@ -188,13 +188,16 @@ macro_rules! tx_submitter_local {
 /// Create TxSubmitter::Gelato
 #[macro_export]
 macro_rules! tx_submitter_gelato {
-    ($chain_id:expr, $gelato_conf:ident) => {{
-        let sponsor = Signers::try_from_signer_conf(&$gelato_conf.signer).await?;
+    ($base_provider:expr, $gelato_conf:ident) => {{
+        let signer = Signers::try_from_signer_conf(&$gelato_conf.signer).await?;
+        let sponsor = signer.clone();
+        let chain_id = $base_provider.get_chainid().await?.as_usize();
+        let signing_provider: Arc<_> = wrap_http!($base_provider.clone(), signer); // kludge: only using signing provider for type consistency with TxSubmitter::Local
 
-        // TODO: is_high_priority set to false currently, want configurable
         let client = SingleChainGelatoClient::with_default_url(
+            signing_provider,
             sponsor,
-            $chain_id,
+            chain_id,
             $gelato_conf.fee_token,
             false,
         );
@@ -220,8 +223,7 @@ macro_rules! boxed_contract {
                     tx_submitter_local!($base_provider, signer_conf)
                 }
                 nomad_xyz_configuration::ethereum::TxSubmitterConf::Gelato(gelato_conf) => {
-                    let chain_id = $base_provider.get_chainid().await?.as_usize();
-                    tx_submitter_gelato!(chain_id, gelato_conf)
+                    tx_submitter_gelato!($base_provider, gelato_conf)
                 }
             };
 
