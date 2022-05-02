@@ -79,28 +79,20 @@ impl AgentSecrets {
                 },
             }
 
-            let signer_conf = self
-                .transaction_signers
+            let submitter_conf = self
+                .transaction_submitters
                 .get(network)
                 .unwrap_or_else(|| panic!("no signerconf for {}", network));
-            match signer_conf {
-                SignerConf::HexKey(key) => {
-                    eyre::ensure!(
-                        !key.as_ref().is_empty(),
-                        "Hex signer key for {} empty!",
-                        network,
-                    );
-                }
-                SignerConf::Aws { id, region } => {
-                    eyre::ensure!(!id.is_empty(), "ID for {} aws signer key empty!", network,);
-                    eyre::ensure!(
-                        !region.is_empty(),
-                        "Region for {} aws signer key empty!",
-                        network,
-                    );
-                }
-                SignerConf::Node => (),
-            }
+            match submitter_conf {
+                TransactionSubmitterConf::Ethereum(conf) => match conf {
+                    ethereum::TransactionSubmitterConf::Local(signer_conf) => {
+                        signer_conf.validate(network)?
+                    }
+                    ethereum::TransactionSubmitterConf::Gelato(gelato_conf) => {
+                        gelato_conf.signer.validate(network)?
+                    }
+                },
+            };
         }
 
         Ok(())

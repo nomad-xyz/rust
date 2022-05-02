@@ -36,6 +36,8 @@ pub struct SingleChainGelatoClient<M> {
     pub chain_id: usize,
     /// Fee token
     pub fee_token: String,
+    /// Transactions are of high priority
+    pub is_high_priority: bool,
     /// Unused
     _middleware: PhantomData<M>,
 }
@@ -47,12 +49,18 @@ impl<M: Middleware + 'static> SingleChainGelatoClient<M> {
     }
 
     /// Instantiate single chain client with default Gelato url
-    pub fn with_default_url(sponsor: Signers, chain_id: usize, fee_token: String) -> Self {
+    pub fn with_default_url(
+        sponsor: Signers,
+        chain_id: usize,
+        fee_token: String,
+        is_high_priority: bool,
+    ) -> Self {
         Self {
             client: GelatoClient::default(),
             sponsor,
             chain_id,
             fee_token,
+            is_high_priority,
             _middleware: Default::default(),
         }
     }
@@ -62,10 +70,16 @@ impl<M: Middleware + 'static> SingleChainGelatoClient<M> {
         &self,
         dest: &str,
         data: &str,
+        gas_limit: usize,
     ) -> Result<RelayResponse, reqwest::Error> {
         let relayer_fee = self
             .client
-            .get_estimated_fee(self.chain_id, &self.fee_token, 100_000, true)
+            .get_estimated_fee(
+                self.chain_id,
+                &self.fee_token,
+                gas_limit,
+                self.is_high_priority,
+            )
             .await?;
 
         self.client

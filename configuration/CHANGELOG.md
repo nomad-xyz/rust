@@ -2,6 +2,9 @@
 
 ### Unreleased
 
+- adds transaction submitters type and to replace transaction signers
+- adds gelato config struct
+
 ### v0.1.0-rc.23
 
 - fix typo in staging goerli rpc url

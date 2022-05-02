@@ -190,8 +190,14 @@ macro_rules! chain_submitter_local {
 macro_rules! chain_submitter_gelato {
     ($chain_id:expr, $gelato_conf:ident) => {{
         let sponsor = Signers::try_from_signer_conf(&$gelato_conf.signer).await?;
-        let client =
-            SingleChainGelatoClient::with_default_url(sponsor, $chain_id, $gelato_conf.fee_token);
+
+        // TODO: is_high_priority set to false currently, want configurable
+        let client = SingleChainGelatoClient::with_default_url(
+            sponsor,
+            $chain_id,
+            $gelato_conf.fee_token,
+            false,
+        );
         ChainSubmitter::new(client.into())
     }};
 }
