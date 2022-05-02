@@ -2,6 +2,12 @@
 
 ### Unreleased
 
+## v0.1.0-rc.18
+
+- enable connext for evmos in production
+
+## v0.1.0-rc.17
+
 - add gas configs feature
 
 ### v0.1.0-rc.16

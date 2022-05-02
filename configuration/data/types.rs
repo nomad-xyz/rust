@@ -59,7 +59,7 @@ extern "C" {
 
     #[wasm_bindgen(typescript_type = "HomeUpdateGasLimit")]
     pub type HomeUpdateGasLimit;
-    
+
     #[wasm_bindgen(typescript_type = "HomeGasLimits")]
     pub type HomeGasLimits;
 
