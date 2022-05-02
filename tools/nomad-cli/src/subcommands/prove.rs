@@ -9,7 +9,7 @@ use nomad_core::{
 };
 
 use nomad_base::NomadDB;
-use nomad_ethereum::{ChainSubmitter, EthereumReplica};
+use nomad_ethereum::{EthereumReplica, TxSubmitter};
 
 use ethers::{
     prelude::{Http, Middleware, Provider, SignerMiddleware, H160},
@@ -155,7 +155,7 @@ impl ProveCommand {
             .unwrap_or_else(|| replicas::address_by_domain_pair(origin, destination).unwrap());
 
         Ok(EthereumReplica::new(
-            ChainSubmitter::new(middleware.clone().into()),
+            TxSubmitter::new(middleware.clone().into()),
             middleware,
             &ContractLocator {
                 name: "".into(),

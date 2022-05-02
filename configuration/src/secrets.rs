@@ -3,7 +3,7 @@
 //! This struct built from environment variables. It is used alongside a
 //! NomadConfig to build an agents `Settings` block (see settings/mod.rs).
 
-use crate::{agent::SignerConf, chains::ethereum, ChainConf, FromEnv, TransactionSubmitterConf};
+use crate::{agent::SignerConf, chains::ethereum, ChainConf, FromEnv, TxSubmitterConf};
 use eyre::Result;
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
@@ -16,7 +16,7 @@ pub struct AgentSecrets {
     /// RPC endpoints
     pub rpcs: HashMap<String, ChainConf>,
     /// Transaction submission variants
-    pub transaction_submitters: HashMap<String, TransactionSubmitterConf>,
+    pub tx_submitters: HashMap<String, TxSubmitterConf>,
     /// Attestation signers
     pub attestation_signer: Option<SignerConf>,
 }
@@ -80,15 +80,15 @@ impl AgentSecrets {
             }
 
             let submitter_conf = self
-                .transaction_submitters
+                .tx_submitters
                 .get(network)
                 .unwrap_or_else(|| panic!("no signerconf for {}", network));
             match submitter_conf {
-                TransactionSubmitterConf::Ethereum(conf) => match conf {
-                    ethereum::TransactionSubmitterConf::Local(signer_conf) => {
+                TxSubmitterConf::Ethereum(conf) => match conf {
+                    ethereum::TxSubmitterConf::Local(signer_conf) => {
                         signer_conf.validate(network)?
                     }
-                    ethereum::TransactionSubmitterConf::Gelato(gelato_conf) => {
+                    ethereum::TxSubmitterConf::Gelato(gelato_conf) => {
                         gelato_conf.signer.validate(network)?
                     }
                 },
@@ -122,12 +122,12 @@ impl FromEnv for AgentSecrets {
         for network in networks.iter() {
             let network_upper = network.to_uppercase();
             let chain_conf = ChainConf::from_env(&network_upper)?;
-            let transaction_submitter = TransactionSubmitterConf::from_env(&network_upper)?;
+            let tx_submitter = TxSubmitterConf::from_env(&network_upper)?;
 
             secrets.rpcs.insert(network.to_owned(), chain_conf);
             secrets
-                .transaction_submitters
-                .insert(network.to_owned(), transaction_submitter);
+                .tx_submitters
+                .insert(network.to_owned(), tx_submitter);
         }
 
         let attestation_signer = SignerConf::from_env("ATTESTATION_SIGNER");

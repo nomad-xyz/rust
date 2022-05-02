@@ -17,7 +17,7 @@ use crate::{
 use color_eyre::{eyre::bail, Result};
 use nomad_core::{db::DB, Common, ContractLocator};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
-use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets, TransactionSubmitterConf};
+use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets, TxSubmitterConf};
 use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig, NomadGasConfig};
 use serde::Deserialize;
 use std::collections::HashSet;
@@ -161,7 +161,7 @@ pub struct Settings {
     /// The tracing configuration
     pub logging: LogConfig,
     /// Transaction signers
-    pub submitters: HashMap<String, TransactionSubmitterConf>,
+    pub submitters: HashMap<String, TxSubmitterConf>,
     /// Optional attestation signer
     pub attestation_signer: Option<SignerConf>,
 }
@@ -186,7 +186,7 @@ impl Settings {
 
 impl Settings {
     /// Try to get a signer instance by name
-    pub fn get_submitter_conf(&self, name: &str) -> Option<TransactionSubmitterConf> {
+    pub fn get_submitter_conf(&self, name: &str) -> Option<TxSubmitterConf> {
         self.submitters.get(name).cloned()
     }
 
@@ -501,7 +501,7 @@ impl Settings {
             gas,
             index,
             logging: agent.logging,
-            submitters: secrets.transaction_submitters.clone(),
+            submitters: secrets.tx_submitters.clone(),
             attestation_signer: secrets.attestation_signer.clone(),
         }
     }
@@ -583,7 +583,7 @@ impl Settings {
         }
 
         for (network, signer) in self.submitters.iter() {
-            let secret_submitter = secrets.transaction_submitters.get(network).unwrap();
+            let secret_submitter = secrets.tx_submitters.get(network).unwrap();
             assert_eq!(signer, secret_submitter);
         }
 

@@ -14,7 +14,7 @@ use nomad_xyz_configuration::ReplicaGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
 use tracing::instrument;
 
-use crate::{bindings::replica::Replica as EthereumReplicaInternal, ChainSubmitter};
+use crate::{bindings::replica::Replica as EthereumReplicaInternal, TxSubmitter};
 
 #[derive(Debug)]
 /// Struct that retrieves indexes event data for Ethereum replica
@@ -126,7 +126,7 @@ where
     W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
-    submitter: ChainSubmitter<W>,
+    submitter: TxSubmitter<W>,
     contract: Arc<EthereumReplicaInternal<R>>,
     domain: u32,
     name: String,
@@ -141,7 +141,7 @@ where
     /// Create a reference to a Replica at a specific Ethereum address on some
     /// chain
     pub fn new(
-        submitter: ChainSubmitter<W>,
+        submitter: TxSubmitter<W>,
         read_provider: Arc<R>,
         ContractLocator {
             name,
