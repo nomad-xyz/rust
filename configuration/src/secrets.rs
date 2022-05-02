@@ -109,7 +109,7 @@ impl AgentSecrets {
                 .get(network)
                 .unwrap_or_else(|| panic!("no signerconf for {}", network));
             match signer_conf {
-                SignerConf::HexKey { key } => {
+                SignerConf::HexKey(key) => {
                     eyre::ensure!(
                         !key.as_ref().is_empty(),
                         "Hex signer key for {} empty!",

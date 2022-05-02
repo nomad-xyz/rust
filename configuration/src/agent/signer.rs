@@ -1,16 +1,14 @@
+use std::str::FromStr;
+
 use crate::FromEnv;
 use nomad_types::HexString;
-use serde_json::json;
 
 /// Ethereum signer types
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[serde(untagged, rename_all = "camelCase")]
 pub enum SignerConf {
-    /// A local hex key
-    HexKey {
-        /// Hex string of private key, without 0x prefix
-        key: HexString<64>,
-    },
+    /// A local hex key, hex string of private key, with or without 0x prefix
+    HexKey(HexString<64>),
     /// An AWS signer. Note that AWS credentials must be inserted into the env
     /// separately.
     Aws {
@@ -19,7 +17,6 @@ pub enum SignerConf {
         /// The AWS region
         region: String,
     },
-    #[serde(other)]
     /// Assume node will sign on RPC calls
     Node,
 }
@@ -32,30 +29,52 @@ impl Default for SignerConf {
 
 impl FromEnv for SignerConf {
     fn from_env(prefix: &str) -> Option<Self> {
-        let signer_type = std::env::var(&format!("{}_TYPE", prefix)).ok()?;
-        let signer_json = match signer_type.as_ref() {
-            "hexKey" => {
-                let signer_key = std::env::var(&format!("{}_KEY", prefix)).ok()?;
-                json!({
-                    "type": signer_type,
-                    "key": signer_key,
-                })
+        // ordering this first preferentially uses AWS if both are specified
+        if let Some(id) = std::env::var(&format!("{}_ID", prefix)).ok() {
+            if let Some(region) = std::env::var(&format!("{}_REGION", prefix)).ok() {
+                return Some(SignerConf::Aws { id, region });
             }
-            "aws" => {
-                let id = std::env::var(&format!("{}_ID", prefix)).ok()?;
-                let region = std::env::var(&format!("{}_REGION", prefix)).ok()?;
-                json!({
-                    "type": signer_type,
-                    "id": id,
-                    "region": region,
-                })
-            }
-            _ => panic!("Unknown signer type: {}", signer_type),
-        };
+        }
 
-        Some(
-            serde_json::from_value(signer_json)
-                .unwrap_or_else(|_| panic!("malformed json for {} signer", prefix)),
-        )
+        if let Some(signer_key) = std::env::var(&format!("{}_KEY", prefix)).ok() {
+            return Some(SignerConf::HexKey(HexString::from_str(&signer_key).ok()?));
+        }
+
+        None
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use serde_json::{json, Value};
+
+    use super::SignerConf;
+
+    #[test]
+    fn it_deserializes_hexkey_signer_confs() {
+        let k = "0x3232323232323232323232323232323232323232323232323232323232323232";
+        let value = json! { "0x3232323232323232323232323232323232323232323232323232323232323232" };
+
+        let signer_conf: SignerConf = serde_json::from_value(value).unwrap();
+        assert_eq!(signer_conf, SignerConf::HexKey(k.parse().unwrap()));
+
+        let value = Value::Null;
+        let signer_conf: SignerConf = serde_json::from_value(value).unwrap();
+        assert_eq!(signer_conf, SignerConf::Node);
+    }
+    #[test]
+    fn it_deserializes_aws_signer_confs() {
+        let value = json!({
+            "id": "",
+            "region": ""
+        });
+        let signer_conf: SignerConf = serde_json::from_value(value).unwrap();
+        assert_eq!(
+            signer_conf,
+            SignerConf::Aws {
+                id: "".to_owned(),
+                region: "".to_owned()
+            }
+        );
     }
 }
