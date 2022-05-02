@@ -175,19 +175,19 @@ macro_rules! wrap_ws {
     }};
 }
 
-/// Create ChainSubmitter::Local
+/// Create TxSubmitter::Local
 #[macro_export]
-macro_rules! chain_submitter_local {
+macro_rules! tx_submitter_local {
     ($base_provider:expr, $signer_conf:ident) => {{
         let signer = Signers::try_from_signer_conf(&$signer_conf).await?;
         let signing_provider: Arc<_> = wrap_http!($base_provider.clone(), signer);
-        ChainSubmitter::new(signing_provider.into())
+        TxSubmitter::new(signing_provider.into())
     }};
 }
 
-/// Create ChainSubmitter::Gelato
+/// Create TxSubmitter::Gelato
 #[macro_export]
-macro_rules! chain_submitter_gelato {
+macro_rules! tx_submitter_gelato {
     ($chain_id:expr, $gelato_conf:ident) => {{
         let sponsor = Signers::try_from_signer_conf(&$gelato_conf.signer).await?;
 
@@ -198,7 +198,7 @@ macro_rules! chain_submitter_gelato {
             $gelato_conf.fee_token,
             false,
         );
-        ChainSubmitter::new(client.into())
+        TxSubmitter::new(client.into())
     }};
 }
 
@@ -216,12 +216,12 @@ macro_rules! boxed_contract {
             // If there's a provided signer, we want to manage every aspect
             // locally
             let submitter = match conf {
-                nomad_xyz_configuration::ethereum::TransactionSubmitterConf::Local(signer_conf) => {
-                    chain_submitter_local!($base_provider, signer_conf)
+                nomad_xyz_configuration::ethereum::TxSubmitterConf::Local(signer_conf) => {
+                    tx_submitter_local!($base_provider, signer_conf)
                 }
-                nomad_xyz_configuration::ethereum::TransactionSubmitterConf::Gelato(gelato_conf) => {
+                nomad_xyz_configuration::ethereum::TxSubmitterConf::Gelato(gelato_conf) => {
                     let chain_id = $base_provider.get_chainid().await?.as_usize();
-                    chain_submitter_gelato!(chain_id, gelato_conf)
+                    tx_submitter_gelato!(chain_id, gelato_conf)
                 }
             };
 
@@ -240,7 +240,7 @@ macro_rules! boxed_contract {
     }};
     ($name:ident, $abi:ident, $trait:ident, $($n:ident:$t:ty),*)  => {
         #[doc = "Cast a contract locator to a live contract handle"]
-        pub async fn $name(conn: nomad_xyz_configuration::ethereum::Connection, locator: &ContractLocator, submitter_conf: Option<nomad_xyz_configuration::ethereum::TransactionSubmitterConf>, timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
+        pub async fn $name(conn: nomad_xyz_configuration::ethereum::Connection, locator: &ContractLocator, submitter_conf: Option<nomad_xyz_configuration::ethereum::TxSubmitterConf>, timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
             let b: Box<dyn $trait> = match conn {
                 nomad_xyz_configuration::chains::ethereum::Connection::Http (url) => {
                     boxed_contract!(@http url, submitter_conf, $abi, timelag, locator, $($n),*)

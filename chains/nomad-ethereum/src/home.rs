@@ -17,7 +17,7 @@ use nomad_xyz_configuration::HomeGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
 use tracing::instrument;
 
-use crate::{bindings::home::Home as EthereumHomeInternal, ChainSubmitter};
+use crate::{bindings::home::Home as EthereumHomeInternal, TxSubmitter};
 
 impl<M> std::fmt::Display for EthereumHomeInternal<M>
 where
@@ -166,7 +166,7 @@ where
     W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
-    submitter: ChainSubmitter<W>,
+    submitter: TxSubmitter<W>,
     contract: Arc<EthereumHomeInternal<R>>,
     domain: u32,
     name: String,
@@ -181,7 +181,7 @@ where
     /// Create a reference to a Home at a specific Ethereum address on some
     /// chain
     pub fn new(
-        submitter: ChainSubmitter<W>,
+        submitter: TxSubmitter<W>,
         read_provider: Arc<R>,
         ContractLocator {
             name,

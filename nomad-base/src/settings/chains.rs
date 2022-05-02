@@ -4,7 +4,7 @@ use nomad_ethereum::{make_conn_manager, make_home, make_replica};
 use nomad_types::NomadIdentifier;
 use nomad_xyz_configuration::{
     contracts::CoreContracts, AgentSecrets, ChainConf, ConnectionManagerGasLimits, HomeGasLimits,
-    NomadConfig, ReplicaGasLimits, TransactionSubmitterConf,
+    NomadConfig, ReplicaGasLimits, TxSubmitterConf,
 };
 use serde::Deserialize;
 
@@ -132,7 +132,7 @@ impl ChainSetup {
     /// Try to convert the chain setting into a Home contract
     pub async fn try_into_home(
         &self,
-        submitter_conf: Option<TransactionSubmitterConf>,
+        submitter_conf: Option<TxSubmitterConf>,
         timelag: Option<u8>,
         gas: Option<HomeGasLimits>,
     ) -> Result<Homes> {
@@ -162,7 +162,7 @@ impl ChainSetup {
     /// Try to convert the chain setting into a replica contract
     pub async fn try_into_replica(
         &self,
-        submitter_conf: Option<TransactionSubmitterConf>,
+        submitter_conf: Option<TxSubmitterConf>,
         gas: Option<ReplicaGasLimits>,
     ) -> Result<Replicas> {
         match &self.chain {
@@ -191,7 +191,7 @@ impl ChainSetup {
     /// Try to convert chain setting into XAppConnectionManager contract
     pub async fn try_into_connection_manager(
         &self,
-        submitter_conf: Option<TransactionSubmitterConf>,
+        submitter_conf: Option<TxSubmitterConf>,
         gas: Option<ConnectionManagerGasLimits>,
     ) -> Result<ConnectionManagers> {
         let submitter_conf = submitter_conf.map(std::convert::Into::into);

@@ -32,16 +32,16 @@ impl<M> From<SingleChainGelatoClient<M>> for SubmitterClient<M> {
 
 /// Chain submitter
 #[derive(Debug)]
-pub struct ChainSubmitter<M> {
+pub struct TxSubmitter<M> {
     /// Tx submitter client
     pub client: SubmitterClient<M>,
 }
 
-impl<M> ChainSubmitter<M>
+impl<M> TxSubmitter<M>
 where
     M: Middleware + 'static,
 {
-    /// Create new ChainSubmitter from submitter
+    /// Create new TxSubmitter from submitter
     pub fn new(client: SubmitterClient<M>) -> Self {
         Self { client }
     }

@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use crate::{
     bindings::xappconnectionmanager::XAppConnectionManager as EthereumConnectionManagerInternal,
-    ChainSubmitter,
+    TxSubmitter,
 };
 
 /// A reference to a XAppConnectionManager contract on some Ethereum chain
@@ -20,7 +20,7 @@ where
     W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
-    submitter: ChainSubmitter<W>,
+    submitter: TxSubmitter<W>,
     contract: Arc<EthereumConnectionManagerInternal<R>>,
     domain: u32,
     name: String,
@@ -36,7 +36,7 @@ where
     /// address on some chain
     #[allow(dead_code)]
     pub fn new(
-        submitter: ChainSubmitter<W>,
+        submitter: TxSubmitter<W>,
         read_provider: Arc<R>,
         ContractLocator {
             name,

@@ -32,21 +32,21 @@ impl Default for Connection {
 /// Local or relay-based transaction submission
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 #[serde(tag = "submitterType", content = "submitter", rename_all = "camelCase")]
-pub enum TransactionSubmitterConf {
+pub enum TxSubmitterConf {
     /// Signer configuration for local signer
     Local(SignerConf),
     /// Gelato configuration for Gelato relay
     Gelato(GelatoConf),
 }
 
-impl From<super::TransactionSubmitterConf> for TransactionSubmitterConf {
-    fn from(conf: super::TransactionSubmitterConf) -> Self {
-        let super::TransactionSubmitterConf::Ethereum(conf) = conf;
+impl From<super::TxSubmitterConf> for TxSubmitterConf {
+    fn from(conf: super::TxSubmitterConf) -> Self {
+        let super::TxSubmitterConf::Ethereum(conf) = conf;
         conf
     }
 }
 
-impl FromEnv for TransactionSubmitterConf {
+impl FromEnv for TxSubmitterConf {
     fn from_env(prefix: &str) -> Option<Self> {
         let submitter_type = std::env::var(&format!("{}_SUBMITTERTYPE", prefix)).ok()?;
 
