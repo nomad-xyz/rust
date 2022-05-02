@@ -11,30 +11,30 @@ use tracing::{debug, info};
 /// Component responsible for submitting transactions to the chain. Can
 /// sign/submit locally or use a transaction relay service.
 #[derive(Debug, Clone)]
-pub enum Submitter<M> {
+pub enum SubmitterClient<M> {
     /// Sign/submit txs locally
     Local(Arc<M>),
     /// Pass meta txs to Gelato relay service
     Gelato(SingleChainGelatoClient<M>),
 }
 
-impl<M> From<Arc<M>> for Submitter<M> {
+impl<M> From<Arc<M>> for SubmitterClient<M> {
     fn from(client: Arc<M>) -> Self {
         Self::Local(client)
     }
 }
 
-impl<M> From<SingleChainGelatoClient<M>> for Submitter<M> {
+impl<M> From<SingleChainGelatoClient<M>> for SubmitterClient<M> {
     fn from(client: SingleChainGelatoClient<M>) -> Self {
         Self::Gelato(client)
     }
 }
 
-/// Receives meta txs and submits them to chain
+/// Chain submitter
 #[derive(Debug)]
 pub struct ChainSubmitter<M> {
-    /// Tx submitter
-    pub submitter: Submitter<M>,
+    /// Tx submitter client
+    pub client: SubmitterClient<M>,
 }
 
 impl<M> ChainSubmitter<M>
@@ -42,8 +42,8 @@ where
     M: Middleware + 'static,
 {
     /// Create new ChainSubmitter from submitter
-    pub fn new(submitter: Submitter<M>) -> Self {
-        Self { submitter }
+    pub fn new(client: SubmitterClient<M>) -> Self {
+        Self { client }
     }
 
     /// Submit transaction to chain
@@ -55,8 +55,8 @@ where
     ) -> Result<TxOutcome, ChainCommunicationError> {
         let tx: TypedTransaction = tx.into();
 
-        match &self.submitter {
-            Submitter::Local(client) => {
+        match &self.client {
+            SubmitterClient::Local(client) => {
                 let dispatched = client
                     .send_transaction(tx, None)
                     .await
@@ -76,7 +76,7 @@ where
                 let outcome = result.try_into()?;
                 Ok(outcome)
             }
-            Submitter::Gelato(client) => {
+            SubmitterClient::Gelato(client) => {
                 let tx_data = tx.data().expect("!tx data");
                 let data = format!("{:x}", tx_data);
                 let address = format!("{:x}", contract_address);
@@ -87,8 +87,9 @@ where
                     "Dispatching tx to Gelato relay."
                 );
 
+                let gas_limit = 100_000; // TODO: clear up with Gelato
                 let RelayResponse { task_id } = client
-                    .send_relay_transaction(&address, &data)
+                    .send_relay_transaction(&address, &data, gas_limit)
                     .await
                     .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?;
                 info!(task_id = ?task_id, "Submitted tx to Gelato relay. Polling task for completion...");
