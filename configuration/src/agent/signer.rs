@@ -128,7 +128,7 @@ mod test {
 impl SignerConf {
     /// Validate signer conf fields
     pub fn validate(&self, network: &str) -> eyre::Result<()> {
-        Ok(match self {
+        match self {
             SignerConf::HexKey { key } => {
                 eyre::ensure!(
                     !key.as_ref().is_empty(),
@@ -145,6 +145,8 @@ impl SignerConf {
                 );
             }
             SignerConf::Node => (),
-        })
+        };
+
+        Ok(())
     }
 }

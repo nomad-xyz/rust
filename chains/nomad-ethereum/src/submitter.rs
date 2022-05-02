@@ -15,7 +15,7 @@ pub enum SubmitterClient<M> {
     /// Sign/submit txs locally
     Local(Arc<M>),
     /// Pass meta txs to Gelato relay service
-    Gelato(SingleChainGelatoClient<M>),
+    Gelato(Arc<SingleChainGelatoClient<M>>),
 }
 
 impl<M> From<Arc<M>> for SubmitterClient<M> {
@@ -26,7 +26,7 @@ impl<M> From<Arc<M>> for SubmitterClient<M> {
 
 impl<M> From<SingleChainGelatoClient<M>> for SubmitterClient<M> {
     fn from(client: SingleChainGelatoClient<M>) -> Self {
-        Self::Gelato(client)
+        Self::Gelato(client.into())
     }
 }
 
@@ -66,7 +66,7 @@ where
 
                 let result = dispatched
                     .await?
-                    .ok_or_else(|| ChainCommunicationError::DroppedError(tx_hash))?;
+                    .ok_or(ChainCommunicationError::DroppedError(tx_hash))?;
 
                 info!(
                     "confirmed transaction with tx_hash {:?}",
@@ -105,8 +105,7 @@ where
                     if !ACCEPTABLE_STATES.contains(&status.task_state) {
                         return Err(ChainCommunicationError::TxSubmissionError(
                             format!("Gelato task failed: {:?}", status).into(),
-                        )
-                        .into());
+                        ));
                     }
 
                     if let Some(execution) = &status.execution {
