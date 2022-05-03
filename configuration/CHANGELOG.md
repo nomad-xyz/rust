@@ -2,6 +2,9 @@
 
 ### Unreleased
 
+- Simplify JSON representation of signers
+- Simplify JSON representation of connection URLs
+
 ## v0.1.0-rc.18
 
 - enable connext for evmos in production
