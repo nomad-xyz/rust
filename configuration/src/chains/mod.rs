@@ -55,11 +55,11 @@ pub enum TxSubmitterConf {
 
 impl FromEnv for TxSubmitterConf {
     fn from_env(network: &str) -> Option<Self> {
-        let rpc_style = std::env::var(&format!("TXSUBMITTERS_{}_RPCSTYLE", network)).ok()?;
+        let rpc_style = std::env::var(&format!("{}_RPCSTYLE", network)).ok()?;
 
         match rpc_style.as_ref() {
             "ethereum" => Some(Self::Ethereum(ethereum::TxSubmitterConf::from_env(
-                &format!("TXSUBMITTERS_{}", network),
+                network,
             )?)),
             _ => panic!("Unknown transaction submission rpc style: {}", rpc_style),
         }
