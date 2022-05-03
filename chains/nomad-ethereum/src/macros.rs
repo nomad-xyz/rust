@@ -189,7 +189,7 @@ macro_rules! tx_submitter_local {
 #[macro_export]
 macro_rules! tx_submitter_gelato {
     ($base_provider:expr, $gelato_conf:ident) => {{
-        let signer = Signers::try_from_signer_conf(&$gelato_conf.signer).await?;
+        let signer = Signers::try_from_signer_conf(&$gelato_conf.sponsor).await?;
         let sponsor = signer.clone();
         let chain_id = $base_provider.get_chainid().await?.as_usize();
         let signing_provider: Arc<_> = wrap_http!($base_provider.clone(), signer); // kludge: only using signing provider for type consistency with TxSubmitter::Local
@@ -246,6 +246,7 @@ macro_rules! boxed_contract {
             let b: Box<dyn $trait> = match conn {
                 nomad_xyz_configuration::chains::ethereum::Connection::Http (url) => {
                     boxed_contract!(@http url, submitter_conf, $abi, timelag, locator, $($n),*)
+                }
                 nomad_xyz_configuration::chains::ethereum::Connection::Ws (url) => {
                     boxed_contract!(@ws url, submitter_conf, $abi, timelag, locator, $($n),*)
                 }

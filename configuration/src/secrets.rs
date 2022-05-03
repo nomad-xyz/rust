@@ -90,7 +90,7 @@ impl AgentSecrets {
                         signer_conf.validate(network)?
                     }
                     ethereum::TxSubmitterConf::Gelato(gelato_conf) => {
-                        gelato_conf.signer.validate(network)?
+                        gelato_conf.sponsor.validate(network)?
                     }
                 },
             };
@@ -102,6 +102,7 @@ impl AgentSecrets {
 
 impl FromEnv for AgentSecrets {
     fn from_env(_prefix: &str) -> Option<Self> {
+        println!("START");
         let env = std::env::var("RUN_ENV").ok()?;
         let home = std::env::var("AGENT_HOME").ok()?;
 
@@ -120,9 +121,13 @@ impl FromEnv for AgentSecrets {
 
         let mut secrets = AgentSecrets::default();
 
+        println!("Getting per network conf and submitters");
         for network in networks.iter() {
             let network_upper = network.to_uppercase();
+            println!("Getting chainconf: {}", network_upper);
             let chain_conf = ChainConf::from_env(&network_upper)?;
+
+            println!("Getting tx submitter conf");
             let tx_submitter = TxSubmitterConf::from_env(&network_upper)?;
 
             secrets.rpcs.insert(network.to_owned(), chain_conf);

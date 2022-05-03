@@ -1,65 +1,91 @@
 //! Ethereum/EVM configuration types
 
-use crate::{agent::SignerConf, FromEnv};
+use std::str::FromStr;
 
-mod gelato;
-pub use gelato::*;
+mod submitter;
+pub use submitter::*;
 
 /// Ethereum connection configuration
-#[derive(Debug, serde::Deserialize, Clone, PartialEq)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Connection {
     /// HTTP connection details
-    Http {
-        /// Fully qualified string to connect to
-        url: String,
-    },
+    Http(
+        /// Fully qualified URI to connect to
+        String,
+    ),
     /// Websocket connection details
-    Ws {
-        /// Fully qualified string to connect to
-        url: String,
-    },
+    Ws(
+        /// Fully qualified URI to connect to
+        String,
+    ),
+}
+
+impl Connection {
+    fn from_string(s: String) -> eyre::Result<Self> {
+        if s.starts_with("http://") || s.starts_with("https://") {
+            Ok(Self::Http(s))
+        } else if s.starts_with("wss://") || s.starts_with("ws://") {
+            Ok(Self::Ws(s))
+        } else {
+            eyre::bail!("Expected http or websocket URI")
+        }
+    }
+}
+
+impl FromStr for Connection {
+    type Err = eyre::Report;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::from_string(s.to_owned())
+    }
 }
 
 impl Default for Connection {
     fn default() -> Self {
-        Self::Http {
-            url: Default::default(),
-        }
+        Self::Http(Default::default())
     }
 }
 
-/// Local or relay-based transaction submission
-#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-#[serde(tag = "submitterType", content = "submitter", rename_all = "camelCase")]
-pub enum TxSubmitterConf {
-    /// Signer configuration for local signer
-    Local(SignerConf),
-    /// Gelato configuration for Gelato relay
-    Gelato(GelatoConf),
-}
-
-impl From<super::TxSubmitterConf> for TxSubmitterConf {
-    fn from(conf: super::TxSubmitterConf) -> Self {
-        let super::TxSubmitterConf::Ethereum(conf) = conf;
-        conf
+impl<'de> serde::Deserialize<'de> for Connection {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Self::from_string(s).map_err(serde::de::Error::custom)
     }
 }
 
-impl FromEnv for TxSubmitterConf {
-    fn from_env(prefix: &str) -> Option<Self> {
-        let submitter_type = std::env::var(&format!("{}_SUBMITTERTYPE", prefix)).ok()?;
+#[cfg(test)]
+mod test {
+    use serde_json::json;
 
-        match submitter_type.as_ref() {
-            "local" => {
-                let signer_conf = SignerConf::from_env(&format!("{}_SUBMITTER", prefix))?;
-                Some(Self::Local(signer_conf))
-            }
-            "gelato" => {
-                let gelato_conf = GelatoConf::from_env(&format!("{}_SUBMITTER", prefix))?;
-                Some(Self::Gelato(gelato_conf))
-            }
-            _ => panic!("Unknown tx submission type: {}", submitter_type),
-        }
+    use super::Connection;
+
+    #[test]
+    fn it_desers_ethereum_rpc_configs() {
+        let value = json! {
+            "https://google.com"
+        };
+        let connection: Connection = serde_json::from_value(value).unwrap();
+        assert_eq!(
+            connection,
+            Connection::Http("https://google.com".to_owned())
+        );
+        let value = json! {
+            "http://google.com"
+        };
+        let connection: Connection = serde_json::from_value(value).unwrap();
+        assert_eq!(connection, Connection::Http("http://google.com".to_owned()));
+        let value = json! {
+            "wss://google.com"
+        };
+        let connection: Connection = serde_json::from_value(value).unwrap();
+        assert_eq!(connection, Connection::Ws("wss://google.com".to_owned()));
+        let value = json! {
+            "ws://google.com"
+        };
+        let connection: Connection = serde_json::from_value(value).unwrap();
+        assert_eq!(connection, Connection::Ws("ws://google.com".to_owned()));
     }
 }
