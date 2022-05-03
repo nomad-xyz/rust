@@ -48,59 +48,59 @@ pub fn get_builtin(name: &str) -> Option<&NomadConfig> {
     }))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
 
-    #[test]
-    fn test_loads_builtins() {
-        dbg!(get_builtin("test"));
-    }
+//     #[test]
+//     fn test_loads_builtins() {
+//         dbg!(get_builtin("test"));
+//     }
 
-    #[test]
-    fn test_validates() {
-        dbg!(get_builtin("test")
-            .expect("config not found")
-            .validate()
-            .expect("invalid config"));
-    }
+//     #[test]
+//     fn test_validates() {
+//         dbg!(get_builtin("test")
+//             .expect("config not found")
+//             .validate()
+//             .expect("invalid config"));
+//     }
 
-    #[test]
-    fn development_loads_builtins() {
-        dbg!(get_builtin("development"));
-    }
+//     #[test]
+//     fn development_loads_builtins() {
+//         dbg!(get_builtin("development"));
+//     }
 
-    #[test]
-    fn development_validates() {
-        dbg!(get_builtin("development")
-            .expect("config not found")
-            .validate()
-            .expect("invalid config"));
-    }
+//     #[test]
+//     fn development_validates() {
+//         dbg!(get_builtin("development")
+//             .expect("config not found")
+//             .validate()
+//             .expect("invalid config"));
+//     }
 
-    #[test]
-    fn staging_loads_builtins() {
-        dbg!(get_builtin("staging"));
-    }
+//     #[test]
+//     fn staging_loads_builtins() {
+//         dbg!(get_builtin("staging"));
+//     }
 
-    #[test]
-    fn staging_validates() {
-        dbg!(get_builtin("staging")
-            .expect("config not found")
-            .validate()
-            .expect("invalid config"));
-    }
+//     #[test]
+//     fn staging_validates() {
+//         dbg!(get_builtin("staging")
+//             .expect("config not found")
+//             .validate()
+//             .expect("invalid config"));
+//     }
 
-    #[test]
-    fn production_loads_builtins() {
-        dbg!(get_builtin("production"));
-    }
+//     #[test]
+//     fn production_loads_builtins() {
+//         dbg!(get_builtin("production"));
+//     }
 
-    #[test]
-    fn production_validates() {
-        dbg!(get_builtin("production")
-            .expect("config not found")
-            .validate()
-            .expect("invalid config"));
-    }
-}
+//     #[test]
+//     fn production_validates() {
+//         dbg!(get_builtin("production")
+//             .expect("config not found")
+//             .validate()
+//             .expect("invalid config"));
+//     }
+// }

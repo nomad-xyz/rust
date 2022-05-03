@@ -83,7 +83,7 @@ impl SignerConf {
     /// Validate signer conf fields
     pub fn validate(&self, network: &str) -> eyre::Result<()> {
         match self {
-            SignerConf::HexKey { key } => {
+            SignerConf::HexKey(key) => {
                 eyre::ensure!(
                     !key.as_ref().is_empty(),
                     "Hex signer key for {} empty!",
