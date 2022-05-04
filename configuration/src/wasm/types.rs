@@ -183,6 +183,11 @@ export interface NomadGasConfig {
   bridge: BridgeGasConfig;
 }
 
+export interface S3Config {
+  bucket: string;
+  region: string;
+}
+
 export interface NomadConfig {
   version: number;
   environment: string;
@@ -194,6 +199,7 @@ export interface NomadConfig {
   agent: Record<string, AgentConfig>;
   gas: Record<string, NomadGasConfig>;
   bridgeGui: Record<string, AppConfig>;
+  s3?: S3Config;
 }
 "#;
 
@@ -282,6 +288,9 @@ extern "C" {
 
     #[wasm_bindgen(typescript_type = "NomadGasConfig")]
     pub type NomadGasConfig;
+
+    #[wasm_bindgen(typescript_type = "S3Config")]
+    pub type S3Config;
 
     #[wasm_bindgen(typescript_type = "NomadConfig")]
     pub type NomadConfig;

@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- duplicate s3 bucket info at top level
+
 ### v0.1.0-rc.19
 
 - Simplify JSON representation of signers

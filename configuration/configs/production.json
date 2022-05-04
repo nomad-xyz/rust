@@ -9,6 +9,10 @@
     "milkomedaC1",
     "moonbeam"
   ],
+  "s3": {
+    "bucket": "nomadxyz-production-proofs",
+    "region": "us-west-2"
+  },
   "rpcs": {
     "evmos": ["https://eth.bd.evmos.org:8545"],
     "ethereum": ["https://main-light.eth.linkpool.io/"],

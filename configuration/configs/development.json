@@ -2,6 +2,10 @@
   "version": 0,
   "environment": "development",
   "networks": ["rinkeby", "goerli", "kovan", "evmostestnet"],
+  "s3": {
+    "bucket": "nomadxyz-development-proofs",
+    "region": "us-west-2"
+  },
   "rpcs": {
     "rinkeby": ["https://rinkeby-light.eth.linkpool.io"],
     "goerli": ["https://goerli-light.eth.linkpool.io"],
