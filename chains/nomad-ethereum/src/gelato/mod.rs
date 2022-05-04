@@ -3,6 +3,9 @@ use gelato_relay::{GelatoClient, RelayResponse, TaskState};
 use nomad_core::Signers;
 use std::sync::Arc;
 
+mod sponsor;
+pub use sponsor::*;
+
 /*
 {
   chainId: number;

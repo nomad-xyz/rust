@@ -29,6 +29,8 @@ tracing-futures = "0.2.5"
 url = "2.2.2"
 thiserror = "1.0.30"
 reqwest = { version = "0.11.10", features = ["json"]}
+lazy_static = "1.4.0"
+sha3 = "0.9.1"
 
 nomad-xyz-configuration = { path = "../../configuration" }
 nomad-types = { path = "../../nomad-types" }
