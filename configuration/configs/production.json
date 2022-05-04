@@ -10,24 +10,12 @@
     "moonbeam"
   ],
   "rpcs": {
-    "evmos": [
-      "https://eth.bd.evmos.org:8545"
-    ],
-    "ethereum": [
-      "https://main-light.eth.linkpool.io/"
-    ],
-    "moonbeam": [
-      "https://moonriver.api.onfinality.io/public"
-    ],
-    "milkomedaC1": [
-      "https://rpc.c1.milkomeda.com:8545"
-    ],
-    "xdai": [
-      "https://dai.poa.network/"
-    ],
-    "avalanche": [
-      "https://api.avax.network/ext/bc/C/rpc"
-    ]
+    "evmos": ["https://eth.bd.evmos.org:8545"],
+    "ethereum": ["https://main-light.eth.linkpool.io/"],
+    "moonbeam": ["https://moonriver.api.onfinality.io/public"],
+    "milkomedaC1": ["https://rpc.c1.milkomeda.com:8545"],
+    "xdai": ["https://dai.poa.network/"],
+    "avalanche": ["https://api.avax.network/ext/bc/C/rpc"]
   },
   "protocol": {
     "governor": {
@@ -38,22 +26,14 @@
       "avalanche": {
         "name": "avalanche",
         "domain": 1635148152,
-        "connections": [
-          "moonbeam",
-          "ethereum",
-          "milkomedaC1",
-          "xdai",
-          "evmos"
-        ],
+        "connections": ["moonbeam", "ethereum", "milkomedaC1", "xdai", "evmos"],
         "configuration": {
           "optimisticSeconds": 1800,
           "processGas": 850000,
           "reserveGas": 25000,
           "maximumGas": 1000000,
           "updater": "0xb93d4dbb87b80f0869a5ce0839fb75acdbeb1b77",
-          "watchers": [
-            "0x499b1fa18e3cac1c8cdf2b14c458aa70a6a2b68f"
-          ],
+          "watchers": ["0x499b1fa18e3cac1c8cdf2b14c458aa70a6a2b68f"],
           "governance": {
             "recoveryManager": "0x91dba25187b85ada9111bb2ed92006c10c543741",
             "recoveryTimelock": 86400
@@ -62,7 +42,7 @@
         "specs": {
           "chainId": 43114,
           "blockTime": 2,
-          "finalizationBlocks": 2,
+          "finalizationBlocks": 3,
           "supports1559": true,
           "confirmations": 20,
           "blockExplorer": "https://snowtrace.io/",
@@ -91,9 +71,7 @@
           "reserveGas": 25000,
           "maximumGas": 1000000,
           "updater": "0x777a89f8cba8fa632268e8f3c6789cdadada3482",
-          "watchers": [
-            "0xce941bbad38b35bd7f6b039af5ae67f8f0c99960"
-          ],
+          "watchers": ["0xce941bbad38b35bd7f6b039af5ae67f8f0c99960"],
           "governance": {
             "recoveryManager": "0x5a07b875c618dcf69ec9681eccf147cf0ce84d11",
             "recoveryTimelock": 86400
@@ -131,9 +109,7 @@
           "reserveGas": 25000,
           "maximumGas": 1000000,
           "updater": "0x40fd91557b318bd5d52d12535795265c88702681",
-          "watchers": [
-            "0x9782a3c8128f5d1bd3c9655d03181ba5b420883e"
-          ],
+          "watchers": ["0x9782a3c8128f5d1bd3c9655d03181ba5b420883e"],
           "governance": {
             "recoveryManager": "0x2d23b3865d5b7cd88ce9ce7514a13545672d9ef7",
             "recoveryTimelock": 86400
@@ -171,9 +147,7 @@
           "reserveGas": 25000,
           "maximumGas": 1000000,
           "updater": "0x71dc76c07e92325e7cc09117ab94310da63fc2b9",
-          "watchers": [
-            "0x297bbc2f2eaaeb17ee53f514020bc8173f0570dc"
-          ],
+          "watchers": ["0x297bbc2f2eaaeb17ee53f514020bc8173f0570dc"],
           "governance": {
             "recoveryManager": "0xda2f881f7f4e9d2b9559f97c7670472a85c1986a",
             "recoveryTimelock": 86400
@@ -211,9 +185,7 @@
           "reserveGas": 25000,
           "maximumGas": 1000000,
           "updater": "0xc8e344d4698b6462187c88b9bb58f26ca3b5ed31",
-          "watchers": [
-            "0x9e8e7eb5886a9c77e955fd5d717581556eb7f98d"
-          ],
+          "watchers": ["0x9e8e7eb5886a9c77e955fd5d717581556eb7f98d"],
           "governance": {
             "recoveryManager": "0xea24ac04defb338ca8595c3750e20166f3b4998a",
             "recoveryTimelock": 86400
@@ -248,22 +220,14 @@
       "milkomedaC1": {
         "name": "milkomedaC1",
         "domain": 25393,
-        "connections": [
-          "ethereum",
-          "avalanche",
-          "moonbeam",
-          "xdai",
-          "evmos"
-        ],
+        "connections": ["ethereum", "avalanche", "moonbeam", "xdai", "evmos"],
         "configuration": {
           "optimisticSeconds": 1800,
           "processGas": 850000,
           "reserveGas": 25000,
           "maximumGas": 1000000,
           "updater": "0xe293d129d9fd291a8115cb373bb934586055427d",
-          "watchers": [
-            "0x06d8902cfae8235047dc7783875279311798c715"
-          ],
+          "watchers": ["0x06d8902cfae8235047dc7783875279311798c715"],
           "governance": {
             "recoveryManager": "0xea24ac04defb338ca8595c3750e20166f3b4998a",
             "recoveryTimelock": 86400
@@ -750,12 +714,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": [
-          "moonbeam",
-          "milkomedaC1",
-          "avalanche",
-          "evmos"
-        ],
+        "subsidizedRemotes": ["moonbeam", "milkomedaC1", "avalanche", "evmos"],
         "s3": {
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
@@ -794,12 +753,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": [
-          "moonbeam",
-          "xdai",
-          "avalanche",
-          "evmos"
-        ],
+        "subsidizedRemotes": ["moonbeam", "xdai", "avalanche", "evmos"],
         "s3": {
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
@@ -838,12 +792,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": [
-          "moonbeam",
-          "milkomedaC1",
-          "xdai",
-          "avalanche"
-        ],
+        "subsidizedRemotes": ["moonbeam", "milkomedaC1", "xdai", "avalanche"],
         "s3": {
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
@@ -882,12 +831,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": [
-          "moonbeam",
-          "milkomedaC1",
-          "xdai",
-          "evmos"
-        ],
+        "subsidizedRemotes": ["moonbeam", "milkomedaC1", "xdai", "evmos"],
         "s3": {
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
@@ -926,12 +870,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": [
-          "milkomedaC1",
-          "xdai",
-          "avalanche",
-          "evmos"
-        ],
+        "subsidizedRemotes": ["milkomedaC1", "xdai", "avalanche", "evmos"],
         "s3": {
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
@@ -952,56 +891,148 @@
       }
     }
   },
+  "gas": {
+    "ethereum": {
+      "core": {
+        "home": {
+          "update": {
+            "base": 100000,
+            "perMessage": 10000
+          },
+          "improperUpdate": {
+            "base": 100000,
+            "perMessage": 10000
+          },
+          "doubleUpdate": 200000
+        },
+        "replica": {
+          "update": 140000,
+          "prove": 200000,
+          "process": 1700000,
+          "proveAndProcess": 1900000,
+          "doubleUpdate": 200000
+        },
+        "connectionManager": {
+          "ownerUnenrollReplica": 120000,
+          "unenrollReplica": 120000
+        }
+      },
+      "bridge": {
+        "bridgeRouter": {
+          "send": 500000
+        },
+        "ethHelper": {
+          "send": 800000,
+          "sendToEvmLike": 800000
+        }
+      }
+    },
+    "moonbeam": {
+      "core": {
+        "home": {
+          "update": {
+            "base": 100000,
+            "perMessage": 10000
+          },
+          "improperUpdate": {
+            "base": 100000,
+            "perMessage": 10000
+          },
+          "doubleUpdate": 200000
+        },
+        "replica": {
+          "update": 140000,
+          "prove": 200000,
+          "process": 1700000,
+          "proveAndProcess": 1900000,
+          "doubleUpdate": 200000
+        },
+        "connectionManager": {
+          "ownerUnenrollReplica": 120000,
+          "unenrollReplica": 120000
+        }
+      },
+      "bridge": {
+        "bridgeRouter": {
+          "send": 500000
+        },
+        "ethHelper": {
+          "send": 800000,
+          "sendToEvmLike": 800000
+        }
+      }
+    },
+    "milkomedaC1": {
+      "core": {
+        "home": {
+          "update": {
+            "base": 100000,
+            "perMessage": 10000
+          },
+          "improperUpdate": {
+            "base": 100000,
+            "perMessage": 10000
+          },
+          "doubleUpdate": 200000
+        },
+        "replica": {
+          "update": 140000,
+          "prove": 200000,
+          "process": 1700000,
+          "proveAndProcess": 1900000,
+          "doubleUpdate": 200000
+        },
+        "connectionManager": {
+          "ownerUnenrollReplica": 120000,
+          "unenrollReplica": 120000
+        }
+      },
+      "bridge": {
+        "bridgeRouter": {
+          "send": 500000
+        },
+        "ethHelper": {
+          "send": 800000,
+          "sendToEvmLike": 800000
+        }
+      }
+    }
+  },
   "bridgeGui": {
     "avalanche": {
       "displayName": "Avalanche",
       "nativeTokenSymbol": "AVAX",
-      "connections": [
-        "ethereum"
-      ],
+      "connections": ["ethereum"],
       "connextEnabled": true
     },
     "evmos": {
       "displayName": "Evmos",
       "nativeTokenSymbol": "EVMOS",
-      "connections": [
-        "ethereum"
-      ],
+      "connections": ["ethereum"],
       "connextEnabled": true
     },
     "ethereum": {
       "displayName": "Ethereum",
       "nativeTokenSymbol": "ETH",
-      "connections": [
-        "avalanche",
-        "moonbeam",
-        "milkomedaC1",
-        "xDai"
-      ],
+      "connections": ["avalanche", "moonbeam", "milkomedaC1", "xDai"],
       "manualProcessing": true,
       "connextEnabled": true
     },
     "milkomedaC1": {
       "displayName": "Milkomeda C1",
       "nativeTokenSymbol": "milkADA",
-      "connections": [
-        "ethereum"
-      ]
+      "connections": ["ethereum"]
     },
     "xdai": {
       "displayName": "xDai",
       "nativeTokenSymbol": "xDAI",
-      "connections": [
-        "ethereum"
-      ],
+      "connections": ["ethereum"],
       "connextEnabled": true
     },
     "moonbeam": {
       "displayName": "Moonbeam",
       "nativeTokenSymbol": "GLMR",
-      "connections": [
-        "ethereum"
-      ],
+      "connections": ["ethereum"],
       "connextEnabled": true
     }
   }
