@@ -1,18 +1,14 @@
 //! Settings and configuration for Nomad agents
 //!
-//! This crate draws heavily on `nomad-xyz-configuration`. All public values are
-//! drawn from this publicly hosted package. All secret values are drawn from
-//! either a secrets.json file (see secrets.rs for more info) or a hosted
-//! secrets manager backend.
+//! All public values are drawn from the publicly hosted package
+//! `nomad-xyz-configuration`. All secret values are drawn from either
+//! environment variables OR a secrets.json file.
 //!
-//! Agent Deployment Flow:
-//!  1. Run /nomad-base/src/bin/secrets_template.rs, passing in RUN_ENV
-//!     environment variable (RUN_ENV=<development | production> env cargo run
-//!     --bin secrets-template). This will create a secrets.json template for
-//!     the given RUN_ENV in the current directory.
-//!  2. Override template secrets.json values (rpcs, tx signers, optional
-//!     attestation signer) with environment variables.
-//!  3. Run agents, passing in RUN_ENV and AGENT_HOME as environment variables.
+//! If configuring an agent using a custom config JSON file, place a JSON
+//! config file in the working directory and set the CONFIG_PATH environment
+//! variable to match the path to the file. See the "external" files in the
+//! `fixtures` directory for examples of an external config file and their
+//! corresponding env file and/or secrets.json file.
 
 use crate::{
     agent::AgentCore, CachingHome, CachingReplica, CommonIndexerVariants, CommonIndexers,

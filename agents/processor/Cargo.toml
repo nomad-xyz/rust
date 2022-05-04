@@ -32,3 +32,4 @@ nomad-base = { path = "../../nomad-base" }
 [dev-dependencies]
 nomad-test = { path = "../../nomad-test" }
 dotenv = "0.15.0"
+serial_test = "0.6.0"

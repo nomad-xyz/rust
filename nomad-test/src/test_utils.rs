@@ -2,7 +2,8 @@ use futures_util::FutureExt;
 use nomad_core::db::DB;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
-use std::{future::Future, panic};
+use std::path::Path;
+use std::{env, future::Future, panic};
 
 use rocksdb::Options;
 
@@ -37,4 +38,26 @@ where
     };
     let _ = rocksdb::DB::destroy(&Options::default(), rand_path);
     assert!(result.is_ok())
+}
+
+pub async fn run_test_with_env<T, Fut>(path: impl AsRef<Path>, test: T)
+where
+    T: FnOnce() -> Fut + panic::UnwindSafe,
+    Fut: Future<Output = ()>,
+{
+    let result = {
+        dotenv::from_filename(path).unwrap();
+        let func = panic::AssertUnwindSafe(async { test().await });
+        func.catch_unwind().await
+    };
+
+    clear_env_vars();
+    assert!(result.is_ok())
+}
+
+pub fn clear_env_vars() {
+    let env_vars = env::vars();
+    for (key, _) in env_vars.into_iter() {
+        env::remove_var(key);
+    }
 }

@@ -31,3 +31,4 @@ affix = "0.1.2"
 tokio-test = "0.4.0"
 nomad-test = { path = "../../nomad-test" }
 dotenv = "0.15.0"
+serial_test = "0.6.0"
