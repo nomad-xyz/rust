@@ -1,5 +1,39 @@
 use serde::{Deserialize, Serialize};
 
+/*
+{
+    typeId: string (pass "ForwardRequest"),
+    chainId: number;
+    target: string;
+    data: BytesLike;
+    feeToken: string;
+    paymentType: number (pass 1);
+    maxFee: string (will be available from our fee oracle endpoint);
+    sponsor: string;
+    sponsorChainId: number (same as chainId);
+    nonce: number (can just pass 0 if next field is false);
+    enforceSponsorNonce: boolean (pass false in case you don't want to track nonces);
+    sponsorSignature: BytesLike (EIP-712 signature of struct ForwardRequest{chainId, target, ..., nonce, enforceSponsorNonce})
+ }
+*/
+
+/// Request for forwarding tx to gas-tank based relay service
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ForwardRequest {
+    pub chain_id: usize,
+    pub target: String,
+    pub data: String,
+    pub fee_token: String,
+    pub payment_type: usize, // 1 = gas tank
+    pub max_fee: String,
+    pub sponsor: String,
+    pub sponsor_chain_id: usize,     // same as chain_id
+    pub nonce: usize,                // can default 0 if next field false
+    pub enforce_sponsor_nonce: bool, // default false given replay safe
+    pub sponsor_signature: Vec<u8>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct RelayRequest {
