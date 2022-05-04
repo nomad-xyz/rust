@@ -100,7 +100,7 @@ where
                 );
 
                 let RelayResponse { task_id } = client
-                    .send_relay_transaction(&address, &data, gas_limit)
+                    .send_forward_request(&address, &data, gas_limit)
                     .await
                     .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?;
                 info!(task_id = ?task_id, "Submitted tx to Gelato relay. Polling task for completion...");

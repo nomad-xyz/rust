@@ -197,6 +197,7 @@ macro_rules! tx_submitter_gelato {
         let client = SingleChainGelatoClient::with_default_url(
             signing_provider,
             sponsor,
+            H160::zero(), // TODO: take in gelato address in config
             chain_id,
             $gelato_conf.fee_token,
             false,

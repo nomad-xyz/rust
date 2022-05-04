@@ -1,26 +1,13 @@
 use ethers::providers::Middleware;
-use gelato_relay::{GelatoClient, RelayResponse, TaskState};
-use nomad_core::Signers;
+use ethers::types::Address;
+use ethers_signers::Signer;
+use gelato_relay::{ForwardRequest, GelatoClient, RelayResponse, TaskState};
+use nomad_core::{ChainCommunicationError, Signers};
 use std::sync::Arc;
 
+/// Sponsor data encoding/signing
 mod sponsor;
 pub use sponsor::*;
-
-/*
-{
-  chainId: number;
-  target: string;
-  data: BytesLike;
-  feeToken: string;
-  paymentType: number;
-  maxFee: string;
-  sponsor: string;
-  sponsorChainId: number;
-  nonce: number;
-  enforceSponsorNonce: boolean;
-  sponsorSignature: BytesLike;
-}
- */
 
 pub(crate) const ACCEPTABLE_STATES: [TaskState; 4] = [
     TaskState::CheckPending,
@@ -38,6 +25,8 @@ pub struct SingleChainGelatoClient<M> {
     pub eth_client: Arc<M>,
     /// Sponsor signer
     pub sponsor: Signers,
+    /// Gelato relay forwarder address
+    pub forwarder: Address,
     /// Chain id
     pub chain_id: usize,
     /// Fee token
@@ -59,6 +48,7 @@ where
     pub fn with_default_url(
         eth_client: Arc<M>,
         sponsor: Signers,
+        forwarder: Address,
         chain_id: usize,
         fee_token: String,
         is_high_priority: bool,
@@ -67,6 +57,7 @@ where
             gelato: GelatoClient::default(),
             eth_client,
             sponsor,
+            forwarder,
             chain_id,
             fee_token,
             is_high_priority,
@@ -74,24 +65,40 @@ where
     }
 
     /// Send relay transaction
-    pub async fn send_relay_transaction(
+    pub async fn send_forward_request(
         &self,
-        dest: &str,
+        target: &str,
         data: &str,
         gas_limit: usize,
-    ) -> Result<RelayResponse, reqwest::Error> {
-        let relayer_fee = self
+    ) -> Result<RelayResponse, ChainCommunicationError> {
+        let max_fee = self
             .gelato()
-            .get_estimated_fee(
-                self.chain_id,
-                &self.fee_token,
-                gas_limit,
-                self.is_high_priority,
-            )
-            .await?;
-
-        self.gelato()
-            .send_relay_transaction(self.chain_id, dest, data, &self.fee_token, relayer_fee)
+            .get_estimated_fee(self.chain_id, &self.fee_token, gas_limit, false)
             .await
+            .map_err(|e| ChainCommunicationError::CustomError(e.into()))?;
+
+        let mut request = ForwardRequest {
+            chain_id: self.chain_id,
+            target: target.to_owned(),
+            data: data.to_owned(),
+            fee_token: self.fee_token.to_owned(),
+            payment_type: 1, // gas tank
+            max_fee: max_fee.to_string(),
+            sponsor: format!("{:x}", self.sponsor.address()),
+            sponsor_chain_id: self.chain_id,
+            nonce: 0,                     // default, not needed
+            enforce_sponsor_nonce: false, // replay safety builtin to contracts
+            sponsor_signature: None,      // not yet signed
+        };
+
+        let sponsor_signature = sponsor_sign_request(&self.sponsor, self.forwarder, &request)
+            .await
+            .map_err(|e| ChainCommunicationError::CustomError(e.into()))?;
+
+        request.sponsor_signature = Some(sponsor_signature);
+
+        Ok(RelayResponse {
+            task_id: "id".to_owned(),
+        }) // TODO: replace with call to endpoint
     }
 }
