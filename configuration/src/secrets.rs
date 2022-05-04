@@ -82,7 +82,7 @@ impl AgentSecrets {
             let submitter_conf = self
                 .tx_submitters
                 .get(network)
-                .unwrap_or_else(|| panic!("no signerconf for {}", network));
+                .unwrap_or_else(|| panic!("no submitter conf for {}", network));
             match submitter_conf {
                 TxSubmitterConf::Ethereum(conf) => match conf {
                     ethereum::TxSubmitterConf::Local(signer_conf) => {
@@ -101,7 +101,6 @@ impl AgentSecrets {
 
 impl FromEnv for AgentSecrets {
     fn from_env(_prefix: &str) -> Option<Self> {
-        println!("START");
         let env = std::env::var("RUN_ENV").ok()?;
         let home = std::env::var("AGENT_HOME").ok()?;
 
@@ -120,13 +119,10 @@ impl FromEnv for AgentSecrets {
 
         let mut secrets = AgentSecrets::default();
 
-        println!("Getting per network conf and submitters");
         for network in networks.iter() {
             let network_upper = network.to_uppercase();
-            println!("Getting chainconf: {}", network_upper);
             let chain_conf = ChainConf::from_env(&network_upper)?;
 
-            println!("Getting tx submitter conf");
             let tx_submitter = TxSubmitterConf::from_env(&network_upper)?;
 
             secrets.rpcs.insert(network.to_owned(), chain_conf);
