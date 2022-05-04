@@ -216,8 +216,6 @@ macro_rules! boxed_contract {
     }};
     (@submitter $base_provider:expr, $submitter_conf:ident, $($tail:tt)*) => {{
         if let Some(conf) = $submitter_conf {
-            // If there's a provided signer, we want to manage every aspect
-            // locally
             let submitter = match conf {
                 nomad_xyz_configuration::ethereum::TxSubmitterConf::Local(signer_conf) => {
                     tx_submitter_local!($base_provider, signer_conf)
@@ -229,7 +227,7 @@ macro_rules! boxed_contract {
 
             boxed_contract!(@timelag $base_provider, submitter, $($tail)*)
         } else {
-            panic!("Not supporting contracts with tx submitter");
+            panic!("Not supporting contracts with tx submitter"); // TODO: allow readonly contracts?
         }
     }};
     (@ws $url:expr, $($tail:tt)*) => {{

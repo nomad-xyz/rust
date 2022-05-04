@@ -352,35 +352,35 @@ impl NomadConfig {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use std::path::PathBuf;
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
 
-//     use super::*;
+    use super::*;
 
-//     #[test]
-//     fn it_loads_the_sample_config() {
-//         let path: PathBuf = env!("CARGO_MANIFEST_DIR")
-//             .parse::<PathBuf>()
-//             .unwrap()
-//             .join("configs/test.json");
+    #[test]
+    fn it_loads_the_sample_config() {
+        let path: PathBuf = env!("CARGO_MANIFEST_DIR")
+            .parse::<PathBuf>()
+            .unwrap()
+            .join("configs/test.json");
 
-//         let _config: NomadConfig =
-//             serde_json::from_reader(std::fs::File::open(path).unwrap()).unwrap();
-//         dbg!(&_config);
-//     }
+        let _config: NomadConfig =
+            serde_json::from_reader(std::fs::File::open(path).unwrap()).unwrap();
+        dbg!(&_config);
+    }
 
-//     #[test]
-//     fn it_allows_default_config() {
-//         dbg!(NomadConfig::default());
-//     }
+    #[test]
+    fn it_allows_default_config() {
+        dbg!(NomadConfig::default());
+    }
 
-//     #[test]
-//     fn it_does_the_yaml() {
-//         let yaml = crate::builtin::get_builtin("test")
-//             .unwrap()
-//             .to_yaml()
-//             .unwrap();
-//         println!("{}", yaml);
-//     }
-// }
+    #[test]
+    fn it_does_the_yaml() {
+        let yaml = crate::builtin::get_builtin("test")
+            .unwrap()
+            .to_yaml()
+            .unwrap();
+        println!("{}", yaml);
+    }
+}

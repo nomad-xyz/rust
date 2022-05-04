@@ -6,14 +6,15 @@ use std::sync::Arc;
 /*
 {
   chainId: number;
-  target: string; ** contract address?
+  target: string;
   data: BytesLike;
   feeToken: string;
-  paymentType: number; ** some kind of enum for gas tank vs. legacy?
-  maxFee: string; ** just call get_estimated_fee?
+  paymentType: number;
+  maxFee: string;
   sponsor: string;
   sponsorChainId: number;
-  nonce: number; ** does this enforce ordering too?
+  nonce: number;
+  enforceSponsorNonce: boolean;
   sponsorSignature: BytesLike;
 }
  */
