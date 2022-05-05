@@ -1,8 +1,8 @@
 //! Secrets configuration for agents.
 //!
-//! This struct is serialized from a JSON file or built drawing from a hosted
-//! secrets manager backend. This struct is then used to finish building an
-//! agents `Settings` block (see settings/mod.rs) along with a `NomadConfig`.
+//! This struct built from environment variables. This struct is then used to
+//! finish building an agents `Settings` block (see settings/mod.rs) along with
+//! a `NomadConfig`.
 //!
 //! Example JSON File Format
 //! {
@@ -71,7 +71,6 @@ impl AgentSecrets {
 
         for network in networks.iter() {
             let network_upper = network.to_uppercase();
-            println!("{}", network_upper);
             let chain_conf = ChainConf::from_env(&format!("RPCS_{}", network_upper))?;
             let transaction_signer =
                 SignerConf::from_env(&format!("TRANSACTIONSIGNERS_{}", network_upper))?;

@@ -49,13 +49,18 @@ macro_rules! decl_settings {
 
             impl [<$name Settings>] {
                 pub fn new() -> color_eyre::Result<Self>{
+                    // Get agent, home, and replica names
                     let agent = std::stringify!($name).to_lowercase();
                     let home = std::env::var("AGENT_HOME").expect("missing AGENT_HOME");
 
-                    let secrets_path = std::env::var("SECRETS_PATH").ok();
-                    let config_path = std::env::var("CONFIG_PATH").ok();
+                    let remote_networks = nomad_base::get_remotes_from_env!();
+                    color_eyre::eyre::ensure!(!remote_networks.is_empty(), "Must pass in at least one replica through env");
+
+                    let mut all_networks = remote_networks.clone();
+                    all_networks.insert(home.clone());
 
                     // Get config
+                    let config_path = std::env::var("CONFIG_PATH").ok();
                     let config: nomad_xyz_configuration::NomadConfig = match config_path {
                         Some(path) => nomad_xyz_configuration::NomadConfig::from_file(path).expect("!config"),
                         None => {
@@ -65,35 +70,11 @@ macro_rules! decl_settings {
                     };
                     config.validate()?;
 
-                    let mut remote_networks = std::collections::HashSet::new();
-                    let secrets = match secrets_path {
-                        Some(path) => {
-                            remote_networks = config
-                                .protocol()
-                                .networks
-                                .get(&home)
-                                .expect("!networks")
-                                .connections
-                                .to_owned();
-
-                            nomad_xyz_configuration::AgentSecrets::from_file(path).expect("failed to build AgentSecrets from file")
-                        }
-                        None => {
-                            remote_networks = nomad_base::get_remotes_from_env!();
-
-                            let mut all_networks = remote_networks.clone();
-                            all_networks.insert(home.clone());
-
-                            println!("All networks: {:?}", all_networks);
-
-                            color_eyre::eyre::ensure!(!remote_networks.is_empty(), "Must pass in at least one replica through env");
-                            nomad_xyz_configuration::AgentSecrets::from_env(&all_networks).expect("failed to build AgentSecrets from env")
-                        },
-                    };
+                    // Get agent secrets
+                    let secrets = nomad_xyz_configuration::AgentSecrets::from_env(&all_networks).expect("failed to build AgentSecrets from env");
                     secrets.validate(&agent, &home, &remote_networks)?;
 
-                    println!("Remote networks post: {:?}", remote_networks);
-
+                    // Create base settings
                     let base = nomad_base::Settings::from_config_and_secrets(&agent, &home, &remote_networks, &config, &secrets);
                     base.validate_against_config_and_secrets(&agent, &home, &remote_networks, &config, &secrets)?;
 

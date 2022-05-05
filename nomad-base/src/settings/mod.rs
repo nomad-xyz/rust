@@ -551,7 +551,6 @@ impl Settings {
         let home_chain_conf = secrets.rpcs.get(home_network).unwrap();
         assert_eq!(&self.home.chain, home_chain_conf);
 
-        println!("Remote networks validation: {:?}", remote_networks);
         for remote_network in remote_networks.iter() {
             let replica_setup = self.replicas.get(remote_network).unwrap();
             let config_replica_domain = config
