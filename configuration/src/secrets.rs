@@ -1,42 +1,7 @@
 //! Secrets configuration for agents.
 //!
-//! This struct built from environment variables. This struct is then used to
-//! finish building an agents `Settings` block (see settings/mod.rs) along with
-//! a `NomadConfig`.
-//!
-//! Example JSON File Format
-//! {
-//!     "rpcs": {
-//!         "ethereum": {
-//!             "rpcStyle": "ethereum",
-//!             "connection": {
-//!                 "type": "http",
-//!                 "url": ""
-//!             }
-//!         },
-//!         "moonbeam": {
-//!             "rpcStyle": "ethereum",
-//!             "connection": {
-//!                 "type": "http",
-//!                 "url": ""
-//!             }
-//!         },
-//!     },
-//!     "transactionSigners": {
-//!         "ethereum": {
-//!             "type": "hexKey"
-//!             "key": "",
-//!         },
-//!         "moonbeam": {
-//!             "type": "hexKey"
-//!             "key": "",
-//!         },
-//!     },
-//!     "attestationSigner": {
-//!         "key": "",
-//!         "type": "hexKey"
-//!     }
-//! }
+//! This struct built from environment variables. It is used alongside a 
+//! NomadConfig to build an agents `Settings` block (see settings/mod.rs).
 
 use crate::{agent::SignerConf, chains::ethereum, ChainConf, FromEnv};
 use eyre::Result;

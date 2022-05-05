@@ -7,6 +7,8 @@ Added Evmos Testnet to Staging Deploys
 ### v0.1.0-rc.20
 
 - Fix xDai display name
+- validation of configured secrets takes in list of remote networks given that we can now specify remote networks of interest
+- adds 3rd network to test.json to test partial specification of remotes
 
 ### v0.1.0-rc.19
 
