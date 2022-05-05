@@ -8,7 +8,7 @@ decl_settings!(Kathy, KathyConfig,);
 #[cfg(test)]
 mod test {
     use super::*;
-    use nomad_base::NomadAgent;
+    use nomad_base::{get_remotes_from_env, NomadAgent};
     use nomad_test::test_utils;
     use nomad_xyz_configuration::AgentSecrets;
 
@@ -18,6 +18,7 @@ mod test {
         test_utils::run_test_with_env("../../fixtures/env.test", || async move {
             let run_env = dotenv::var("RUN_ENV").unwrap();
             let agent_home = dotenv::var("AGENT_HOME").unwrap();
+            let remotes = get_remotes_from_env!();
 
             let settings = KathySettings::new().unwrap();
 
@@ -29,6 +30,7 @@ mod test {
                 .validate_against_config_and_secrets(
                     crate::Kathy::AGENT_NAME,
                     &agent_home,
+                    &remotes,
                     config,
                     &secrets,
                 )
@@ -47,6 +49,7 @@ mod test {
         test_utils::run_test_with_env("../../fixtures/env.external", || async move {
             std::env::set_var("CONFIG_PATH", "../../fixtures/external_config.json");
             let agent_home = dotenv::var("AGENT_HOME").unwrap();
+            let remotes = get_remotes_from_env!();
 
             let settings = KathySettings::new().unwrap();
 
@@ -61,7 +64,42 @@ mod test {
                 .validate_against_config_and_secrets(
                     crate::Kathy::AGENT_NAME,
                     &agent_home,
+                    &remotes,
                     &config,
+                    &secrets,
+                )
+                .unwrap();
+
+            let agent_config = &config.agent().get("ethereum").unwrap().kathy;
+            assert_eq!(settings.agent.interval, agent_config.interval);
+            assert_eq!(settings.agent.chat, agent_config.chat);
+        })
+        .await
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_builds_settings_from_partial_env() {
+        test_utils::run_test_with_env("../../fixtures/env.partial", || async move {
+            let run_env = dotenv::var("RUN_ENV").unwrap();
+            let agent_home = dotenv::var("AGENT_HOME").unwrap();
+            let remotes = get_remotes_from_env!();
+
+            let mut networks = remotes.clone();
+            networks.insert(agent_home.clone());
+
+            let settings = KathySettings::new().unwrap();
+
+            let config = nomad_xyz_configuration::get_builtin(&run_env).unwrap();
+            let secrets = AgentSecrets::from_env(&networks).unwrap();
+
+            settings
+                .base
+                .validate_against_config_and_secrets(
+                    crate::Kathy::AGENT_NAME,
+                    &agent_home,
+                    &remotes,
+                    config,
                     &secrets,
                 )
                 .unwrap();

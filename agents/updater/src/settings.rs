@@ -7,7 +7,7 @@ decl_settings!(Updater, UpdaterConfig,);
 #[cfg(test)]
 mod test {
     use super::*;
-    use nomad_base::NomadAgent;
+    use nomad_base::{get_remotes_from_env, NomadAgent};
     use nomad_test::test_utils;
     use nomad_xyz_configuration::AgentSecrets;
 
@@ -17,6 +17,7 @@ mod test {
         test_utils::run_test_with_env("../../fixtures/env.test", || async move {
             let run_env = dotenv::var("RUN_ENV").unwrap();
             let agent_home = dotenv::var("AGENT_HOME").unwrap();
+            let remotes = get_remotes_from_env!();
 
             let settings = UpdaterSettings::new().unwrap();
 
@@ -28,6 +29,7 @@ mod test {
                 .validate_against_config_and_secrets(
                     crate::Updater::AGENT_NAME,
                     &agent_home,
+                    &remotes,
                     config,
                     &secrets,
                 )

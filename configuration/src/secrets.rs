@@ -38,7 +38,6 @@
 //!     }
 //! }
 
-use crate::NomadConfig;
 use crate::{agent::SignerConf, chains::ethereum, ChainConf, FromEnv};
 use eyre::Result;
 use serde::Deserialize;
@@ -72,6 +71,7 @@ impl AgentSecrets {
 
         for network in networks.iter() {
             let network_upper = network.to_uppercase();
+            println!("{}", network_upper);
             let chain_conf = ChainConf::from_env(&format!("RPCS_{}", network_upper))?;
             let transaction_signer =
                 SignerConf::from_env(&format!("TRANSACTIONSIGNERS_{}", network_upper))?;
@@ -89,12 +89,10 @@ impl AgentSecrets {
     }
 
     /// Ensure populated RPCs and transaction signers
-    pub fn validate_against_config(
-        &self,
-        agent_name: &str,
-        home: &str,
-        config: &NomadConfig,
-    ) -> Result<()> {
+    pub fn validate(&self, agent_name: &str, home: &str, remotes: &HashSet<String>) -> Result<()> {
+        let mut networks = remotes.to_owned();
+        networks.insert(home.to_owned());
+
         // TODO: replace agent name with associated type
         if agent_name == "updater" || agent_name == "watcher" {
             eyre::ensure!(
@@ -103,15 +101,6 @@ impl AgentSecrets {
                 agent_name,
             )
         }
-
-        let mut networks = config
-            .protocol()
-            .networks
-            .get(home)
-            .expect("!networks")
-            .connections
-            .to_owned();
-        networks.insert(home.to_owned());
 
         for network in networks.iter() {
             let chain_conf = self

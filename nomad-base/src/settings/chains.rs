@@ -111,6 +111,7 @@ impl ChainSetup {
             }
         };
 
+        println!("Resident network: {}", resident_network);
         let chain = secrets
             .rpcs
             .get(&resident_network)

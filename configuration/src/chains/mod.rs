@@ -29,7 +29,7 @@ impl FromEnv for ChainConf {
 
         let json = json!({
             "rpcStyle": rpc_style,
-            "connection":rpc_url,
+            "connection": rpc_url,
         });
 
         Some(
