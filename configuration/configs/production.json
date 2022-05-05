@@ -1028,7 +1028,7 @@
       "connections": ["ethereum"]
     },
     "xdai": {
-      "displayName": "xDai",
+      "displayName": "Gnosis Chain",
       "nativeTokenSymbol": "xDAI",
       "connections": ["ethereum"],
       "connextEnabled": true

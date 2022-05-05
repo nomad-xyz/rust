@@ -2,6 +2,10 @@
 
 ### Unreleased
 
+### v0.1.0-rc.20
+
+- Fix xDai display name
+
 ### v0.1.0-rc.19
 
 - duplicate s3 bucket info at top level
