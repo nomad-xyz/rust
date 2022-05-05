@@ -1,6 +1,6 @@
 //! Processor public configuration
 
-use crate::decl_config;
+use crate::{decl_config, S3Config};
 use ethers::types::H256;
 use std::collections::HashSet;
 
@@ -11,16 +11,7 @@ decl_config!(Processor {
     denied: Option<HashSet<H256>>,
     /// Index only mode
     subsidized_remotes: Vec<String>,
-    /// S3 config
+    /// Whether to upload proofs to s3
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     s3: Option<S3Config>,
 });
-
-/// S3 Configuration
-#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct S3Config {
-    /// Bucket
-    pub bucket: String,
-    /// Region
-    pub region: String,
-}

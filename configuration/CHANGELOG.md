@@ -4,6 +4,8 @@
 
 ### v0.1.0-rc.19
 
+- duplicate s3 bucket info at top level
+  [#151](https://github.com/nomad-xyz/rust/pull/151)
 - Simplify JSON representation of signers
 - Simplify JSON representation of connection URLs
 - Add avalanche

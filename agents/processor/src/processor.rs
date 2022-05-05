@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use color_eyre::{eyre::bail, Result};
 use ethers::prelude::H256;
 use futures_util::future::select_all;
-use nomad_xyz_configuration::agent::processor::S3Config;
+use nomad_xyz_configuration::S3Config;
 use std::{
     collections::{HashMap, HashSet},
     sync::Arc,

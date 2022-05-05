@@ -84,6 +84,9 @@ extern "C" {
     #[wasm_bindgen(typescript_type = "NomadGasConfig")]
     pub type NomadGasConfig;
 
+    #[wasm_bindgen(typescript_type = "S3Config")]
+    pub type S3Config;
+
     #[wasm_bindgen(typescript_type = "NomadConfig")]
     pub type NomadConfig;
 }

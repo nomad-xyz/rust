@@ -41,6 +41,16 @@ use bridge::{AppConfig, BridgeContracts};
 use contracts::CoreContracts;
 use network::{Domain, NetworkInfo};
 
+/// S3 Configuration
+#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct S3Config {
+    /// Bucket
+    pub bucket: String,
+    /// Region
+    pub region: String,
+}
+
 /// A Nomad configuration json format
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -65,6 +75,9 @@ pub struct NomadConfig {
     gas: HashMap<String, NomadGasConfig>,
     /// Bridge application GUI configuration
     pub bridge_gui: HashMap<String, AppConfig>,
+    /// S3 bucket for this environment
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub s3: Option<S3Config>,
 }
 
 impl NomadConfig {

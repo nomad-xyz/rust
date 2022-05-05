@@ -7,6 +7,9 @@
 /// decl_settings!(Relayer, RelayerConfig,);
 /// ```
 macro_rules! decl_settings {
+    ($name:ident, $agent_settings:ty) => {
+        decl_settings!($name, $agent_settings,);
+    };
     ($name:ident, $agent_settings:ty,) => {
         affix::paste! {
             #[derive(Debug, serde::Deserialize)]
@@ -59,5 +62,5 @@ macro_rules! decl_settings {
                 }
             }
         }
-    }
+    };
 }

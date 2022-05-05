@@ -177,6 +177,11 @@ export interface NomadGasConfig {
   bridge: BridgeGasConfig;
 }
 
+export interface S3Config {
+  bucket: string;
+  region: string;
+}
+
 export interface NomadConfig {
   version: number;
   environment: string;
@@ -188,4 +193,5 @@ export interface NomadConfig {
   agent: Record<string, AgentConfig>;
   gas: Record<string, NomadGasConfig>;
   bridgeGui: Record<string, AppConfig>;
+  s3?: S3Config;
 }
