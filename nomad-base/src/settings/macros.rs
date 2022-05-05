@@ -49,15 +49,9 @@ macro_rules! decl_settings {
 
             impl [<$name Settings>] {
                 pub fn new() -> color_eyre::Result<Self>{
-                    // Get agent, home, and replica names
+                    // Get agent and home names
                     let agent = std::stringify!($name).to_lowercase();
                     let home = std::env::var("AGENT_HOME").expect("missing AGENT_HOME");
-
-                    let remote_networks = nomad_base::get_remotes_from_env!();
-                    color_eyre::eyre::ensure!(!remote_networks.is_empty(), "Must pass in at least one replica through env");
-
-                    let mut all_networks = remote_networks.clone();
-                    all_networks.insert(home.clone());
 
                     // Get config
                     let config_path = std::env::var("CONFIG_PATH").ok();
@@ -69,6 +63,25 @@ macro_rules! decl_settings {
                         }
                     };
                     config.validate()?;
+
+                    // Get agent remotes
+                    let all_remotes_res = std::env::var("AGENT_REPLICAS_ALL");
+                    let remote_networks = if let Ok(all_remotes) = all_remotes_res {
+                        config
+                            .protocol()
+                            .networks
+                            .get(&home)
+                            .expect("!networks")
+                            .connections
+                            .clone()
+                    } else {
+                        let remote_networks = nomad_base::get_remotes_from_env!();
+                        color_eyre::eyre::ensure!(!remote_networks.is_empty(), "Must pass in at least one replica through env");
+                        remote_networks
+                    };
+
+                    let mut all_networks = remote_networks.clone();
+                    all_networks.insert(home.clone());
 
                     // Get agent secrets
                     let secrets = nomad_xyz_configuration::AgentSecrets::from_env(&all_networks).expect("failed to build AgentSecrets from env");

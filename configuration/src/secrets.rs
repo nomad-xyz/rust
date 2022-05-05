@@ -1,6 +1,6 @@
 //! Secrets configuration for agents.
 //!
-//! This struct built from environment variables. It is used alongside a 
+//! This struct built from environment variables. It is used alongside a
 //! NomadConfig to build an agents `Settings` block (see settings/mod.rs).
 
 use crate::{agent::SignerConf, chains::ethereum, ChainConf, FromEnv};
