@@ -4,7 +4,7 @@ macro_rules! get_remotes_from_env {
     () => {{
         let mut remotes = std::collections::HashSet::new();
         for i in 0.. {
-            let replica_var = format!("AGENT_REPLICA_{}", i);
+            let replica_var = format!("AGENT_REPLICA_{}_NAME", i);
             let replica_res = std::env::var(&replica_var);
 
             if let Ok(replica) = replica_res {
@@ -51,7 +51,7 @@ macro_rules! decl_settings {
                 pub fn new() -> color_eyre::Result<Self>{
                     // Get agent and home names
                     let agent = std::stringify!($name).to_lowercase();
-                    let home = std::env::var("AGENT_HOME").expect("missing AGENT_HOME");
+                    let home = std::env::var("AGENT_HOME_NAME").expect("missing AGENT_HOME_NAME");
 
                     // Get config
                     let config_path = std::env::var("CONFIG_PATH").ok();

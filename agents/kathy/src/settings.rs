@@ -17,7 +17,7 @@ mod test {
     async fn it_builds_settings_from_env() {
         test_utils::run_test_with_env("../../fixtures/env.test", || async move {
             let run_env = dotenv::var("RUN_ENV").unwrap();
-            let agent_home = dotenv::var("AGENT_HOME").unwrap();
+            let agent_home = dotenv::var("AGENT_HOME_NAME").unwrap();
             let remotes = get_remotes_from_env!();
 
             let settings = KathySettings::new().unwrap();
@@ -48,7 +48,7 @@ mod test {
     async fn it_builds_settings_from_external_file() {
         test_utils::run_test_with_env("../../fixtures/env.external", || async move {
             std::env::set_var("CONFIG_PATH", "../../fixtures/external_config.json");
-            let agent_home = dotenv::var("AGENT_HOME").unwrap();
+            let agent_home = dotenv::var("AGENT_HOME_NAME").unwrap();
             let remotes = get_remotes_from_env!();
 
             let settings = KathySettings::new().unwrap();
@@ -82,7 +82,7 @@ mod test {
     async fn it_builds_settings_from_partial_env() {
         test_utils::run_test_with_env("../../fixtures/env.partial", || async move {
             let run_env = dotenv::var("RUN_ENV").unwrap();
-            let agent_home = dotenv::var("AGENT_HOME").unwrap();
+            let agent_home = dotenv::var("AGENT_HOME_NAME").unwrap();
             let remotes = get_remotes_from_env!();
 
             let mut networks = remotes.clone();

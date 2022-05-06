@@ -17,7 +17,7 @@ mod test {
     async fn it_builds_settings_from_env() {
         test_utils::run_test_with_env("../../fixtures/env.test", || async move {
             let run_env = dotenv::var("RUN_ENV").unwrap();
-            let agent_home = dotenv::var("AGENT_HOME").unwrap();
+            let agent_home = dotenv::var("AGENT_HOME_NAME").unwrap();
             let remotes = get_remotes_from_env!();
 
             let settings = ProcessorSettings::new().unwrap();
