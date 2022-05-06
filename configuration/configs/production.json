@@ -910,6 +910,9 @@
     },
     "evmos": {
       "type": "evmDefault"
+    },
+    "avalanche": {
+      "type": "evmDefault"
     }
   },
   "bridgeGui": {
