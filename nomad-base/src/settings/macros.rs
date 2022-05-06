@@ -75,20 +75,8 @@ macro_rules! decl_settings {
                     config.validate()?;
 
                     // Get agent remotes
-                    let all_remotes_res = std::env::var("AGENT_REPLICAS_ALL");
-                    let remote_networks = if let Ok(all_remotes) = all_remotes_res {
-                        config
-                            .protocol()
-                            .networks
-                            .get(&home)
-                            .expect("!networks")
-                            .connections
-                            .clone()
-                    } else {
-                        let remote_networks = nomad_base::get_remotes_from_env!(home, config);
-                        color_eyre::eyre::ensure!(!remote_networks.is_empty(), "Must pass in at least one replica through env");
-                        remote_networks
-                    };
+                    let remote_networks = nomad_base::get_remotes_from_env!(home, config);
+                    color_eyre::eyre::ensure!(!remote_networks.is_empty(), "Must pass in at least one replica through env");
 
                     let mut all_networks = remote_networks.clone();
                     all_networks.insert(home.clone());
