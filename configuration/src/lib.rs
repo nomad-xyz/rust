@@ -72,7 +72,7 @@ pub struct NomadConfig {
     /// Agent configuration
     agent: HashMap<String, AgentConfig>,
     /// Optional per-chain gas configurations
-    gas: HashMap<String, NomadGasConfig>,
+    gas: HashMap<String, NomadGasConfigs>,
     /// Bridge application GUI configuration
     pub bridge_gui: HashMap<String, AppConfig>,
     /// S3 bucket for this environment
@@ -336,8 +336,19 @@ impl NomadConfig {
     }
 
     /// Get a reference to the nomad config's gas map.
-    pub fn gas(&self) -> &HashMap<String, NomadGasConfig> {
-        &self.gas
+    pub fn gas(&self) -> HashMap<String, NomadGasConfig> {
+        self.gas
+            .iter()
+            .map(|(k, v)| {
+                (
+                    k.to_owned(),
+                    match v {
+                        NomadGasConfigs::Custom(config) => config.clone(),
+                        NomadGasConfigs::EvmDefault(config) => config.0.clone(),
+                    },
+                )
+            })
+            .collect()
     }
 
     /// Get a reference to the nomad config's agent.
