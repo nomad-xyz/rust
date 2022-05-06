@@ -53,10 +53,7 @@ impl AgentSecrets {
     }
 
     /// Ensure populated RPCs and transaction signers
-    pub fn validate(&self, agent_name: &str, home: &str, remotes: &HashSet<String>) -> Result<()> {
-        let mut networks = remotes.to_owned();
-        networks.insert(home.to_owned());
-
+    pub fn validate(&self, agent_name: &str, networks: &HashSet<String>) -> Result<()> {
         // TODO: replace agent name with associated type
         if agent_name == "updater" || agent_name == "watcher" {
             eyre::ensure!(

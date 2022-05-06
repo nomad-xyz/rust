@@ -1,20 +1,30 @@
 #[macro_export]
 /// Get remote networks from env
 macro_rules! get_remotes_from_env {
-    () => {{
-        let mut remotes = std::collections::HashSet::new();
-        for i in 0.. {
-            let replica_var = format!("AGENT_REPLICA_{}_NAME", i);
-            let replica_res = std::env::var(&replica_var);
+    ($home:ident, $config:ident) => {{
+        if let Ok(_) = std::env::var("AGENT_REPLICAS_ALL") {
+            $config
+                .protocol()
+                .networks
+                .get(&$home)
+                .expect("!networks")
+                .connections
+                .clone()
+        } else {
+            let mut remotes = std::collections::HashSet::new();
+            for i in 0.. {
+                let replica_var = format!("AGENT_REPLICA_{}_NAME", i);
+                let replica_res = std::env::var(&replica_var);
 
-            if let Ok(replica) = replica_res {
-                remotes.insert(replica);
-            } else {
-                break;
+                if let Ok(replica) = replica_res {
+                    remotes.insert(replica);
+                } else {
+                    break;
+                }
             }
-        }
 
-        remotes
+            remotes
+        }
     }};
 }
 
@@ -75,7 +85,7 @@ macro_rules! decl_settings {
                             .connections
                             .clone()
                     } else {
-                        let remote_networks = nomad_base::get_remotes_from_env!();
+                        let remote_networks = nomad_base::get_remotes_from_env!(home, config);
                         color_eyre::eyre::ensure!(!remote_networks.is_empty(), "Must pass in at least one replica through env");
                         remote_networks
                     };
@@ -85,7 +95,7 @@ macro_rules! decl_settings {
 
                     // Get agent secrets
                     let secrets = nomad_xyz_configuration::AgentSecrets::from_env(&all_networks).expect("failed to build AgentSecrets from env");
-                    secrets.validate(&agent, &home, &remote_networks)?;
+                    secrets.validate(&agent, &all_networks)?;
 
                     // Create base settings
                     let base = nomad_base::Settings::from_config_and_secrets(&agent, &home, &remote_networks, &config, &secrets);

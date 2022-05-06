@@ -18,12 +18,16 @@ mod test {
         test_utils::run_test_with_env("../../fixtures/env.test", || async move {
             let run_env = dotenv::var("RUN_ENV").unwrap();
             let agent_home = dotenv::var("AGENT_HOME_NAME").unwrap();
-            let remotes = get_remotes_from_env!();
 
             let settings = KathySettings::new().unwrap();
 
             let config = nomad_xyz_configuration::get_builtin(&run_env).unwrap();
-            let secrets = AgentSecrets::from_env(&config.networks).unwrap();
+
+            let remotes = get_remotes_from_env!(agent_home, config);
+            let mut networks = remotes.clone();
+            networks.insert(agent_home.clone());
+
+            let secrets = AgentSecrets::from_env(&networks).unwrap();
 
             settings
                 .base
@@ -49,7 +53,6 @@ mod test {
         test_utils::run_test_with_env("../../fixtures/env.external", || async move {
             std::env::set_var("CONFIG_PATH", "../../fixtures/external_config.json");
             let agent_home = dotenv::var("AGENT_HOME_NAME").unwrap();
-            let remotes = get_remotes_from_env!();
 
             let settings = KathySettings::new().unwrap();
 
@@ -57,7 +60,12 @@ mod test {
                 "../../fixtures/external_config.json",
             )
             .unwrap();
-            let secrets = AgentSecrets::from_env(&config.networks).unwrap();
+
+            let remotes = get_remotes_from_env!(agent_home, config);
+            let mut networks = remotes.clone();
+            networks.insert(agent_home.clone());
+
+            let secrets = AgentSecrets::from_env(&networks).unwrap();
 
             settings
                 .base
@@ -83,14 +91,15 @@ mod test {
         test_utils::run_test_with_env("../../fixtures/env.partial", || async move {
             let run_env = dotenv::var("RUN_ENV").unwrap();
             let agent_home = dotenv::var("AGENT_HOME_NAME").unwrap();
-            let remotes = get_remotes_from_env!();
-
-            let mut networks = remotes.clone();
-            networks.insert(agent_home.clone());
 
             let settings = KathySettings::new().unwrap();
 
             let config = nomad_xyz_configuration::get_builtin(&run_env).unwrap();
+
+            let remotes = get_remotes_from_env!(agent_home, config);
+            let mut networks = remotes.clone();
+            networks.insert(agent_home.clone());
+
             let secrets = AgentSecrets::from_env(&networks).unwrap();
 
             settings

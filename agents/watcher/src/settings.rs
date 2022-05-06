@@ -18,12 +18,16 @@ mod test {
         test_utils::run_test_with_env("../../fixtures/env.test", || async move {
             let run_env = dotenv::var("RUN_ENV").unwrap();
             let agent_home = dotenv::var("AGENT_HOME_NAME").unwrap();
-            let remotes = get_remotes_from_env!();
 
             let settings = WatcherSettings::new().unwrap();
 
             let config = nomad_xyz_configuration::get_builtin(&run_env).unwrap();
-            let secrets = AgentSecrets::from_env(&config.networks).unwrap();
+
+            let remotes = get_remotes_from_env!(agent_home, config);
+            let mut networks = remotes.clone();
+            networks.insert(agent_home.clone());
+
+            let secrets = AgentSecrets::from_env(&networks).unwrap();
 
             settings
                 .base
