@@ -500,7 +500,7 @@ impl Settings {
             home,
             replicas,
             managers,
-            gas: config.gas().clone(),
+            gas: config.gas(),
             index,
             logging: agent.logging,
             signers: secrets.transaction_signers.clone(),

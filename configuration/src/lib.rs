@@ -343,8 +343,8 @@ impl NomadConfig {
                 (
                     k.to_owned(),
                     match v {
-                        NomadGasConfigs::Custom(config) => config.clone(),
-                        NomadGasConfigs::EvmDefault(config) => config.0.clone(),
+                        NomadGasConfigs::Custom(config) => *config,
+                        NomadGasConfigs::EvmDefault(config) => config.0,
                     },
                 )
             })
