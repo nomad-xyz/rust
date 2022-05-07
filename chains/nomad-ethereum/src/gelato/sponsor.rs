@@ -1,5 +1,5 @@
 use color_eyre::Result;
-use ethers::abi::Token;
+use ethers::abi::{ethereum_types::BigEndianHash, Token};
 use ethers::prelude::*;
 use ethers::utils::keccak256;
 use gelato_relay::ForwardRequest;
@@ -24,7 +24,7 @@ pub fn get_domain_separator(address: Address, chain_id: U256) -> H256 {
         Token::FixedBytes(keccak256(EIP712_DOMAIN_TYPE).to_vec()),
         Token::FixedBytes(keccak256("GelatoRelayForwarder").to_vec()),
         Token::FixedBytes(keccak256("V1").to_vec()),
-        Token::FixedBytes(format!("{:x}", chain_id).into_bytes()),
+        Token::FixedBytes(H256::from_uint(&chain_id).as_bytes().to_vec()),
         Token::Address(address),
     ]);
 
@@ -78,4 +78,27 @@ pub async fn sponsor_sign_request<S: Signer>(
         .sign_message_without_eip_155(digest)
         .await
         .map(|s| s.to_vec())
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use ethers::prelude::U256;
+
+    const KOVAN_GELATO_RELAY_FORWARDER: &str = "0xC176f63f3827afE6789FD737f4679B299F97d108";
+    const KOVAN_CHAIN_ID: u64 = 42;
+
+    #[test]
+    fn it_computes_domain_separator() {
+        let domain_separator = get_domain_separator(
+            H160::from_str(KOVAN_GELATO_RELAY_FORWARDER).unwrap(),
+            U256::from(KOVAN_CHAIN_ID),
+        );
+        dbg!("{:?}", domain_separator);
+
+        assert_eq!(
+            format!("{:#x}", domain_separator),
+            "0x80d0833d2a99df6a94d491cee0d9b3b5586c41d9b01edaf54538f65d01474c94"
+        );
+    }
 }
