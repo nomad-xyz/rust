@@ -1,7 +1,7 @@
 use ethers::providers::Middleware;
 use ethers::types::Address;
 use ethers_signers::Signer;
-use gelato_relay::{ForwardRequest, GelatoClient, RelayResponse, TaskState};
+use gelato_relay::{GelatoClient, RelayResponse, TaskState};
 use nomad_core::{ChainCommunicationError, Signers};
 use std::sync::Arc;
 
@@ -77,7 +77,7 @@ where
             .await
             .map_err(|e| ChainCommunicationError::CustomError(e.into()))?;
 
-        let mut request = ForwardRequest {
+        let unfilled_request = UnfilledFowardRequest {
             chain_id: self.chain_id,
             target: target.to_owned(),
             data: data.to_owned(),
@@ -88,17 +88,18 @@ where
             sponsor_chain_id: self.chain_id,
             nonce: 0,                     // default, not needed
             enforce_sponsor_nonce: false, // replay safety builtin to contracts
-            sponsor_signature: None,      // not yet signed
         };
 
-        let sponsor_signature = sponsor_sign_request(&self.sponsor, self.forwarder, &request)
+        let sponsor_signature =
+            sponsor_sign_request(&self.sponsor, self.forwarder, &unfilled_request)
+                .await
+                .map_err(|e| ChainCommunicationError::CustomError(e.into()))?;
+
+        let filled_request = unfilled_request.to_filled(sponsor_signature);
+
+        self.gelato()
+            .send_forward_request(&filled_request)
             .await
-            .map_err(|e| ChainCommunicationError::CustomError(e.into()))?;
-
-        request.sponsor_signature = Some(sponsor_signature);
-
-        Ok(RelayResponse {
-            task_id: "id".to_owned(),
-        }) // TODO: replace with call to endpoint
+            .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))
     }
 }
