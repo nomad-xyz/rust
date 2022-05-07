@@ -47,6 +47,23 @@ impl GelatoClient {
         res.json().await
     }
 
+    pub async fn send_forward_request(
+        &self,
+        params: &ForwardRequest,
+    ) -> Result<RelayResponse, reqwest::Error> {
+        let url = format!(
+            "https://gateway.api.gelato.digital/metabox-relays/{}",
+            params.chain_id
+        );
+        let res = reqwest::Client::new()
+            .post(url)
+            .json(&params)
+            .send()
+            .await?;
+
+        res.json().await
+    }
+
     pub async fn is_chain_supported(&self, chain_id: usize) -> Result<bool, reqwest::Error> {
         let supported_chains = self.get_gelato_relay_chains().await?;
         Ok(supported_chains.contains(&chain_id.to_string()))
