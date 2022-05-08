@@ -55,6 +55,7 @@ impl GelatoClient {
             "https://gateway.api.gelato.digital/metabox-relays/{}",
             params.chain_id
         );
+
         let res = reqwest::Client::new()
             .post(url)
             .json(&params)

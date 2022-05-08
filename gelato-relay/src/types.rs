@@ -21,6 +21,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ForwardRequest {
+    pub type_id: String,
     pub chain_id: usize,
     pub target: String,
     pub data: String,
@@ -31,7 +32,7 @@ pub struct ForwardRequest {
     pub sponsor_chain_id: usize,     // same as chain_id
     pub nonce: usize,                // can default 0 if next field false
     pub enforce_sponsor_nonce: bool, // default false given replay safe
-    pub sponsor_signature: Vec<u8>,
+    pub sponsor_signature: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

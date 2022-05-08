@@ -89,20 +89,18 @@ where
                     )
                     .as_usize();
 
-                let tx_data = tx.data().expect("!tx data");
-                let data = format!("{:x}", tx_data);
-                let address = format!("{:x}", contract_address);
-
                 info!(
                     domain = domain,
-                    contract_address = ?address,
+                    contract_address = ?contract_address,
                     "Dispatching tx to Gelato relay."
                 );
 
+                let data = tx.data().expect("!tx data");
                 let RelayResponse { task_id } = client
-                    .send_forward_request(&address, &data, gas_limit)
+                    .send_forward_request(contract_address, data, gas_limit)
                     .await
                     .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?;
+
                 info!(task_id = ?task_id, "Submitted tx to Gelato relay. Polling task for completion...");
 
                 loop {

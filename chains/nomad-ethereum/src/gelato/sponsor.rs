@@ -11,6 +11,7 @@ use std::str::FromStr;
 #[allow(missing_docs)]
 #[derive(Debug, Clone)]
 pub struct UnfilledFowardRequest {
+    pub type_id: String,
     pub chain_id: usize,
     pub target: String,
     pub data: String,
@@ -25,8 +26,11 @@ pub struct UnfilledFowardRequest {
 
 impl UnfilledFowardRequest {
     /// Fill ForwardRequest with sponsor signature and return full request struct
-    pub fn to_filled(self, sponsor_signature: Vec<u8>) -> ForwardRequest {
+    pub fn into_filled(self, sponsor_signature: Vec<u8>) -> ForwardRequest {
+        let hex_sig = format!("0x{}", hex::encode(sponsor_signature));
+
         ForwardRequest {
+            type_id: self.type_id,
             chain_id: self.chain_id,
             target: self.target,
             data: self.data,
@@ -37,7 +41,7 @@ impl UnfilledFowardRequest {
             sponsor_chain_id: self.sponsor_chain_id,
             nonce: self.nonce,
             enforce_sponsor_nonce: self.enforce_sponsor_nonce,
-            sponsor_signature,
+            sponsor_signature: hex_sig,
         }
     }
 }
@@ -81,7 +85,7 @@ pub fn get_forward_request_hash(request: &UnfilledFowardRequest) -> H256 {
         Token::Bool(request.enforce_sponsor_nonce),
     ]);
 
-    H256::from_slice(&encoded_request)
+    H256::from_slice(&keccak256(encoded_request))
 }
 
 /// Sign request that will be given to GelatoRelayForwarder on given chain
