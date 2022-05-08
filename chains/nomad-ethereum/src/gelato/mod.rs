@@ -5,6 +5,10 @@ use gelato_relay::{GelatoClient, RelayResponse, TaskState};
 use nomad_core::{ChainCommunicationError, Signers};
 use std::sync::Arc;
 
+/// EIP-712 request structure
+mod types;
+pub use types::*;
+
 /// Sponsor data encoding/signing
 mod sponsor;
 pub use sponsor::*;
@@ -79,20 +83,19 @@ where
         //     .await
         //     .map_err(|e| ChainCommunicationError::CustomError(e.into()))?;
 
-        let max_fee = "10000";
+        let max_fee = 10000;
 
         let target = format!("{:#x}", target);
-        let data = format!("{:#x}", data);
         let sponsor = format!("{:#x}", self.sponsor.address());
 
         let unfilled_request = UnfilledFowardRequest {
             type_id: FORWARD_REQUEST_TYPE_ID.to_owned(),
             chain_id: self.chain_id,
             target,
-            data,
+            data: data.to_string(),
             fee_token: self.fee_token.to_owned(),
             payment_type: 1, // gas tank
-            max_fee: max_fee.to_string(),
+            max_fee,
             sponsor,
             sponsor_chain_id: self.chain_id,
             nonce: 0,                     // default, not needed
