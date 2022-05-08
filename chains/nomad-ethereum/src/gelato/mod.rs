@@ -83,12 +83,13 @@ where
 
         let target = format!("{:#x}", target);
         let sponsor = format!("{:#x}", self.sponsor.address());
+        let data = data.to_string().strip_prefix("0x").unwrap().to_owned();
 
         let unfilled_request = UnfilledFowardRequest {
             type_id: FORWARD_REQUEST_TYPE_ID.to_owned(),
             chain_id: self.chain_id,
             target,
-            data: data.to_string(),
+            data,
             fee_token: self.fee_token.to_owned(),
             payment_type: 1, // gas tank
             max_fee,
