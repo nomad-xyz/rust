@@ -72,12 +72,13 @@ impl UnfilledFowardRequest {
     /// Fill ForwardRequest with sponsor signature and return full request struct
     pub fn into_filled(self, sponsor_signature: Vec<u8>) -> ForwardRequest {
         let hex_sig = format!("0x{}", hex::encode(sponsor_signature));
+        let hex_data = format!("0x{}", self.data);
 
         ForwardRequest {
             type_id: self.type_id,
             chain_id: self.chain_id,
             target: self.target,
-            data: self.data,
+            data: hex_data,
             fee_token: self.fee_token,
             payment_type: self.payment_type,
             max_fee: self.max_fee.to_string(),

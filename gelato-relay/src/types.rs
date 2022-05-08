@@ -85,7 +85,7 @@ pub struct TaskStatus {
     pub task_state: TaskState,
     #[serde(rename = "created_at")]
     pub created_at: String, // date
-    pub last_check: Option<String>,
+    pub last_check: Option<Check>,
     pub execution: Option<Execution>,
     pub last_execution: String, // date
 }
@@ -96,6 +96,7 @@ pub struct Execution {
     pub status: String,
     pub transaction_hash: String,
     pub block_number: usize,
+    #[serde(rename = "created_at")]
     pub created_at: String,
 }
 

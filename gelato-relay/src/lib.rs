@@ -108,7 +108,10 @@ impl GelatoClient {
         &self,
         task_id: &str,
     ) -> Result<Option<TaskStatus>, reqwest::Error> {
-        let url = format!("{}/tasks/{}", &self.url, task_id);
+        let url = format!(
+            "https://gateway.api.gelato.digital/tasks/GelatoMetaBox/{}",
+            task_id
+        );
         let res = reqwest::get(url).await?;
         let task_status: TaskStatusResponse = res.json().await?;
         Ok(task_status.data.first().cloned())
