@@ -1,17 +1,13 @@
+use ethers::signers::Signer;
 use ethers::types::Address;
 use ethers::{prelude::Bytes, providers::Middleware};
-use ethers_signers::Signer;
 use gelato_relay::{GelatoClient, RelayResponse, TaskState};
 use nomad_core::{ChainCommunicationError, Signers};
 use std::sync::Arc;
 
-/// EIP-712 request structure
+/// EIP-712 forward request structure
 mod types;
 pub use types::*;
-
-/// Sponsor data encoding/signing
-mod sponsor;
-pub use sponsor::*;
 
 pub(crate) const FORWARD_REQUEST_TYPE_ID: &str = "ForwardRequest";
 
@@ -75,7 +71,7 @@ where
         &self,
         target: Address,
         data: &Bytes,
-        gas_limit: usize,
+        _gas_limit: usize,
     ) -> Result<RelayResponse, ChainCommunicationError> {
         // let estimated_fee = self
         //     .gelato()
@@ -102,12 +98,13 @@ where
             enforce_sponsor_nonce: false, // replay safety builtin to contracts
         };
 
-        let sponsor_signature =
-            sponsor_sign_request(&self.sponsor, self.forwarder, &unfilled_request)
-                .await
-                .map_err(|e| ChainCommunicationError::CustomError(e.into()))?;
+        let sponsor_signature = self
+            .sponsor
+            .sign_typed_data(&unfilled_request)
+            .await
+            .unwrap();
 
-        let filled_request = unfilled_request.into_filled(sponsor_signature);
+        let filled_request = unfilled_request.into_filled(sponsor_signature.to_vec());
 
         self.gelato()
             .send_forward_request(&filled_request)
