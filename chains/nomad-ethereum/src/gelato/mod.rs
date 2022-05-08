@@ -1,5 +1,5 @@
-use ethers::providers::Middleware;
 use ethers::types::Address;
+use ethers::{prelude::Bytes, providers::Middleware};
 use ethers_signers::Signer;
 use gelato_relay::{GelatoClient, RelayResponse, TaskState};
 use nomad_core::{ChainCommunicationError, Signers};
@@ -8,6 +8,8 @@ use std::sync::Arc;
 /// Sponsor data encoding/signing
 mod sponsor;
 pub use sponsor::*;
+
+pub(crate) const FORWARD_REQUEST_TYPE_ID: &str = "ForwardRequest";
 
 pub(crate) const ACCEPTABLE_STATES: [TaskState; 4] = [
     TaskState::CheckPending,
@@ -67,24 +69,31 @@ where
     /// Send relay transaction
     pub async fn send_forward_request(
         &self,
-        target: &str,
-        data: &str,
+        target: Address,
+        data: &Bytes,
         gas_limit: usize,
     ) -> Result<RelayResponse, ChainCommunicationError> {
-        let max_fee = self
-            .gelato()
-            .get_estimated_fee(self.chain_id, &self.fee_token, gas_limit, false)
-            .await
-            .map_err(|e| ChainCommunicationError::CustomError(e.into()))?;
+        // let estimated_fee = self
+        //     .gelato()
+        //     .get_estimated_fee(self.chain_id, &self.fee_token, gas_limit, false)
+        //     .await
+        //     .map_err(|e| ChainCommunicationError::CustomError(e.into()))?;
+
+        let max_fee = "10000";
+
+        let target = format!("{:#x}", target);
+        let data = format!("{:#x}", data);
+        let sponsor = format!("{:#x}", self.sponsor.address());
 
         let unfilled_request = UnfilledFowardRequest {
+            type_id: FORWARD_REQUEST_TYPE_ID.to_owned(),
             chain_id: self.chain_id,
-            target: target.to_owned(),
-            data: data.to_owned(),
+            target,
+            data,
             fee_token: self.fee_token.to_owned(),
             payment_type: 1, // gas tank
             max_fee: max_fee.to_string(),
-            sponsor: format!("{:x}", self.sponsor.address()),
+            sponsor,
             sponsor_chain_id: self.chain_id,
             nonce: 0,                     // default, not needed
             enforce_sponsor_nonce: false, // replay safety builtin to contracts
@@ -95,7 +104,7 @@ where
                 .await
                 .map_err(|e| ChainCommunicationError::CustomError(e.into()))?;
 
-        let filled_request = unfilled_request.to_filled(sponsor_signature);
+        let filled_request = unfilled_request.into_filled(sponsor_signature);
 
         self.gelato()
             .send_forward_request(&filled_request)

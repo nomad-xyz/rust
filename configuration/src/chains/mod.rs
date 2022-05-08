@@ -24,10 +24,8 @@ impl Default for ChainConf {
 
 impl FromEnv for ChainConf {
     fn from_env(network: &str) -> Option<Self> {
-        println!("Getting chainconf info");
         let rpc_style = std::env::var(&format!("{}_RPCSTYLE", network)).ok()?;
         let rpc_url = std::env::var(&format!("{}_CONNECTION_URL", network)).ok()?;
-        println!("GOT chainconf info");
 
         let json = json!({
             "rpcStyle": rpc_style,
