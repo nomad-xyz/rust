@@ -2,14 +2,16 @@
 /// Get remote networks from env
 macro_rules! get_remotes_from_env {
     ($home:ident, $config:ident) => {{
+        let connections = $config
+            .protocol()
+            .networks
+            .get(&$home)
+            .expect("!networks")
+            .connections
+            .clone();
+
         if let Ok(_) = std::env::var("AGENT_REPLICAS_ALL") {
-            $config
-                .protocol()
-                .networks
-                .get(&$home)
-                .expect("!networks")
-                .connections
-                .clone()
+            connections
         } else {
             let mut remotes = std::collections::HashSet::new();
             for i in 0.. {
@@ -17,6 +19,10 @@ macro_rules! get_remotes_from_env {
                 let replica_res = std::env::var(&replica_var);
 
                 if let Ok(replica) = replica_res {
+                    if connections.get(&replica).is_none() {
+                        panic!("Attempted to run agent with unconnected replica. Home: {}. Replica: {}", $home, &replica);
+                    }
+
                     remotes.insert(replica);
                 } else {
                     break;
