@@ -85,7 +85,7 @@ pub struct TaskStatus {
     pub task_state: TaskState,
     #[serde(rename = "created_at")]
     pub created_at: String, // date
-    pub last_check: Option<Check>,
+    pub last_check: Option<CheckOrDate>,
     pub execution: Option<Execution>,
     pub last_execution: String, // date
 }
@@ -98,6 +98,13 @@ pub struct Execution {
     pub block_number: usize,
     #[serde(rename = "created_at")]
     pub created_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(untagged, rename_all = "camelCase")]
+pub enum CheckOrDate {
+    Check(Check),
+    Date(String),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
