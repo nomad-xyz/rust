@@ -115,6 +115,20 @@ impl NomadConfig {
                 domain.name
             );
 
+            // Check there is rpc for network
+            eyre::ensure!(
+                self.rpcs.contains_key(network),
+                "RPC for network named '{}' not present.",
+                network
+            );
+
+            // Check there is agent config for network
+            eyre::ensure!(
+                self.agent.contains_key(network),
+                "Agent config for network named '{}' not present.",
+                network
+            );
+
             for connection in domain.connections.iter() {
                 // Check that IF a core contracts exists, it has al configured
                 // replicas
@@ -161,6 +175,24 @@ impl NomadConfig {
             eyre::ensure!(
                 self.networks.contains(network),
                 "Bridge named '{}' not present in configured networks",
+                network,
+            );
+        }
+
+        // Check that no extra agent config
+        for network in self.agent.keys() {
+            eyre::ensure!(
+                self.networks.contains(network),
+                "Agent config named '{}' not present in configured networks",
+                network,
+            );
+        }
+
+        // Check that no extra gui config
+        for network in self.bridge_gui.keys() {
+            eyre::ensure!(
+                self.networks.contains(network),
+                "GUI config named '{}' not present in configured networks",
                 network,
             );
         }
