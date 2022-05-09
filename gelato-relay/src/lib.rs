@@ -92,7 +92,10 @@ impl GelatoClient {
             ("isHighPriority", is_high_priority),
         ]);
 
-        let base_url = format!("{}/oracles/{}/estimate", &self.url, chain_id);
+        let base_url = format!(
+            "https://gateway.api.gelato.digital/oracles/{}/estimate",
+            chain_id
+        );
         let url = reqwest::Url::parse_with_params(&base_url, params).expect("!url");
         let res = reqwest::get(url).await?;
 

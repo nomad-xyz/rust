@@ -1,9 +1,13 @@
 use ethers::signers::Signer;
-use ethers::types::Address;
+use ethers::types::transaction::eip2718::TypedTransaction;
+use ethers::types::{Address, H256};
 use ethers::{prelude::Bytes, providers::Middleware};
 use gelato_relay::{GelatoClient, RelayResponse, TaskState};
-use nomad_core::{ChainCommunicationError, Signers};
-use std::sync::Arc;
+use nomad_core::{ChainCommunicationError, Signers, TxOutcome};
+use std::{str::FromStr, sync::Arc};
+use tokio::task::JoinHandle;
+use tokio::time::{sleep, Duration};
+use tracing::{debug, info};
 
 /// EIP-712 forward request structure
 mod types;
@@ -22,7 +26,7 @@ pub(crate) const ACCEPTABLE_STATES: [TaskState; 4] = [
 #[derive(Debug, Clone)]
 pub struct SingleChainGelatoClient<M> {
     /// Gelato client
-    pub gelato: GelatoClient,
+    pub gelato: Arc<GelatoClient>,
     /// Ethers client (for estimating gas)
     pub eth_client: Arc<M>,
     /// Sponsor signer
@@ -42,8 +46,8 @@ where
     M: Middleware + 'static,
 {
     /// Get reference to base client
-    pub fn gelato(&self) -> &GelatoClient {
-        &self.gelato
+    pub fn gelato(&self) -> Arc<GelatoClient> {
+        self.gelato.clone()
     }
 
     /// Instantiate single chain client with default Gelato url
@@ -56,7 +60,7 @@ where
         is_high_priority: bool,
     ) -> Self {
         Self {
-            gelato: GelatoClient::default(),
+            gelato: GelatoClient::default().into(),
             eth_client,
             sponsor,
             forwarder,
@@ -66,20 +70,105 @@ where
         }
     }
 
+    /// Submit a transaction to Gelato and poll until completion or failure.
+    pub async fn submit_blocking(
+        &self,
+        domain: u32,
+        contract_address: Address,
+        tx: &TypedTransaction,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
+        let RelayResponse { task_id } = self.dispatch_tx(domain, contract_address, tx).await?;
+
+        info!(task_id = ?&task_id, "Submitted tx to Gelato relay. Polling task for completion...");
+        Self::poll_task_id(task_id, self.gelato())
+            .await
+            .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?
+    }
+
+    /// Dispatch tx to Gelato and return task id.
+    pub async fn dispatch_tx(
+        &self,
+        domain: u32,
+        contract_address: Address,
+        tx: &TypedTransaction,
+    ) -> Result<RelayResponse, ChainCommunicationError> {
+        // If gas limit not hardcoded in tx, eth_estimateGas
+        let gas_limit = tx
+            .gas()
+            .unwrap_or(
+                &self
+                    .eth_client
+                    .estimate_gas(tx)
+                    .await
+                    .map_err(|e| ChainCommunicationError::MiddlewareError(e.into()))?,
+            )
+            .as_usize();
+        let data = tx.data().expect("!tx data");
+
+        info!(
+            domain = domain,
+            contract_address = ?contract_address,
+            "Dispatching tx to Gelato relay."
+        );
+
+        self.send_forward_request(contract_address, data, gas_limit)
+            .await
+            .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))
+    }
+
+    /// Poll task id and return tx hash of transaction if successful, error if
+    /// otherwise.
+    pub fn poll_task_id(
+        task_id: String,
+        gelato: Arc<GelatoClient>,
+    ) -> JoinHandle<Result<TxOutcome, ChainCommunicationError>> {
+        tokio::spawn(async move {
+            loop {
+                let status = gelato
+                    .get_task_status(&task_id)
+                    .await
+                    .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?
+                    .expect("!task status");
+
+                if !ACCEPTABLE_STATES.contains(&status.task_state) {
+                    return Err(ChainCommunicationError::TxSubmissionError(
+                        format!("Gelato task failed: {:?}", status).into(),
+                    ));
+                }
+
+                if let Some(execution) = &status.execution {
+                    info!(
+                        chain = ?status.chain,
+                        task_id = ?status.task_id,
+                        execution = ?execution,
+                        "Gelato relay executed tx."
+                    );
+
+                    let tx_hash = &execution.transaction_hash;
+                    let txid = H256::from_str(tx_hash)
+                        .unwrap_or_else(|_| panic!("Malformed tx hash from Gelato"));
+
+                    return Ok(TxOutcome { txid });
+                }
+
+                debug!(task_id = ?task_id, "Polling Gelato task.");
+                sleep(Duration::from_millis(500)).await;
+            }
+        })
+    }
+
     /// Send relay transaction
     pub async fn send_forward_request(
         &self,
         target: Address,
         data: &Bytes,
-        _gas_limit: usize,
+        gas_limit: usize,
     ) -> Result<RelayResponse, ChainCommunicationError> {
-        // let estimated_fee = self
-        //     .gelato()
-        //     .get_estimated_fee(self.chain_id, &self.fee_token, gas_limit, false)
-        //     .await
-        //     .map_err(|e| ChainCommunicationError::CustomError(e.into()))?;
-
-        let max_fee = 10000;
+        let max_fee = self
+            .gelato()
+            .get_estimated_fee(self.chain_id, &self.fee_token, gas_limit + 100_000, false)
+            .await
+            .map_err(|e| ChainCommunicationError::CustomError(e.into()))?; // add 100k gas padding for Gelato contract ops
 
         let target = format!("{:#x}", target);
         let sponsor = format!("{:#x}", self.sponsor.address());
