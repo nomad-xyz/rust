@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+Added Evmos Testnet to Staging Deploys
+
 ### v0.1.0-rc.20
 
 - Fix xDai display name
