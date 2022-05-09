@@ -380,7 +380,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": ["kovan", "goerli", "neontestnet"],
+        "subsidizedRemotes": ["kovan", "goerli", "evmostestnet"],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
@@ -419,7 +419,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": ["rinkeby", "goerli", "neontestnet"],
+        "subsidizedRemotes": ["rinkeby", "goerli", "evmostestnet"],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
@@ -497,7 +497,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": ["rinkeby", "kovan", "neontestnet"],
+        "subsidizedRemotes": ["rinkeby", "kovan", "evmostestnet"],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
@@ -635,7 +635,7 @@
     "rinkeby": {
       "displayName": "Rinkeby",
       "nativeTokenSymbol": "rETH",
-      "connections": ["kovan", "goerli", "neontestnet"],
+      "connections": ["kovan", "goerli", "evmostestnet"],
       "manualProcessing": true,
       "connextEnabled": true
     },
