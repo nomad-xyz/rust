@@ -1,12 +1,10 @@
-use crate::{SingleChainGelatoClient, ACCEPTABLE_STATES};
+use crate::SingleChainGelatoClient;
 use color_eyre::Result;
 use ethers::prelude::*;
 use ethers::types::transaction::eip2718::TypedTransaction;
-use gelato_relay::RelayResponse;
 use nomad_core::{ChainCommunicationError, TxOutcome};
-use std::{str::FromStr, sync::Arc};
-use tokio::time::{sleep, Duration};
-use tracing::{debug, info};
+use std::sync::Arc;
+use tracing::info;
 
 /// Component responsible for submitting transactions to the chain. Can
 /// sign/submit locally or use a transaction relay service.
@@ -61,6 +59,7 @@ where
                     .send_transaction(tx, None)
                     .await
                     .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?;
+
                 let tx_hash: ethers::core::types::H256 = *dispatched;
                 info!("dispatched transaction with tx_hash {:?}", tx_hash);
 
@@ -77,64 +76,7 @@ where
                 Ok(outcome)
             }
             SubmitterClient::Gelato(client) => {
-                // If gas limit not hardcoded in tx, eth_estimateGas
-                let gas_limit = tx
-                    .gas()
-                    .unwrap_or(
-                        &client
-                            .eth_client
-                            .estimate_gas(&tx)
-                            .await
-                            .map_err(|e| ChainCommunicationError::MiddlewareError(e.into()))?,
-                    )
-                    .as_usize();
-
-                info!(
-                    domain = domain,
-                    contract_address = ?contract_address,
-                    "Dispatching tx to Gelato relay."
-                );
-
-                let data = tx.data().expect("!tx data");
-                let RelayResponse { task_id } = client
-                    .send_forward_request(contract_address, data, gas_limit)
-                    .await
-                    .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?;
-
-                info!(task_id = ?task_id, "Submitted tx to Gelato relay. Polling task for completion...");
-
-                loop {
-                    let status = client
-                        .gelato()
-                        .get_task_status(&task_id)
-                        .await
-                        .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?
-                        .expect("!task status");
-
-                    if !ACCEPTABLE_STATES.contains(&status.task_state) {
-                        return Err(ChainCommunicationError::TxSubmissionError(
-                            format!("Gelato task failed: {:?}", status).into(),
-                        ));
-                    }
-
-                    if let Some(execution) = &status.execution {
-                        info!(
-                            chain = ?status.chain,
-                            task_id = ?status.task_id,
-                            execution = ?execution,
-                            "Gelato relay executed tx."
-                        );
-
-                        let tx_hash = &execution.transaction_hash;
-                        let txid = H256::from_str(tx_hash)
-                            .unwrap_or_else(|_| panic!("Malformed tx hash from Gelato"));
-
-                        return Ok(TxOutcome { txid });
-                    }
-
-                    debug!(task_id = ?task_id, "Polling Gelato task.");
-                    sleep(Duration::from_millis(500)).await;
-                }
+                client.submit_blocking(domain, contract_address, &tx).await
             }
         }
     }
