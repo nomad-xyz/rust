@@ -2,7 +2,9 @@
 
 ### Unreleased
 
-Added Evmos Testnet to Staging Deploys
+### v0.1.0-rc.21
+
+- Added Evmos Testnet to Staging Deploys
 
 ### v0.1.0-rc.20
 

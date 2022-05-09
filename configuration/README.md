@@ -57,6 +57,7 @@ To build the wasm library:
 - Update Changelog from unreleased to next version
 - Bump package version in `cargo.toml` to  `<new-package-version>`
 - Run the tests locally: `cargo test`
+- Commit `configuration/Cargo.toml`, `Cargo.lock`, and `configuration/CHANGELOG.md`
 - Make a PR and merge it
 
 #### Release / Publish
