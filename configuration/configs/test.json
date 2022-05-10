@@ -4,7 +4,8 @@
   "networks": ["ethereum", "moonbeam", "evmos"],
   "rpcs": {
     "moonbeam": ["https://rpc.api.moonbeam.network"],
-    "ethereum": ["https://main-light.eth.linkpool.io/"]
+    "ethereum": ["https://main-light.eth.linkpool.io/"],
+    "evmos": ["https://eth.bd.evmos.org:8545"]
   },
   "protocol": {
     "governor": {
