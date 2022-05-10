@@ -283,7 +283,7 @@ decl_agent!(
         replica_tasks: RwLock<HashMap<String, JoinHandle<Result<()>>>>,
         allowed: Option<Arc<HashSet<H256>>>,
         denied: Option<Arc<HashSet<H256>>>,
-        subsidized_remotes: Vec<String>,
+        subsidized_remotes: HashSet<String>,
         next_message_nonces: prometheus::IntGaugeVec,
         config: Option<S3Config>,
     }
@@ -296,7 +296,7 @@ impl Processor {
         core: AgentCore,
         allowed: Option<HashSet<H256>>,
         denied: Option<HashSet<H256>>,
-        subsidized_remotes: Vec<String>,
+        subsidized_remotes: HashSet<String>,
         config: Option<S3Config>,
     ) -> Self {
         let next_message_nonces = core
@@ -408,9 +408,20 @@ impl NomadAgent for Processor {
             let mut tasks = vec![home_sync_task, prover_sync_task, home_fail_watch_task];
 
             if !self.subsidized_remotes.is_empty() {
-                let remotes: Vec<&str> =
-                    self.subsidized_remotes.iter().map(|r| r.as_str()).collect();
-                tasks.push(self.run_many(&remotes));
+                let specified_remotes: HashSet<String> =
+                    self.replicas().keys().map(String::to_owned).collect();
+
+                // Get intersection of specified remotes (replicas in settings)
+                // and subsidized remotes
+                let specified_subsidized: Vec<&str> = self
+                    .subsidized_remotes
+                    .intersection(&specified_remotes)
+                    .collect::<Vec<_>>()
+                    .iter()
+                    .map(|x| x.as_str())
+                    .collect();
+
+                tasks.push(self.run_many(&specified_subsidized));
             }
 
             // if we have a bucket, add a task to push to it
