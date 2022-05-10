@@ -9,8 +9,8 @@ decl_config!(Processor {
     allowed: Option<HashSet<H256>>,
     /// Deny list
     denied: Option<HashSet<H256>>,
-    /// Index only mode
-    subsidized_remotes: Vec<String>,
+    /// Remote chains to subsidize processing on
+    subsidized_remotes: HashSet<String>,
     /// Whether to upload proofs to s3
     #[serde(default, skip_serializing_if = "Option::is_none")]
     s3: Option<S3Config>,

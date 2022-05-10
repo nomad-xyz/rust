@@ -10,7 +10,15 @@ macro_rules! get_remotes_from_env {
             .connections
             .clone();
 
-        if let Ok(_) = std::env::var("AGENT_REPLICAS_ALL") {
+        let all_connections = if let Ok(val) = std::env::var("AGENT_REPLICAS_ALL") {
+            // If set to true/false, return value
+            val.parse::<bool>().expect("misformatted AGENT_REPLICAS_ALL")
+        } else {
+            // If unset, return false
+            false
+        };
+
+        if all_connections {
             connections
         } else {
             let mut remotes = std::collections::HashSet::new();
@@ -83,6 +91,7 @@ macro_rules! decl_settings {
                     // Get agent remotes
                     let remote_networks = nomad_base::get_remotes_from_env!(home, config);
                     color_eyre::eyre::ensure!(!remote_networks.is_empty(), "Must pass in at least one replica through env");
+                    tracing::info!(remote_networks = ?remote_networks, "Loading settings for remote networks.");
 
                     let mut all_networks = remote_networks.clone();
                     all_networks.insert(home.clone());
