@@ -2,6 +2,9 @@
 
 ### Unreleased
 
+
+### v0.1.0-rc.21
+
 - validation of configured secrets takes in list of remote networks given that we can now specify remote networks of interest
 - adds 3rd network to test.json to test partial specification of remotes
 - add evmostestnet staging deploys
