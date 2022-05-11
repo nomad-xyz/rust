@@ -1,4 +1,48 @@
 #[macro_export]
+/// Get remote networks from env
+macro_rules! get_remotes_from_env {
+    ($home:ident, $config:ident) => {{
+        let connections = $config
+            .protocol()
+            .networks
+            .get(&$home)
+            .expect("!networks")
+            .connections
+            .clone();
+
+        let all_connections = if let Ok(val) = std::env::var("AGENT_REPLICAS_ALL") {
+            // If set to true/false, return value
+            val.parse::<bool>().expect("misformatted AGENT_REPLICAS_ALL")
+        } else {
+            // If unset, return false
+            false
+        };
+
+        if all_connections {
+            connections
+        } else {
+            let mut remotes = std::collections::HashSet::new();
+            for i in 0.. {
+                let replica_var = format!("AGENT_REPLICA_{}_NAME", i);
+                let replica_res = std::env::var(&replica_var);
+
+                if let Ok(replica) = replica_res {
+                    if connections.get(&replica).is_none() {
+                        panic!("Attempted to run agent with unconnected replica. Home: {}. Replica: {}", $home, &replica);
+                    }
+
+                    remotes.insert(replica);
+                } else {
+                    break;
+                }
+            }
+
+            remotes
+        }
+    }};
+}
+
+#[macro_export]
 /// Declare a new agent settings block with base settings + agent-specific
 /// settings
 /// ### Usage
@@ -29,12 +73,12 @@ macro_rules! decl_settings {
 
             impl [<$name Settings>] {
                 pub fn new() -> color_eyre::Result<Self>{
+                    // Get agent and home names
                     let agent = std::stringify!($name).to_lowercase();
-                    let home = std::env::var("AGENT_HOME").expect("missing AGENT_HOME");
+                    let home = std::env::var("AGENT_HOME_NAME").expect("missing AGENT_HOME_NAME");
 
-                    let secrets_path = std::env::var("SECRETS_PATH").ok();
+                    // Get config
                     let config_path = std::env::var("CONFIG_PATH").ok();
-
                     let config: nomad_xyz_configuration::NomadConfig = match config_path {
                         Some(path) => nomad_xyz_configuration::NomadConfig::from_file(path).expect("!config"),
                         None => {
@@ -44,14 +88,21 @@ macro_rules! decl_settings {
                     };
                     config.validate()?;
 
-                    let secrets = match secrets_path {
-                        Some(path) =>  nomad_xyz_configuration::AgentSecrets::from_file(path).expect("failed to build AgentSecrets from file"),
-                        None => nomad_xyz_configuration::AgentSecrets::from_env(&config.networks).expect("failed to build AgentSecrets from env"),
-                    };
-                    secrets.validate_against_config(&agent, &home, &config)?;
+                    // Get agent remotes
+                    let remote_networks = nomad_base::get_remotes_from_env!(home, config);
+                    color_eyre::eyre::ensure!(!remote_networks.is_empty(), "Must pass in at least one replica through env");
+                    tracing::info!(remote_networks = ?remote_networks, "Loading settings for remote networks.");
 
-                    let base = nomad_base::Settings::from_config_and_secrets(&agent, &home, &config, &secrets);
-                    base.validate_against_config_and_secrets(&agent, &home, &config, &secrets)?;
+                    let mut all_networks = remote_networks.clone();
+                    all_networks.insert(home.clone());
+
+                    // Get agent secrets
+                    let secrets = nomad_xyz_configuration::AgentSecrets::from_env(&all_networks).expect("failed to build AgentSecrets from env");
+                    secrets.validate(&agent, &all_networks)?;
+
+                    // Create base settings
+                    let base = nomad_base::Settings::from_config_and_secrets(&agent, &home, &remote_networks, &config, &secrets);
+                    base.validate_against_config_and_secrets(&agent, &home, &remote_networks, &config, &secrets)?;
 
                     let agent = config.agent().get(&home).expect("agent config").[<$name:lower>].clone();
 

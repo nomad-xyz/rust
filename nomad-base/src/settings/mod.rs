@@ -20,6 +20,7 @@ use nomad_ethereum::{make_home_indexer, make_replica_indexer};
 use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets};
 use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig, NomadGasConfig};
 use serde::Deserialize;
+use std::collections::HashSet;
 use std::{collections::HashMap, sync::Arc};
 
 /// Chain configuration
@@ -438,6 +439,7 @@ impl Settings {
     pub fn from_config_and_secrets(
         agent_name: &str,
         home_network: &str,
+        remote_networks: &HashSet<String>,
         config: &NomadConfig,
         secrets: &AgentSecrets,
     ) -> Self {
@@ -453,13 +455,7 @@ impl Settings {
             secrets,
         );
 
-        let connections = &config
-            .protocol()
-            .networks
-            .get(home_network)
-            .expect("!replica networks")
-            .connections;
-        let replicas = connections
+        let replicas = remote_networks
             .iter()
             .map(|remote_network| {
                 (
@@ -480,7 +476,7 @@ impl Settings {
         let managers: Option<HashMap<String, ChainSetup>> =
             if agent_name.to_lowercase() == "watcher" {
                 Some(
-                    connections
+                    remote_networks
                         .iter()
                         .map(|remote_network| {
                             (
@@ -512,11 +508,12 @@ impl Settings {
         }
     }
 
-    /// Validate base config against NomadConfig and AgentSecrets blocks
+    /// Validate base settings against NomadConfig and AgentSecrets blocks
     pub fn validate_against_config_and_secrets(
         &self,
         agent_name: &str,
         home_network: &str,
+        remote_networks: &HashSet<String>,
         config: &NomadConfig,
         secrets: &AgentSecrets,
     ) -> color_eyre::Result<()> {
@@ -554,13 +551,7 @@ impl Settings {
         let home_chain_conf = secrets.rpcs.get(home_network).unwrap();
         assert_eq!(&self.home.chain, home_chain_conf);
 
-        let home_connections = &config
-            .protocol()
-            .networks
-            .get(home_network)
-            .expect("!networks")
-            .connections;
-        for remote_network in home_connections {
+        for remote_network in remote_networks.iter() {
             let replica_setup = self.replicas.get(remote_network).unwrap();
             let config_replica_domain = config
                 .protocol()

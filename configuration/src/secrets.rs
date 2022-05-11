@@ -1,44 +1,8 @@
 //! Secrets configuration for agents.
 //!
-//! This struct is serialized from a JSON file or built drawing from a hosted
-//! secrets manager backend. This struct is then used to finish building an
-//! agents `Settings` block (see settings/mod.rs) along with a `NomadConfig`.
-//!
-//! Example JSON File Format
-//! {
-//!     "rpcs": {
-//!         "ethereum": {
-//!             "rpcStyle": "ethereum",
-//!             "connection": {
-//!                 "type": "http",
-//!                 "url": ""
-//!             }
-//!         },
-//!         "moonbeam": {
-//!             "rpcStyle": "ethereum",
-//!             "connection": {
-//!                 "type": "http",
-//!                 "url": ""
-//!             }
-//!         },
-//!     },
-//!     "transactionSigners": {
-//!         "ethereum": {
-//!             "type": "hexKey"
-//!             "key": "",
-//!         },
-//!         "moonbeam": {
-//!             "type": "hexKey"
-//!             "key": "",
-//!         },
-//!     },
-//!     "attestationSigner": {
-//!         "key": "",
-//!         "type": "hexKey"
-//!     }
-//! }
+//! This struct built from environment variables. It is used alongside a
+//! NomadConfig to build an agents `Settings` block (see settings/mod.rs).
 
-use crate::NomadConfig;
 use crate::{agent::SignerConf, chains::ethereum, ChainConf, FromEnv};
 use eyre::Result;
 use serde::Deserialize;
@@ -89,12 +53,7 @@ impl AgentSecrets {
     }
 
     /// Ensure populated RPCs and transaction signers
-    pub fn validate_against_config(
-        &self,
-        agent_name: &str,
-        home: &str,
-        config: &NomadConfig,
-    ) -> Result<()> {
+    pub fn validate(&self, agent_name: &str, networks: &HashSet<String>) -> Result<()> {
         // TODO: replace agent name with associated type
         if agent_name == "updater" || agent_name == "watcher" {
             eyre::ensure!(
@@ -103,15 +62,6 @@ impl AgentSecrets {
                 agent_name,
             )
         }
-
-        let mut networks = config
-            .protocol()
-            .networks
-            .get(home)
-            .expect("!networks")
-            .connections
-            .to_owned();
-        networks.insert(home.to_owned());
 
         for network in networks.iter() {
             let chain_conf = self

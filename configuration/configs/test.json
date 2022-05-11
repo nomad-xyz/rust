@@ -1,10 +1,11 @@
 {
   "version": 0,
   "environment": "test",
-  "networks": ["ethereum", "moonbeam"],
+  "networks": ["ethereum", "moonbeam", "evmos"],
   "rpcs": {
     "moonbeam": ["https://rpc.api.moonbeam.network"],
-    "ethereum": ["https://main-light.eth.linkpool.io/"]
+    "ethereum": ["https://main-light.eth.linkpool.io/"],
+    "evmos": ["https://eth.bd.evmos.org:8545"]
   },
   "protocol": {
     "governor": {
@@ -15,7 +16,7 @@
       "ethereum": {
         "name": "ethereum",
         "domain": 6648936,
-        "connections": ["moonbeam"],
+        "connections": ["moonbeam", "evmos"],
         "specs": {
           "chainId": 1,
           "blockTime": 15,
@@ -46,7 +47,7 @@
       "moonbeam": {
         "name": "moonbeam",
         "domain": 1650811245,
-        "connections": ["ethereum"],
+        "connections": ["ethereum", "evmos"],
         "specs": {
           "chainId": 1284,
           "finalizationBlocks": 20,
@@ -77,6 +78,48 @@
           "mintGas": 200000,
           "deployGas": 850000
         }
+      },
+      "evmos": {
+        "name": "evmos",
+        "domain": 1702260083,
+        "connections": ["ethereum", "moonbeam"],
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 25000,
+          "maximumGas": 1000000,
+          "updater": "0xc8e344d4698b6462187c88b9bb58f26ca3b5ed31",
+          "watchers": ["0x9e8e7eb5886a9c77e955fd5d717581556eb7f98d"],
+          "governance": {
+            "recoveryManager": "0xea24ac04defb338ca8595c3750e20166f3b4998a",
+            "recoveryTimelock": 86400
+          }
+        },
+        "specs": {
+          "chainId": 9001,
+          "blockTime": 6,
+          "finalizationBlocks": 1,
+          "supports1559": true,
+          "confirmations": 5,
+          "blockExplorer": "http://evm.evmos.org",
+          "indexPageSize": 2000
+        },
+        "bridgeConfiguration": {
+          "weth": "0xd4949664cd82660aae99bedc034a0dea8a0bd517",
+          "customs": [
+            {
+              "token": {
+                "domain": 6648936,
+                "id": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+              },
+              "name": "USD Coin",
+              "symbol": "USDC",
+              "decimals": 6
+            }
+          ],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
       }
     }
   },
@@ -101,6 +144,11 @@
           "implementation": "0x7F58bb8311DB968AB110889F2Dfa04ab7E8E831B",
           "proxy": "0x049b51e531Fd8f90da6d92EA83dC4125002F20EF",
           "beacon": "0x0876dFe4AcAe0e1c0a43302716483f5752298b71"
+        },
+        "evmos": {
+          "implementation": "0x7f58bb8311db968ab110889f2dfa04ab7e8e831b",
+          "proxy": "0x5bae47bf29f4e9b1e275c0b427b84c4daa30033a",
+          "beacon": "0x0876dfe4acae0e1c0a43302716483f5752298b71"
         }
       }
     },
@@ -124,6 +172,39 @@
           "implementation": "0x67833a48b3F509d4252ac2c19cd604556eD6c981",
           "proxy": "0x7F58bb8311DB968AB110889F2Dfa04ab7E8E831B",
           "beacon": "0x3009C99D370B780304D2098196f1EBF779a4777a"
+        },
+        "evmos": {
+          "implementation": "0x67833a48b3f509d4252ac2c19cd604556ed6c981",
+          "proxy": "0xc1fae48ae1225fce8698503d5bb1378db5ce14f6",
+          "beacon": "0x3009c99d370b780304d2098196f1ebf779a4777a"
+        }
+      }
+    },
+    "evmos": {
+      "deployHeight": 59176,
+      "upgradeBeaconController": "0x2e09edd238eeaea6e4da705fbe5922b1979e03ac",
+      "xAppConnectionManager": "0x9272c9d5fa902ef3804ec81e0333ae420d57f715",
+      "updaterManager": "0xdb378579c2af11817eea21474a39f95b5b9dfd7e",
+      "governanceRouter": {
+        "implementation": "0xa84e233a12b36125a731e1362121d8d4ea030c91",
+        "proxy": "0x67833a48b3f509d4252ac2c19cd604556ed6c981",
+        "beacon": "0x569d80f7fc17316b4c83f072b92ef37b72819de0"
+      },
+      "home": {
+        "implementation": "0xfe8874778f946ac2990a29eba3cfd50760593b2f",
+        "proxy": "0x063e871f8db991cead34b557a00b157b360084cc",
+        "beacon": "0x8f184d6aa1977fd2f9d9024317d0ea5cf5815b6f"
+      },
+      "replicas": {
+        "moonbeam": {
+          "implementation": "0x0876dfe4acae0e1c0a43302716483f5752298b71",
+          "proxy": "0x4d41f97f84256d9546b5d71446a9dd7af3507d94",
+          "beacon": "0x049b51e531fd8f90da6d92ea83dc4125002f20ef"
+        },
+        "ethereum": {
+          "implementation": "0x0876dfe4acae0e1c0a43302716483f5752298b71",
+          "proxy": "0x969d515486ba6133400ac9c73298586426a090f5",
+          "beacon": "0x049b51e531fd8f90da6d92ea83dc4125002f20ef"
         }
       }
     }
@@ -166,6 +247,42 @@
         "beacon": "0x969d515486Ba6133400aC9C73298586426a090F5"
       },
       "ethHelper": "0xB70588b1A51F847d13158ff18E9Cac861dF5Fb00"
+    },
+    "evmos": {
+      "deployHeight": 59533,
+      "bridgeRouter": {
+        "implementation": "0x1061ed6f75f3a95a8bedda9107b7743cf21cd346",
+        "proxy": "0x2eff94f8c56c20f85d45e9752bfec3c0522c55c7",
+        "beacon": "0xef989866b66a491e7b6c7473d73b589450d0f766"
+      },
+      "tokenRegistry": {
+        "implementation": "0xc2a442efef1db52c8d2c266a0cbb722bf68fe4ee",
+        "proxy": "0x10b84c73001745d969e7056d7ca474ce1d959fe8",
+        "beacon": "0x029b8f153786f021c3d47012d9cf932dc5fc73f0"
+      },
+      "bridgeToken": {
+        "implementation": "0xd876faf5aaeb576f2ecfc6242a08b6ed63a54dc9",
+        "proxy": "0x0000000000000000000000000000000000000000",
+        "beacon": "0x5b14324fe6ae40a753382fe844c3342a430cab30"
+      },
+      "ethHelper": "0x9c254d1f87a563069b271ab29a537bd674d0f5dc",
+      "customs": [
+        {
+          "token": {
+            "domain": 6648936,
+            "id": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+          },
+          "name": "USD Coin",
+          "symbol": "USDC",
+          "decimals": 6,
+          "controller": "0x0AaC4649C6E73f094D4B3c2209e856f92301a952",
+          "addresses": {
+            "implementation": "0xd876faf5aaeb576f2ecfc6242a08b6ed63a54dc9",
+            "proxy": "0x51e44FfaD5C2B122C8b635671FCC8139dc636E82",
+            "beacon": "0x0a627A6398F429b62969Cd475FB5Ba8e04a4EB70"
+          }
+        }
+      ]
     }
   },
   "agent": {
@@ -221,6 +338,40 @@
       },
       "processor": {
         "subsidizedRemotes": [],
+        "enabled": true,
+        "interval": 5,
+        "s3": {
+          "bucket": "dummy-bucket",
+          "region": "dummy-region"
+        }
+      },
+      "watcher": {
+        "enabled": true,
+        "interval": 10
+      },
+      "kathy": {
+        "enabled": false,
+        "interval": 100
+      }
+    },
+    "evmos": {
+      "rpcStyle": "ethereum",
+      "db": "/usr/share/nomad",
+      "metrics": 9090,
+      "logging": {
+        "level": "info",
+        "fmt": "json"
+      },
+      "updater": {
+        "enabled": true,
+        "interval": 5
+      },
+      "relayer": {
+        "enabled": true,
+        "interval": 10
+      },
+      "processor": {
+        "subsidizedRemotes": ["moonbeam"],
         "enabled": true,
         "interval": 5,
         "s3": {
