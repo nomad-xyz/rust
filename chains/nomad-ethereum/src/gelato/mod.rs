@@ -80,7 +80,7 @@ where
         let RelayResponse { task_id } = self.dispatch_tx(domain, contract_address, tx).await?;
 
         info!(task_id = ?&task_id, "Submitted tx to Gelato relay. Polling task for completion...");
-        Self::poll_task_id(task_id, self.gelato())
+        self.poll_task_id(task_id)
             .await
             .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?
     }
@@ -119,9 +119,11 @@ where
     /// Poll task id and return tx hash of transaction if successful, error if
     /// otherwise.
     pub fn poll_task_id(
+        &self,
         task_id: String,
-        gelato: Arc<GelatoClient>,
     ) -> JoinHandle<Result<TxOutcome, ChainCommunicationError>> {
+        let gelato = self.gelato();
+
         tokio::spawn(async move {
             loop {
                 let status = gelato
