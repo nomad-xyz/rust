@@ -2,6 +2,7 @@
 
 ### Unreleased
 
+- fix broken output tests
 
 ### v0.1.0-rc.21
 
