@@ -1,9 +1,9 @@
 use crate::{
     accumulator::{
-        merkle::{merkle_root_from_branch, MerkleTree},
+        full::{merkle_root_from_branch, MerkleTree},
         TREE_DEPTH,
     },
-    test_utils::find_vector,
+    test_utils::find_test_fixtures,
     utils::{destination_and_nonce, home_domain_hash},
     FailureNotification, NomadMessage, Update,
 };
@@ -53,7 +53,7 @@ pub mod output_functions {
             .write(true)
             .create(true)
             .truncate(true)
-            .open(find_vector("message.json"))
+            .open(find_test_fixtures("message.json"))
             .expect("Failed to open/create file");
 
         file.write_all(json.as_bytes())
@@ -83,7 +83,7 @@ pub mod output_functions {
             .write(true)
             .create(true)
             .truncate(true)
-            .open(find_vector("proof.json"))
+            .open(find_test_fixtures("proof.json"))
             .expect("Failed to open/create file");
 
         file.write_all(json.as_bytes())
@@ -107,7 +107,7 @@ pub mod output_functions {
             .write(true)
             .create(true)
             .truncate(true)
-            .open(find_vector("homeDomainHash.json"))
+            .open(find_test_fixtures("homeDomainHash.json"))
             .expect("Failed to open/create file");
 
         file.write_all(json.as_bytes())
@@ -133,7 +133,7 @@ pub mod output_functions {
             .write(true)
             .create(true)
             .truncate(true)
-            .open(find_vector("destinationNonce.json"))
+            .open(find_test_fixtures("destinationNonce.json"))
             .expect("Failed to open/create file");
 
         file.write_all(json.as_bytes())
@@ -176,7 +176,7 @@ pub mod output_functions {
                 .write(true)
                 .create(true)
                 .truncate(true)
-                .open(find_vector("signedUpdate.json"))
+                .open(find_test_fixtures("signedUpdate.json"))
                 .expect("Failed to open/create file");
 
             file.write_all(json.as_bytes())
@@ -226,7 +226,7 @@ pub mod output_functions {
                 .write(true)
                 .create(true)
                 .truncate(true)
-                .open(find_vector("signedFailure.json"))
+                .open(find_test_fixtures("signedFailure.json"))
                 .expect("Failed to open/create file");
 
             file.write_all(json.as_bytes())
