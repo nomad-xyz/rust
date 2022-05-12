@@ -107,10 +107,10 @@ After signing is set up, commits can be signed with the `-S` flag.
 If your commits have changed code, please ensure the following pass before submitting a PR:
 
 ```
-cargo check --all
-cargo test --all --all-features
+cargo check --workspace
+cargo test --workspace --all-features
 cargo fmt -- --check
-cargo clippy --all --all-features -- -D warnings
+cargo clippy --workspace --all-features -- -D warnings
 ```
 
 ## Advanced Usage
