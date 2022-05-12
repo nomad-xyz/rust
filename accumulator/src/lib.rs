@@ -4,7 +4,7 @@
 #![warn(missing_copy_implementations)]
 
 /// A full incremental merkle. Suitable for running off-chain.
-mod full;
+pub mod full;
 
 /// Hashing utils
 pub mod utils;
