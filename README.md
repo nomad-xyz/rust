@@ -57,39 +57,54 @@ This will generate this repos documentation and open it in a web browser.
 
 The off-chain portion of Nomad is a set of agents each with a specific role:
 
+- `processor`
+  - Retrieves Merkle leaves from home chain
+  - Observes one or more replica chains
+  - Generates proofs for passed messages
+  - Submits messages with proofs to replica chains
+- `relayer`
+  - Relays signed updates from the home chain to the replicas
+- `updater`
+  - Signs update attestations and submits them to the home chain
 - `watcher`
   - Observes the home chain
   - Observes one or more replica chains
   - Check for fraud
   - Submits fraud to the home chain
   - If configured, issues emergency stop transactions
-- `processor`
-  - Retrieves Merkle leaves from home chain
-  - Observes one or more replica chains
-  - Generates proofs for passed messages
-  - Submits messages with proofs to replica chains
-- `updater`
-  - Signs update attestations and submits them to the home chain
-- `relayer`
-  - Relays signed updates from the home chain to the replicas
 
 ### Repository Layout
 
-- `nomad-core`
-  - Contains implementations of core primitives
-    - Traits (interfaces) of the on-chain contracts
-    - Model implementations of the on-chain contracts
-    - Merkle tree implementations
 - `nomad-base`
-  - Contains shared utilities for building off-chain agents
-    - Trait implementations for various chains
-    - Shared configuration file formats
-    - Basic agent setup
-- `chains/nomad-ethereum`
-  - Interfaces for Ethereum contracts
+  - A VM-agnostic toolkit for building agents
+    - Common agent structs
+    - Agent traits
+    - Agent settings
+    - NomadDB (RocksDB)
+    - Concrete contract objects (for calling contracts)
+    - VM-agnostic contract sync
+    - Common metrics
+- `nomad-core`
+  - Contains implementations of core primitives  
+    - Core primitives
+    - Core data types
+    - Contract and chain traits
+- `nomad-types`
+  - Common types used throughout the stack
+- `chains`
+  - A collection of crates for interacting with different VMs
+    - Ethereum
+    - More coming...
+- `accumulator`
+  - Contains Merkle tree implementations
 - `agents`
-  - Agent implementations
-
+  - A collection of VM-agnostic agent implementations
+- `configuration`
+  - An interface for persisting and accessing config data
+    - JSON config files (for development, staging, production)
+    - An interface for retrieving agent and system config
+    - An interface for retrieving agent secrets
+  
 ## Contributing
 
 All contributions, big and small, are welcome. All contributions require signature verification and contributions that touch code will have to pass linting and formatting checks as well as tests. 
@@ -139,7 +154,7 @@ There exists a docker build for the agent binaries. These docker images are used
 - In `$AGENT_NAME/src/main.rs`:
   - Add `mod` declarations for your agent and settings modules
   - Create `main` and `setup` functions
-  - Follow the pattern in `nomad-base/src/main.rs`
+  - Use the implementation in `agents/kathy/src/main.rs` as a guide
 - Add required config to `configuration/configs/*` for the agent
 
 ## Miscellaneous
