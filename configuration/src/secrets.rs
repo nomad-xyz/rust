@@ -37,14 +37,13 @@ impl AgentSecrets {
         for network in networks.iter() {
             let network_upper = network.to_uppercase();
 
-            let chain_conf = ChainConf::from_env(&network_upper)?;
-
-            let transaction_signer = SignerConf::from_env(Some("TXSIGNER"), Some(&network_upper))?;
+            let chain_conf = ChainConf::from_env(&network_upper, Some("DEFAULT")?;
+            let tx_submitter = TxSubmitterConf::from_env(&network_upper)?;
 
             secrets.rpcs.insert(network.to_owned(), chain_conf);
             secrets
-                .transaction_signers
-                .insert(network.to_owned(), transaction_signer);
+                .tx_submitters
+                .insert(network.to_owned(), tx_submitter);
         }
 
         let attestation_signer = SignerConf::from_env(Some("ATTESTATION_SIGNER"), None);
@@ -97,45 +96,6 @@ impl AgentSecrets {
         }
 
         Ok(())
-    }
-}
-
-impl FromEnv for AgentSecrets {
-    fn from_env(_prefix: &str) -> Option<Self> {
-        let env = std::env::var("RUN_ENV").ok()?;
-        let home = std::env::var("AGENT_HOME").ok()?;
-
-        let config = crate::get_builtin(&env)
-            .expect("couldn't retrieve config!")
-            .to_owned();
-
-        let mut networks = config
-            .protocol()
-            .networks
-            .get(&home)
-            .expect("!networks")
-            .connections
-            .to_owned();
-        networks.insert(home);
-
-        let mut secrets = AgentSecrets::default();
-
-        for network in networks.iter() {
-            let network_upper = network.to_uppercase();
-            let chain_conf = ChainConf::from_env(&network_upper)?;
-
-            let tx_submitter = TxSubmitterConf::from_env(&network_upper)?;
-
-            secrets.rpcs.insert(network.to_owned(), chain_conf);
-            secrets
-                .tx_submitters
-                .insert(network.to_owned(), tx_submitter);
-        }
-
-        let attestation_signer = SignerConf::from_env("ATTESTATION_SIGNER");
-        secrets.attestation_signer = attestation_signer;
-
-        Some(secrets)
     }
 }
 
@@ -215,13 +175,19 @@ mod test {
     fn it_builds_from_env() {
         test_utils::run_test_with_env_sync("../fixtures/env.test", move || {
             let networks = &crate::get_builtin("test").unwrap().networks;
-            AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
+            let secrets = AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
+			secrets
+            	.validate("", networks)
+            	.expect("Failed to validate secrets");
         });
     }
 
     #[test]
     fn it_builds_from_file() {
-        AgentSecrets::from_file("../fixtures/test_secrets.json")
+        let secrets = AgentSecrets::from_file("../fixtures/test_secrets.json")
             .expect("Failed to load secrets from file");
+        secrets
+            .validate("", networks)
+            .expect("Failed to validate secrets");
     }
 }
