@@ -13,6 +13,8 @@ use tracing::{debug, info};
 mod types;
 pub use types::*;
 
+pub mod utils;
+
 pub(crate) const FORWARD_REQUEST_TYPE_ID: &str = "ForwardRequest";
 
 pub(crate) const ACCEPTABLE_STATES: [TaskState; 4] = [

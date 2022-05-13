@@ -1,3 +1,4 @@
+use super::utils::CHAIN_ID_TO_FORWARDER;
 use ethers::abi::{self, Token};
 use ethers::types::{transaction::eip712::*, Address};
 use ethers::utils::hex::FromHexError;
@@ -39,8 +40,9 @@ impl Eip712 for UnfilledFowardRequest {
             name: "GelatoRelayForwarder".to_owned(),
             version: "V1".to_owned(),
             chain_id: self.chain_id.into(),
-            verifying_contract: Address::from_str("0xC176f63f3827afE6789FD737f4679B299F97d108")
-                .expect("!verifying contract"), // TODO: fetch from Gelato API
+            verifying_contract: *CHAIN_ID_TO_FORWARDER
+                .get(&self.chain_id)
+                .expect("!forwarder"),
             salt: None,
         })
     }
