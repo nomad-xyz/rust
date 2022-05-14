@@ -13,6 +13,7 @@ Nomad is designed to prioritize:
 - Operating costs: No gas-intensive header verification or state management
 - Implementation speed and cost: Uses simple smart contracts without complex cryptography
 - Ease of use: Straightforward interface for maintaining xApp connections
+- Security: Relies on a 1/n honest watcher assumption for security
 
 You can read more about Nomad's architecture at our [main documentation site](https://docs.nomad.xyz).
 
@@ -57,13 +58,6 @@ This will generate this repos documentation and open it in a web browser.
 
 The off-chain portion of Nomad is a set of agents each with a specific role:
 
-- `processor`
-  - Retrieves Merkle leaves from home chain
-  - Observes one or more replica chains
-  - Generates proofs for passed messages
-  - Submits messages with proofs to replica chains
-- `relayer`
-  - Relays signed updates from the home chain to the replicas
 - `updater`
   - Signs update attestations and submits them to the home chain
 - `watcher`
@@ -72,6 +66,13 @@ The off-chain portion of Nomad is a set of agents each with a specific role:
   - Check for fraud
   - Submits fraud to the home chain
   - If configured, issues emergency stop transactions
+- `relayer`
+  - Relays signed updates from the home chain to the replicas
+- `processor`
+  - Retrieves Merkle leaves from home chain
+  - Observes one or more replica chains
+  - Generates proofs for passed messages
+  - Submits messages with proofs to replica chains
 
 ### Repository Layout
 
