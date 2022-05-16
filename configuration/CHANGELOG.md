@@ -3,6 +3,7 @@
 ### Unreleased
 
 - fix broken output tests
+- Add Neon testnet to dev and staging configs
 
 ### v0.1.0-rc.21
 
