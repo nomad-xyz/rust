@@ -16,6 +16,12 @@ impl<'de> Deserialize<'de> for EvmDefaultWrapper {
     }
 }
 
+impl Default for EvmDefaultWrapper {
+    fn default() -> Self {
+        Self(EVM_DEFAULT)
+    }
+}
+
 pub const EVM_DEFAULT: NomadGasConfig = NomadGasConfig {
     core: CoreGasConfig {
         home: HomeGasLimits {

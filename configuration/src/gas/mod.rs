@@ -1,17 +1,57 @@
 //! Per-chain gas configurations
 
-use serde::{Deserialize, Serialize};
+use serde::{de, Deserialize, Serialize};
+use std::fmt;
 
 mod defaults;
+use defaults::EvmDefaultWrapper;
 
 /// Gas config types
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(tag = "type", content = "config", rename_all = "camelCase")]
+#[derive(Debug, Copy, Clone, Serialize, PartialEq)]
+#[serde(untagged)]
 pub enum NomadGasConfigs {
     /// Custom fully specified
     Custom(NomadGasConfig),
     /// Evm default
-    EvmDefault(defaults::EvmDefaultWrapper),
+    EvmDefault(EvmDefaultWrapper),
+}
+
+impl<'de> Deserialize<'de> for NomadGasConfigs {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_any(NomadGasConfigsVisitor)
+    }
+}
+
+struct NomadGasConfigsVisitor;
+impl<'de> de::Visitor<'de> for NomadGasConfigsVisitor {
+    type Value = NomadGasConfigs;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a gas config map or gas config default")
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        if v == "evmDefault" {
+            Ok(NomadGasConfigs::EvmDefault(EvmDefaultWrapper::default()))
+        } else {
+            Err(E::custom("Unable to parse NomadGasConfigs from string"))
+        }
+    }
+
+    fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error>
+    where
+        A: de::MapAccess<'de>,
+    {
+        Ok(NomadGasConfigs::Custom(NomadGasConfig::deserialize(
+            de::value::MapAccessDeserializer::new(map),
+        )?))
+    }
 }
 
 /// Gas configuration for core and bridge contract methods

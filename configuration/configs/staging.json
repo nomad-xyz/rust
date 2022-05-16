@@ -679,15 +679,9 @@
     }
   },
   "gas": {
-    "rinkeby": {
-      "type": "evmDefault"
-    },
-    "goerli": {
-      "type": "evmDefault"
-    },
-    "kovan": {
-      "type": "evmDefault"
-    }
+    "rinkeby": "evmDefault",
+    "goerli": "evmDefault",
+    "kovan": "evmDefault"
   },
   "bridgeGui": {
     "goerli": {

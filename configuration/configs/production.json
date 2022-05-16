@@ -896,24 +896,12 @@
     }
   },
   "gas": {
-    "ethereum": {
-      "type": "evmDefault"
-    },
-    "moonbeam": {
-      "type": "evmDefault"
-    },
-    "milkomedaC1": {
-      "type": "evmDefault"
-    },
-    "xdai": {
-      "type": "evmDefault"
-    },
-    "evmos": {
-      "type": "evmDefault"
-    },
-    "avalanche": {
-      "type": "evmDefault"
-    }
+    "ethereum": "evmDefault",
+    "moonbeam": "evmDefault",
+    "milkomedaC1": "evmDefault",
+    "xdai": "evmDefault",
+    "evmos": "evmDefault",
+    "avalanche": "evmDefault"
   },
   "bridgeGui": {
     "avalanche": {
