@@ -91,13 +91,12 @@ impl AgentSecrets {
                         network,
                     );
                 }
-                SignerConf::Aws { id } => {
+                SignerConf::Aws { id, arn: _ } => {
                     eyre::ensure!(!id.is_empty(), "ID for {} aws signer key empty!", network,);
                 }
                 SignerConf::Node => (),
             }
         }
-
         Ok(())
     }
 }

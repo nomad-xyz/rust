@@ -14,6 +14,12 @@ pub enum SignerConf {
     Aws {
         /// The UUID identifying the AWS KMS Key
         id: String, // change to no _ so we can set by env
+        /// The ARN of a role to assume. If this is specified, the agent will
+        /// attempt to assume this role, and use it to access the KMS. If
+        /// unspecified, the agent will attempt to use environment-inserted
+        /// AWS credentials
+        #[serde(default)]
+        arn: Option<String>,
     },
     /// Assume node will sign on RPC calls
     Node,
@@ -29,7 +35,8 @@ impl FromEnv for SignerConf {
     fn from_env(prefix: &str) -> Option<Self> {
         // ordering this first preferentially uses AWS if both are specified
         if let Ok(id) = std::env::var(&format!("{}_ID", prefix)) {
-            return Some(SignerConf::Aws { id });
+            let arn = std::env::var(&format!("{}_ARN", prefix)).ok();
+            return Some(SignerConf::Aws { id, arn });
         }
 
         if let Ok(signer_key) = std::env::var(&format!("{}_KEY", prefix)) {
@@ -64,6 +71,12 @@ mod test {
             "id": "",
         });
         let signer_conf: SignerConf = serde_json::from_value(value).unwrap();
-        assert_eq!(signer_conf, SignerConf::Aws { id: "".to_owned() });
+        assert_eq!(
+            signer_conf,
+            SignerConf::Aws {
+                id: "".to_owned(),
+                arn: None,
+            }
+        );
     }
 }

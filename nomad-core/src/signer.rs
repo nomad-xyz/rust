@@ -1,6 +1,8 @@
 use color_eyre::{eyre::bail, Result};
 use ethers_signers::WalletError;
 pub use nomad_types::NomadIdentifier;
+use rusoto_core::HttpClient;
+use rusoto_sts::{StsAssumeRoleSessionCredentialsProvider, StsClient};
 use std::convert::Infallible;
 
 use async_trait::async_trait;
@@ -60,13 +62,41 @@ async fn init_kms() {
     KMS_CLIENT.get_or_init(|| KmsClient::new(Default::default()));
 }
 
+async fn init_aws_with_sts(arn: &str) {
+    let sts = StsClient::new(Default::default());
+
+    let provider = StsAssumeRoleSessionCredentialsProvider::new(
+        sts,
+        arn.to_owned(),
+        "default".to_owned(),
+        None,
+        None,
+        None,
+        None,
+    );
+
+    let auto_refreshing_provider =
+        rusoto_credential::AutoRefreshingProvider::new(provider).unwrap();
+
+    KMS_CLIENT.get_or_init(|| {
+        KmsClient::new_with(
+            HttpClient::new().unwrap(),
+            auto_refreshing_provider,
+            Default::default(),
+        )
+    });
+}
+
 impl Signers {
     /// Try to build Signer from SignerConf object
     pub async fn try_from_signer_conf(conf: &SignerConf) -> Result<Self> {
         match conf {
             SignerConf::HexKey(key) => Ok(Self::Local(key.as_ref().parse()?)),
-            SignerConf::Aws { id } => {
-                init_kms().await;
+            SignerConf::Aws { id, arn } => {
+                match arn {
+                    Some(arn) => init_aws_with_sts(arn).await,
+                    None => init_kms().await,
+                };
                 let signer =
                     AwsSigner::new(KMS_CLIENT.get().expect("kms should be initialized"), id, 0)
                         .await?;
