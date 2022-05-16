@@ -1,7 +1,7 @@
 //! Per-chain gas configurations
 
 use serde::{de, Deserialize, Serialize};
-use std::fmt;
+use std::{convert::Infallible, fmt, str::FromStr};
 
 mod defaults;
 use defaults::EvmDefaultWrapper;
@@ -25,6 +25,18 @@ impl<'de> Deserialize<'de> for NomadGasConfigs {
     }
 }
 
+impl FromStr for NomadGasConfigs {
+    type Err = Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s == "evmDefault" {
+            Ok(NomadGasConfigs::EvmDefault(EvmDefaultWrapper::default()))
+        } else {
+            panic!("Unrecognized string variant for gas config")
+        }
+    }
+}
+
 struct NomadGasConfigsVisitor;
 impl<'de> de::Visitor<'de> for NomadGasConfigsVisitor {
     type Value = NomadGasConfigs;
@@ -37,11 +49,7 @@ impl<'de> de::Visitor<'de> for NomadGasConfigsVisitor {
     where
         E: de::Error,
     {
-        if v == "evmDefault" {
-            Ok(NomadGasConfigs::EvmDefault(EvmDefaultWrapper::default()))
-        } else {
-            Err(E::custom("Unable to parse NomadGasConfigs from string"))
-        }
+        Ok(FromStr::from_str(v).unwrap())
     }
 
     fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error>
