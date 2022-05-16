@@ -6,7 +6,7 @@
 
 use nomad_types::{NameOrDomain, NomadIdentifier};
 use std::collections::{HashMap, HashSet};
-use std::{fs::File, path::Path};
+use std::{fs::File, ops::Deref, path::Path};
 
 pub mod agent;
 pub mod bridge;
@@ -336,18 +336,10 @@ impl NomadConfig {
     }
 
     /// Get a reference to the nomad config's gas map.
-    pub fn gas(&self) -> HashMap<String, NomadGasConfig> {
+    pub fn gas(&self) -> HashMap<String, &NomadGasConfig> {
         self.gas
             .iter()
-            .map(|(k, v)| {
-                (
-                    k.to_owned(),
-                    match v {
-                        NomadGasConfigs::Custom(config) => *config,
-                        NomadGasConfigs::EvmDefault(config) => config.0,
-                    },
-                )
-            })
+            .map(|(k, v)| (k.to_owned(), v.deref()))
             .collect()
     }
 

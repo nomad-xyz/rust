@@ -494,13 +494,19 @@ impl Settings {
                 None
             };
 
+        let gas: HashMap<String, NomadGasConfig> = config
+            .gas()
+            .into_iter()
+            .map(|(k, v)| (k, v.to_owned()))
+            .collect();
+
         Self {
             db,
             metrics,
             home,
             replicas,
             managers,
-            gas: config.gas(),
+            gas,
             index,
             logging: agent.logging,
             signers: secrets.transaction_signers.clone(),

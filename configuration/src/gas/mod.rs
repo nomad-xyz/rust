@@ -4,16 +4,18 @@ use serde::{de, Deserialize, Serialize};
 use std::{convert::Infallible, fmt, str::FromStr};
 
 mod defaults;
-use defaults::EvmDefaultWrapper;
+use defaults::EVM_DEFAULT;
 
 /// Gas config types
 #[derive(Debug, Copy, Clone, Serialize, PartialEq)]
-#[serde(untagged)]
-pub enum NomadGasConfigs {
-    /// Custom fully specified
-    Custom(NomadGasConfig),
-    /// Evm default
-    EvmDefault(EvmDefaultWrapper),
+pub struct NomadGasConfigs(NomadGasConfig);
+
+impl std::ops::Deref for NomadGasConfigs {
+    type Target = NomadGasConfig;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 impl<'de> Deserialize<'de> for NomadGasConfigs {
@@ -30,7 +32,7 @@ impl FromStr for NomadGasConfigs {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s == "evmDefault" {
-            Ok(NomadGasConfigs::EvmDefault(EvmDefaultWrapper::default()))
+            Ok(NomadGasConfigs(EVM_DEFAULT))
         } else {
             panic!("Unrecognized string variant for gas config")
         }
@@ -56,7 +58,7 @@ impl<'de> de::Visitor<'de> for NomadGasConfigsVisitor {
     where
         A: de::MapAccess<'de>,
     {
-        Ok(NomadGasConfigs::Custom(NomadGasConfig::deserialize(
+        Ok(NomadGasConfigs(NomadGasConfig::deserialize(
             de::value::MapAccessDeserializer::new(map),
         )?))
     }
