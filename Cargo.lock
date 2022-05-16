@@ -2489,6 +2489,7 @@ dependencies = [
  "prometheus",
  "rocksdb",
  "rusoto_core",
+ "rusoto_credential",
  "rusoto_kms",
  "serde 1.0.136",
  "serde_json",
