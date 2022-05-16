@@ -3,6 +3,7 @@
 ### Unreleased
 
 - make aws key region non-functional (region should be read from env)
+- add STS assumerole configuration to AWS signer
 
 ### v0.1.0-rc.23
 
