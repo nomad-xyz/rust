@@ -77,6 +77,16 @@ async fn main() -> eyre::Result<()> {
         concat!(env!("CARGO_MANIFEST_DIR"), "/data/types.rs")
     );
 
+    let (first, second, third) = tokio::try_join!(
+        fetch_config(ENVS[0]),
+        fetch_config(ENVS[1]),
+        fetch_config(ENVS[2]),
+    )?;
+
+    store_config(ENVS[0], &first)?;
+    store_config(ENVS[1], &second)?;
+    store_config(ENVS[2], &third)?;
+
     for env in ENVS {
         let text = fetch_config(env).await?;
         store_config(env, &text)?;
