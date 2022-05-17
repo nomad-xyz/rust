@@ -2576,11 +2576,13 @@ dependencies = [
  "ethers",
  "eyre",
  "js-sys",
+ "nomad-test",
  "nomad-types",
  "once_cell",
  "serde 1.0.136",
  "serde_json",
  "serde_yaml",
+ "serial_test",
  "wasm-bindgen",
  "wee_alloc",
 ]
