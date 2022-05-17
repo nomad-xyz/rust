@@ -38,6 +38,9 @@ pub mod wasm;
 #[cfg_attr(target_arch = "wasm32", global_allocator)]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+#[cfg(not(target_arch = "wasm32"))]
+const CONFIG_BASE_URI: &str = "https://nomad-xyz.github.io/config";
+
 use agent::AgentConfig;
 use bridge::{AppConfig, BridgeContracts};
 use contracts::CoreContracts;
@@ -351,6 +354,13 @@ impl NomadConfig {
     /// Convert to yaml
     pub fn to_yaml(&self) -> eyre::Result<String> {
         Ok(serde_yaml::to_string(&self)?)
+    }
+
+    /// Attempt to fetch a config by env name from the static configuration site
+    #[cfg(not(target_arch = "wasm32"))]
+    pub async fn fetch(env: &str) -> eyre::Result<Self> {
+        let uri = format!("{}/{}.json", CONFIG_BASE_URI, env);
+        Ok(reqwest::get(uri).await?.json().await?)
     }
 }
 
