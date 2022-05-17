@@ -38,7 +38,10 @@ impl AgentSecrets {
             let network_upper = network.to_uppercase();
             let chain_conf = ChainConf::from_env(&format!("RPCS_{}", network_upper))?;
             let transaction_signer =
-                SignerConf::from_env(&format!("TRANSACTIONSIGNERS_{}", network_upper))?;
+                match SignerConf::from_env(&format!("TRANSACTIONSIGNERS_{}", network_upper)) {
+                    Some(conf) => conf,
+                    None => SignerConf::from_env("TRANSACTIONSIGNERS_DEFAULT_")?,
+                };
 
             secrets.rpcs.insert(network.to_owned(), chain_conf);
             secrets
