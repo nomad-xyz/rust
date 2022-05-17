@@ -114,6 +114,63 @@ impl AgentSecrets {
 mod test {
     use super::*;
     use nomad_test::test_utils;
+    use nomad_types::HexString;
+
+    #[test]
+    #[serial_test::serial]
+    fn it_builds_from_env_signer_mixed() {
+        test_utils::run_test_with_env_sync("../fixtures/env.test-signer-mixed", move || {
+            let networks = &crate::get_builtin("test").unwrap().networks;
+            let secrets =
+                AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
+
+            let default_config = SignerConf::Aws {
+                id: "default_id".into(),
+                region: "default_region".into(),
+            };
+            let moonbeam_config = SignerConf::Aws {
+                id: "moonbeam_id".into(),
+                region: "moonbeam_region".into(),
+            };
+            let ethereum_key = SignerConf::HexKey(
+                HexString::from_string(
+                    "0x1111111111111111111111111111111111111111111111111111111111111111",
+                )
+                .unwrap(),
+            );
+
+            assert_eq!(
+                *secrets.transaction_signers.get("moonbeam").unwrap(),
+                moonbeam_config
+            );
+            assert_eq!(
+                *secrets.transaction_signers.get("ethereum").unwrap(),
+                ethereum_key
+            );
+            assert_eq!(
+                *secrets.transaction_signers.get("evmos").unwrap(),
+                default_config
+            );
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn it_builds_from_env_signer_default() {
+        test_utils::run_test_with_env_sync("../fixtures/env.test-signer-default", move || {
+            let networks = &crate::get_builtin("test").unwrap().networks;
+            let secrets =
+                AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
+
+            let default_config = SignerConf::Aws {
+                id: "default_id".into(),
+                region: "default_region".into(),
+            };
+            for (_, config) in &secrets.transaction_signers {
+                assert_eq!(*config, default_config);
+            }
+        });
+    }
 
     #[test]
     #[serial_test::serial]
