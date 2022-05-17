@@ -13,6 +13,8 @@
 
 ### v0.1.0-rc.20
 
+- add evmos and xdai gas configs (evmDefault)
+- add `evmDefault` option to gas configs
 - Fix xDai display name
 
 ### v0.1.0-rc.19

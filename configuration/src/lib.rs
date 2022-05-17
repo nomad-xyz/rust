@@ -72,6 +72,7 @@ pub struct NomadConfig {
     /// Agent configuration
     agent: HashMap<String, AgentConfig>,
     /// Optional per-chain gas configurations
+    #[serde(deserialize_with = "gas::gas_map_ser::deserialize")]
     gas: HashMap<String, NomadGasConfig>,
     /// Bridge application GUI configuration
     pub bridge_gui: HashMap<String, AppConfig>,

@@ -494,13 +494,14 @@ impl Settings {
                 None
             };
 
+        let gas: HashMap<String, NomadGasConfig> = config.gas().clone();
         Self {
             db,
             metrics,
             home,
             replicas,
             managers,
-            gas: config.gas().clone(),
+            gas,
             index,
             logging: agent.logging,
             signers: secrets.transaction_signers.clone(),
