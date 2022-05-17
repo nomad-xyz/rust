@@ -36,7 +36,12 @@ impl AgentSecrets {
 
         for network in networks.iter() {
             let network_upper = network.to_uppercase();
-            let chain_conf = ChainConf::from_env(&format!("RPCS_{}", network_upper))?;
+
+            let chain_conf = match ChainConf::from_env(&format!("RPCS_{}", network_upper)) {
+                Some(conf) => conf,
+                None => ChainConf::from_env("RPCS_DEFAULT")?,
+            };
+
             let transaction_signer =
                 match SignerConf::from_env(&format!("TRANSACTIONSIGNERS_{}", network_upper)) {
                     Some(conf) => conf,
