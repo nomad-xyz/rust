@@ -113,18 +113,20 @@ impl AgentSecrets {
 #[cfg(test)]
 mod test {
     use super::*;
-    const SECRETS_JSON_PATH: &str = "../fixtures/test_secrets.json";
-    const SECRETS_ENV_PATH: &str = "../fixtures/env.test";
+    use nomad_test::test_utils;
 
     #[test]
+    #[serial_test::serial]
     fn it_builds_from_env() {
-        let networks = &crate::get_builtin("test").unwrap().networks;
-        dotenv::from_filename(SECRETS_ENV_PATH).unwrap();
-        AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
+        test_utils::run_test_with_env_sync("../fixtures/env.test", move || {
+            let networks = &crate::get_builtin("test").unwrap().networks;
+            AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
+        });
     }
 
     #[test]
     fn it_builds_from_file() {
-        AgentSecrets::from_file(SECRETS_JSON_PATH).expect("Failed to load secrets from file");
+        AgentSecrets::from_file("../fixtures/test_secrets.json")
+            .expect("Failed to load secrets from file");
     }
 }
