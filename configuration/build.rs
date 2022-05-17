@@ -38,6 +38,27 @@ fn store_config(env: &str, contents: &str) -> eyre::Result<()> {
     Ok(())
 }
 
+async fn get_configs() -> eyre::Result<()> {
+    let (first, second, third) = tokio::join!(
+        fetch_config(ENVS[0]),
+        fetch_config(ENVS[1]),
+        fetch_config(ENVS[2]),
+    );
+
+    // We do it this way so that if fetches fail we update all possible
+    // However, if disk access is erroring, we error
+    if let Ok(first) = first {
+        store_config(ENVS[0], &first)?
+    }
+    if let Ok(second) = second {
+        store_config(ENVS[1], &second)?
+    }
+    if let Ok(third) = third {
+        store_config(ENVS[2], &third)?;
+    }
+    Ok(())
+}
+
 fn gen_wasm_bindgen() -> eyre::Result<()> {
     let mut f = fs::OpenOptions::new()
         .write(true)
@@ -76,28 +97,8 @@ async fn main() -> eyre::Result<()> {
         concat!(env!("CARGO_MANIFEST_DIR"), "/data/types.rs")
     );
 
-    let (first, second, third) = tokio::join!(
-        fetch_config(ENVS[0]),
-        fetch_config(ENVS[1]),
-        fetch_config(ENVS[2]),
-    );
-
-    if let Ok(first) = first {
-        store_config(ENVS[0], &first)?
-    }
-    if let Ok(second) = second {
-        store_config(ENVS[1], &second)?
-    }
-    if let Ok(third) = third {
-        store_config(ENVS[2], &third)?;
-    }
-
-    for env in ENVS {
-        let text = fetch_config(env).await?;
-        store_config(env, &text)?;
-    }
-
     gen_wasm_bindgen()?;
+    get_configs().await?;
 
     Ok(())
 }
