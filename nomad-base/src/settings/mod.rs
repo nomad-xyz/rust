@@ -494,12 +494,7 @@ impl Settings {
                 None
             };
 
-        let gas: HashMap<String, NomadGasConfig> = config
-            .gas()
-            .into_iter()
-            .map(|(k, v)| (k, v.to_owned()))
-            .collect();
-
+        let gas: HashMap<String, NomadGasConfig> = config.gas().clone();
         Self {
             db,
             metrics,
