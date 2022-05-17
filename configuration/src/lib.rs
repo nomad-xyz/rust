@@ -6,7 +6,7 @@
 
 use nomad_types::{NameOrDomain, NomadIdentifier};
 use std::collections::{HashMap, HashSet};
-use std::{fs::File, ops::Deref, path::Path};
+use std::{fs::File, path::Path};
 
 pub mod agent;
 pub mod bridge;
@@ -72,7 +72,8 @@ pub struct NomadConfig {
     /// Agent configuration
     agent: HashMap<String, AgentConfig>,
     /// Optional per-chain gas configurations
-    gas: HashMap<String, NomadGasConfigs>,
+    #[serde(deserialize_with = "gas::gas_map_ser::deserialize")]
+    gas: HashMap<String, NomadGasConfig>,
     /// Bridge application GUI configuration
     pub bridge_gui: HashMap<String, AppConfig>,
     /// S3 bucket for this environment
@@ -336,11 +337,8 @@ impl NomadConfig {
     }
 
     /// Get a reference to the nomad config's gas map.
-    pub fn gas(&self) -> HashMap<String, &NomadGasConfig> {
-        self.gas
-            .iter()
-            .map(|(k, v)| (k.to_owned(), v.deref()))
-            .collect()
+    pub fn gas(&self) -> &HashMap<String, NomadGasConfig> {
+        &self.gas
     }
 
     /// Get a reference to the nomad config's agent.

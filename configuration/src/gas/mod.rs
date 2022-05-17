@@ -6,64 +6,6 @@ use std::{convert::Infallible, fmt, str::FromStr};
 mod defaults;
 use defaults::EVM_DEFAULT;
 
-/// Gas config types
-#[derive(Debug, Copy, Clone, Serialize, PartialEq)]
-pub struct NomadGasConfigs(NomadGasConfig);
-
-impl std::ops::Deref for NomadGasConfigs {
-    type Target = NomadGasConfig;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<'de> Deserialize<'de> for NomadGasConfigs {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        deserializer.deserialize_any(NomadGasConfigsVisitor)
-    }
-}
-
-impl FromStr for NomadGasConfigs {
-    type Err = Infallible;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s == "evmDefault" {
-            Ok(NomadGasConfigs(EVM_DEFAULT))
-        } else {
-            panic!("Unrecognized string variant for gas config")
-        }
-    }
-}
-
-struct NomadGasConfigsVisitor;
-impl<'de> de::Visitor<'de> for NomadGasConfigsVisitor {
-    type Value = NomadGasConfigs;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a gas config map or gas config default")
-    }
-
-    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        Ok(FromStr::from_str(v).unwrap())
-    }
-
-    fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error>
-    where
-        A: de::MapAccess<'de>,
-    {
-        Ok(NomadGasConfigs(NomadGasConfig::deserialize(
-            de::value::MapAccessDeserializer::new(map),
-        )?))
-    }
-}
-
 /// Gas configuration for core and bridge contract methods
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -160,4 +102,84 @@ pub struct EthHelperGasLimits {
     pub send: u64,
     /// Send to EVM like
     pub send_to_evm_like: u64,
+}
+
+pub(crate) mod gas_map_ser {
+    use serde::Deserializer;
+    use std::collections::HashMap;
+
+    use super::*;
+
+    /// A convenience struct for intermediate deser of gas configs
+    #[derive(Debug, Copy, Clone, Serialize, PartialEq)]
+    pub(crate) struct NomadGasConfigInternal(NomadGasConfig);
+
+    impl From<NomadGasConfig> for NomadGasConfigInternal {
+        fn from(conf: NomadGasConfig) -> Self {
+            NomadGasConfigInternal(conf)
+        }
+    }
+
+    impl std::ops::Deref for NomadGasConfigInternal {
+        type Target = NomadGasConfig;
+
+        fn deref(&self) -> &Self::Target {
+            &self.0
+        }
+    }
+
+    impl<'de> Deserialize<'de> for NomadGasConfigInternal {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            deserializer.deserialize_any(NomadGasConfigInternalVisitor)
+        }
+    }
+
+    impl FromStr for NomadGasConfigInternal {
+        type Err = Infallible;
+
+        fn from_str(s: &str) -> Result<Self, Self::Err> {
+            if s == "evmDefault" {
+                Ok(NomadGasConfigInternal(EVM_DEFAULT))
+            } else {
+                panic!("Unrecognized string variant for gas config")
+            }
+        }
+    }
+
+    struct NomadGasConfigInternalVisitor;
+    impl<'de> de::Visitor<'de> for NomadGasConfigInternalVisitor {
+        type Value = NomadGasConfigInternal;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a gas config map or gas config default")
+        }
+
+        fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(FromStr::from_str(v).unwrap())
+        }
+
+        fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error>
+        where
+            A: de::MapAccess<'de>,
+        {
+            Ok(NomadGasConfigInternal(NomadGasConfig::deserialize(
+                de::value::MapAccessDeserializer::new(map),
+            )?))
+        }
+    }
+
+    pub(crate) fn deserialize<'de, D>(d: D) -> Result<HashMap<String, NomadGasConfig>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let map = HashMap::<String, NomadGasConfigInternal>::deserialize(d)?;
+
+        Ok(map.into_iter().map(|(k, v)| (k, *v)).collect())
+    }
 }
