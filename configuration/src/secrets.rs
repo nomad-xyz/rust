@@ -115,50 +115,59 @@ impl AgentSecrets {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::ethereum::Connection;
     use nomad_test::test_utils;
-    use nomad_types::HexString;
 
     #[test]
     #[serial_test::serial]
-    fn it_builds_from_env_signer_mixed() {
+    fn it_builds_from_env_mixed() {
         test_utils::run_test_with_env_sync("../fixtures/env.test-signer-mixed", move || {
             let networks = &crate::get_builtin("test").unwrap().networks;
             let secrets =
                 AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
 
-            let default_config = SignerConf::Aws {
-                id: "default_id".into(),
-                region: "default_region".into(),
-            };
-            let moonbeam_config = SignerConf::Aws {
-                id: "moonbeam_id".into(),
-                region: "moonbeam_region".into(),
-            };
-            let ethereum_key = SignerConf::HexKey(
-                HexString::from_string(
-                    "0x1111111111111111111111111111111111111111111111111111111111111111",
-                )
-                .unwrap(),
-            );
-
             assert_eq!(
                 *secrets.transaction_signers.get("moonbeam").unwrap(),
-                moonbeam_config
+                SignerConf::Aws {
+                    id: "moonbeam_id".into(),
+                    region: "moonbeam_region".into(),
+                }
             );
             assert_eq!(
                 *secrets.transaction_signers.get("ethereum").unwrap(),
-                ethereum_key
+                SignerConf::HexKey(
+                    "0x1111111111111111111111111111111111111111111111111111111111111111"
+                        .parse()
+                        .unwrap()
+                )
             );
             assert_eq!(
                 *secrets.transaction_signers.get("evmos").unwrap(),
-                default_config
+                SignerConf::Aws {
+                    id: "default_id".into(),
+                    region: "default_region".into(),
+                }
+            );
+            assert_eq!(
+                *secrets.rpcs.get("moonbeam").unwrap(),
+                ChainConf::Ethereum(Connection::Http("https://rpc.api.moonbeam.network".into()))
+            );
+            assert_eq!(
+                *secrets.rpcs.get("ethereum").unwrap(),
+                ChainConf::Ethereum(Connection::Http(
+                    "https://main-light.eth.linkpool.io/".into()
+                ))
+            );
+            assert_eq!(
+                *secrets.rpcs.get("evmos").unwrap(),
+                ChainConf::Ethereum(Connection::Http("https://eth.bd.evmos.org:8545".into()))
             );
         });
     }
 
     #[test]
     #[serial_test::serial]
-    fn it_builds_from_env_signer_default() {
+    fn it_builds_from_env_default() {
         test_utils::run_test_with_env_sync("../fixtures/env.test-signer-default", move || {
             let networks = &crate::get_builtin("test").unwrap().networks;
             let secrets =
@@ -170,6 +179,9 @@ mod test {
             };
             for (_, config) in &secrets.transaction_signers {
                 assert_eq!(*config, default_config);
+            }
+            for (_, config) in &secrets.rpcs {
+                assert!(matches!(*config, ChainConf::Ethereum { .. }));
             }
         });
     }
