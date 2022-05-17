@@ -1,5 +1,4 @@
 use std::{fs, io::Write, path::PathBuf};
-use tokio;
 
 const DEFINITIONS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/data/definitions.ts"));
 const TYPEDEFS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/data/types.rs"));
