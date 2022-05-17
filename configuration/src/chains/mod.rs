@@ -23,12 +23,17 @@ impl Default for ChainConf {
 }
 
 impl FromEnv for ChainConf {
-    fn from_env(prefix: &str) -> Option<Self> {
-        let rpc_style = std::env::var(&format!("{}_RPCSTYLE", prefix)).ok()?;
+    fn from_env(prefix: &str, default_prefix: Option<&str>) -> Option<Self> {
+        let mut rpc_style = std::env::var(&format!("{}_RPCSTYLE", prefix)).ok();
+
+        if let (None, Some(prefix)) = (&rpc_style, default_prefix) {
+            rpc_style = std::env::var(&format!("{}_RPCSTYLE", prefix)).ok();
+        }
+
         let rpc_url = std::env::var(&format!("{}_CONNECTION_URL", prefix)).ok()?;
 
         let json = json!({
-            "rpcStyle": rpc_style,
+            "rpcStyle": rpc_style?,
             "connection": rpc_url,
         });
 

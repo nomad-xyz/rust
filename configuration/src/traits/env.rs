@@ -9,7 +9,7 @@ pub trait EnvOverridable {
 pub trait FromEnv {
     /// Optionally load self from env vars. Return None if any necessary env var
     /// is missing.
-    fn from_env(prefix: &str) -> Option<Self>
+    fn from_env(prefix: &str, default_prefix: Option<&str>) -> Option<Self>
     where
         Self: Sized;
 }

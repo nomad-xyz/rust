@@ -37,16 +37,13 @@ impl AgentSecrets {
         for network in networks.iter() {
             let network_upper = network.to_uppercase();
 
-            let chain_conf = match ChainConf::from_env(&format!("RPCS_{}", network_upper)) {
-                Some(conf) => conf,
-                None => ChainConf::from_env("RPCS_DEFAULT")?,
-            };
+            let chain_conf =
+                ChainConf::from_env(&format!("RPCS_{}", network_upper), Some("RPCS_DEFAULT"))?;
 
-            let transaction_signer =
-                match SignerConf::from_env(&format!("TRANSACTIONSIGNERS_{}", network_upper)) {
-                    Some(conf) => conf,
-                    None => SignerConf::from_env("TRANSACTIONSIGNERS_DEFAULT")?,
-                };
+            let transaction_signer = SignerConf::from_env(
+                &format!("TRANSACTIONSIGNERS_{}", network_upper),
+                Some("TRANSACTIONSIGNERS_DEFAULT"),
+            )?;
 
             secrets.rpcs.insert(network.to_owned(), chain_conf);
             secrets
@@ -54,7 +51,7 @@ impl AgentSecrets {
                 .insert(network.to_owned(), transaction_signer);
         }
 
-        let attestation_signer = SignerConf::from_env("ATTESTATION_SIGNER");
+        let attestation_signer = SignerConf::from_env("ATTESTATION_SIGNER", None);
         secrets.attestation_signer = attestation_signer;
 
         Some(secrets)
