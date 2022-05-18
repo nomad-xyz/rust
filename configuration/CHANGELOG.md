@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+### v0.1.0-rc.22
+
 - fix broken output tests
 - Add Neon testnet to dev and staging configs
 
