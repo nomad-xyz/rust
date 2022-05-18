@@ -4,6 +4,10 @@
 
 ### v0.1.0-rc.22
 
+- fix typo in staging goerli rpc url
+
+### v0.1.0-rc.22
+
 - fix broken output tests
 - Add Neon testnet to dev and staging configs
 
