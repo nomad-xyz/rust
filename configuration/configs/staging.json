@@ -5,7 +5,7 @@
   "rpcs": {
     "rinkeby": ["https://rinkeby-light.eth.linkpool.io"],
     "neontestnet": ["https://proxy.devnet.neonlabs.org/solana"],
-    "goerli": ["tps://goerli-light.eth.linkpool.io"],
+    "goerli": ["https://goerli-light.eth.linkpool.io"],
     "kovan": ["https://kovan.poa.network"],
     "evmostestnet": ["https://eth.bd.evmos.dev:8545"]
   },
