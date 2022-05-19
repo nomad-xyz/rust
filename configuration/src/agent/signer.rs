@@ -14,8 +14,6 @@ pub enum SignerConf {
     Aws {
         /// The UUID identifying the AWS KMS Key
         id: String, // change to no _ so we can set by env
-        /// The AWS region
-        region: String,
     },
     /// Assume node will sign on RPC calls
     Node,
@@ -31,9 +29,7 @@ impl FromEnv for SignerConf {
     fn from_env(prefix: &str, default_prefix: Option<&str>) -> Option<Self> {
         // ordering this first preferentially uses AWS if both are specified
         if let Ok(id) = std::env::var(&format!("{}_ID", prefix)) {
-            if let Ok(region) = std::env::var(&format!("{}_REGION", prefix)) {
-                return Some(SignerConf::Aws { id, region });
-            }
+            return Some(SignerConf::Aws { id });
         }
 
         if let Ok(signer_key) = std::env::var(&format!("{}_KEY", prefix)) {
@@ -70,15 +66,8 @@ mod test {
     fn it_deserializes_aws_signer_confs() {
         let value = json!({
             "id": "",
-            "region": ""
         });
         let signer_conf: SignerConf = serde_json::from_value(value).unwrap();
-        assert_eq!(
-            signer_conf,
-            SignerConf::Aws {
-                id: "".to_owned(),
-                region: "".to_owned()
-            }
-        );
+        assert_eq!(signer_conf, SignerConf::Aws { id: "".to_owned() });
     }
 }

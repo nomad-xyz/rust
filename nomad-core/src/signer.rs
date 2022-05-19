@@ -58,12 +58,12 @@ impl From<AwsSigner<'static>> for Signers {
     }
 }
 
-async fn init_kms(region: &str) {
+async fn init_kms() {
     KMS_CLIENT.get_or_init(|| {
         KmsClient::new_with(
             HttpClient::new().unwrap(),
             DefaultCredentialsProvider::new().unwrap(),
-            region.parse().expect("invalid region"),
+            Default::default(), // reads from env
         )
     });
 }
@@ -73,8 +73,8 @@ impl Signers {
     pub async fn try_from_signer_conf(conf: &SignerConf) -> Result<Self> {
         match conf {
             SignerConf::HexKey(key) => Ok(Self::Local(key.as_ref().parse()?)),
-            SignerConf::Aws { id, region } => {
-                init_kms(region).await;
+            SignerConf::Aws { id } => {
+                init_kms().await;
                 let signer =
                     AwsSigner::new(KMS_CLIENT.get().expect("kms should be initialized"), id, 0)
                         .await?;

@@ -4,6 +4,7 @@
 
 - add handling for default keys `TRANSACTIONSIGNERS_DEFAULT_{KEY,ID,REGION}` and `RPCS_DEFAULT_RPCSTYLE`
 - add tests for new default config keys
+- make aws key region non-functional (region should be read from env)
 
 ### v0.1.0-rc.23
 
