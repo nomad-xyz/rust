@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- make aws key region non-functional (region should be read from env)
+
 ### v0.1.0-rc.23
 
 - fix typo in staging goerli rpc url
