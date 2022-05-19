@@ -2,7 +2,7 @@
 
 ### Unreleased
 
-### v0.1.0-rc.22
+### v0.1.0-rc.23
 
 - fix typo in staging goerli rpc url
 
