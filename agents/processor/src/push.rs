@@ -39,7 +39,8 @@ impl std::fmt::Debug for Pusher {
 
 impl Pusher {
     /// Instantiate a new pusher with a region
-    pub fn new(name: &str, bucket: &str, region: Region, db: NomadDB) -> Self {
+    pub fn new(name: &str, bucket: &str, db: NomadDB) -> Self {
+        let region: Region = Default::default(); // loads from aws env
         let client = S3Client::new(region.clone());
         Self {
             name: name.to_owned(),
