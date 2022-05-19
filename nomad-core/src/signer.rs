@@ -1,7 +1,6 @@
 use color_eyre::{eyre::bail, Result};
 use ethers_signers::WalletError;
 pub use nomad_types::NomadIdentifier;
-use rusoto_credential::DefaultCredentialsProvider;
 use std::convert::Infallible;
 
 use async_trait::async_trait;
@@ -15,7 +14,6 @@ use ethers::{
 };
 use nomad_xyz_configuration::agent::SignerConf;
 use once_cell::sync::OnceCell;
-use rusoto_core::HttpClient;
 use rusoto_kms::KmsClient;
 
 static KMS_CLIENT: OnceCell<KmsClient> = OnceCell::new();
@@ -59,13 +57,7 @@ impl From<AwsSigner<'static>> for Signers {
 }
 
 async fn init_kms() {
-    KMS_CLIENT.get_or_init(|| {
-        KmsClient::new_with(
-            HttpClient::new().unwrap(),
-            DefaultCredentialsProvider::new().unwrap(),
-            Default::default(), // reads from env
-        )
-    });
+    KMS_CLIENT.get_or_init(|| KmsClient::new(Default::default()));
 }
 
 impl Signers {
