@@ -2,6 +2,11 @@
 
 ### Unreleased
 
+- add handling for default keys `TRANSACTIONSIGNERS_DEFAULT_{KEY,ID,REGION}` and `RPCS_DEFAULT_RPCSTYLE`
+- add tests for new default config keys
+
+### v0.1.0-rc.22
+
 - fix broken output tests
 
 ### v0.1.0-rc.21
