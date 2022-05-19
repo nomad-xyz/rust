@@ -12,8 +12,12 @@ pub enum SignerConf {
     /// An AWS signer. Note that AWS credentials must be inserted into the env
     /// separately.
     Aws {
-        /// The UUID identifying the AWS KMS Key
-        id: String, // change to no _ so we can set by env
+        /// An AWS identifier for the key. This may be
+        /// 1. Its UUID
+        /// 2. Its ARN
+        /// 3. A key alias
+        /// 4. A key alias's ARN
+        id: String,
     },
     /// Assume node will sign on RPC calls
     Node,
