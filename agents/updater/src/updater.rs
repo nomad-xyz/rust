@@ -85,6 +85,8 @@ impl From<&Updater> for UpdaterChannel {
     }
 }
 
+/// Components need to run the updater's produce and submit tasks.
+/// Only operates on the home.
 #[derive(Debug, Clone)]
 pub struct UpdaterChannel {
     home: Arc<CachingHome>,
@@ -195,8 +197,15 @@ impl NomadAgent for Updater {
             self.assert_home_not_failed().await??;
 
             let home_fail_watch_task = self.watch_home_fail(self.interval_seconds);
+
+            info!("Starting updater sync task...");
             let sync_task = self.home().sync();
-            let update_task = self.run_report_error("".to_owned()); // just operates on home
+
+            // Run a single error-catching task for producing and submitting
+            // updates. While we use the agent channel pattern, this run task
+            // only operates on the home.
+            info!("Starting updater produce and submit tasks...");
+            let update_task = self.run_report_error("".to_owned());
 
             let (res, _, rem) =
                 select_all(vec![home_fail_watch_task, sync_task, update_task]).await;
