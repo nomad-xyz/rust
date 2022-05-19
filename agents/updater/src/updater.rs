@@ -71,6 +71,20 @@ impl Updater {
     }
 }
 
+impl From<&Updater> for UpdaterChannel {
+    fn from(updater: &Updater) -> Self {
+        UpdaterChannel {
+            home: updater.home(),
+            db: NomadDB::new(updater.home().name(), updater.db()),
+            signer: updater.signer.clone(),
+            signed_attestation_count: updater.signed_attestation_count.clone(),
+            submitted_update_count: updater.submitted_update_count.clone(),
+            finalization_seconds: updater.finalization_seconds,
+            interval_seconds: updater.interval_seconds,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct UpdaterChannel {
     home: Arc<CachingHome>,
@@ -121,15 +135,7 @@ impl NomadAgent for Updater {
     }
 
     fn build_channel(&self, _replica: &str) -> Self::Channel {
-        Self::Channel {
-            home: self.home(),
-            db: NomadDB::new(self.home().name(), self.db()),
-            signer: self.signer.clone(),
-            signed_attestation_count: self.signed_attestation_count.clone(),
-            submitted_update_count: self.submitted_update_count.clone(),
-            finalization_seconds: self.finalization_seconds,
-            interval_seconds: self.interval_seconds,
-        }
+        self.into()
     }
 
     fn run(channel: Self::Channel) -> Instrumented<JoinHandle<Result<()>>> {
