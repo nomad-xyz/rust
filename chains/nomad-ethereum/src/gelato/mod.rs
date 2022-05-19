@@ -15,8 +15,6 @@ pub use types::*;
 
 pub mod utils;
 
-pub(crate) const FORWARD_REQUEST_TYPE_ID: &str = "ForwardRequest";
-
 pub(crate) const ACCEPTABLE_STATES: [TaskState; 4] = [
     TaskState::CheckPending,
     TaskState::ExecPending,
@@ -179,17 +177,18 @@ where
         let data = data.to_string().strip_prefix("0x").unwrap().to_owned();
 
         let unfilled_request = UnfilledFowardRequest {
-            type_id: FORWARD_REQUEST_TYPE_ID.to_owned(),
             chain_id: self.chain_id,
             target,
             data,
             fee_token: self.fee_token.to_owned(),
             payment_type: 1, // gas tank
             max_fee,
+            gas: gas_limit,
             sponsor,
             sponsor_chain_id: self.chain_id,
             nonce: 0,                     // default, not needed
             enforce_sponsor_nonce: false, // replay safety builtin to contracts
+            enforce_sponsor_nonce_ordering: false,
         };
 
         let sponsor_signature = self

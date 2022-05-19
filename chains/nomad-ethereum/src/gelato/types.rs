@@ -6,22 +6,23 @@ use ethers::utils::keccak256;
 use gelato_relay::ForwardRequest;
 use std::str::FromStr;
 
-const FORWARD_REQUEST_TYPE: &str = "ForwardRequest(uint256 chainId,address target,bytes data,address feeToken,uint256 paymentType,uint256 maxFee,address sponsor,uint256 sponsorChainId,uint256 nonce,bool enforceSponsorNonce)";
+const FORWARD_REQUEST_TYPE: &str = "ForwardRequest(uint256 chainId,address target,bytes data,address feeToken,uint256 paymentType,uint256 maxFee,uint256 gas,address sponsor,uint256 sponsorChainId,uint256 nonce,bool enforceSponsorNonce,bool enforceSponsorNonceOrdering)";
 
 #[allow(missing_docs)]
 #[derive(Debug, Clone)]
 pub struct UnfilledFowardRequest {
-    pub type_id: String,
     pub chain_id: usize,
     pub target: String,
     pub data: String,
     pub fee_token: String,
     pub payment_type: usize, // 1 = gas tank
     pub max_fee: usize,
+    pub gas: usize,
     pub sponsor: String,
     pub sponsor_chain_id: usize,     // same as chain_id
     pub nonce: usize,                // can default 0 if next field false
     pub enforce_sponsor_nonce: bool, // default false given replay safe
+    pub enforce_sponsor_nonce_ordering: bool,
 }
 
 /// ForwardRequest error
@@ -60,10 +61,12 @@ impl Eip712 for UnfilledFowardRequest {
             Token::Address(Address::from_str(&self.fee_token).expect("!fee token")),
             Token::Uint(self.payment_type.into()),
             Token::Uint(self.max_fee.into()),
+            Token::Uint(self.gas.into()),
             Token::Address(Address::from_str(&self.sponsor).expect("!sponsor")),
             Token::Uint(self.sponsor_chain_id.into()),
             Token::Uint(self.nonce.into()),
             Token::Bool(self.enforce_sponsor_nonce),
+            Token::Bool(self.enforce_sponsor_nonce_ordering),
         ]);
 
         Ok(keccak256(encoded_request))
@@ -77,7 +80,7 @@ impl UnfilledFowardRequest {
         let hex_data = format!("0x{}", self.data);
 
         ForwardRequest {
-            type_id: self.type_id,
+            type_id: "ForwardRequest".to_owned(),
             chain_id: self.chain_id,
             target: self.target,
             data: hex_data,
@@ -101,24 +104,28 @@ mod test {
     use ethers::types::transaction::eip712::Eip712;
     use lazy_static::lazy_static;
 
+    const DOMAIN_SEPARATOR: &str =
+        "0x1b927f522830945610cf8f0521ef8b3f69352936e1b0920968dcad9cf1e30762";
     const DUMMY_SPONSOR_KEY: &str =
-        "fae558d7fb0ac7970a7a472559f332c2a67d2ec283c98fd2afa58403bdfd74a5";
-    const SPONSOR_SIGNATURE: &str = "0xc09004502ade171bc918fbb6eb4911045b7defdb78435b37de693a9f4ee80d9e2b17d45237d1012e7df27aaac6a2b51072ba1fecfa4a151d1f85fbc278e85e7f1b";
+        "9cb3a530d61728e337290409d967db069f5219279f89e5ddb5ae4af76a8da5f4";
+    const DUMMY_SPONSOR_ADDRESS: &str = "0x4e4f0d95bc1a4275b748a63221796080b1aa5c10";
+    const SPONSOR_SIGNATURE: &str = "0x23c272c0cba2b897de0fd8fe87d419f0f273c82ef10917520b733da889688b1c6fec89412c6f121fccbc30ce89b20a3de2f405018f1ac1249b9ff705fdb62a521b";
 
     lazy_static! {
         pub static ref REQUEST: UnfilledFowardRequest = UnfilledFowardRequest {
-            type_id: "ForwardRequest".to_owned(),
             chain_id: 42,
             target: "0x61bBe925A5D646cE074369A6335e5095Ea7abB7A".to_owned(),
-            data: "4b327067000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+            data: "4b327067000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeaeeeeeeeeeeeeeeeee"
                 .to_owned(),
             fee_token: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE".to_owned(),
             payment_type: 1,
             max_fee: 10000000000000000000,
-            sponsor: "0xcaCE8809B0F21A2dd707CA7B3E4CB04ffcCB5A3e".to_owned(),
+            gas: 200000,
+            sponsor: DUMMY_SPONSOR_ADDRESS.to_owned(),
             sponsor_chain_id: 42,
             nonce: 0,
             enforce_sponsor_nonce: false,
+            enforce_sponsor_nonce_ordering: false,
         };
     }
 
@@ -128,30 +135,16 @@ mod test {
 
         assert_eq!(
             format!("0x{}", hex::encode(domain_separator)),
-            "0x80d0833d2a99df6a94d491cee0d9b3b5586c41d9b01edaf54538f65d01474c94"
+            DOMAIN_SEPARATOR,
         );
     }
 
     #[tokio::test]
     async fn it_computes_and_signs_digest() {
         let sponsor: LocalWallet = DUMMY_SPONSOR_KEY.parse().unwrap();
+        assert_eq!(DUMMY_SPONSOR_ADDRESS, format!("{:#x}", sponsor.address()));
 
-        let request = UnfilledFowardRequest {
-            type_id: "ForwardRequest".to_owned(),
-            chain_id: 42,
-            target: "0x61bBe925A5D646cE074369A6335e5095Ea7abB7A".to_owned(),
-            data: "4b327067000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-                .to_owned(),
-            fee_token: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE".to_owned(),
-            payment_type: 1,
-            max_fee: 10000000000000000000,
-            sponsor: "0xcaCE8809B0F21A2dd707CA7B3E4CB04ffcCB5A3e".to_owned(),
-            sponsor_chain_id: 42,
-            nonce: 0,
-            enforce_sponsor_nonce: false,
-        };
-
-        let signature = sponsor.sign_typed_data(&request).await.unwrap().to_vec();
+        let signature = sponsor.sign_typed_data(&*REQUEST).await.unwrap().to_vec();
 
         let hex_sig = format!("0x{}", hex::encode(signature));
         assert_eq!(SPONSOR_SIGNATURE, hex_sig);

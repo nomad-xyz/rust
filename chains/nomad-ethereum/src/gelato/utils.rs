@@ -9,7 +9,7 @@ lazy_static! {
     // Kovan
     [(
         42,
-        Address::from_str("0xC176f63f3827afE6789FD737f4679B299F97d108").expect("!forwarder proxy"),
+        Address::from_str("0x4F36f93F58d36DcbC1E60b9bdBE213482285C482").expect("!forwarder proxy"),
     ),
     // Goerli
     (
