@@ -8,7 +8,7 @@ async fn main() -> Result<(), reqwest::Error> {
     println!("Relay chains: {:?}", chains);
 
     let task_status = gelato
-        .get_task_status("0x1a976f2bed20b154cb02a8c039705e34d4f5971a0f7b82ae1cdfd80bc1636d8f")
+        .get_task_status("0xce52ae7a6a3032848d76b161ac4c131fa995dcc67e3be5392dfb8466275d6679")
         .await?;
     println!("Task status: {:?}", task_status);
 

@@ -79,7 +79,9 @@ where
     ) -> Result<TxOutcome, ChainCommunicationError> {
         let RelayResponse { task_id } = self.dispatch_tx(domain, contract_address, tx).await?;
 
-        info!(task_id = ?&task_id, "Submitted tx to Gelato relay. Polling task for completion...");
+        info!(task_id = ?&task_id, "Submitted tx to Gelato relay.");
+
+        info!(task_id = ?&task_id, "Polling Gelato task...");
         self.poll_task_id(task_id)
             .await
             .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?

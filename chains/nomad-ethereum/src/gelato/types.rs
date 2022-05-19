@@ -87,10 +87,12 @@ impl UnfilledFowardRequest {
             fee_token: self.fee_token,
             payment_type: self.payment_type,
             max_fee: self.max_fee.to_string(),
+            gas: self.gas.to_string(),
             sponsor: self.sponsor,
             sponsor_chain_id: self.sponsor_chain_id,
             nonce: self.nonce,
             enforce_sponsor_nonce: self.enforce_sponsor_nonce,
+            enforce_sponsor_nonce_ordering: self.enforce_sponsor_nonce_ordering,
             sponsor_signature: hex_sig,
         }
     }

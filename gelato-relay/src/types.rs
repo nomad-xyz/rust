@@ -28,10 +28,12 @@ pub struct ForwardRequest {
     pub fee_token: String,
     pub payment_type: usize, // 1 = gas tank
     pub max_fee: String,
+    pub gas: String,
     pub sponsor: String,
     pub sponsor_chain_id: usize,     // same as chain_id
     pub nonce: usize,                // can default 0 if next field false
     pub enforce_sponsor_nonce: bool, // default false given replay safe
+    pub enforce_sponsor_nonce_ordering: bool,
     pub sponsor_signature: String,
 }
 
