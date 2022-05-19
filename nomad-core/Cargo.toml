@@ -35,7 +35,7 @@ nomad-types = { path = "../nomad-types" }
 nomad-xyz-configuration = { path = "../configuration" }
 
 [dev-dependencies]
-tokio = {version = "1.0.1", features = ["rt", "time"]}
+tokio = { version = "1.0.1", features = ["rt", "time", "macros"] }
 
 [features]
 output = []
