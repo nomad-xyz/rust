@@ -3,7 +3,35 @@ use std::str::FromStr;
 use crate::FromEnv;
 use nomad_types::HexString;
 
-/// Ethereum signer types
+/// Ethereum signer configurations.
+///
+/// This config item specifies valid Ethereum signers.
+/// When deserializing, it attempts the following:
+/// 1. Deserialize the value as a 32-byte hex string
+///    A hex string is treated as a private key for a local signer. This is
+///    generally discouraged.
+/// 2. Deserialize the value as an object containing a single key `id`,
+///    whose value is a string. This is treated as an identifier for an AWS
+///    key. If this configuration is used, the AWS region and credentials must
+///    be supplied when running the program. Typically these are inserted by
+///    env var, aws config, or instance roles.
+/// 3. Anything else is treated as an instruction to request the RPC node sign
+///    transactions and messages via the `eth_sign` family of RPC requests. If
+///    this mode is used, the RPC mode must be unlocked, and have a key.
+///
+/// # Examples
+///
+/// ```ignore
+/// // JSON examples
+/// // Hex Key
+/// "0x1234123412341234123412341234123412341234123412341234123412341234"
+/// // Aws
+/// { "id": "5485edfa-d7c2-11ec-9d64-0242ac120002" }
+/// // Node signer
+/// null
+/// "asdjf"
+/// 38
+/// ```
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 #[serde(untagged, rename_all = "camelCase")]
 pub enum SignerConf {
