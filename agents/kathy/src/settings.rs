@@ -26,8 +26,10 @@ mod test {
             networks.insert(agent_home.clone());
 
             let secrets = AgentSecrets::from_env(&networks).unwrap();
-            secrets.validate("kathy", &networks).expect("!secrets validate");
-            
+            secrets
+                .validate("kathy", &networks)
+                .expect("!secrets validate");
+
             settings
                 .base
                 .validate_against_config_and_secrets(
@@ -49,13 +51,13 @@ mod test {
     #[tokio::test]
     #[serial_test::serial]
     async fn it_builds_settings_from_env_mixed() {
-        test_build_from_env_file("../../fixtures/env.test-signer-mixed").await;
+        test_build_from_env_file("../../fixtures/env.test-local-signer-mixed").await;
     }
 
     #[tokio::test]
     #[serial_test::serial]
     async fn it_builds_settings_from_env_default() {
-        test_build_from_env_file("../../fixtures/env.test-signer-default").await;
+        test_build_from_env_file("../../fixtures/env.test-local-signer-default").await;
     }
 
     #[tokio::test]
@@ -89,7 +91,9 @@ mod test {
             networks.insert(agent_home.clone());
 
             let secrets = AgentSecrets::from_env(&networks).unwrap();
-            secrets.validate("kathy", &networks).expect("!secrets validate");
+            secrets
+                .validate("kathy", &networks)
+                .expect("!secrets validate");
 
             settings
                 .base

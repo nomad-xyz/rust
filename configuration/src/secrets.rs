@@ -102,13 +102,13 @@ impl AgentSecrets {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::ethereum::Connection;
+    use crate::ethereum::{Connection, GelatoConf};
     use nomad_test::test_utils;
 
     #[test]
     #[serial_test::serial]
-    fn it_builds_from_env_mixed() {
-        test_utils::run_test_with_env_sync("../fixtures/env.test-signer-mixed", move || {
+    fn it_builds_from_env_local_mixed() {
+        test_utils::run_test_with_env_sync("../fixtures/env.test-local-signer-mixed", move || {
             let networks = &crate::get_builtin("test").unwrap().networks;
             let secrets =
                 AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
@@ -152,16 +152,46 @@ mod test {
 
     #[test]
     #[serial_test::serial]
-    fn it_builds_from_env_default() {
-        test_utils::run_test_with_env_sync("../fixtures/env.test-signer-default", move || {
+    fn it_builds_from_env_local_default() {
+        test_utils::run_test_with_env_sync(
+            "../fixtures/env.test-local-signer-default",
+            move || {
+                let networks = &crate::get_builtin("test").unwrap().networks;
+                let secrets =
+                    AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
+
+                let default_config =
+                    TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Local(SignerConf::Aws {
+                        id: "default_id".into(),
+                        region: "default_region".into(),
+                    }));
+                for (_, config) in &secrets.tx_submitters {
+                    assert_eq!(*config, default_config);
+                }
+                for (_, config) in &secrets.rpcs {
+                    assert!(matches!(*config, ChainConf::Ethereum { .. }));
+                }
+            },
+        );
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn it_builds_from_env_gelato_default() {
+        test_utils::run_test_with_env_sync("../fixtures/env.test-gelato-default", move || {
             let networks = &crate::get_builtin("test").unwrap().networks;
             let secrets =
                 AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
 
-            let default_config = SignerConf::Aws {
-                id: "default_id".into(),
-            };
-            for (_, config) in &secrets.transaction_signers {
+            let default_config =
+                TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Gelato(GelatoConf {
+                    sponsor: SignerConf::Aws {
+                        id: "default_id".into(),
+                        region: "default_region".into(),
+                    },
+                    fee_token: "0x1234".to_owned(),
+                }));
+            for (_, config) in &secrets.tx_submitters {
                 assert_eq!(*config, default_config);
             }
             for (_, config) in &secrets.rpcs {
