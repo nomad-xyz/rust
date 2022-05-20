@@ -36,9 +36,14 @@ impl AgentSecrets {
 
         for network in networks.iter() {
             let network_upper = network.to_uppercase();
-            let chain_conf = ChainConf::from_env(&format!("RPCS_{}", network_upper))?;
-            let transaction_signer =
-                SignerConf::from_env(&format!("TRANSACTIONSIGNERS_{}", network_upper))?;
+
+            let chain_conf =
+                ChainConf::from_env(&format!("RPCS_{}", network_upper), Some("RPCS_DEFAULT"))?;
+
+            let transaction_signer = SignerConf::from_env(
+                &format!("TRANSACTIONSIGNERS_{}", network_upper),
+                Some("TRANSACTIONSIGNERS_DEFAULT"),
+            )?;
 
             secrets.rpcs.insert(network.to_owned(), chain_conf);
             secrets
@@ -46,7 +51,7 @@ impl AgentSecrets {
                 .insert(network.to_owned(), transaction_signer);
         }
 
-        let attestation_signer = SignerConf::from_env("ATTESTATION_SIGNER");
+        let attestation_signer = SignerConf::from_env("ATTESTATION_SIGNER", None);
         secrets.attestation_signer = attestation_signer;
 
         Some(secrets)
@@ -110,18 +115,89 @@ impl AgentSecrets {
 #[cfg(test)]
 mod test {
     use super::*;
-    const SECRETS_JSON_PATH: &str = "../fixtures/test_secrets.json";
-    const SECRETS_ENV_PATH: &str = "../fixtures/env.test";
+    use crate::ethereum::Connection;
+    use nomad_test::test_utils;
 
     #[test]
+    #[serial_test::serial]
+    fn it_builds_from_env_mixed() {
+        test_utils::run_test_with_env_sync("../fixtures/env.test-signer-mixed", move || {
+            let networks = &crate::get_builtin("test").unwrap().networks;
+            let secrets =
+                AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
+
+            assert_eq!(
+                *secrets.transaction_signers.get("moonbeam").unwrap(),
+                SignerConf::Aws {
+                    id: "moonbeam_id".into(),
+                    region: "moonbeam_region".into(),
+                }
+            );
+            assert_eq!(
+                *secrets.transaction_signers.get("ethereum").unwrap(),
+                SignerConf::HexKey(
+                    "0x1111111111111111111111111111111111111111111111111111111111111111"
+                        .parse()
+                        .unwrap()
+                )
+            );
+            assert_eq!(
+                *secrets.transaction_signers.get("evmos").unwrap(),
+                SignerConf::Aws {
+                    id: "default_id".into(),
+                    region: "default_region".into(),
+                }
+            );
+            assert_eq!(
+                *secrets.rpcs.get("moonbeam").unwrap(),
+                ChainConf::Ethereum(Connection::Http("https://rpc.api.moonbeam.network".into()))
+            );
+            assert_eq!(
+                *secrets.rpcs.get("ethereum").unwrap(),
+                ChainConf::Ethereum(Connection::Http(
+                    "https://main-light.eth.linkpool.io/".into()
+                ))
+            );
+            assert_eq!(
+                *secrets.rpcs.get("evmos").unwrap(),
+                ChainConf::Ethereum(Connection::Http("https://eth.bd.evmos.org:8545".into()))
+            );
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn it_builds_from_env_default() {
+        test_utils::run_test_with_env_sync("../fixtures/env.test-signer-default", move || {
+            let networks = &crate::get_builtin("test").unwrap().networks;
+            let secrets =
+                AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
+
+            let default_config = SignerConf::Aws {
+                id: "default_id".into(),
+                region: "default_region".into(),
+            };
+            for (_, config) in &secrets.transaction_signers {
+                assert_eq!(*config, default_config);
+            }
+            for (_, config) in &secrets.rpcs {
+                assert!(matches!(*config, ChainConf::Ethereum { .. }));
+            }
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
     fn it_builds_from_env() {
-        let networks = &crate::get_builtin("test").unwrap().networks;
-        dotenv::from_filename(SECRETS_ENV_PATH).unwrap();
-        AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
+        test_utils::run_test_with_env_sync("../fixtures/env.test", move || {
+            let networks = &crate::get_builtin("test").unwrap().networks;
+            AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
+        });
     }
 
     #[test]
     fn it_builds_from_file() {
-        AgentSecrets::from_file(SECRETS_JSON_PATH).expect("Failed to load secrets from file");
+        AgentSecrets::from_file("../fixtures/test_secrets.json")
+            .expect("Failed to load secrets from file");
     }
 }

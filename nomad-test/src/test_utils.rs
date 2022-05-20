@@ -55,6 +55,19 @@ where
     assert!(result.is_ok())
 }
 
+pub fn run_test_with_env_sync<T>(path: impl AsRef<Path>, test: T)
+where
+    T: FnOnce() + panic::UnwindSafe,
+{
+    let result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
+        dotenv::from_filename(path).unwrap();
+        test()
+    }));
+
+    clear_env_vars();
+    assert!(result.is_ok())
+}
+
 pub fn clear_env_vars() {
     let env_vars = env::vars();
     for (key, _) in env_vars.into_iter() {

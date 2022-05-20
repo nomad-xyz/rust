@@ -28,7 +28,7 @@ impl Default for SignerConf {
 }
 
 impl FromEnv for SignerConf {
-    fn from_env(prefix: &str) -> Option<Self> {
+    fn from_env(prefix: &str, default_prefix: Option<&str>) -> Option<Self> {
         // ordering this first preferentially uses AWS if both are specified
         if let Ok(id) = std::env::var(&format!("{}_ID", prefix)) {
             if let Ok(region) = std::env::var(&format!("{}_REGION", prefix)) {
@@ -38,6 +38,10 @@ impl FromEnv for SignerConf {
 
         if let Ok(signer_key) = std::env::var(&format!("{}_KEY", prefix)) {
             return Some(SignerConf::HexKey(HexString::from_str(&signer_key).ok()?));
+        }
+
+        if let Some(prefix) = default_prefix {
+            return SignerConf::from_env(prefix, None);
         }
 
         None
