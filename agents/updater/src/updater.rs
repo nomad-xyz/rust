@@ -11,7 +11,7 @@ use tracing::{info, instrument::Instrumented, Instrument};
 use crate::{
     produce::UpdateProducer, settings::UpdaterSettings as Settings, submit::UpdateSubmitter,
 };
-use nomad_base::{AgentCore, NomadAgent, NomadDB};
+use nomad_base::{AgentCore, CachingHome, NomadAgent, NomadDB};
 use nomad_core::{Common, Signers};
 
 /// An updater agent
@@ -71,6 +71,33 @@ impl Updater {
     }
 }
 
+impl From<&Updater> for UpdaterChannel {
+    fn from(updater: &Updater) -> Self {
+        UpdaterChannel {
+            home: updater.home(),
+            db: NomadDB::new(updater.home().name(), updater.db()),
+            signer: updater.signer.clone(),
+            signed_attestation_count: updater.signed_attestation_count.clone(),
+            submitted_update_count: updater.submitted_update_count.clone(),
+            finalization_seconds: updater.finalization_seconds,
+            interval_seconds: updater.interval_seconds,
+        }
+    }
+}
+
+/// Components need to run the updater's produce and submit tasks.
+/// Only operates on the home.
+#[derive(Debug, Clone)]
+pub struct UpdaterChannel {
+    home: Arc<CachingHome>,
+    db: NomadDB,
+    signer: Arc<Signers>,
+    signed_attestation_count: IntCounter,
+    submitted_update_count: IntCounter,
+    finalization_seconds: u64,
+    interval_seconds: u64,
+}
+
 // This is a bit of a kludge to make from_settings work.
 // Ideally this hould be generic across all signers.
 // Right now we only have one
@@ -80,7 +107,7 @@ impl NomadAgent for Updater {
 
     type Settings = Settings;
 
-    type Channel = ();
+    type Channel = UpdaterChannel;
 
     async fn from_settings(settings: Self::Settings) -> Result<Self>
     where
@@ -110,11 +137,52 @@ impl NomadAgent for Updater {
     }
 
     fn build_channel(&self, _replica: &str) -> Self::Channel {
-        panic!("Updater::build_channel should not be called")
+        self.into()
     }
 
-    fn run(_channel: Self::Channel) -> Instrumented<JoinHandle<Result<()>>> {
-        panic!("Updater::run(channel) should not be called. Always call run_all")
+    fn run(channel: Self::Channel) -> Instrumented<JoinHandle<Result<()>>> {
+        let home = channel.home.clone();
+        let address = channel.signer.address();
+        let db = channel.db.clone();
+
+        let produce = UpdateProducer::new(
+            home.clone(),
+            db.clone(),
+            channel.signer.clone(),
+            channel.interval_seconds,
+            channel.signed_attestation_count.clone(),
+        );
+
+        let submit = UpdateSubmitter::new(
+            home.clone(),
+            db,
+            channel.interval_seconds,
+            channel.finalization_seconds,
+            channel.submitted_update_count,
+        );
+
+        tokio::spawn(async move {
+            let expected: Address = home.updater().await?.into();
+            ensure!(
+                expected == address,
+                "Contract updater does not match keys. On-chain: {}. Local: {}",
+                expected,
+                address
+            );
+
+            // Only spawn updater tasks once syncing has finished
+            info!("Spawning produce and submit tasks...");
+            let produce_task = produce.spawn();
+            let submit_task = submit.spawn();
+
+            let (res, _, rem) = select_all(vec![produce_task, submit_task]).await;
+
+            for task in rem.into_iter() {
+                task.into_inner().abort();
+            }
+            res?
+        })
+        .in_current_span()
     }
 
     fn run_many(&self, _replicas: &[&str]) -> Instrumented<JoinHandle<Result<()>>> {
@@ -125,56 +193,22 @@ impl NomadAgent for Updater {
     where
         Self: Sized + 'static,
     {
-        // First we check that we have the correct key to sign with.
-        let home = self.home();
-        let address = self.signer.address();
-        let db = NomadDB::new(self.home().name(), self.db());
-
-        let produce = UpdateProducer::new(
-            self.home(),
-            db.clone(),
-            self.signer.clone(),
-            self.interval_seconds,
-            self.signed_attestation_count.clone(),
-        );
-
-        let submit = UpdateSubmitter::new(
-            self.home(),
-            db,
-            self.interval_seconds,
-            self.finalization_seconds,
-            self.submitted_update_count.clone(),
-        );
-
-        let fail_check = self.assert_home_not_failed();
-        let home_fail_watch_task = self.watch_home_fail(self.interval_seconds);
-
         tokio::spawn(async move {
-            fail_check.await??;
+            self.assert_home_not_failed().await??;
 
-            let expected: Address = home.updater().await?.into();
-            ensure!(
-                expected == address,
-                "Contract updater does not match keys. On-chain: {}. Local: {}",
-                expected,
-                address
-            );
+            let home_fail_watch_task = self.watch_home_fail(self.interval_seconds);
 
-            info!("Spawning sync task for updater...");
-            let sync_task = home.sync();
+            info!("Starting updater sync task...");
+            let sync_task = self.home().sync();
 
-            // Only spawn updater tasks once syncing has finished
-            info!("Spawning produce and submit tasks...");
-            let produce_task = produce.spawn();
-            let submit_task = submit.spawn();
+            // Run a single error-catching task for producing and submitting
+            // updates. While we use the agent channel pattern, this run task
+            // only operates on the home.
+            info!("Starting updater produce and submit tasks...");
+            let update_task = self.run_report_error("".to_owned());
 
-            let (res, _, rem) = select_all(vec![
-                sync_task,
-                produce_task,
-                submit_task,
-                home_fail_watch_task,
-            ])
-            .await;
+            let (res, _, rem) =
+                select_all(vec![home_fail_watch_task, sync_task, update_task]).await;
 
             for task in rem.into_iter() {
                 task.into_inner().abort();
