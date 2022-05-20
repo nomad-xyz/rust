@@ -10,9 +10,7 @@ mod test {
     use super::*;
     use nomad_base::{get_remotes_from_env, NomadAgent};
     use nomad_test::test_utils;
-    use nomad_xyz_configuration::{
-        agent::SignerConf, ethereum::Connection, AgentSecrets, ChainConf,
-    };
+    use nomad_xyz_configuration::AgentSecrets;
 
     #[tokio::test]
     #[serial_test::serial]
@@ -42,40 +40,9 @@ mod test {
                 )
                 .unwrap();
 
-            assert_eq!(
-                *settings.base.signers.get("moonbeam").unwrap(),
-                SignerConf::Aws {
-                    id: "moonbeam_id".into(),
-                }
-            );
-            assert_eq!(
-                *settings.base.signers.get("ethereum").unwrap(),
-                SignerConf::HexKey(
-                    "0x1111111111111111111111111111111111111111111111111111111111111111"
-                        .parse()
-                        .unwrap()
-                )
-            );
-            assert_eq!(
-                *settings.base.signers.get("evmos").unwrap(),
-                SignerConf::Aws {
-                    id: "default_id".into(),
-                }
-            );
-            assert_eq!(
-                settings.base.home.chain,
-                ChainConf::Ethereum(Connection::Http(
-                    "https://main-light.eth.linkpool.io/".into()
-                ))
-            );
-            assert_eq!(
-                settings.base.replicas.get("moonbeam").unwrap().chain,
-                ChainConf::Ethereum(Connection::Http("https://rpc.api.moonbeam.network".into()))
-            );
-            assert_eq!(
-                settings.base.replicas.get("evmos").unwrap().chain,
-                ChainConf::Ethereum(Connection::Http("https://eth.bd.evmos.org:8545".into()))
-            );
+            let agent_config = &config.agent().get("ethereum").unwrap().kathy;
+            assert_eq!(settings.agent.interval, agent_config.interval);
+            assert_eq!(settings.agent.chat, agent_config.chat);
         })
         .await
     }
@@ -108,19 +75,9 @@ mod test {
                 )
                 .unwrap();
 
-            let default_config = SignerConf::Aws {
-                id: "default_id".into(),
-            };
-            for (_, config) in &settings.base.signers {
-                assert_eq!(*config, default_config);
-            }
-            assert!(matches!(
-                settings.base.home.chain,
-                ChainConf::Ethereum { .. }
-            ));
-            for (_, config) in &settings.base.replicas {
-                assert!(matches!(config.chain, ChainConf::Ethereum { .. }));
-            }
+            let agent_config = &config.agent().get("ethereum").unwrap().kathy;
+            assert_eq!(settings.agent.interval, agent_config.interval);
+            assert_eq!(settings.agent.chat, agent_config.chat);
         })
         .await
     }

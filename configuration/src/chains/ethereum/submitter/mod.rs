@@ -5,6 +5,15 @@ use crate::{agent::SignerConf, FromEnv};
 mod gelato;
 pub use gelato::*;
 
+fn get_submitter_type(prefix: &str, default_prefix: Option<&str>) -> Option<String> {
+    let mut submitter_type = std::env::var(&format!("{}_SUBMITTERTYPE", prefix)).ok();
+    if let (None, Some(prefix)) = (&submitter_type, default_prefix) {
+        submitter_type = std::env::var(&format!("{}_SUBMITTERTYPE", prefix)).ok();
+    }
+
+    submitter_type
+}
+
 /// Local or relay-based transaction submission
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 #[serde(tag = "submitterType", content = "submitter", rename_all = "camelCase")]
@@ -23,19 +32,22 @@ impl From<crate::TxSubmitterConf> for TxSubmitterConf {
 }
 
 impl FromEnv for TxSubmitterConf {
-    fn from_env(prefix: &str) -> Option<Self> {
-        let submitter_type = std::env::var(&format!("{}_SUBMITTERTYPE", prefix)).ok()?;
+    fn from_env(prefix: &str, default_prefix: Option<&str>) -> Option<Self> {
+        let submitter_type = get_submitter_type(prefix, default_prefix)?;
 
-        match submitter_type.as_ref() {
+        return match submitter_type.as_ref() {
             "local" => {
-                let signer_conf = SignerConf::from_env(&format!("{}_SUBMITTER", prefix))?;
+                let signer_conf = SignerConf::from_env(
+                    &format!("{}_TXSIGNER", prefix),
+                    Some("DEFAULT_TXSIGNERS"),
+                )?;
                 Some(Self::Local(signer_conf))
             }
             "gelato" => {
-                let gelato_conf = GelatoConf::from_env(&format!("{}_SUBMITTER", prefix))?;
+                let gelato_conf = GelatoConf::from_env(&format!("{}_GELATO", prefix), None)?;
                 Some(Self::Gelato(gelato_conf))
             }
             _ => panic!("Unknown tx submission type: {}", submitter_type),
-        }
+        };
     }
 }

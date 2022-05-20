@@ -11,8 +11,8 @@ pub struct GelatoConf {
 }
 
 impl FromEnv for GelatoConf {
-    fn from_env(prefix: &str) -> Option<Self> {
-        let sponsor = SignerConf::from_env(&format!("{}_SPONSOR", prefix))?;
+    fn from_env(prefix: &str, _default_prefix: Option<&str>) -> Option<Self> {
+        let sponsor = SignerConf::from_env(&format!("{}_SPONSOR", prefix), None)?;
         let fee_token = std::env::var(&format!("{}_FEETOKEN", prefix)).ok()?;
 
         Some(Self { sponsor, fee_token })

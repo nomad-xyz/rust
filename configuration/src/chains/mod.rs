@@ -4,6 +4,15 @@ pub mod ethereum;
 
 use serde_json::json;
 
+fn get_rpc_style(prefix: &str, default_prefix: Option<&str>) -> Option<String> {
+    let mut rpc_style = std::env::var(&format!("{}_RPCSTYLE", prefix)).ok();
+    if let (None, Some(prefix)) = (&rpc_style, default_prefix) {
+        rpc_style = std::env::var(&format!("{}_RPCSTYLE", prefix)).ok();
+    }
+
+    rpc_style
+}
+
 /// A connection to _some_ blockchain.
 ///
 /// Specify the chain name (enum variant) in toml under the `chain` key
@@ -34,13 +43,13 @@ impl ChainConf {
         let rpc_url = std::env::var(&format!("{}_CONNECTION_URL", network)).ok()?;
 
         let json = json!({
-            "rpcStyle": rpc_style?,
+            "rpcStyle": rpc_style,
             "connection": rpc_url,
         });
 
         Some(
             serde_json::from_value(json)
-                .unwrap_or_else(|_| panic!("malformed json for {} rpc", network)),
+                .unwrap_or_else(|_| panic!("malformed json for {} rpc", prefix)),
         )
     }
 }
@@ -54,12 +63,13 @@ pub enum TxSubmitterConf {
 }
 
 impl FromEnv for TxSubmitterConf {
-    fn from_env(network: &str) -> Option<Self> {
-        let rpc_style = std::env::var(&format!("{}_RPCSTYLE", network)).ok()?;
+    fn from_env(prefix: &str, default_prefix: Option<&str>) -> Option<Self> {
+        let rpc_style = get_rpc_style(prefix, default_prefix)?;
 
         match rpc_style.as_ref() {
             "ethereum" => Some(Self::Ethereum(ethereum::TxSubmitterConf::from_env(
-                network,
+                prefix,
+                default_prefix,
             )?)),
             _ => panic!("Unknown transaction submission rpc style: {}", rpc_style),
         }

@@ -37,8 +37,8 @@ impl AgentSecrets {
         for network in networks.iter() {
             let network_upper = network.to_uppercase();
 
-            let chain_conf = ChainConf::from_env(&network_upper, Some("DEFAULT")?;
-            let tx_submitter = TxSubmitterConf::from_env(&network_upper)?;
+            let chain_conf = ChainConf::from_env(&network_upper, Some("DEFAULT"))?;
+            let tx_submitter = TxSubmitterConf::from_env(&network_upper, Some("DEFAULT"))?;
 
             secrets.rpcs.insert(network.to_owned(), chain_conf);
             secrets
@@ -114,22 +114,22 @@ mod test {
                 AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
 
             assert_eq!(
-                *secrets.transaction_signers.get("moonbeam").unwrap(),
-                SignerConf::Aws {
+                *secrets.tx_submitters.get("moonbeam").unwrap(),
+                TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Local(SignerConf::Aws {
                     id: "moonbeam_id".into(),
                 }
             );
             assert_eq!(
-                *secrets.transaction_signers.get("ethereum").unwrap(),
-                SignerConf::HexKey(
+                *secrets.tx_submitters.get("ethereum").unwrap(),
+                TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Local(SignerConf::HexKey(
                     "0x1111111111111111111111111111111111111111111111111111111111111111"
                         .parse()
                         .unwrap()
-                )
+                )))
             );
             assert_eq!(
-                *secrets.transaction_signers.get("evmos").unwrap(),
-                SignerConf::Aws {
+                *secrets.tx_submitters.get("evmos").unwrap(),
+                TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Local(SignerConf::Aws {
                     id: "default_id".into(),
                 }
             );
@@ -175,15 +175,17 @@ mod test {
     fn it_builds_from_env() {
         test_utils::run_test_with_env_sync("../fixtures/env.test", move || {
             let networks = &crate::get_builtin("test").unwrap().networks;
-            let secrets = AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
-			secrets
-            	.validate("", networks)
-            	.expect("Failed to validate secrets");
+            let secrets =
+                AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
+            secrets
+                .validate("", networks)
+                .expect("Failed to validate secrets");
         });
     }
 
     #[test]
     fn it_builds_from_file() {
+        let networks = &crate::get_builtin("test").unwrap().networks;
         let secrets = AgentSecrets::from_file("../fixtures/test_secrets.json")
             .expect("Failed to load secrets from file");
         secrets
