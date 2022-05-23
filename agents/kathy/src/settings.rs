@@ -46,7 +46,6 @@ mod test {
                 *settings.base.signers.get("moonbeam").unwrap(),
                 SignerConf::Aws {
                     id: "moonbeam_id".into(),
-                    region: "moonbeam_region".into(),
                 }
             );
             assert_eq!(
@@ -61,7 +60,6 @@ mod test {
                 *settings.base.signers.get("evmos").unwrap(),
                 SignerConf::Aws {
                     id: "default_id".into(),
-                    region: "default_region".into(),
                 }
             );
             assert_eq!(
@@ -112,7 +110,6 @@ mod test {
 
             let default_config = SignerConf::Aws {
                 id: "default_id".into(),
-                region: "default_region".into(),
             };
             for (_, config) in &settings.base.signers {
                 assert_eq!(*config, default_config);
