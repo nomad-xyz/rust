@@ -22,7 +22,8 @@ impl Default for ChainConf {
 }
 
 impl ChainConf {
-    /// Build ChainConf from env vars
+    /// Build ChainConf from env vars. Will use default RPCSTYLE if
+    /// network-specific not provided.
     pub fn from_env(network: &str) -> Option<Self> {
         let mut rpc_style = std::env::var(&format!("{}_RPCSTYLE", network)).ok();
 

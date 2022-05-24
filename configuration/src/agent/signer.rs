@@ -60,8 +60,12 @@ impl Default for SignerConf {
 }
 
 impl SignerConf {
-    /// Build SignerConf from env vars. Return default if network specifics not
+    /// Build SignerConf from env vars. Return default if network-specific not
     /// provided.
+    ///
+    /// Examples of optional `prefix` would include "TXSIGNER" or
+    /// "ATTESTATION_SIGNER". `network` is optional in case that signer is not
+    /// network-specific (e.g. attestation signer).
     pub fn from_env(prefix: Option<&str>, network: Option<&str>) -> Option<Self> {
         let full_prefix = full_prefix(prefix, network);
         let opt_signer_conf = Self::from_full_prefix(&full_prefix);
