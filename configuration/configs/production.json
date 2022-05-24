@@ -10,6 +10,9 @@
     "moonbeam",
     "godwoken",
     "moonriver",
+    "fantom",
+    "bobaL2",
+    "cronos",
     "fuse"
   ],
   "s3": {
@@ -41,6 +44,15 @@
     "moonriver": [
       "https://moonriver.api.onfinality.io/public"
     ],
+    "fantom": [
+      "https://rpc.ftm.tools/"
+    ],
+    "bobaL2": [
+      "https://mainnet.boba.network"
+    ],
+    "cronos": [
+      "https://rpc.artemisone.org/cronos"
+    ],
     "fuse": [
       "https://rpc.fuse.io/"
     ]
@@ -64,10 +76,11 @@
           "optimism",
           "arbitrum",
           "harmony",
+          "moonriver",
           "fantom",
           "bobaL2",
           "cronos",
-          "moonriver"
+          "fuse"
         ],
         "specs": {
           "chainId": 71394,
@@ -76,6 +89,94 @@
           "supports1559": false,
           "confirmations": 4,
           "blockExplorer": "https://explorer.nervos.org/",
+          "indexPageSize": 2000
+        },
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 25000,
+          "maximumGas": 1000000,
+          "governance": {
+            "recoveryManager": "TEMPLATE",
+            "recoveryTimelock": 86400
+          },
+          "updater": "TEMPLATE",
+          "watchers": ["TEMPLATE"]
+        },
+        "bridgeConfiguration": {
+          "weth": "TEMPLATE",
+          "customs": [],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
+      },
+      "moonriver": {
+        "name": "moonriver",
+        "domain": 114105118,
+        "connections": [
+          "ethereum",
+          "xdai",
+          "avalanche",
+          "evmos",
+          "milkomedaC1",
+          "moonbeam",
+          "godwoken",
+          "fantom",
+          "bobaL2",
+          "cronos",
+          "fuse"
+        ],
+        "specs": {
+          "chainId": 1285,
+          "blockTime": 12,
+          "finalizationBlocks": 20,
+          "supports1559": true,
+          "confirmations": 3,
+          "blockExplorer": "https://moonriver.moonscan.io/",
+          "indexPageSize": 2000
+        },
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 25000,
+          "maximumGas": 1000000,
+          "governance": {
+            "recoveryManager": "TEMPLATE",
+            "recoveryTimelock": 86400
+          },
+          "updater": "TEMPLATE",
+          "watchers": ["TEMPLATE"]
+        },
+        "bridgeConfiguration": {
+          "weth": "TEMPLATE",
+          "customs": [],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
+      },
+      "fantom": {
+        "name": "fantom",
+        "domain": 10297110,
+        "connections": [
+          "ethereum",
+          "xdai",
+          "avalanche",
+          "evmos",
+          "milkomedaC1",
+          "moonbeam",
+          "godwoken",
+          "moonriver",
+          "bobaL2",
+          "cronos",
+          "fuse"
+        ],
+        "specs": {
+          "chainId": 250,
+          "blockTime": 1,
+          "finalizationBlocks": 5,
+          "supports1559": false,
+          "confirmations": 5,
+          "blockExplorer": "https://ftmscan.com/",
           "indexPageSize": 2000
         },
         "configuration": {
@@ -99,16 +200,65 @@
           "deployGas": 850000
         }
       },
+      "cronos": {
+        "name": "cronos",
+        "domain": 99114111,
+        "connections": [
+          "ethereum",
+          "xdai",
+          "avalanche",
+          "evmos",
+          "milkomedaC1",
+          "moonbeam",
+          "godwoken",
+          "moonriver",
+          "fantom",
+          "bobaL2",
+          "fuse"
+        ],
+        "specs": {
+          "chainId": 25,
+          "blockTime": 6,
+          "finalizationBlocks": 1,
+          "supports1559": true,
+          "confirmations": 5,
+          "blockExplorer": "https://cronoscan.com/",
+          "indexPageSize": 2000
+        },
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 25000,
+          "maximumGas": 1000000,
+          "governance": {
+            "recoveryManager": "TEMPLATE",
+            "recoveryTimelock": 86400
+          },
+          "updater": "TEMPLATE",
+          "watchers": ["TEMPLATE"]
+        },
+        "bridgeConfiguration": {
+          "weth": "TEMPLATE",
+          "customs": [],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
+      },
       "avalanche": {
         "name": "avalanche",
         "domain": 1635148152,
         "connections": [
-          "moonbeam",
           "ethereum",
-          "milkomedaC1",
           "xdai",
           "evmos",
-          "godwoken"
+          "milkomedaC1",
+          "moonbeam",
+          "godwoken",
+          "moonriver",
+          "fantom",
+          "bobaL2",
+          "cronos",
+          "fuse"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -144,12 +294,17 @@
         "name": "xdai",
         "domain": 2019844457,
         "connections": [
-          "moonbeam",
+          "ethereum",
           "avalanche",
           "evmos",
-          "ethereum",
           "milkomedaC1",
-          "godwoken"
+          "moonbeam",
+          "godwoken",
+          "moonriver",
+          "fantom",
+          "bobaL2",
+          "cronos",
+          "fuse"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -185,12 +340,17 @@
         "name": "moonbeam",
         "domain": 1650811245,
         "connections": [
+          "ethereum",
           "xdai",
           "avalanche",
-          "ethereum",
           "evmos",
           "milkomedaC1",
-          "godwoken"
+          "godwoken",
+          "moonriver",
+          "fantom",
+          "bobaL2",
+          "cronos",
+          "fuse"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -227,11 +387,16 @@
         "domain": 6648936,
         "connections": [
           "xdai",
-          "evmos",
-          "moonbeam",
-          "milkomedaC1",
           "avalanche",
-          "godwoken"
+          "evmos",
+          "milkomedaC1",
+          "moonbeam",
+          "godwoken",
+          "moonriver",
+          "fantom",
+          "bobaL2",
+          "cronos",
+          "fuse"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -267,12 +432,17 @@
         "name": "evmos",
         "domain": 1702260083,
         "connections": [
-          "xdai",
           "ethereum",
-          "milkomedaC1",
+          "xdai",
           "avalanche",
+          "milkomedaC1",
           "moonbeam",
-          "godwoken"
+          "godwoken",
+          "moonriver",
+          "fantom",
+          "bobaL2",
+          "cronos",
+          "fuse"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -319,11 +489,16 @@
         "domain": 25393,
         "connections": [
           "ethereum",
-          "avalanche",
-          "moonbeam",
           "xdai",
+          "avalanche",
           "evmos",
-          "godwoken"
+          "moonbeam",
+          "godwoken",
+          "moonriver",
+          "fantom",
+          "bobaL2",
+          "cronos",
+          "fuse"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
