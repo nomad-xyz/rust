@@ -45,6 +45,8 @@ pub enum SignerConf {
         /// 2. Its ARN
         /// 3. A key alias
         /// 4. A key alias's ARN
+        ///
+        /// See full rusoto documentation [here](https://docs.rs/rusoto_kms/0.47.0/rusoto_kms/struct.GetPublicKeyRequest.html#structfield.key_id)
         id: String,
     },
     /// Assume node will sign on RPC calls
