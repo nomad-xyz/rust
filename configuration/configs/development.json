@@ -80,8 +80,8 @@
           "processGas": 850000,
           "reserveGas": 25000,
           "maximumGas": 1000000,
-          "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4d",
-          "watchers": ["0x8ad65ba028cae9e3932959d5c167a09ede941d2d"],
+          "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4c",
+          "watchers": ["0x8ad65ba028cae9e3932959d5c167a09ede941d2c"],
           "governance": {
             "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
             "recoveryTimelock": 86400
@@ -200,8 +200,8 @@
           "processGas": 850000,
           "reserveGas": 25000,
           "maximumGas": 1000000,
-          "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4d",
-          "watchers": ["0x8ad65ba028cae9e3932959d5c167a09ede941d2d"],
+          "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4c",
+          "watchers": ["0x8ad65ba028cae9e3932959d5c167a09ede941d2c"],
           "governance": {
             "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
             "recoveryTimelock": 86400
