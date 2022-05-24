@@ -84,9 +84,8 @@ impl SignerConf {
 
     /// Build SignerConf from full prefix
     fn from_full_prefix(full_prefix: &str) -> Option<Self> {
-        println!("{}", &format!("{}_ID", full_prefix));
         // ordering this first preferentially uses AWS if both are specified
-        if let Ok(id) = std::env::var(&format!("{}_ID", prefix)) {
+        if let Ok(id) = std::env::var(&format!("{}_ID", full_prefix)) {
             return Some(SignerConf::Aws { id });
         }
 
