@@ -1,16 +1,41 @@
 {
   "version": 0,
   "environment": "development",
-  "networks": ["goerli", "neontestnet", "rinkeby", "evmostestnet", "kovan", "arbitrum-rinkeby", "optimism-kovan", "milkomedaC1testnet"],
+  "networks": [
+    "neontestnet",
+    "optimism-kovan",
+    "milkomedaC1testnet",
+    "evmostestnet",
+    "arbitrum-rinkeby",
+    "goerli",
+    "kovan",
+    "rinkeby"
+  ],
   "rpcs": {
-    "rinkeby": ["https://rinkeby-light.eth.linkpool.io"],
-    "goerli": ["https://goerli-light.eth.linkpool.io"],
-    "neontestnet": ["https://proxy.devnet.neonlabs.org/solana"],
-    "kovan": ["https://kovan.poa.network"],
-    "evmostestnet": ["https://eth.bd.evmos.dev:8545"],
-    "arbitrum-rinkeby": ["https://rinkeby.arbitrum.io/rpc"],
-    "optimism-kovan": ["https://kovan.optimism.io/"],
-    "milkomedaC1testnet": ["https://rpc-devnet-cardano-evm.c1.milkomeda.com"]
+    "rinkeby": [
+      "https://eth-rinkeby.alchemyapi.io/v2/2_EHjVL6clA6rFkDqdX8b7afHwHoCU0x"
+    ],
+    "evmostestnet": [
+      "https://eth.bd.evmos.dev:8545"
+    ],
+    "arbitrum-rinkeby": [
+      "https://arb-rinkeby.g.alchemy.com/v2/HNsZLmLznthLO3uEj2Vb6pwTM3EG2QY6"
+    ],
+    "neontestnet": [
+      "https://proxy.devnet.neonlabs.org/solana"
+    ],
+    "milkomedaC1testnet": [
+      "https://rpc-devnet-cardano-evm.c1.milkomeda.com"
+    ],
+    "goerli": [
+      "https://eth-goerli.alchemyapi.io/v2/PU0_a_1LHwf2bVF1zscb8hr8E4Rqk49F"
+    ],
+    "kovan": [
+      "https://kovan.poa.network"
+    ],
+    "optimism-kovan": [
+      "https://opt-kovan.g.alchemy.com/v2/ogYr6dwa3VE23kXKUqgB9iS8QyQ83Y_C"
+    ]
   },
   "protocol": {
     "governor": {
@@ -18,113 +43,27 @@
       "id": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec"
     },
     "networks": {
-      "kovan": {
-        "name": "kovan",
-        "domain": 2001,
-        "connections": ["rinkeby", "neontestnet", "evmostestnet", "goerli", "arbitrum-rinkeby", "optimism-kovan", "milkomedaC1testnet"],
-        "configuration": {
-          "optimisticSeconds": 10,
-          "processGas": 850000,
-          "reserveGas": 15000,
-          "maximumGas": 1000000,
-          "updater": "0x45818549c1e7d16c915fe23c1524b524507a184b",
-          "watchers": ["0xe8c6bf61d5f5744f465865772e1de88059267bac"],
-          "governance": {
-            "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
-            "recoveryTimelock": 180
-          }
-        },
-        "specs": {
-          "chainId": 42,
-          "blockTime": 4,
-          "finalizationBlocks": 10,
-          "supports1559": false,
-          "confirmations": 15,
-          "blockExplorer": "https://kovan.etherscan.io/",
-          "indexPageSize": 2000
-        },
-        "bridgeConfiguration": {
-          "weth": "0xd0a1e359811322d97991e03f863a0c30c2cf029c",
-          "customs": [],
-          "mintGas": 200000,
-          "deployGas": 850000
-        }
-      },
-      "goerli": {
-        "name": "goerli",
-        "domain": 3001,
-        "connections": ["neontestnet", "evmostestnet", "kovan", "rinkeby", "arbitrum-rinkeby", "optimism-kovan", "milkomedaC1testnet"],
-        "configuration": {
-          "optimisticSeconds": 10,
-          "processGas": 850000,
-          "reserveGas": 15000,
-          "maximumGas": 1000000,
-          "updater": "0xd16bdbbc56090156ec609ebebc8bace1240fa22e",
-          "watchers": ["0x69520f1cec6199fe93c6c77881b5de701e0efeff"],
-          "governance": {
-            "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
-            "recoveryTimelock": 180
-          }
-        },
-        "specs": {
-          "chainId": 5,
-          "blockTime": 15,
-          "finalizationBlocks": 100,
-          "supports1559": true,
-          "confirmations": 4,
-          "blockExplorer": "https://goerli.etherscan.io/",
-          "indexPageSize": 2000
-        },
-        "bridgeConfiguration": {
-          "weth": "0x0bb7509324ce409f7bbc4b701f932eaca9736ab7",
-          "customs": [],
-          "mintGas": 200000,
-          "deployGas": 850000
-        }
-      },
-      "evmostestnet": {
-        "name": "evmostestnet",
-        "domain": 4001,
-        "connections": ["neontestnet", "kovan", "rinkeby", "goerli", "arbitrum-rinkeby", "optimism-kovan", "milkomedaC1testnet"],
-        "configuration": {
-          "optimisticSeconds": 10,
-          "processGas": 850000,
-          "reserveGas": 15000,
-          "maximumGas": 1000000,
-          "updater": "0x815d2281a9ebacfbffa4294375de6e14f2522d87",
-          "watchers": ["0xafcf8db79e999cb79260572fb61c8e5006b855a4"],
-          "governance": {
-            "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
-            "recoveryTimelock": 180
-          }
-        },
-        "specs": {
-          "chainId": 9000,
-          "blockTime": 5,
-          "finalizationBlocks": 10,
-          "supports1559": false,
-          "confirmations": 6,
-          "blockExplorer": "https://evm.evmos.dev/",
-          "indexPageSize": 2000
-        },
-        "bridgeConfiguration": {
-          "weth": "0xcc491f589b45d4a3c679016195b3fb87d7848210",
-          "customs": [],
-          "mintGas": 200000,
-          "deployGas": 850000
-        }
-      },
       "rinkeby": {
         "name": "rinkeby",
         "domain": 1001,
-        "connections": ["kovan", "evmostestnet", "neontestnet", "goerli", "arbitrum-rinkeby", "optimism-kovan", "milkomedaC1testnet"],
+        "connections": [
+          "arbitrum-rinkeby",
+          "optimism-kovan",
+          "milkomedaC1testnet",
+          "kovan",
+          "neontestnet",
+          "evmostestnet",
+          "goerli"
+        ],
         "configuration": {
           "optimisticSeconds": 10,
           "processGas": 850000,
           "reserveGas": 15000,
           "maximumGas": 1000000,
           "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4c",
-          "watchers": ["0x8ad65ba028cae9e3932959d5c167a09ede941d2c"],
+          "watchers": [
+            "0x8ad65ba028cae9e3932959d5c167a09ede941d2c"
+          ],
           "governance": {
             "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
             "recoveryTimelock": 180
@@ -146,17 +85,111 @@
           "deployGas": 850000
         }
       },
+      "arbitrum-rinkeby": {
+        "name": "arbitrum-rinkeby",
+        "domain": 6661,
+        "connections": [
+          "neontestnet",
+          "optimism-kovan",
+          "evmostestnet",
+          "kovan",
+          "goerli",
+          "rinkeby",
+          "milkomedaC1testnet"
+        ],
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 25000,
+          "maximumGas": 1000000,
+          "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4d",
+          "watchers": [
+            "0x8ad65ba028cae9e3932959d5c167a09ede941d2d"
+          ],
+          "governance": {
+            "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
+            "recoveryTimelock": 86400
+          }
+        },
+        "specs": {
+          "chainId": 421611,
+          "blockTime": 150000,
+          "finalizationBlocks": 1,
+          "supports1559": false,
+          "confirmations": 1,
+          "blockExplorer": "https://testnet.arbiscan.io/",
+          "indexPageSize": 2000
+        },
+        "bridgeConfiguration": {
+          "weth": "0xebbc3452cc911591e4f18f3b36727df45d6bd1f9",
+          "customs": [],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
+      },
+      "kovan": {
+        "name": "kovan",
+        "domain": 2001,
+        "connections": [
+          "milkomedaC1testnet",
+          "arbitrum-rinkeby",
+          "neontestnet",
+          "goerli",
+          "evmostestnet",
+          "rinkeby",
+          "optimism-kovan"
+        ],
+        "configuration": {
+          "optimisticSeconds": 10,
+          "processGas": 850000,
+          "reserveGas": 15000,
+          "maximumGas": 1000000,
+          "updater": "0x45818549c1e7d16c915fe23c1524b524507a184b",
+          "watchers": [
+            "0xe8c6bf61d5f5744f465865772e1de88059267bac"
+          ],
+          "governance": {
+            "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
+            "recoveryTimelock": 180
+          }
+        },
+        "specs": {
+          "chainId": 42,
+          "blockTime": 4,
+          "finalizationBlocks": 10,
+          "supports1559": false,
+          "confirmations": 15,
+          "blockExplorer": "https://kovan.etherscan.io/",
+          "indexPageSize": 2000
+        },
+        "bridgeConfiguration": {
+          "weth": "0xd0a1e359811322d97991e03f863a0c30c2cf029c",
+          "customs": [],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
+      },
       "neontestnet": {
         "name": "neontestnet",
         "domain": 5001,
-        "connections": ["rinkeby", "kovan", "evmostestnet", "goerli", "arbitrum-rinkeby", "optimism-kovan", "milkomedaC1testnet"],
+        "connections": [
+          "arbitrum-rinkeby",
+          "rinkeby",
+          "goerli",
+          "kovan",
+          "milkomedaC1testnet",
+          "optimism-kovan",
+          "evmostestnet"
+        ],
         "configuration": {
           "optimisticSeconds": 1800,
           "processGas": 850000,
           "reserveGas": 25000,
           "maximumGas": 1000000,
           "updater": "0xa4e6e0953443882f448b93de52abfe7eb8b2efd4",
-          "watchers": ["0xdc030a4e198dd6d08a7497b3deaf644ad755c10b"],
+          "watchers": [
+            "0xdc030a4e198dd6d08a7497b3deaf644ad755c10b"
+          ],
           "governance": {
             "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
             "recoveryTimelock": 180
@@ -181,7 +214,29 @@
       "optimism-kovan": {
         "name": "optimism-kovan",
         "domain": 8881,
-        "connections": ["goerli", "neontestnet", "rinkeby", "evmostestnet", "kovan", "arbitrum-rinkeby", "milkomedaC1testnet"],
+        "connections": [
+          "arbitrum-rinkeby",
+          "neontestnet",
+          "kovan",
+          "rinkeby",
+          "goerli",
+          "evmostestnet",
+          "milkomedaC1testnet"
+        ],
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 25000,
+          "maximumGas": 1000000,
+          "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4d",
+          "watchers": [
+            "0x8ad65ba028cae9e3932959d5c167a09ede941d2d"
+          ],
+          "governance": {
+            "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
+            "recoveryTimelock": 86400
+          }
+        },
         "specs": {
           "chainId": 69,
           "blockTime": 150000,
@@ -191,20 +246,50 @@
           "blockExplorer": "https://kovan-optimistic.etherscan.io",
           "indexPageSize": 2000
         },
+        "bridgeConfiguration": {
+          "weth": "0xebbc3452cc911591e4f18f3b36727df45d6bd1f9",
+          "customs": [],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
+      },
+      "goerli": {
+        "name": "goerli",
+        "domain": 3001,
+        "connections": [
+          "kovan",
+          "rinkeby",
+          "arbitrum-rinkeby",
+          "optimism-kovan",
+          "neontestnet",
+          "milkomedaC1testnet",
+          "evmostestnet"
+        ],
         "configuration": {
-          "optimisticSeconds": 1800,
+          "optimisticSeconds": 10,
           "processGas": 850000,
-          "reserveGas": 25000,
+          "reserveGas": 15000,
           "maximumGas": 1000000,
+          "updater": "0xd16bdbbc56090156ec609ebebc8bace1240fa22e",
+          "watchers": [
+            "0x69520f1cec6199fe93c6c77881b5de701e0efeff"
+          ],
           "governance": {
             "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
-            "recoveryTimelock": 86400
-          },
-          "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4d",
-          "watchers": ["0x8ad65ba028cae9e3932959d5c167a09ede941d2d"]
+            "recoveryTimelock": 180
+          }
+        },
+        "specs": {
+          "chainId": 5,
+          "blockTime": 15,
+          "finalizationBlocks": 100,
+          "supports1559": true,
+          "confirmations": 4,
+          "blockExplorer": "https://goerli.etherscan.io/",
+          "indexPageSize": 2000
         },
         "bridgeConfiguration": {
-          "weth": "0xEBbc3452Cc911591e4F18f3b36727Df45d6bd1f9",
+          "weth": "0x0bb7509324ce409f7bbc4b701f932eaca9736ab7",
           "customs": [],
           "mintGas": 200000,
           "deployGas": 850000
@@ -213,7 +298,29 @@
       "milkomedaC1testnet": {
         "name": "milkomedaC1testnet",
         "domain": 7771,
-        "connections": ["goerli", "neontestnet", "rinkeby", "evmostestnet", "kovan", "arbitrum-rinkeby", "optimism-kovan"],
+        "connections": [
+          "arbitrum-rinkeby",
+          "kovan",
+          "goerli",
+          "neontestnet",
+          "optimism-kovan",
+          "rinkeby",
+          "evmostestnet"
+        ],
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 25000,
+          "maximumGas": 1000000,
+          "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4d",
+          "watchers": [
+            "0x8ad65ba028cae9e3932959d5c167a09ede941d2d"
+          ],
+          "governance": {
+            "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
+            "recoveryTimelock": 86400
+          }
+        },
         "specs": {
           "chainId": 200101,
           "blockTime": 150000,
@@ -223,52 +330,50 @@
           "blockExplorer": "https://explorer-devnet-cardano-evm.c1.milkomeda.com",
           "indexPageSize": 2000
         },
-        "configuration": {
-          "optimisticSeconds": 1800,
-          "processGas": 850000,
-          "reserveGas": 25000,
-          "maximumGas": 1000000,
-          "governance": {
-            "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
-            "recoveryTimelock": 86400
-          },
-          "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4d",
-          "watchers": ["0x8ad65ba028cae9e3932959d5c167a09ede941d2d"]
-        },
         "bridgeConfiguration": {
-          "weth": "0xEBbc3452Cc911591e4F18f3b36727Df45d6bd1f9",
+          "weth": "0xebbc3452cc911591e4f18f3b36727df45d6bd1f9",
           "customs": [],
           "mintGas": 200000,
           "deployGas": 850000
         }
       },
-      "arbitrum-rinkeby": {
-        "name": "arbitrum-rinkeby",
-        "domain": 6661,
-        "connections": ["goerli", "neontestnet", "rinkeby", "evmostestnet", "kovan", "optimism-kovan", "milkomedaC1testnet"],
-        "specs": {
-          "chainId": 421611,
-          "blockTime": 150000,
-          "finalizationBlocks": 1,
-          "supports1559": false,
-          "confirmations": 1,
-          "blockExplorer": "https://testnet.arbiscan.io/",
-          "indexPageSize": 2000
-        },
+      "evmostestnet": {
+        "name": "evmostestnet",
+        "domain": 4001,
+        "connections": [
+          "arbitrum-rinkeby",
+          "goerli",
+          "kovan",
+          "milkomedaC1testnet",
+          "rinkeby",
+          "neontestnet",
+          "optimism-kovan"
+        ],
         "configuration": {
-          "optimisticSeconds": 1800,
+          "optimisticSeconds": 10,
           "processGas": 850000,
-          "reserveGas": 25000,
+          "reserveGas": 15000,
           "maximumGas": 1000000,
+          "updater": "0x815d2281a9ebacfbffa4294375de6e14f2522d87",
+          "watchers": [
+            "0xafcf8db79e999cb79260572fb61c8e5006b855a4"
+          ],
           "governance": {
             "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
-            "recoveryTimelock": 86400
-          },
-          "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4d",
-          "watchers": ["0x8ad65ba028cae9e3932959d5c167a09ede941d2d"]
+            "recoveryTimelock": 180
+          }
+        },
+        "specs": {
+          "chainId": 9000,
+          "blockTime": 5,
+          "finalizationBlocks": 10,
+          "supports1559": false,
+          "confirmations": 6,
+          "blockExplorer": "https://evm.evmos.dev/",
+          "indexPageSize": 2000
         },
         "bridgeConfiguration": {
-          "weth": "0xEBbc3452Cc911591e4F18f3b36727Df45d6bd1f9",
+          "weth": "0xcc491f589b45d4a3c679016195b3fb87d7848210",
           "customs": [],
           "mintGas": 200000,
           "deployGas": 850000
@@ -277,6 +382,218 @@
     }
   },
   "core": {
+    "milkomedaC1testnet": {
+      "deployHeight": 4270914,
+      "upgradeBeaconController": "0x16abfd2f9d25f0b74feac4f4aa3ce69723cf9f49",
+      "xAppConnectionManager": "0x2377f2921e46b6385d2aba6d134165f0ae2540a6",
+      "updaterManager": "0x18187a9f52cc7e59464bf8b8d8ae519322cccb09",
+      "governanceRouter": {
+        "implementation": "0x1f269d7278ecca61f7446dbd89eb4d3fa92af09d",
+        "proxy": "0x05f80dffa0792714fbc7abbbe832be84492d3663",
+        "beacon": "0xeee380069040e680f51dea7ad1e6d0be24de868f"
+      },
+      "home": {
+        "implementation": "0x6a84eba3f09699ebae59b7d7df6e75651ff56704",
+        "proxy": "0xe0cbe40722b3f46e56ff0b55e09d7a38e0715679",
+        "beacon": "0x359197c2be6a3132238f33f890d313c30b8a244a"
+      },
+      "replicas": {
+        "rinkeby": {
+          "implementation": "0xaeb90516ea6f45fb9146da4cea7b105945b0bba3",
+          "proxy": "0xbcab90e25639ca50dd9487f6038622c3baff105c",
+          "beacon": "0x7bc7e3ccd1964da679079f103c408350c98bcb3f"
+        },
+        "arbitrum-rinkeby": {
+          "implementation": "0xaeb90516ea6f45fb9146da4cea7b105945b0bba3",
+          "proxy": "0xd252a210d87e85b70c4b4a3229a9ed8b06ed2e4b",
+          "beacon": "0x7bc7e3ccd1964da679079f103c408350c98bcb3f"
+        },
+        "evmostestnet": {
+          "implementation": "0xaeb90516ea6f45fb9146da4cea7b105945b0bba3",
+          "proxy": "0x452bf1f185d6357d03a5c49079efa53388952fd4",
+          "beacon": "0x7bc7e3ccd1964da679079f103c408350c98bcb3f"
+        },
+        "goerli": {
+          "implementation": "0xaeb90516ea6f45fb9146da4cea7b105945b0bba3",
+          "proxy": "0x9348f5d079b423aebbfd2c0b45c15218bbb3df5b",
+          "beacon": "0x7bc7e3ccd1964da679079f103c408350c98bcb3f"
+        },
+        "kovan": {
+          "implementation": "0xaeb90516ea6f45fb9146da4cea7b105945b0bba3",
+          "proxy": "0xae9d86c1e4f010ac1cdfafcc9d9e008a7098ad11",
+          "beacon": "0x7bc7e3ccd1964da679079f103c408350c98bcb3f"
+        },
+        "optimism-kovan": {
+          "implementation": "0xaeb90516ea6f45fb9146da4cea7b105945b0bba3",
+          "proxy": "0xc636742fa4edab3efdd36533681430741a81546d",
+          "beacon": "0x7bc7e3ccd1964da679079f103c408350c98bcb3f"
+        },
+        "neontestnet": {
+          "implementation": "0xaeb90516ea6f45fb9146da4cea7b105945b0bba3",
+          "proxy": "0xca8aed5d71e232b9d8b020cce4acc5a611aa4f0f",
+          "beacon": "0x7bc7e3ccd1964da679079f103c408350c98bcb3f"
+        }
+      }
+    },
+    "kovan": {
+      "deployHeight": 31134284,
+      "upgradeBeaconController": "0xb0aefe5a88eeda7af7171c57430b153251275c33",
+      "xAppConnectionManager": "0x5240cc5f271f6dcbcc5ec67be04fd9de0f50f91f",
+      "updaterManager": "0x8bd3e4b2ef10491fcc9153840a8ca54c7e7738bf",
+      "governanceRouter": {
+        "implementation": "0xf4a442eeecc3e275d5ed4d91ec6231c7ab8e2386",
+        "proxy": "0x3f7754a3e178acc32ff8d5887b38f4e7b1673d8b",
+        "beacon": "0xd3bd51f18b7a77f2d16364ec0e7a8e499f86c8e9"
+      },
+      "home": {
+        "implementation": "0x397a0edbdd4c89d1dad557ae5bac75f585d77b7d",
+        "proxy": "0x4730144aa70a22bd04338e4589ec8f55618e73bf",
+        "beacon": "0x1c29678a918b8b4823a76b542b199b82cf4629ba"
+      },
+      "replicas": {
+        "arbitrum-rinkeby": {
+          "implementation": "0x18f4019f6620e1593059b5a0518ceed6a6634373",
+          "proxy": "0x7694f68d6d6084c9ac27fc9d3f227b605b2cc3d3",
+          "beacon": "0x6c6b091665520088dbfe8ccb1ecb1d0556814e0d"
+        },
+        "goerli": {
+          "implementation": "0x18f4019f6620e1593059b5a0518ceed6a6634373",
+          "proxy": "0x9969e1b2a9f81fc9066897b4865b58443967024b",
+          "beacon": "0x6c6b091665520088dbfe8ccb1ecb1d0556814e0d"
+        },
+        "neontestnet": {
+          "implementation": "0x18f4019f6620e1593059b5a0518ceed6a6634373",
+          "proxy": "0xeb04adc8a451b9730ccf0b7f8ab1fb422c72c55a",
+          "beacon": "0x6c6b091665520088dbfe8ccb1ecb1d0556814e0d"
+        },
+        "evmostestnet": {
+          "implementation": "0x18f4019f6620e1593059b5a0518ceed6a6634373",
+          "proxy": "0x5dcbdfe40ef9e865b3cc2c90c517c557b2fa91c8",
+          "beacon": "0x6c6b091665520088dbfe8ccb1ecb1d0556814e0d"
+        },
+        "milkomedaC1testnet": {
+          "implementation": "0x18f4019f6620e1593059b5a0518ceed6a6634373",
+          "proxy": "0x306dbddaa3da986548ed7a468cfe4c7f5addbd09",
+          "beacon": "0x6c6b091665520088dbfe8ccb1ecb1d0556814e0d"
+        },
+        "optimism-kovan": {
+          "implementation": "0x18f4019f6620e1593059b5a0518ceed6a6634373",
+          "proxy": "0xf8c1ed7f36eb944d8b40af86b998d7b1be47143d",
+          "beacon": "0x6c6b091665520088dbfe8ccb1ecb1d0556814e0d"
+        },
+        "rinkeby": {
+          "implementation": "0x18f4019f6620e1593059b5a0518ceed6a6634373",
+          "proxy": "0x523c830c9007b595609a7e5f4885eeae6a4d2318",
+          "beacon": "0x6c6b091665520088dbfe8ccb1ecb1d0556814e0d"
+        }
+      }
+    },
+    "optimism-kovan": {
+      "deployHeight": 3348750,
+      "upgradeBeaconController": "0x5235cd80c9a35af0a5deba021912826ae435d824",
+      "xAppConnectionManager": "0x4edaefba2e07099d9c18e166efe2ce943702df82",
+      "updaterManager": "0xca1f9e26553327c460378fea1cd0a039c465c6da",
+      "governanceRouter": {
+        "implementation": "0x41f948c5d25c5744c6864e762e7c484d0c25fe60",
+        "proxy": "0x3fbf3ec1e6a1fffd745d5edf4b5096979f6f57e3",
+        "beacon": "0x6e411324e5cac119e6ff05c617d2cd5c950d31f8"
+      },
+      "home": {
+        "implementation": "0x493fdc094c7fce02eaeeeaeb5cef57e90fa7b23a",
+        "proxy": "0xa33132edf3a037bcdc2f192fb6cce9266afc4148",
+        "beacon": "0x2c636db7284e2a7de2a5ec9b28420a70f7edc3d2"
+      },
+      "replicas": {
+        "kovan": {
+          "implementation": "0xc0820555b33bc561254e61db4222f4311e1d3575",
+          "proxy": "0x48a733b3347c6bbe1ec623855b5822471254681f",
+          "beacon": "0x9e3a397fa1b743ea373ba231bf9098cea7cc8356"
+        },
+        "rinkeby": {
+          "implementation": "0xc0820555b33bc561254e61db4222f4311e1d3575",
+          "proxy": "0xcbf7d49635f2cdde1a9e9399e02c660ad87c6976",
+          "beacon": "0x9e3a397fa1b743ea373ba231bf9098cea7cc8356"
+        },
+        "evmostestnet": {
+          "implementation": "0xc0820555b33bc561254e61db4222f4311e1d3575",
+          "proxy": "0x86f31f21f440133f0e8801a9c27bbceca1a37212",
+          "beacon": "0x9e3a397fa1b743ea373ba231bf9098cea7cc8356"
+        },
+        "milkomedaC1testnet": {
+          "implementation": "0xc0820555b33bc561254e61db4222f4311e1d3575",
+          "proxy": "0xc9cee3f0c700f9dd386da267621e76950185b19c",
+          "beacon": "0x9e3a397fa1b743ea373ba231bf9098cea7cc8356"
+        },
+        "neontestnet": {
+          "implementation": "0xc0820555b33bc561254e61db4222f4311e1d3575",
+          "proxy": "0x586e0b790df4d208aeb91ff6415f4542852525f2",
+          "beacon": "0x9e3a397fa1b743ea373ba231bf9098cea7cc8356"
+        },
+        "goerli": {
+          "implementation": "0xc0820555b33bc561254e61db4222f4311e1d3575",
+          "proxy": "0xb8ef12b109bfae65d3035bed1a13746031d7b945",
+          "beacon": "0x9e3a397fa1b743ea373ba231bf9098cea7cc8356"
+        },
+        "arbitrum-rinkeby": {
+          "implementation": "0xc0820555b33bc561254e61db4222f4311e1d3575",
+          "proxy": "0xae72fd780c3f51014644a7939ab2e8d44cd3e546",
+          "beacon": "0x9e3a397fa1b743ea373ba231bf9098cea7cc8356"
+        }
+      }
+    },
+    "neontestnet": {
+      "deployHeight": 131966188,
+      "upgradeBeaconController": "0x0dab5407446bfebb16990c8f586a91ba7bb2c189",
+      "xAppConnectionManager": "0x9cb5abe515ca91a3851aa246d614a639ad88b735",
+      "updaterManager": "0xeb79540da3f802e63e63f99eb13c7803109def40",
+      "governanceRouter": {
+        "implementation": "0xe6034b2f02ffe38563c0f96252577ceedb00b4f5",
+        "proxy": "0x0e4024950d71f630d710f8523e4e40656a2cd617",
+        "beacon": "0xf2e2da66eaacc274469c29149d9ba5996fad5449"
+      },
+      "home": {
+        "implementation": "0x38789a24cf7bd4b1f3bf5cebb7498c2662de92d3",
+        "proxy": "0x532814a2b5a5f4a30fd31d03ab32936d95a4e581",
+        "beacon": "0x0ae0010822fccb4778d18c5dfecb53ac6074ddf4"
+      },
+      "replicas": {
+        "goerli": {
+          "implementation": "0xd14eebfb2c1267f88dd0b362c86e41517680dbc3",
+          "proxy": "0x124a74f83f6dceef8b6e712f5977e2e0c924bfbf",
+          "beacon": "0xb02a38bdf558321ac00f823d2593e216bee873dd"
+        },
+        "optimism-kovan": {
+          "implementation": "0xd14eebfb2c1267f88dd0b362c86e41517680dbc3",
+          "proxy": "0xf8c1ed7f36eb944d8b40af86b998d7b1be47143d",
+          "beacon": "0xb02a38bdf558321ac00f823d2593e216bee873dd"
+        },
+        "kovan": {
+          "implementation": "0xd14eebfb2c1267f88dd0b362c86e41517680dbc3",
+          "proxy": "0x226fa9744ce3e1b398abca71d7a794ec0a13e23e",
+          "beacon": "0xb02a38bdf558321ac00f823d2593e216bee873dd"
+        },
+        "rinkeby": {
+          "implementation": "0xd14eebfb2c1267f88dd0b362c86e41517680dbc3",
+          "proxy": "0xd9d656c4c8de9e66422589724796e2514fa59b1c",
+          "beacon": "0xb02a38bdf558321ac00f823d2593e216bee873dd"
+        },
+        "milkomedaC1testnet": {
+          "implementation": "0xd14eebfb2c1267f88dd0b362c86e41517680dbc3",
+          "proxy": "0xd2264e20d2b1f451bac9d48e1635d4c3d5997480",
+          "beacon": "0xb02a38bdf558321ac00f823d2593e216bee873dd"
+        },
+        "evmostestnet": {
+          "implementation": "0xd14eebfb2c1267f88dd0b362c86e41517680dbc3",
+          "proxy": "0x9eedb4e71296a17a52dba260906394bc559e35e2",
+          "beacon": "0xb02a38bdf558321ac00f823d2593e216bee873dd"
+        },
+        "arbitrum-rinkeby": {
+          "implementation": "0xd14eebfb2c1267f88dd0b362c86e41517680dbc3",
+          "proxy": "0x7694f68d6d6084c9ac27fc9d3f227b605b2cc3d3",
+          "beacon": "0xb02a38bdf558321ac00f823d2593e216bee873dd"
+        }
+      }
+    },
     "goerli": {
       "deployHeight": 6748555,
       "upgradeBeaconController": "0x5bba73ef76bf303c0b48ade5d611bb2f80471653",
@@ -298,58 +615,35 @@
           "proxy": "0x9df21c4a016b8bd84000b29a3ba51980ddd7b37a",
           "beacon": "0x4a455cbabd96dc9b0dba2f0ccbb58a2dad403df2"
         },
-        "neontestnet": {
-          "implementation": "0x8a36fbccc8d844aaacbca71e7ec8847215bb82f2",
-          "proxy": "0xe9239d33c26bef40ae87a2e211848fc8e7c7baa0",
-          "beacon": "0x4a455cbabd96dc9b0dba2f0ccbb58a2dad403df2"
-        },
         "rinkeby": {
           "implementation": "0x8a36fbccc8d844aaacbca71e7ec8847215bb82f2",
           "proxy": "0xf405c58d95a8f2617505841bdacef6de27006d74",
+          "beacon": "0x4a455cbabd96dc9b0dba2f0ccbb58a2dad403df2"
+        },
+        "arbitrum-rinkeby": {
+          "implementation": "0x8a36fbccc8d844aaacbca71e7ec8847215bb82f2",
+          "proxy": "0xd2264e20d2b1f451bac9d48e1635d4c3d5997480",
           "beacon": "0x4a455cbabd96dc9b0dba2f0ccbb58a2dad403df2"
         },
         "evmostestnet": {
           "implementation": "0x8a36fbccc8d844aaacbca71e7ec8847215bb82f2",
           "proxy": "0xf1b83d100860887aef35e50b3794e28dc744e5ce",
           "beacon": "0x4a455cbabd96dc9b0dba2f0ccbb58a2dad403df2"
-        }
-      }
-    },
-    "kovan": {
-      "deployHeight": 31134284,
-      "upgradeBeaconController": "0xb0aefe5a88eeda7af7171c57430b153251275c33",
-      "xAppConnectionManager": "0x5240cc5f271f6dcbcc5ec67be04fd9de0f50f91f",
-      "updaterManager": "0x8bd3e4b2ef10491fcc9153840a8ca54c7e7738bf",
-      "governanceRouter": {
-        "implementation": "0xf4a442eeecc3e275d5ed4d91ec6231c7ab8e2386",
-        "proxy": "0x3f7754a3e178acc32ff8d5887b38f4e7b1673d8b",
-        "beacon": "0xd3bd51f18b7a77f2d16364ec0e7a8e499f86c8e9"
-      },
-      "home": {
-        "implementation": "0x397a0edbdd4c89d1dad557ae5bac75f585d77b7d",
-        "proxy": "0x4730144aa70a22bd04338e4589ec8f55618e73bf",
-        "beacon": "0x1c29678a918b8b4823a76b542b199b82cf4629ba"
-      },
-      "replicas": {
-        "evmostestnet": {
-          "implementation": "0x18f4019f6620e1593059b5a0518ceed6a6634373",
-          "proxy": "0x5dcbdfe40ef9e865b3cc2c90c517c557b2fa91c8",
-          "beacon": "0x6c6b091665520088dbfe8ccb1ecb1d0556814e0d"
+        },
+        "milkomedaC1testnet": {
+          "implementation": "0x8a36fbccc8d844aaacbca71e7ec8847215bb82f2",
+          "proxy": "0xf8c1ed7f36eb944d8b40af86b998d7b1be47143d",
+          "beacon": "0x4a455cbabd96dc9b0dba2f0ccbb58a2dad403df2"
+        },
+        "optimism-kovan": {
+          "implementation": "0x8a36fbccc8d844aaacbca71e7ec8847215bb82f2",
+          "proxy": "0x7694f68d6d6084c9ac27fc9d3f227b605b2cc3d3",
+          "beacon": "0x4a455cbabd96dc9b0dba2f0ccbb58a2dad403df2"
         },
         "neontestnet": {
-          "implementation": "0x18f4019f6620e1593059b5a0518ceed6a6634373",
-          "proxy": "0xeb04adc8a451b9730ccf0b7f8ab1fb422c72c55a",
-          "beacon": "0x6c6b091665520088dbfe8ccb1ecb1d0556814e0d"
-        },
-        "rinkeby": {
-          "implementation": "0x18f4019f6620e1593059b5a0518ceed6a6634373",
-          "proxy": "0x523c830c9007b595609a7e5f4885eeae6a4d2318",
-          "beacon": "0x6c6b091665520088dbfe8ccb1ecb1d0556814e0d"
-        },
-        "goerli": {
-          "implementation": "0x18f4019f6620e1593059b5a0518ceed6a6634373",
-          "proxy": "0x9969e1b2a9f81fc9066897b4865b58443967024b",
-          "beacon": "0x6c6b091665520088dbfe8ccb1ecb1d0556814e0d"
+          "implementation": "0x8a36fbccc8d844aaacbca71e7ec8847215bb82f2",
+          "proxy": "0xe9239d33c26bef40ae87a2e211848fc8e7c7baa0",
+          "beacon": "0x4a455cbabd96dc9b0dba2f0ccbb58a2dad403df2"
         }
       }
     },
@@ -369,14 +663,14 @@
         "beacon": "0x3fbcb5d882d706c9dea852700c7c35d1087d8740"
       },
       "replicas": {
-        "goerli": {
+        "optimism-kovan": {
           "implementation": "0x67e9837aa16f425b379aaf7e4d5581e59d577cf2",
-          "proxy": "0xff1000469744aa20630ae61d5f9f461b08755582",
+          "proxy": "0x7694f68d6d6084c9ac27fc9d3f227b605b2cc3d3",
           "beacon": "0xa38bdbd738e81a93e006959f1ea6565bb033c8d7"
         },
-        "rinkeby": {
+        "arbitrum-rinkeby": {
           "implementation": "0x67e9837aa16f425b379aaf7e4d5581e59d577cf2",
-          "proxy": "0x362f6d97609501e630ad8a5da2f211675cac591e",
+          "proxy": "0xd2264e20d2b1f451bac9d48e1635d4c3d5997480",
           "beacon": "0xa38bdbd738e81a93e006959f1ea6565bb033c8d7"
         },
         "neontestnet": {
@@ -384,10 +678,78 @@
           "proxy": "0x41737ac8a129f20707d914ff088a7ec3e57bc99b",
           "beacon": "0xa38bdbd738e81a93e006959f1ea6565bb033c8d7"
         },
+        "rinkeby": {
+          "implementation": "0x67e9837aa16f425b379aaf7e4d5581e59d577cf2",
+          "proxy": "0x362f6d97609501e630ad8a5da2f211675cac591e",
+          "beacon": "0xa38bdbd738e81a93e006959f1ea6565bb033c8d7"
+        },
+        "milkomedaC1testnet": {
+          "implementation": "0x67e9837aa16f425b379aaf7e4d5581e59d577cf2",
+          "proxy": "0xf8c1ed7f36eb944d8b40af86b998d7b1be47143d",
+          "beacon": "0xa38bdbd738e81a93e006959f1ea6565bb033c8d7"
+        },
+        "goerli": {
+          "implementation": "0x67e9837aa16f425b379aaf7e4d5581e59d577cf2",
+          "proxy": "0xff1000469744aa20630ae61d5f9f461b08755582",
+          "beacon": "0xa38bdbd738e81a93e006959f1ea6565bb033c8d7"
+        },
         "kovan": {
           "implementation": "0x67e9837aa16f425b379aaf7e4d5581e59d577cf2",
           "proxy": "0x745f85d60c6afe77a6465336b87f4baaa5418a13",
           "beacon": "0xa38bdbd738e81a93e006959f1ea6565bb033c8d7"
+        }
+      }
+    },
+    "arbitrum-rinkeby": {
+      "deployHeight": 12046137,
+      "upgradeBeaconController": "0x9929746430aa76ac6814cb37ed5c8b8a27140d2c",
+      "xAppConnectionManager": "0x1ba0c269ad0b49bb078ad83f1cc3ff27fd9ee8da",
+      "updaterManager": "0x6eb485a1f761ec136504cb0101f104c2589294f0",
+      "governanceRouter": {
+        "implementation": "0x56ada505d4c6b1ae84d21ce4d14cd16d1a354eca",
+        "proxy": "0x5d88c30caba3cec2d6df4b92824fa95ba0cb1b28",
+        "beacon": "0x685711cf12a824e10b47a1f03219ca3bd7e6d250"
+      },
+      "home": {
+        "implementation": "0x4ca6efa591143d48bd5c83f5562d4c3a0fe7c459",
+        "proxy": "0xc341974dc80d63672997ea4956f0027d16b7d5b9",
+        "beacon": "0x8e72b769766f4f2a826b2a780c6c5e39a8eef804"
+      },
+      "replicas": {
+        "optimism-kovan": {
+          "implementation": "0xeeffc52826f60164bff4baa8a6ced2ba2edd0edc",
+          "proxy": "0x289241f1fcfeb158f59ce6369be8a3d980d1560a",
+          "beacon": "0xdd5f594f31a8c0770610dfeb54c6b377ba798535"
+        },
+        "rinkeby": {
+          "implementation": "0xeeffc52826f60164bff4baa8a6ced2ba2edd0edc",
+          "proxy": "0x0cfa7f69e0ad7c45d746a476925a13c4105031f7",
+          "beacon": "0xdd5f594f31a8c0770610dfeb54c6b377ba798535"
+        },
+        "evmostestnet": {
+          "implementation": "0xeeffc52826f60164bff4baa8a6ced2ba2edd0edc",
+          "proxy": "0x88c3dec2f274a32b7a1f1945acd7cfe2c5623809",
+          "beacon": "0xdd5f594f31a8c0770610dfeb54c6b377ba798535"
+        },
+        "neontestnet": {
+          "implementation": "0xeeffc52826f60164bff4baa8a6ced2ba2edd0edc",
+          "proxy": "0x51e515108655b15a861631a684ab320ad4ab2892",
+          "beacon": "0xdd5f594f31a8c0770610dfeb54c6b377ba798535"
+        },
+        "kovan": {
+          "implementation": "0xeeffc52826f60164bff4baa8a6ced2ba2edd0edc",
+          "proxy": "0x879d50e3de1256d2e6b9fed08360b28e9a18f5bf",
+          "beacon": "0xdd5f594f31a8c0770610dfeb54c6b377ba798535"
+        },
+        "goerli": {
+          "implementation": "0xeeffc52826f60164bff4baa8a6ced2ba2edd0edc",
+          "proxy": "0xea75751993bc9cde392b262db9817587028dd8b1",
+          "beacon": "0xdd5f594f31a8c0770610dfeb54c6b377ba798535"
+        },
+        "milkomedaC1testnet": {
+          "implementation": "0xeeffc52826f60164bff4baa8a6ced2ba2edd0edc",
+          "proxy": "0x24af59cf2b92d90288792568381adced783c9f9e",
+          "beacon": "0xdd5f594f31a8c0770610dfeb54c6b377ba798535"
         }
       }
     },
@@ -407,9 +769,9 @@
         "beacon": "0x8c49b91b307cd9d00838b947cf7f4a25bc051152"
       },
       "replicas": {
-        "goerli": {
+        "neontestnet": {
           "implementation": "0xad74bef73458ddb8646af7a2e9a56734fa44694c",
-          "proxy": "0x96ee295d2c96ea0353b25ff0b8e8e0b8e64db60f",
+          "proxy": "0x08f8fb0d580e0ee422bc477d6098e401226a715a",
           "beacon": "0x8dc1c77718b6f97f4a1e06e234ba2c8defd9cf9a"
         },
         "kovan": {
@@ -417,58 +779,75 @@
           "proxy": "0x097a3eb6cd351ab28de67a0a0bda9e0e32733da7",
           "beacon": "0x8dc1c77718b6f97f4a1e06e234ba2c8defd9cf9a"
         },
-        "neontestnet": {
+        "optimism-kovan": {
           "implementation": "0xad74bef73458ddb8646af7a2e9a56734fa44694c",
-          "proxy": "0x08f8fb0d580e0ee422bc477d6098e401226a715a",
+          "proxy": "0x05445ee794d34bf16573697b3c6c6d009032f251",
+          "beacon": "0x8dc1c77718b6f97f4a1e06e234ba2c8defd9cf9a"
+        },
+        "arbitrum-rinkeby": {
+          "implementation": "0xad74bef73458ddb8646af7a2e9a56734fa44694c",
+          "proxy": "0x5d7ad3c2bfdc58fceb514f38fbf6547ecd177e49",
+          "beacon": "0x8dc1c77718b6f97f4a1e06e234ba2c8defd9cf9a"
+        },
+        "milkomedaC1testnet": {
+          "implementation": "0xad74bef73458ddb8646af7a2e9a56734fa44694c",
+          "proxy": "0xd468ddf895292d65cab24d180f846286ab8e774d",
           "beacon": "0x8dc1c77718b6f97f4a1e06e234ba2c8defd9cf9a"
         },
         "evmostestnet": {
           "implementation": "0xad74bef73458ddb8646af7a2e9a56734fa44694c",
           "proxy": "0x423b1eced988959067834b13b501c8ab78a28576",
           "beacon": "0x8dc1c77718b6f97f4a1e06e234ba2c8defd9cf9a"
-        }
-      }
-    },
-    "neontestnet": {
-      "deployHeight": 131966188,
-      "upgradeBeaconController": "0x0dab5407446bfebb16990c8f586a91ba7bb2c189",
-      "xAppConnectionManager": "0x9cb5abe515ca91a3851aa246d614a639ad88b735",
-      "updaterManager": "0xeb79540da3f802e63e63f99eb13c7803109def40",
-      "governanceRouter": {
-        "implementation": "0xe6034b2f02ffe38563c0f96252577ceedb00b4f5",
-        "proxy": "0x0e4024950d71f630d710f8523e4e40656a2cd617",
-        "beacon": "0xf2e2da66eaacc274469c29149d9ba5996fad5449"
-      },
-      "home": {
-        "implementation": "0x38789a24cf7bd4b1f3bf5cebb7498c2662de92d3",
-        "proxy": "0x532814a2b5a5f4a30fd31d03ab32936d95a4e581",
-        "beacon": "0x0ae0010822fccb4778d18c5dfecb53ac6074ddf4"
-      },
-      "replicas": {
-        "rinkeby": {
-          "implementation": "0xd14eebfb2c1267f88dd0b362c86e41517680dbc3",
-          "proxy": "0xd9d656c4c8de9e66422589724796e2514fa59b1c",
-          "beacon": "0xb02a38bdf558321ac00f823d2593e216bee873dd"
-        },
-        "kovan": {
-          "implementation": "0xd14eebfb2c1267f88dd0b362c86e41517680dbc3",
-          "proxy": "0x226fa9744ce3e1b398abca71d7a794ec0a13e23e",
-          "beacon": "0xb02a38bdf558321ac00f823d2593e216bee873dd"
         },
         "goerli": {
-          "implementation": "0xd14eebfb2c1267f88dd0b362c86e41517680dbc3",
-          "proxy": "0x124a74f83f6dceef8b6e712f5977e2e0c924bfbf",
-          "beacon": "0xb02a38bdf558321ac00f823d2593e216bee873dd"
-        },
-        "evmostestnet": {
-          "implementation": "0xd14eebfb2c1267f88dd0b362c86e41517680dbc3",
-          "proxy": "0x9eedb4e71296a17a52dba260906394bc559e35e2",
-          "beacon": "0xb02a38bdf558321ac00f823d2593e216bee873dd"
+          "implementation": "0xad74bef73458ddb8646af7a2e9a56734fa44694c",
+          "proxy": "0x96ee295d2c96ea0353b25ff0b8e8e0b8e64db60f",
+          "beacon": "0x8dc1c77718b6f97f4a1e06e234ba2c8defd9cf9a"
         }
       }
     }
   },
   "bridge": {
+    "arbitrum-rinkeby": {
+      "deployHeight": 12046229,
+      "bridgeRouter": {
+        "implementation": "0x966cfa3030b4a5126ea46d9b8289b6f402072567",
+        "proxy": "0x63b54d95e4b661ccffcb83dcd1d7c97b325ddc21",
+        "beacon": "0x2a59e5078b20dd47eee4d45d7817726d098ee319"
+      },
+      "tokenRegistry": {
+        "implementation": "0x40c91353f2bcbdbe00f36cc5519d43e8fb9c77fa",
+        "proxy": "0x68c2ac75681bcec7fcdadcec432ae54f2895ef5f",
+        "beacon": "0xa0af1fd49f7333128c0946fe1aef060bf074b390"
+      },
+      "bridgeToken": {
+        "implementation": "0x63ad44b1c9b6b6281bc61508cf115baa2060e9c6",
+        "proxy": "0x0000000000000000000000000000000000000000",
+        "beacon": "0x285341ff0b9a3b2369340f44dce99d1b214c2dde"
+      },
+      "ethHelper": "0x6d01a31cd1a7c8e66ad3dec7c7aee214df4a59e5",
+      "customs": []
+    },
+    "optimism-kovan": {
+      "deployHeight": 3348909,
+      "bridgeRouter": {
+        "implementation": "0x3b0f343653615c85ed8de94bd440f9b649015474",
+        "proxy": "0x48bc85edf8ed763375bf96ff717633753d681a4e",
+        "beacon": "0xe39fcaa14e951999c93dcf075bcbf68322ddbb41"
+      },
+      "tokenRegistry": {
+        "implementation": "0x9d2a844624ef44570abd8256af5ae0b52760208e",
+        "proxy": "0xdfbe4da59b3070ba924865cd935301014ad99520",
+        "beacon": "0x5733ec73ce7a3e3b0c407c7c86d0d8c3cc06b49e"
+      },
+      "bridgeToken": {
+        "implementation": "0xe0bd9d10b869506f951c6d47844561ef5e834d11",
+        "proxy": "0x0000000000000000000000000000000000000000",
+        "beacon": "0x949c5e6422f21c6baa55db8bcde78570272d0b59"
+      },
+      "ethHelper": "0x02f509661780397bf1e06f1652206119dcdae27f",
+      "customs": []
+    },
     "rinkeby": {
       "deployHeight": 10537318,
       "bridgeRouter": {
@@ -487,26 +866,6 @@
         "beacon": "0xc19123a2afcc71220f603aec6228bc527db39fd0"
       },
       "ethHelper": "0x64586c361748e1973efdccda47c43bfd255d5238",
-      "customs": []
-    },
-    "neontestnet": {
-      "deployHeight": 131969775,
-      "bridgeRouter": {
-        "implementation": "0xdd670cd32be311adf9d91b0fbe766c8da5da4bb4",
-        "proxy": "0xbac990165ec54c89b282791ee603b43801cc3218",
-        "beacon": "0x15668d7a4d73745a8354fdfea4657a9ccb77f831"
-      },
-      "tokenRegistry": {
-        "implementation": "0xfe5fc343e4b934c319675b8379753657d15b43ca",
-        "proxy": "0xc5109e06622689368755ee501a8282e3b9202617",
-        "beacon": "0xb8f51a5ca810b12f6a03652a64a9936f8acabe56"
-      },
-      "bridgeToken": {
-        "implementation": "0xac3f0fb1de6a8c2d93471ae3a1f8be6968b1fbcf",
-        "proxy": "0x0000000000000000000000000000000000000000",
-        "beacon": "0xbffbf61c61929216eed0a30d7b824ac2326a01c1"
-      },
-      "ethHelper": "0x298a4e631b2ac6620fffd264f698761ef8c15fb5",
       "customs": []
     },
     "kovan": {
@@ -529,24 +888,24 @@
       "ethHelper": "0xd71410e8f988ba97e95e2833ebf8d6c42cbcaa2d",
       "customs": []
     },
-    "goerli": {
-      "deployHeight": 6748625,
+    "milkomedaC1testnet": {
+      "deployHeight": 4270981,
       "bridgeRouter": {
-        "implementation": "0x9b68006a0740411a315ceeda30f160a5263af005",
-        "proxy": "0x17e9b5d4fbd4359875e19bd06359ded7fba33f4c",
-        "beacon": "0x1e0db0d3361c6e7e78b68079cad63daf5e337c49"
+        "implementation": "0xfe358e0f139980c3fa9c0776ad40d46b1da38155",
+        "proxy": "0x9cc196f074acf41c68e8107b1511573ab40b09f3",
+        "beacon": "0xd7a49e02ae0e55d17e7239aabfc69b67ae9348d5"
       },
       "tokenRegistry": {
-        "implementation": "0xe195d2e4c247b5cce1630cb0b39d8bfedf66c0f3",
-        "proxy": "0xcaca3358fd90c8e7ae9689ac4d21a8a7ec58c030",
-        "beacon": "0x20d53a6835d201fcf9cceab9309a044f75388b83"
+        "implementation": "0xde15238cfa20f174631e18ccfeb35429e2ac1460",
+        "proxy": "0xe92b2a22d1e24617d16dd94e82b1ace5173c9bc8",
+        "beacon": "0xc31da5fb091f0b8a4b34c43d083428686e69ccf4"
       },
       "bridgeToken": {
-        "implementation": "0xa42a96cfd0ecdb41514908d8e0a0a55b14ec199d",
+        "implementation": "0x750f800be6b8b58621aeb4ac6ea1760d52cd10c9",
         "proxy": "0x0000000000000000000000000000000000000000",
-        "beacon": "0xa0f7bd4594dacc63a91b3c7857dbc789309aabe8"
+        "beacon": "0xc2c21fd5c0561944f354b8a8697f622e8e6b3202"
       },
-      "ethHelper": "0x6f646837e542b47a7c982da5ceb3676caabc00bf",
+      "ethHelper": "0xc110c93b1e655d60fcc5a748702b0d09d96df81b",
       "customs": []
     },
     "evmostestnet": {
@@ -567,6 +926,46 @@
         "beacon": "0x96f2380d5240e3634692694eab82f5609caee18d"
       },
       "ethHelper": "0x3bfcdad68bea1ed61fac49d050dabe0e1a482d30",
+      "customs": []
+    },
+    "goerli": {
+      "deployHeight": 6748625,
+      "bridgeRouter": {
+        "implementation": "0x9b68006a0740411a315ceeda30f160a5263af005",
+        "proxy": "0x17e9b5d4fbd4359875e19bd06359ded7fba33f4c",
+        "beacon": "0x1e0db0d3361c6e7e78b68079cad63daf5e337c49"
+      },
+      "tokenRegistry": {
+        "implementation": "0xe195d2e4c247b5cce1630cb0b39d8bfedf66c0f3",
+        "proxy": "0xcaca3358fd90c8e7ae9689ac4d21a8a7ec58c030",
+        "beacon": "0x20d53a6835d201fcf9cceab9309a044f75388b83"
+      },
+      "bridgeToken": {
+        "implementation": "0xa42a96cfd0ecdb41514908d8e0a0a55b14ec199d",
+        "proxy": "0x0000000000000000000000000000000000000000",
+        "beacon": "0xa0f7bd4594dacc63a91b3c7857dbc789309aabe8"
+      },
+      "ethHelper": "0x6f646837e542b47a7c982da5ceb3676caabc00bf",
+      "customs": []
+    },
+    "neontestnet": {
+      "deployHeight": 131969775,
+      "bridgeRouter": {
+        "implementation": "0xdd670cd32be311adf9d91b0fbe766c8da5da4bb4",
+        "proxy": "0xbac990165ec54c89b282791ee603b43801cc3218",
+        "beacon": "0x15668d7a4d73745a8354fdfea4657a9ccb77f831"
+      },
+      "tokenRegistry": {
+        "implementation": "0xfe5fc343e4b934c319675b8379753657d15b43ca",
+        "proxy": "0xc5109e06622689368755ee501a8282e3b9202617",
+        "beacon": "0xb8f51a5ca810b12f6a03652a64a9936f8acabe56"
+      },
+      "bridgeToken": {
+        "implementation": "0xac3f0fb1de6a8c2d93471ae3a1f8be6968b1fbcf",
+        "proxy": "0x0000000000000000000000000000000000000000",
+        "beacon": "0xbffbf61c61929216eed0a30d7b824ac2326a01c1"
+      },
+      "ethHelper": "0x298a4e631b2ac6620fffd264f698761ef8c15fb5",
       "customs": []
     }
   },
@@ -590,90 +989,12 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": ["kovan", "goerli", "evmostestnet", "neontestnet"],
-        "s3": {
-          "bucket": "nomadxyz-development-proofs",
-          "region": "us-west-2"
-        },
-        "interval": 5,
-        "enabled": true
-      },
-      "watcher": {
-        "interval": 5,
-        "enabled": true
-      },
-      "kathy": {
-        "chat": {
-          "type": "default"
-        },
-        "interval": 500,
-        "enabled": true
-      }
-    },
-    "goerli": {
-      "rpcStyle": "ethereum",
-      "db": "/usr/share/nomad",
-      "metrics": 9090,
-      "logging": {
-        "fmt": "json",
-        "level": "info"
-      },
-      "updater": {
-        "interval": 5,
-        "enabled": true
-      },
-      "relayer": {
-        "interval": 10,
-        "enabled": true
-      },
-      "processor": {
-        "allowed": null,
-        "denied": null,
         "subsidizedRemotes": [
-          "rinkeby",
           "kovan",
+          "goerli",
           "evmostestnet",
           "neontestnet"
         ],
-        "s3": {
-          "bucket": "nomadxyz-development-proofs",
-          "region": "us-west-2"
-        },
-        "interval": 5,
-        "enabled": true
-      },
-      "watcher": {
-        "interval": 5,
-        "enabled": true
-      },
-      "kathy": {
-        "chat": {
-          "type": "default"
-        },
-        "interval": 500,
-        "enabled": true
-      }
-    },
-    "evmostestnet": {
-      "rpcStyle": "ethereum",
-      "db": "/usr/share/nomad",
-      "metrics": 9090,
-      "logging": {
-        "fmt": "json",
-        "level": "info"
-      },
-      "updater": {
-        "interval": 5,
-        "enabled": true
-      },
-      "relayer": {
-        "interval": 10,
-        "enabled": true
-      },
-      "processor": {
-        "allowed": null,
-        "denied": null,
-        "subsidizedRemotes": ["rinkeby", "kovan", "goerli", "neontestnet"],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
@@ -756,7 +1077,100 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": ["rinkeby", "goerli", "evmostestnet", "kovan"],
+        "subsidizedRemotes": [
+          "rinkeby",
+          "goerli",
+          "evmostestnet",
+          "kovan"
+        ],
+        "s3": {
+          "bucket": "nomadxyz-development-proofs",
+          "region": "us-west-2"
+        },
+        "interval": 5,
+        "enabled": true
+      },
+      "watcher": {
+        "interval": 5,
+        "enabled": true
+      },
+      "kathy": {
+        "chat": {
+          "type": "default"
+        },
+        "interval": 500,
+        "enabled": true
+      }
+    },
+    "goerli": {
+      "rpcStyle": "ethereum",
+      "db": "/usr/share/nomad",
+      "metrics": 9090,
+      "logging": {
+        "fmt": "json",
+        "level": "info"
+      },
+      "updater": {
+        "interval": 5,
+        "enabled": true
+      },
+      "relayer": {
+        "interval": 10,
+        "enabled": true
+      },
+      "processor": {
+        "allowed": null,
+        "denied": null,
+        "subsidizedRemotes": [
+          "rinkeby",
+          "kovan",
+          "evmostestnet",
+          "neontestnet"
+        ],
+        "s3": {
+          "bucket": "nomadxyz-development-proofs",
+          "region": "us-west-2"
+        },
+        "interval": 5,
+        "enabled": true
+      },
+      "watcher": {
+        "interval": 5,
+        "enabled": true
+      },
+      "kathy": {
+        "chat": {
+          "type": "default"
+        },
+        "interval": 500,
+        "enabled": true
+      }
+    },
+    "evmostestnet": {
+      "rpcStyle": "ethereum",
+      "db": "/usr/share/nomad",
+      "metrics": 9090,
+      "logging": {
+        "fmt": "json",
+        "level": "info"
+      },
+      "updater": {
+        "interval": 5,
+        "enabled": true
+      },
+      "relayer": {
+        "interval": 10,
+        "enabled": true
+      },
+      "processor": {
+        "allowed": null,
+        "denied": null,
+        "subsidizedRemotes": [
+          "rinkeby",
+          "kovan",
+          "goerli",
+          "neontestnet"
+        ],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
@@ -784,33 +1198,46 @@
     "evmostestnet": "evmDefault"
   },
   "bridgeGui": {
-    "goerli": {
-      "displayName": "Goerli",
-      "nativeTokenSymbol": "gETH",
-      "connections": ["rinkeby"],
-      "connextEnabled": true
+    "evmostestnet": {
+      "displayName": "Evmos Testnet",
+      "nativeTokenSymbol": "tEVMOS",
+      "connections": [
+        "rinkeby"
+      ]
     },
     "kovan": {
       "displayName": "Kovan",
       "nativeTokenSymbol": "kETH",
-      "connections": ["rinkeby"],
+      "connections": [
+        "rinkeby"
+      ],
       "connextEnabled": true
-    },
-    "evmostestnet": {
-      "displayName": "Evmos Testnet",
-      "nativeTokenSymbol": "tEVMOS",
-      "connections": ["rinkeby"]
-    },
-    "neontestnet": {
-      "displayName": "Neon Testnet",
-      "nativeTokenSymbol": "tNEON",
-      "connections": ["rinkeby"]
     },
     "rinkeby": {
       "displayName": "Rinkeby",
       "nativeTokenSymbol": "rETH",
-      "connections": ["kovan", "goerli", "evmostestnet", "neontestnet"],
+      "connections": [
+        "kovan",
+        "goerli",
+        "evmostestnet",
+        "neontestnet"
+      ],
       "manualProcessing": true,
+      "connextEnabled": true
+    },
+    "neontestnet": {
+      "displayName": "Neon Testnet",
+      "nativeTokenSymbol": "tNEON",
+      "connections": [
+        "rinkeby"
+      ]
+    },
+    "goerli": {
+      "displayName": "Goerli",
+      "nativeTokenSymbol": "gETH",
+      "connections": [
+        "rinkeby"
+      ],
       "connextEnabled": true
     }
   }
