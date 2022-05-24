@@ -2,6 +2,7 @@
 
 ### Unreleased
 
+- remove `FromEnv` trait and make env loading conf-struct-specific
 - add handling for default keys `TRANSACTIONSIGNERS_DEFAULT_{KEY,ID,REGION}` and `RPCS_DEFAULT_RPCSTYLE`
 - add tests for new default config keys
 - make aws key region non-functional (region should be read from env)
