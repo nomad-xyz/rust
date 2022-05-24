@@ -7,7 +7,10 @@
     "avalanche",
     "evmos",
     "milkomedaC1",
-    "moonbeam"
+    "moonbeam",
+    "godwoken",
+    "moonriver",
+    "fuse"
   ],
   "s3": {
     "bucket": "nomadxyz-production-proofs",
@@ -16,10 +19,13 @@
   "rpcs": {
     "evmos": ["https://eth.bd.evmos.org:8545"],
     "ethereum": ["https://main-light.eth.linkpool.io/"],
-    "moonbeam": ["https://moonriver.api.onfinality.io/public"],
+    "moonbeam": ["https://rpc.api.moonbeam.network"],
     "milkomedaC1": ["https://rpc.c1.milkomeda.com:8545"],
     "xdai": ["https://dai.poa.network/"],
-    "avalanche": ["https://api.avax.network/ext/bc/C/rpc"]
+    "avalanche": ["https://api.avax.network/ext/bc/C/rpc"],
+    "godwoken": ["https://mainnet.godwoken.io/rpc/eth-wallet"],
+    "moonriver": ["https://moonriver.api.onfinality.io/public"],
+    "fuse": ["https://rpc.fuse.io/"]
   },
   "protocol": {
     "governor": {
