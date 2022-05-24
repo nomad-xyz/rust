@@ -427,15 +427,7 @@ impl NomadAgent for Processor {
             // if we have a bucket, add a task to push to it
             if let Some(config) = &self.config {
                 info!(bucket = %config.bucket, "Starting S3 push tasks");
-                tasks.push(
-                    Pusher::new(
-                        self.core.home.name(),
-                        &config.bucket,
-                        config.region.parse().expect("invalid s3 region"),
-                        db.clone(),
-                    )
-                    .spawn(),
-                )
+                tasks.push(Pusher::new(self.core.home.name(), &config.bucket, db.clone()).spawn())
             }
 
             // find the first task to shut down. Then cancel all others

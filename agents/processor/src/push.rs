@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use ethers::utils::keccak256;
-use rusoto_core::{credential::EnvironmentProvider, HttpClient, Region, RusotoError};
+use rusoto_core::{Region, RusotoError};
 use rusoto_s3::{GetObjectError, GetObjectRequest, PutObjectRequest, S3Client, S3};
 
 use color_eyre::eyre::{bail, eyre, Result};
@@ -11,8 +11,6 @@ use nomad_base::NomadDB;
 use nomad_core::accumulator::NomadProof;
 use tokio::{task::JoinHandle, time::sleep};
 use tracing::{debug, info, info_span, instrument::Instrumented, Instrument};
-
-static AWS_S3_PREFIX: &str = "OPT_PROCESSOR_S3";
 
 #[derive(serde::Serialize, serde::Deserialize)]
 struct ProvenMessage {
@@ -41,12 +39,9 @@ impl std::fmt::Debug for Pusher {
 
 impl Pusher {
     /// Instantiate a new pusher with a region
-    pub fn new(name: &str, bucket: &str, region: Region, db: NomadDB) -> Self {
-        let client = S3Client::new_with(
-            HttpClient::new().unwrap(),
-            EnvironmentProvider::with_prefix(AWS_S3_PREFIX),
-            region.clone(),
-        );
+    pub fn new(name: &str, bucket: &str, db: NomadDB) -> Self {
+        let region: Region = Default::default(); // loads from aws env
+        let client = S3Client::new(region.clone());
         Self {
             name: name.to_owned(),
             bucket: bucket.to_owned(),

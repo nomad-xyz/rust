@@ -14,7 +14,6 @@ use ethers::{
 };
 use nomad_xyz_configuration::agent::SignerConf;
 use once_cell::sync::OnceCell;
-use rusoto_core::{credential::EnvironmentProvider, HttpClient};
 use rusoto_kms::KmsClient;
 
 static KMS_CLIENT: OnceCell<KmsClient> = OnceCell::new();
@@ -57,23 +56,20 @@ impl From<AwsSigner<'static>> for Signers {
     }
 }
 
+async fn init_kms() {
+    KMS_CLIENT.get_or_init(|| KmsClient::new(Default::default()));
+}
+
 impl Signers {
     /// Try to build Signer from SignerConf object
     pub async fn try_from_signer_conf(conf: &SignerConf) -> Result<Self> {
         match conf {
             SignerConf::HexKey(key) => Ok(Self::Local(key.as_ref().parse()?)),
-            SignerConf::Aws { id, region } => {
-                let client = KMS_CLIENT.get_or_init(|| {
-                    KmsClient::new_with_client(
-                        rusoto_core::Client::new_with(
-                            EnvironmentProvider::default(),
-                            HttpClient::new().unwrap(),
-                        ),
-                        region.parse().expect("invalid region"),
-                    )
-                });
-
-                let signer = AwsSigner::new(client, id, 0).await?;
+            SignerConf::Aws { id } => {
+                init_kms().await;
+                let signer =
+                    AwsSigner::new(KMS_CLIENT.get().expect("kms should be initialized"), id, 0)
+                        .await?;
                 Ok(Self::Aws(signer))
             }
             SignerConf::Node => bail!("Node signer"),

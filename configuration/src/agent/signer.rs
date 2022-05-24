@@ -3,7 +3,35 @@ use std::str::FromStr;
 use crate::FromEnv;
 use nomad_types::HexString;
 
-/// Ethereum signer types
+/// Ethereum signer configurations.
+///
+/// This config item specifies valid Ethereum signers.
+/// When deserializing, it attempts the following:
+/// 1. Deserialize the value as a 32-byte hex string
+///    A hex string is treated as a private key for a local signer. This is
+///    generally discouraged.
+/// 2. Deserialize the value as an object containing a single key `id`,
+///    whose value is a string. This is treated as an identifier for an AWS
+///    key. If this configuration is used, the AWS region and credentials must
+///    be supplied when running the program. Typically these are inserted by
+///    env var, aws config, or instance roles.
+/// 3. Anything else is treated as an instruction to request the RPC node sign
+///    transactions and messages via the `eth_sign` family of RPC requests. If
+///    this mode is used, the RPC mode must be unlocked, and have a key.
+///
+/// # Examples
+///
+/// ```ignore
+/// // JSON examples
+/// // Hex Key
+/// "0x1234123412341234123412341234123412341234123412341234123412341234"
+/// // Aws
+/// { "id": "5485edfa-d7c2-11ec-9d64-0242ac120002" }
+/// // Node signer
+/// null
+/// "asdjf"
+/// 38
+/// ```
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 #[serde(untagged, rename_all = "camelCase")]
 pub enum SignerConf {
@@ -12,10 +40,14 @@ pub enum SignerConf {
     /// An AWS signer. Note that AWS credentials must be inserted into the env
     /// separately.
     Aws {
-        /// The UUID identifying the AWS KMS Key
-        id: String, // change to no _ so we can set by env
-        /// The AWS region
-        region: String,
+        /// An AWS identifier for the key. This may be
+        /// 1. Its UUID
+        /// 2. Its ARN
+        /// 3. A key alias
+        /// 4. A key alias's ARN
+        ///
+        /// See full rusoto documentation [here](https://docs.rs/rusoto_kms/0.47.0/rusoto_kms/struct.GetPublicKeyRequest.html#structfield.key_id)
+        id: String,
     },
     /// Assume node will sign on RPC calls
     Node,
@@ -31,9 +63,7 @@ impl FromEnv for SignerConf {
     fn from_env(prefix: &str, default_prefix: Option<&str>) -> Option<Self> {
         // ordering this first preferentially uses AWS if both are specified
         if let Ok(id) = std::env::var(&format!("{}_ID", prefix)) {
-            if let Ok(region) = std::env::var(&format!("{}_REGION", prefix)) {
-                return Some(SignerConf::Aws { id, region });
-            }
+            return Some(SignerConf::Aws { id });
         }
 
         if let Ok(signer_key) = std::env::var(&format!("{}_KEY", prefix)) {
@@ -70,15 +100,8 @@ mod test {
     fn it_deserializes_aws_signer_confs() {
         let value = json!({
             "id": "",
-            "region": ""
         });
         let signer_conf: SignerConf = serde_json::from_value(value).unwrap();
-        assert_eq!(
-            signer_conf,
-            SignerConf::Aws {
-                id: "".to_owned(),
-                region: "".to_owned()
-            }
-        );
+        assert_eq!(signer_conf, SignerConf::Aws { id: "".to_owned() });
     }
 }
