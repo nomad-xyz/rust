@@ -12,8 +12,7 @@
     "moonriver",
     "fantom",
     "bobaL2",
-    "cronos",
-    "fuse"
+    "cronos"
   ],
   "s3": {
     "bucket": "nomadxyz-production-proofs",
@@ -63,6 +62,53 @@
       "id": "0x93277b8f5939975b9e6694d5fd2837143afbf68a"
     },
     "networks": {
+      "bobaL2": {
+        "name": "bobaL2",
+        "rpc": "https://mainnet.boba.network/",
+        "domain": 981119897,
+        "connections": [
+          "moonbeam",
+          "ethereum",
+          "milkomedaC1",
+          "xdai",
+          "evmos",
+          "optimism",
+          "arbitrum",
+          "harmony",
+          "fantom",
+          "godwoken",
+          "cronos",
+          "moonriver"
+        ],
+        "specs": {
+          "chainId": 288,
+          "blockTime": 39,
+          "finalizationBlocks": 20,
+          "supports1559": false,
+          "confirmations": 1,
+          "blockExplorer": "https://blockexplorer.boba.network/",
+          "indexPageSize": 2000
+        },
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 25000,
+          "maximumGas": 1000000,
+          "governance": {
+            "recoveryManager": "TODO",
+            "recoveryTimelock": 86400
+          },
+          "updater": "TODO",
+          "watchers": [
+            "TODO"
+          ]
+        },
+        "bridgeConfiguration": {
+          "customs": [],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
+      },
       "godwoken": {
         "name": "godwoken",
         "rpc": "https://mainnet.godwoken.io/rpc/eth-wallet",
@@ -79,8 +125,7 @@
           "moonriver",
           "fantom",
           "bobaL2",
-          "cronos",
-          "fuse"
+          "cronos"
         ],
         "specs": {
           "chainId": 71394,
@@ -97,14 +142,16 @@
           "reserveGas": 25000,
           "maximumGas": 1000000,
           "governance": {
-            "recoveryManager": "TEMPLATE",
+            "recoveryManager": "TODO",
             "recoveryTimelock": 86400
           },
-          "updater": "TEMPLATE",
-          "watchers": ["TEMPLATE"]
+          "updater": "TODO",
+          "watchers": [
+            "TODO"
+          ]
         },
         "bridgeConfiguration": {
-          "weth": "TEMPLATE",
+          "weth": "TODO",
           "customs": [],
           "mintGas": 200000,
           "deployGas": 850000
@@ -123,8 +170,7 @@
           "godwoken",
           "fantom",
           "bobaL2",
-          "cronos",
-          "fuse"
+          "cronos"
         ],
         "specs": {
           "chainId": 1285,
@@ -141,14 +187,16 @@
           "reserveGas": 25000,
           "maximumGas": 1000000,
           "governance": {
-            "recoveryManager": "TEMPLATE",
+            "recoveryManager": "TODO",
             "recoveryTimelock": 86400
           },
-          "updater": "TEMPLATE",
-          "watchers": ["TEMPLATE"]
+          "updater": "TODO",
+          "watchers": [
+            "TODO"
+          ]
         },
         "bridgeConfiguration": {
-          "weth": "TEMPLATE",
+          "weth": "TODO",
           "customs": [],
           "mintGas": 200000,
           "deployGas": 850000
@@ -167,8 +215,7 @@
           "godwoken",
           "moonriver",
           "bobaL2",
-          "cronos",
-          "fuse"
+          "cronos"
         ],
         "specs": {
           "chainId": 250,
@@ -213,8 +260,7 @@
           "godwoken",
           "moonriver",
           "fantom",
-          "bobaL2",
-          "fuse"
+          "bobaL2"
         ],
         "specs": {
           "chainId": 25,
@@ -231,14 +277,16 @@
           "reserveGas": 25000,
           "maximumGas": 1000000,
           "governance": {
-            "recoveryManager": "TEMPLATE",
+            "recoveryManager": "TODO",
             "recoveryTimelock": 86400
           },
-          "updater": "TEMPLATE",
-          "watchers": ["TEMPLATE"]
+          "updater": "TODO",
+          "watchers": [
+            "TODO"
+          ]
         },
         "bridgeConfiguration": {
-          "weth": "TEMPLATE",
+          "weth": "TODO",
           "customs": [],
           "mintGas": 200000,
           "deployGas": 850000
@@ -257,8 +305,7 @@
           "moonriver",
           "fantom",
           "bobaL2",
-          "cronos",
-          "fuse"
+          "cronos"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -303,8 +350,7 @@
           "moonriver",
           "fantom",
           "bobaL2",
-          "cronos",
-          "fuse"
+          "cronos"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -349,8 +395,7 @@
           "moonriver",
           "fantom",
           "bobaL2",
-          "cronos",
-          "fuse"
+          "cronos"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -395,8 +440,7 @@
           "moonriver",
           "fantom",
           "bobaL2",
-          "cronos",
-          "fuse"
+          "cronos"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -441,8 +485,7 @@
           "moonriver",
           "fantom",
           "bobaL2",
-          "cronos",
-          "fuse"
+          "cronos"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -497,8 +540,7 @@
           "moonriver",
           "fantom",
           "bobaL2",
-          "cronos",
-          "fuse"
+          "cronos"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
