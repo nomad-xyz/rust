@@ -1,13 +1,16 @@
 {
   "version": 0,
   "environment": "development",
-  "networks": ["goerli", "neontestnet", "rinkeby", "evmostestnet", "kovan"],
+  "networks": ["goerli", "neontestnet", "rinkeby", "evmostestnet", "kovan", "arbitrum-rinkeby", "optimism-kovan", "milkomedaC1testnet"],
   "rpcs": {
     "rinkeby": ["https://rinkeby-light.eth.linkpool.io"],
     "goerli": ["https://goerli-light.eth.linkpool.io"],
     "neontestnet": ["https://proxy.devnet.neonlabs.org/solana"],
     "kovan": ["https://kovan.poa.network"],
-    "evmostestnet": ["https://eth.bd.evmos.dev:8545"]
+    "evmostestnet": ["https://eth.bd.evmos.dev:8545"],
+    "arbitrum-rinkeby": ["https://rinkeby.arbitrum.io/rpc"],
+    "optimism-kovan": ["https://kovan.optimism.io/"],
+    "milkomedaC1testnet": ["https://rpc-devnet-cardano-evm.c1.milkomeda.com"]
   },
   "protocol": {
     "governor": {
@@ -18,7 +21,7 @@
       "kovan": {
         "name": "kovan",
         "domain": 2001,
-        "connections": ["rinkeby", "neontestnet", "evmostestnet", "goerli"],
+        "connections": ["rinkeby", "neontestnet", "evmostestnet", "goerli", "arbitrum-rinkeby", "optimism-kovan", "milkomedaC1testnet"],
         "configuration": {
           "optimisticSeconds": 10,
           "processGas": 850000,
@@ -50,7 +53,7 @@
       "goerli": {
         "name": "goerli",
         "domain": 3001,
-        "connections": ["neontestnet", "evmostestnet", "kovan", "rinkeby"],
+        "connections": ["neontestnet", "evmostestnet", "kovan", "rinkeby", "arbitrum-rinkeby", "optimism-kovan", "milkomedaC1testnet"],
         "configuration": {
           "optimisticSeconds": 10,
           "processGas": 850000,
@@ -82,7 +85,7 @@
       "evmostestnet": {
         "name": "evmostestnet",
         "domain": 4001,
-        "connections": ["neontestnet", "kovan", "rinkeby", "goerli"],
+        "connections": ["neontestnet", "kovan", "rinkeby", "goerli", "arbitrum-rinkeby", "optimism-kovan", "milkomedaC1testnet"],
         "configuration": {
           "optimisticSeconds": 10,
           "processGas": 850000,
@@ -114,7 +117,7 @@
       "rinkeby": {
         "name": "rinkeby",
         "domain": 1001,
-        "connections": ["kovan", "evmostestnet", "neontestnet", "goerli"],
+        "connections": ["kovan", "evmostestnet", "neontestnet", "goerli", "arbitrum-rinkeby", "optimism-kovan", "milkomedaC1testnet"],
         "configuration": {
           "optimisticSeconds": 10,
           "processGas": 850000,
@@ -146,7 +149,7 @@
       "neontestnet": {
         "name": "neontestnet",
         "domain": 5001,
-        "connections": ["rinkeby", "kovan", "evmostestnet", "goerli"],
+        "connections": ["rinkeby", "kovan", "evmostestnet", "goerli", "arbitrum-rinkeby", "optimism-kovan", "milkomedaC1testnet"],
         "configuration": {
           "optimisticSeconds": 1800,
           "processGas": 850000,
@@ -172,6 +175,102 @@
           "weth": "0xf8ad328e98f85fccbf09e43b16dcbbda7e84beab",
           "customs": [],
           "mintGas": 20000,
+          "deployGas": 850000
+        }
+      },
+      "optimism-kovan": {
+        "name": "optimism-kovan",
+        "domain": 8881,
+        "connections": ["goerli", "neontestnet", "rinkeby", "evmostestnet", "kovan", "arbitrum-rinkeby", "milkomedaC1testnet"],
+        "specs": {
+          "chainId": 69,
+          "blockTime": 150000,
+          "finalizationBlocks": 1,
+          "supports1559": false,
+          "confirmations": 1,
+          "blockExplorer": "https://kovan-optimistic.etherscan.io",
+          "indexPageSize": 2000
+        },
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 25000,
+          "maximumGas": 1000000,
+          "governance": {
+            "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
+            "recoveryTimelock": 86400
+          },
+          "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4d",
+          "watchers": ["0x8ad65ba028cae9e3932959d5c167a09ede941d2d"]
+        },
+        "bridgeConfiguration": {
+          "weth": "0xEBbc3452Cc911591e4F18f3b36727Df45d6bd1f9",
+          "customs": [],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
+      },
+      "milkomedaC1testnet": {
+        "name": "milkomedaC1testnet",
+        "domain": 7771,
+        "connections": ["goerli", "neontestnet", "rinkeby", "evmostestnet", "kovan", "arbitrum-rinkeby", "optimism-kovan"],
+        "specs": {
+          "chainId": 200101,
+          "blockTime": 150000,
+          "finalizationBlocks": 1,
+          "supports1559": false,
+          "confirmations": 1,
+          "blockExplorer": "https://explorer-devnet-cardano-evm.c1.milkomeda.com",
+          "indexPageSize": 2000
+        },
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 25000,
+          "maximumGas": 1000000,
+          "governance": {
+            "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
+            "recoveryTimelock": 86400
+          },
+          "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4d",
+          "watchers": ["0x8ad65ba028cae9e3932959d5c167a09ede941d2d"]
+        },
+        "bridgeConfiguration": {
+          "weth": "0xEBbc3452Cc911591e4F18f3b36727Df45d6bd1f9",
+          "customs": [],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
+      },
+      "arbitrum-rinkeby": {
+        "name": "arbitrum-rinkeby",
+        "domain": 6661,
+        "connections": ["goerli", "neontestnet", "rinkeby", "evmostestnet", "kovan", "optimism-kovan", "milkomedaC1testnet"],
+        "specs": {
+          "chainId": 421611,
+          "blockTime": 150000,
+          "finalizationBlocks": 1,
+          "supports1559": false,
+          "confirmations": 1,
+          "blockExplorer": "https://testnet.arbiscan.io/",
+          "indexPageSize": 2000
+        },
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 25000,
+          "maximumGas": 1000000,
+          "governance": {
+            "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
+            "recoveryTimelock": 86400
+          },
+          "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4d",
+          "watchers": ["0x8ad65ba028cae9e3932959d5c167a09ede941d2d"]
+        },
+        "bridgeConfiguration": {
+          "weth": "0xEBbc3452Cc911591e4F18f3b36727Df45d6bd1f9",
+          "customs": [],
+          "mintGas": 200000,
           "deployGas": 850000
         }
       }
