@@ -67,8 +67,7 @@
           "fantom",
           "bobaL2",
           "cronos",
-          "moonriver",
-          "fuse"
+          "moonriver"
         ],
         "specs": {
           "chainId": 71394,
@@ -108,7 +107,8 @@
           "ethereum",
           "milkomedaC1",
           "xdai",
-          "evmos"
+          "evmos",
+          "godwoken"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -148,7 +148,8 @@
           "avalanche",
           "evmos",
           "ethereum",
-          "milkomedaC1"
+          "milkomedaC1",
+          "godwoken"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -188,7 +189,8 @@
           "avalanche",
           "ethereum",
           "evmos",
-          "milkomedaC1"
+          "milkomedaC1",
+          "godwoken"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -228,7 +230,8 @@
           "evmos",
           "moonbeam",
           "milkomedaC1",
-          "avalanche"
+          "avalanche",
+          "godwoken"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -268,7 +271,8 @@
           "ethereum",
           "milkomedaC1",
           "avalanche",
-          "moonbeam"
+          "moonbeam",
+          "godwoken"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -318,7 +322,8 @@
           "avalanche",
           "moonbeam",
           "xdai",
-          "evmos"
+          "evmos",
+          "godwoken"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
