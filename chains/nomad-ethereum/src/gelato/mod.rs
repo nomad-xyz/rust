@@ -8,6 +8,7 @@ use std::{str::FromStr, sync::Arc};
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
 use tracing::{debug, info};
+use utils::CHAIN_ID_TO_FORWARDER;
 
 /// EIP-712 forward request structure
 mod types;
@@ -54,7 +55,6 @@ where
     pub fn with_default_url(
         eth_client: Arc<M>,
         sponsor: Signers,
-        forwarder: Address,
         chain_id: usize,
         fee_token: String,
         is_high_priority: bool,
@@ -63,7 +63,9 @@ where
             gelato: GelatoClient::default().into(),
             eth_client,
             sponsor,
-            forwarder,
+            forwarder: *CHAIN_ID_TO_FORWARDER
+                .get(&chain_id)
+                .expect("!forwarder proxy"),
             chain_id,
             fee_token,
             is_high_priority,
