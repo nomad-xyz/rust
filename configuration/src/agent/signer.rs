@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::FromEnv;
+use crate::full_prefix;
 use nomad_types::HexString;
 
 /// Ethereum signer configurations.
@@ -59,19 +59,35 @@ impl Default for SignerConf {
     }
 }
 
-impl FromEnv for SignerConf {
-    fn from_env(prefix: &str, default_prefix: Option<&str>) -> Option<Self> {
+impl SignerConf {
+    /// Build SignerConf from env vars. Return default if network specifics not
+    /// provided.
+    pub fn from_env(prefix: Option<&str>, network: Option<&str>) -> Option<Self> {
+        let full_prefix = full_prefix(prefix, network);
+        let opt_signer_conf = Self::from_full_prefix(&full_prefix);
+
+        if opt_signer_conf.is_some() {
+            opt_signer_conf
+        } else {
+            let default_prefix = match prefix {
+                Some(prefix) => format!("DEFAULT_{}", prefix),
+                None => "DEFAULT".to_owned(),
+            };
+
+            Self::from_full_prefix(&default_prefix)
+        }
+    }
+
+    /// Build SignerConf from full prefix
+    fn from_full_prefix(full_prefix: &str) -> Option<Self> {
+        println!("{}", &format!("{}_ID", full_prefix));
         // ordering this first preferentially uses AWS if both are specified
         if let Ok(id) = std::env::var(&format!("{}_ID", prefix)) {
             return Some(SignerConf::Aws { id });
         }
 
-        if let Ok(signer_key) = std::env::var(&format!("{}_KEY", prefix)) {
+        if let Ok(signer_key) = std::env::var(&format!("{}_KEY", full_prefix)) {
             return Some(SignerConf::HexKey(HexString::from_str(&signer_key).ok()?));
-        }
-
-        if let Some(prefix) = default_prefix {
-            return SignerConf::from_env(prefix, None);
         }
 
         None

@@ -4,14 +4,23 @@ pub trait EnvOverridable {
     fn load_env_overrides(&mut self);
 }
 
-/// Implemented by structs that are built from environment variables (signers,
-/// connections, etc)
-pub trait FromEnv {
-    /// Optionally load self from env vars.
-    /// Accepts a `default_prefix` which will be looked for if `prefix` isn't found.
-    /// If both are present, `prefix` has precedence over `default_prefix`.
-    /// Return None if *any* necessary env var is missing.
-    fn from_env(prefix: &str, default_prefix: Option<&str>) -> Option<Self>
-    where
-        Self: Sized;
+/// Given optional prefix and network, concatenate values to create full prefix.
+/// If both prefix and network provided, structure is
+/// network_prefix_postfix. If no network provided, structure is
+/// prefix_postfix. If no prefix, structure is network_postfix. Panic if no
+/// network or prefix.
+pub fn full_prefix(prefix: Option<&str>, network: Option<&str>) -> String {
+    if let Some(prefix) = prefix {
+        if let Some(network) = network {
+            format!("{}_{}", network, prefix)
+        } else {
+            prefix.to_owned()
+        }
+    } else {
+        if let Some(network) = network {
+            return network.to_owned();
+        }
+
+        panic!("Cannot call from_env without providing a prefix or network");
+    }
 }
