@@ -1,15 +1,16 @@
 use gelato_relay::*;
 
-#[tokio::main(flavor = "current_thread")]
-async fn main() -> Result<(), reqwest::Error> {
+#[tokio::test]
+async fn bindings_query_data() -> Result<(), reqwest::Error> {
     let gelato = GelatoClient::default();
 
-    let chains = gelato.get_gelato_relay_chains().await?;
+    let chains = gelato.get_gelato_relay_chains().await.unwrap();
     println!("Relay chains: {:?}", chains);
 
     let task_status = gelato
         .get_task_status("0xce52ae7a6a3032848d76b161ac4c131fa995dcc67e3be5392dfb8466275d6679")
-        .await?;
+        .await
+        .unwrap();
     println!("Task status: {:?}", task_status);
 
     let mainnet: usize = chains[0].parse().unwrap();
@@ -20,7 +21,8 @@ async fn main() -> Result<(), reqwest::Error> {
             100_000,
             true,
         )
-        .await?;
+        .await
+        .unwrap();
     println!("Estimated fee: {:?}", estimated_fee);
 
     Ok(())
