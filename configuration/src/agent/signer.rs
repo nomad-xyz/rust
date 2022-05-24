@@ -95,6 +95,25 @@ impl SignerConf {
 
         None
     }
+
+    /// Validate signer conf fields
+    pub fn validate(&self, network: &str) -> eyre::Result<()> {
+        match self {
+            SignerConf::HexKey(key) => {
+                eyre::ensure!(
+                    !key.as_ref().is_empty(),
+                    "Hex signer key for {} empty!",
+                    network,
+                );
+            }
+            SignerConf::Aws { id } => {
+                eyre::ensure!(!id.is_empty(), "ID for {} aws signer key empty!", network);
+            }
+            SignerConf::Node => (),
+        };
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -122,26 +141,5 @@ mod test {
         });
         let signer_conf: SignerConf = serde_json::from_value(value).unwrap();
         assert_eq!(signer_conf, SignerConf::Aws { id: "".to_owned() });
-    }
-}
-
-impl SignerConf {
-    /// Validate signer conf fields
-    pub fn validate(&self, network: &str) -> eyre::Result<()> {
-        match self {
-            SignerConf::HexKey(key) => {
-                eyre::ensure!(
-                    !key.as_ref().is_empty(),
-                    "Hex signer key for {} empty!",
-                    network,
-                );
-            }
-            SignerConf::Aws { id } => {
-                eyre::ensure!(!id.is_empty(), "ID for {} aws signer key empty!", network);
-            }
-            SignerConf::Node => (),
-        };
-
-        Ok(())
     }
 }
