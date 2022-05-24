@@ -6,9 +6,9 @@ mod gelato;
 pub use gelato::*;
 
 fn get_submitter_type(network: &str) -> Option<String> {
-    let mut submitter_type = std::env::var(&format!("{}_SUBMITTERTYPE", network)).ok();
+    let mut submitter_type = std::env::var(&format!("{}_SUBMITTER_TYPE", network)).ok();
     if submitter_type.is_none() {
-        submitter_type = std::env::var("DEFAULT_SUBMITTERTYPE").ok();
+        submitter_type = std::env::var("DEFAULT_SUBMITTER_TYPE").ok();
     }
 
     submitter_type
