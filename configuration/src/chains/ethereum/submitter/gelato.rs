@@ -1,4 +1,4 @@
-use crate::{agent::SignerConf, FromEnv};
+use crate::agent::SignerConf;
 
 /// Configuration for tx submission through Gelato relay
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
@@ -10,16 +10,25 @@ pub struct GelatoConf {
     pub fee_token: String,
 }
 
-impl FromEnv for GelatoConf {
-    fn from_env(prefix: &str, default_prefix: Option<&str>) -> Option<Self> {
-        if let Some(sponsor) = SignerConf::from_env(&format!("{}_SPONSOR", prefix), None) {
-            if let Ok(fee_token) = std::env::var(&format!("{}_FEETOKEN", prefix)) {
-                return Some(Self { sponsor, fee_token });
-            }
+impl GelatoConf {
+    /// Build GelatoConf from env. Looks for default configuration if
+    /// network-specific not defined.
+    pub fn from_env(network: &str) -> Option<Self> {
+        let opt_conf = GelatoConf::from_full_prefix(network);
+        if opt_conf.is_some() {
+            return opt_conf;
         }
 
-        if let Some(prefix) = default_prefix {
-            return GelatoConf::from_env(prefix, None);
+        Self::from_full_prefix("DEFAULT")
+    }
+
+    fn from_full_prefix(network: &str) -> Option<Self> {
+        if let Some(sponsor) = SignerConf::from_env(Some("GELATO_SPONSOR"), Some(network)) {
+            if let Ok(fee_token) = std::env::var(&format!("{}_GELATO_FEETOKEN", network)) {
+                return Some(Self { sponsor, fee_token });
+            }
+
+            return None;
         }
 
         None

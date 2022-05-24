@@ -3,7 +3,7 @@
 //! This struct built from environment variables. It is used alongside a
 //! NomadConfig to build an agents `Settings` block (see settings/mod.rs).
 
-use crate::{agent::SignerConf, chains::ethereum, ChainConf, FromEnv, TxSubmitterConf};
+use crate::{agent::SignerConf, chains::ethereum, ChainConf, TxSubmitterConf};
 use eyre::Result;
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
@@ -37,8 +37,8 @@ impl AgentSecrets {
         for network in networks.iter() {
             let network_upper = network.to_uppercase();
 
-            let chain_conf = ChainConf::from_env(&network_upper, Some("DEFAULT"))?;
-            let tx_submitter = TxSubmitterConf::from_env(&network_upper, Some("DEFAULT"))?;
+            let chain_conf = ChainConf::from_env(&network_upper)?;
+            let tx_submitter = TxSubmitterConf::from_env(&network_upper)?;
 
             secrets.rpcs.insert(network.to_owned(), chain_conf);
             secrets
@@ -117,7 +117,7 @@ mod test {
                 *secrets.tx_submitters.get("moonbeam").unwrap(),
                 TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Local(SignerConf::Aws {
                     id: "moonbeam_id".into(),
-                }
+                }))
             );
             assert_eq!(
                 *secrets.tx_submitters.get("ethereum").unwrap(),
@@ -131,7 +131,7 @@ mod test {
                 *secrets.tx_submitters.get("evmos").unwrap(),
                 TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Local(SignerConf::Aws {
                     id: "default_id".into(),
-                }
+                }))
             );
             assert_eq!(
                 *secrets.rpcs.get("moonbeam").unwrap(),
@@ -163,7 +163,6 @@ mod test {
                 let default_config =
                     TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Local(SignerConf::Aws {
                         id: "default_id".into(),
-                        region: "default_region".into(),
                     }));
                 for (_, config) in &secrets.tx_submitters {
                     assert_eq!(*config, default_config);
@@ -187,7 +186,6 @@ mod test {
                 TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Gelato(GelatoConf {
                     sponsor: SignerConf::Aws {
                         id: "default_id".into(),
-                        region: "default_region".into(),
                     },
                     fee_token: "0x1234".to_owned(),
                 }));

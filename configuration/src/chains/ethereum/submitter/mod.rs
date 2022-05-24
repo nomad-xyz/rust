@@ -1,14 +1,14 @@
 //! Ethereum tx submitter types
 
-use crate::{agent::SignerConf, FromEnv};
+use crate::agent::SignerConf;
 
 mod gelato;
 pub use gelato::*;
 
-fn get_submitter_type(prefix: &str, default_prefix: Option<&str>) -> Option<String> {
-    let mut submitter_type = std::env::var(&format!("{}_SUBMITTERTYPE", prefix)).ok();
-    if let (None, Some(prefix)) = (&submitter_type, default_prefix) {
-        submitter_type = std::env::var(&format!("{}_SUBMITTERTYPE", prefix)).ok();
+fn get_submitter_type(network: &str) -> Option<String> {
+    let mut submitter_type = std::env::var(&format!("{}_SUBMITTERTYPE", network)).ok();
+    if submitter_type.is_none() {
+        submitter_type = std::env::var("DEFAULT_SUBMITTERTYPE").ok();
     }
 
     submitter_type
@@ -31,23 +31,19 @@ impl From<crate::TxSubmitterConf> for TxSubmitterConf {
     }
 }
 
-impl FromEnv for TxSubmitterConf {
-    fn from_env(prefix: &str, default_prefix: Option<&str>) -> Option<Self> {
-        let submitter_type = get_submitter_type(prefix, default_prefix)?;
+impl TxSubmitterConf {
+    /// Build ethereum TxSubmitterConf from env. Looks for default submitter
+    /// type if network-specific not defined.
+    pub fn from_env(network: &str) -> Option<Self> {
+        let submitter_type = get_submitter_type(network)?;
 
         return match submitter_type.as_ref() {
             "local" => {
-                let default_prefix = default_prefix.map(|p| format!("{}_TXSIGNERS", p));
-                let signer_conf = SignerConf::from_env(
-                    &format!("{}_TXSIGNER", prefix),
-                    default_prefix.as_deref(),
-                )?;
+                let signer_conf = SignerConf::from_env(Some("TXSIGNER"), Some(network))?;
                 Some(Self::Local(signer_conf))
             }
             "gelato" => {
-                let default_prefix = default_prefix.map(|p| format!("{}_GELATO", p));
-                let gelato_conf =
-                    GelatoConf::from_env(&format!("{}_GELATO", prefix), default_prefix.as_deref())?;
+                let gelato_conf = GelatoConf::from_env(network)?;
                 Some(Self::Gelato(gelato_conf))
             }
             _ => panic!("Unknown tx submission type: {}", submitter_type),

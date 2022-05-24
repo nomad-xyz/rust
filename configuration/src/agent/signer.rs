@@ -136,13 +136,8 @@ impl SignerConf {
                     network,
                 );
             }
-            SignerConf::Aws { id, region } => {
-                eyre::ensure!(!id.is_empty(), "ID for {} aws signer key empty!", network,);
-                eyre::ensure!(
-                    !region.is_empty(),
-                    "Region for {} aws signer key empty!",
-                    network,
-                );
+            SignerConf::Aws { id } => {
+                eyre::ensure!(!id.is_empty(), "ID for {} aws signer key empty!", network);
             }
             SignerConf::Node => (),
         };
