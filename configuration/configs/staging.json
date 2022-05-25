@@ -1,13 +1,16 @@
 {
   "version": 0,
   "environment": "staging",
-  "networks": ["neontestnet", "goerli", "rinkeby", "evmostestnet", "kovan"],
+  "networks": ["neontestnet", "goerli", "rinkeby", "evmostestnet", "kovan", "fuji", "mumbai", "milkomedaC1testnet"],
   "rpcs": {
     "rinkeby": ["https://rinkeby-light.eth.linkpool.io"],
     "neontestnet": ["https://proxy.devnet.neonlabs.org/solana"],
     "goerli": ["https://goerli-light.eth.linkpool.io"],
     "kovan": ["https://kovan.poa.network"],
-    "evmostestnet": ["https://eth.bd.evmos.dev:8545"]
+    "evmostestnet": ["https://eth.bd.evmos.dev:8545"],
+    "fuji": ["https://api.avax-test.network/ext/bc/C/rpc"],
+    "mumbai": ["https://rpc-mumbai.matic.today"],
+    "milkomedaC1testnet": ["https://rpc-devnet-cardano-evm.c1.milkomeda.com"]
   },
   "protocol": {
     "governor": {
@@ -15,10 +18,106 @@
       "id": "0x812c096810e8efaa73eff841b601ab82a7be9ab0"
     },
     "networks": {
+      "milkomedaC1testnet": {
+        "name": "milkomedaC1testnet",
+        "domain": 8881,
+        "connections": ["neontestnet", "goerli", "rinkeby", "evmostestnet", "kovan", "fuji", "mumbai"],
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 15000,
+          "maximumGas": 1000000,
+          "updater": "0x5340fe2f454b861e71647bd80596a3463e095c9c",
+          "watchers": ["0xa031973b293b924f6c848202bf1dc3107fde4d1e"],
+          "governance": {
+            "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
+            "recoveryTimelock": 180
+          }
+        },
+        "specs": {
+          "chainId": 200101,
+          "blockTime": 4,
+          "finalizationBlocks": 256,
+          "supports1559": true,
+          "confirmations": 6,
+          "blockExplorer": "https://explorer-devnet-cardano-evm.c1.milkomeda.com/",
+          "indexPageSize": 2000
+        },
+        "bridgeConfiguration": {
+          "weth": "0x65a51E52eCD17B641f8F0D1d56a6c9738951FDC9",
+          "customs": [],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
+      },
+      "mumbai": {
+        "name": "mumbai",
+        "domain": 7771,
+        "connections": ["neontestnet", "goerli", "rinkeby", "evmostestnet", "kovan", "fuji", "milkomedaC1testnet"],
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 15000,
+          "maximumGas": 1000000,
+          "updater": "0x5340fe2f454b861e71647bd80596a3463e095c9c",
+          "watchers": ["0xa031973b293b924f6c848202bf1dc3107fde4d1e"],
+          "governance": {
+            "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
+            "recoveryTimelock": 180
+          }
+        },
+        "specs": {
+          "chainId": 80001,
+          "blockTime": 5,
+          "finalizationBlocks": 256,
+          "supports1559": true,
+          "confirmations": 6,
+          "blockExplorer": "https://mumbai.polygonscan.com/",
+          "indexPageSize": 2000
+        },
+        "bridgeConfiguration": {
+          "weth": "0x0000000000000000000000000000000000001010",
+          "customs": [],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
+      },
+      "fuji": {
+        "name": "fuji",
+        "domain": 6661,
+        "connections": ["neontestnet", "goerli", "rinkeby", "evmostestnet", "kovan", "mumbai", "milkomedaC1testnet"],
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 15000,
+          "maximumGas": 1000000,
+          "updater": "0x5340fe2f454b861e71647bd80596a3463e095c9c",
+          "watchers": ["0xa031973b293b924f6c848202bf1dc3107fde4d1e"],
+          "governance": {
+            "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
+            "recoveryTimelock": 180
+          }
+        },
+        "specs": {
+          "chainId": 43113,
+          "blockTime": 2,
+          "finalizationBlocks": 3,
+          "supports1559": true,
+          "confirmations": 20,
+          "blockExplorer": "https://testnet.snowtrace.io/",
+          "indexPageSize": 2000
+        },
+        "bridgeConfiguration": {
+          "weth": "0xd00ae08403B9bbb9124bB305C09058E32C39A48c",
+          "customs": [],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
+      },
       "kovan": {
         "name": "kovan",
         "domain": 2221,
-        "connections": ["goerli", "rinkeby", "evmostestnet", "neontestnet"],
+        "connections": ["goerli", "rinkeby", "evmostestnet", "neontestnet", "fuji", "mumbai", "milkomedaC1testnet"],
         "configuration": {
           "optimisticSeconds": 1800,
           "processGas": 850000,
@@ -50,7 +149,7 @@
       "goerli": {
         "name": "goerli",
         "domain": 3331,
-        "connections": ["rinkeby", "kovan", "evmostestnet", "neontestnet"],
+        "connections": ["rinkeby", "kovan", "evmostestnet", "neontestnet", "fuji", "mumbai", "milkomedaC1testnet"],
         "configuration": {
           "optimisticSeconds": 1800,
           "processGas": 850000,
@@ -82,7 +181,7 @@
       "neontestnet": {
         "name": "neontestnet",
         "domain": 5551,
-        "connections": ["kovan", "rinkeby", "goerli", "evmostestnet"],
+        "connections": ["kovan", "rinkeby", "goerli", "evmostestnet", "fuji", "mumbai", "milkomedaC1testnet"],
         "configuration": {
           "optimisticSeconds": 1800,
           "processGas": 850000,
@@ -114,7 +213,7 @@
       "evmostestnet": {
         "name": "evmostestnet",
         "domain": 4441,
-        "connections": ["kovan", "goerli", "rinkeby", "neontestnet"],
+        "connections": ["kovan", "goerli", "rinkeby", "neontestnet", "fuji", "mumbai", "milkomedaC1testnet"],
         "configuration": {
           "optimisticSeconds": 1800,
           "processGas": 850000,
@@ -146,7 +245,7 @@
       "rinkeby": {
         "name": "rinkeby",
         "domain": 1111,
-        "connections": ["goerli", "evmostestnet", "kovan", "neontestnet"],
+        "connections": ["goerli", "evmostestnet", "kovan", "neontestnet", "fuji", "mumbai", "milkomedaC1testnet"],
         "configuration": {
           "optimisticSeconds": 1800,
           "processGas": 850000,
