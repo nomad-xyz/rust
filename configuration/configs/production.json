@@ -12,7 +12,8 @@
     "moonriver",
     "fantom",
     "bobaL2",
-    "cronos"
+    "cronos",
+    "fuse"
   ],
   "s3": {
     "bucket": "nomadxyz-production-proofs",
@@ -125,7 +126,8 @@
           "moonriver",
           "fantom",
           "bobaL2",
-          "cronos"
+          "cronos",
+          "fuse"
         ],
         "specs": {
           "chainId": 71394,
@@ -170,7 +172,8 @@
           "godwoken",
           "fantom",
           "bobaL2",
-          "cronos"
+          "cronos",
+          "fuse"
         ],
         "specs": {
           "chainId": 1285,
@@ -191,12 +194,10 @@
             "recoveryTimelock": 86400
           },
           "updater": "TODO",
-          "watchers": [
-            "TODO"
-          ]
+          "watchers": ["TODO"]
         },
         "bridgeConfiguration": {
-          "weth": "TODO",
+          "weth": "0x98878B06940aE243284CA214f92Bb71a2b032B8A",
           "customs": [],
           "mintGas": 200000,
           "deployGas": 850000
@@ -215,7 +216,8 @@
           "godwoken",
           "moonriver",
           "bobaL2",
-          "cronos"
+          "cronos",
+          "fuse"
         ],
         "specs": {
           "chainId": 250,
@@ -241,7 +243,7 @@
           ]
         },
         "bridgeConfiguration": {
-          "weth": "0xe934f463d026d97f6ce0a10215d0ac4224f0a930",
+          "weth": "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83",
           "customs": [],
           "mintGas": 200000,
           "deployGas": 850000
@@ -260,7 +262,8 @@
           "godwoken",
           "moonriver",
           "fantom",
-          "bobaL2"
+          "bobaL2",
+          "fuse"
         ],
         "specs": {
           "chainId": 25,
@@ -281,12 +284,10 @@
             "recoveryTimelock": 86400
           },
           "updater": "TODO",
-          "watchers": [
-            "TODO"
-          ]
+          "watchers": ["TODO"]
         },
         "bridgeConfiguration": {
-          "weth": "TODO",
+          "weth": "0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23",
           "customs": [],
           "mintGas": 200000,
           "deployGas": 850000
@@ -305,7 +306,8 @@
           "moonriver",
           "fantom",
           "bobaL2",
-          "cronos"
+          "cronos",
+          "fuse"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -350,7 +352,8 @@
           "moonriver",
           "fantom",
           "bobaL2",
-          "cronos"
+          "cronos",
+          "fuse"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -395,7 +398,8 @@
           "moonriver",
           "fantom",
           "bobaL2",
-          "cronos"
+          "cronos",
+          "fuse"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -440,7 +444,8 @@
           "moonriver",
           "fantom",
           "bobaL2",
-          "cronos"
+          "cronos",
+          "fuse"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -485,7 +490,8 @@
           "moonriver",
           "fantom",
           "bobaL2",
-          "cronos"
+          "cronos",
+          "fuse"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -540,7 +546,8 @@
           "moonriver",
           "fantom",
           "bobaL2",
-          "cronos"
+          "cronos",
+          "fuse"
         ],
         "configuration": {
           "optimisticSeconds": 1800,
