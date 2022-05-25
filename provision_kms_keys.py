@@ -134,82 +134,87 @@ def calc_eth_address(pub_key) -> str:
     return eth_checksum_addr
 
 
-data_headers = ["Alias Name", "Region", "Key ID", "ARN", "Key Description", "Ethereum Address"]
-data_rows = []
+def main():
 
-kms = boto3.client('kms', region_name=region)
-response = kms.list_aliases(Limit=100)
-truncated = response['Truncated']
-current_aliases = response['Aliases']
+    data_headers = ["Alias Name", "Region", "Key ID", "ARN", "Key Description", "Ethereum Address"]
+    data_rows = []
 
-while truncated:
-    response = kms.list_aliases(Limit=100, Marker=response['NextMarker'])
+    kms = boto3.client('kms', region_name=region)
+    response = kms.list_aliases(Limit=100)
     truncated = response['Truncated']
-    current_aliases = current_aliases + response['Aliases']
+    current_aliases = response['Aliases']
 
-logger.debug(f"Fetched {len(current_aliases)} aliases from KMS")
-logger.debug(json.dumps(current_aliases, indent=2, default=str))
-for environment in environments:
-    for network in networks[environment]:
-        for key in agent_keys[environment]:
+    while truncated:
+        response = kms.list_aliases(Limit=100, Marker=response['NextMarker'])
+        truncated = response['Truncated']
+        current_aliases = current_aliases + response['Aliases']
 
-            key_name = f"{environment}-{network}-{key}"
-            alias_name = f"alias/{key_name}"
+    logger.debug(f"Fetched {len(current_aliases)} aliases from KMS")
+    logger.debug(json.dumps(current_aliases, indent=2, default=str))
+    for environment in environments:
+        for network in networks[environment]:
+            for key in agent_keys[environment]:
 
-            existing_alias = next((alias for alias in current_aliases if alias["AliasName"] == alias_name), None)
+                key_name = f"{environment}-{network}-{key}"
+                alias_name = f"alias/{key_name}"
 
-            if existing_alias == None:
-                logger.info(f"No existing alias found for {key_name}, creating new key")
+                existing_alias = next((alias for alias in current_aliases if alias["AliasName"] == alias_name), None)
 
-                key_response = kms.create_key(
-                    Description=f'{environment} {network} {key}',
-                    KeyUsage='SIGN_VERIFY',
-                    Origin='AWS_KMS',
-                    BypassPolicyLockoutSafetyCheck=False,
-                    CustomerMasterKeySpec="ECC_SECG_P256K1",
-                    Tags=[
-                        {
-                            'TagKey': 'environment',
-                            'TagValue': environment
-                        },
-                    ]
-                )
+                if existing_alias == None:
+                    logger.info(f"No existing alias found for {key_name}, creating new key")
 
-                alias_response = kms.create_alias(
-                    # The alias to create. Aliases must begin with 'alias/'.
-                    AliasName=alias_name,
-                    # The identifier of the CMK whose alias you are creating. You can use the key ID or the Amazon Resource Name (ARN) of the CMK.
-                    TargetKeyId=key_response["KeyMetadata"]["KeyId"],
-                )
+                    key_response = kms.create_key(
+                        Description=f'{environment} {network} {key}',
+                        KeyUsage='SIGN_VERIFY',
+                        Origin='AWS_KMS',
+                        BypassPolicyLockoutSafetyCheck=False,
+                        CustomerMasterKeySpec="ECC_SECG_P256K1",
+                        Tags=[
+                            {
+                                'TagKey': 'environment',
+                                'TagValue': environment
+                            },
+                        ]
+                    )
 
-                logger.debug(json.dumps(key_response, indent=2, default=str))
-                logger.debug(json.dumps(alias_response, indent=2, default=str))
+                    alias_response = kms.create_alias(
+                        # The alias to create. Aliases must begin with 'alias/'.
+                        AliasName=alias_name,
+                        # The identifier of the CMK whose alias you are creating. You can use the key ID or the Amazon Resource Name (ARN) of the CMK.
+                        TargetKeyId=key_response["KeyMetadata"]["KeyId"],
+                    )
+
+                    logger.debug(json.dumps(key_response, indent=2, default=str))
+                    logger.debug(json.dumps(alias_response, indent=2, default=str))
 
 
-                key_id = key_response["KeyMetadata"]["KeyId"]
-                key_arn = key_response["KeyMetadata"]["Arn"]
-                key_description = key_response["KeyMetadata"]["Description"]
-            else: 
-                logger.info(f"Existing alias for {key_name}, fetching key.")
+                    key_id = key_response["KeyMetadata"]["KeyId"]
+                    key_arn = key_response["KeyMetadata"]["Arn"]
+                    key_description = key_response["KeyMetadata"]["Description"]
+                else: 
+                    logger.info(f"Existing alias for {key_name}, fetching key.")
 
-                key_response = kms.describe_key(
-                    KeyId=existing_alias["TargetKeyId"],
-                )
+                    key_response = kms.describe_key(
+                        KeyId=existing_alias["TargetKeyId"],
+                    )
 
-                key_id = key_response["KeyMetadata"]["KeyId"]
-                key_arn = key_response["KeyMetadata"]["Arn"]
-                key_description = key_response["KeyMetadata"]["Description"]
-                
-            logger.debug(f"Key Id: {key_id}")
-            logger.debug(f"Key Arn: {key_arn}")
-            logger.debug(f"Key Description: {key_description}")
+                    key_id = key_response["KeyMetadata"]["KeyId"]
+                    key_arn = key_response["KeyMetadata"]["Arn"]
+                    key_description = key_response["KeyMetadata"]["Description"]
+                    
+                logger.debug(f"Key Id: {key_id}")
+                logger.debug(f"Key Arn: {key_arn}")
+                logger.debug(f"Key Description: {key_description}")
 
-            # Get the Ethereum Address from the KMS CMK
-            public_key = get_kms_public_key(key_id)
-            ethereum_address = calc_eth_address(public_key)
+                # Get the Ethereum Address from the KMS CMK
+                public_key = get_kms_public_key(key_id)
+                ethereum_address = calc_eth_address(public_key)
 
-            data_rows.append([f'alias/{key_name}', region, key_id, key_arn, key_description, ethereum_address])
-    
+                data_rows.append([f'alias/{key_name}', region, key_id, key_arn, key_description, ethereum_address])
+        
 
-# Print out the results of the operation
-print(tabulate(data_rows, data_headers, tablefmt="fancy_grid"))
+    # Print out the results of the operation
+    print(tabulate(data_rows, data_headers, tablefmt="fancy_grid"))
+
+if __name__ == '__main__':
+    main()
