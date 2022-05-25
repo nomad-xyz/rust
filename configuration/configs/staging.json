@@ -69,7 +69,7 @@
         "specs": {
           "chainId": 80001,
           "blockTime": 5,
-          "finalizationBlocks": 256,
+          "finalizationBlocks": 255,
           "supports1559": true,
           "confirmations": 6,
           "blockExplorer": "https://mumbai.polygonscan.com/",
