@@ -36,8 +36,6 @@ where
 {
     contract: Arc<EthereumHomeInternal<R>>,
     provider: Arc<R>,
-    from_height: u32,
-    chunk_size: u32,
 }
 
 impl<R> EthereumHomeIndexer<R>
@@ -52,8 +50,6 @@ where
             domain: _,
             address,
         }: &ContractLocator,
-        from_height: u32,
-        chunk_size: u32,
     ) -> Self {
         Self {
             contract: Arc::new(EthereumHomeInternal::new(
@@ -61,8 +57,6 @@ where
                 provider.clone(),
             )),
             provider,
-            from_height,
-            chunk_size,
         }
     }
 }

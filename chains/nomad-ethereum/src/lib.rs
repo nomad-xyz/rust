@@ -57,20 +57,8 @@ pub struct Chain {
     ethers: ethers::providers::Provider<ethers::providers::Http>,
 }
 
-boxed_indexer!(
-    make_home_indexer,
-    EthereumHomeIndexer,
-    HomeIndexer,
-    from_height: u32,
-    chunk_size: u32
-);
-boxed_indexer!(
-    make_replica_indexer,
-    EthereumReplicaIndexer,
-    CommonIndexer,
-    from_height: u32,
-    chunk_size: u32
-);
+boxed_indexer!(make_home_indexer, EthereumHomeIndexer, HomeIndexer,);
+boxed_indexer!(make_replica_indexer, EthereumReplicaIndexer, CommonIndexer,);
 
 boxed_contract!(make_home, EthereumHome, Home, gas: Option<HomeGasLimits>);
 boxed_contract!(

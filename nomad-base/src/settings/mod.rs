@@ -371,8 +371,6 @@ impl Settings {
                         address: self.home.address,
                     },
                     timelag,
-                    self.home.page_settings.from,
-                    self.home.page_settings.page_size,
                 )
                 .await?,
             )
@@ -394,8 +392,6 @@ impl Settings {
                         address: setup.address,
                     },
                     None, // Will never need timelag for replica data/events
-                    setup.page_settings.from,
-                    setup.page_settings.page_size,
                 )
                 .await?,
             )

@@ -157,7 +157,7 @@ where
                     return Ok(TxOutcome { txid });
                 }
 
-                if &status.task_state == &TaskState::CheckPending {
+                if status.task_state == TaskState::CheckPending {
                     info!(status = ?status, "Polling pending Gelato task...");
                 }
 

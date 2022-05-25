@@ -24,8 +24,6 @@ where
 {
     contract: Arc<EthereumReplicaInternal<R>>,
     provider: Arc<R>,
-    from_height: u32,
-    chunk_size: u32,
 }
 
 impl<R> EthereumReplicaIndexer<R>
@@ -40,8 +38,6 @@ where
             domain: _,
             address,
         }: &ContractLocator,
-        from_height: u32,
-        chunk_size: u32,
     ) -> Self {
         Self {
             contract: Arc::new(EthereumReplicaInternal::new(
@@ -49,8 +45,6 @@ where
                 provider.clone(),
             )),
             provider,
-            from_height,
-            chunk_size,
         }
     }
 }

@@ -23,7 +23,6 @@ where
     submitter: TxSubmitter<W>,
     contract: Arc<EthereumConnectionManagerInternal<R>>,
     domain: u32,
-    name: String,
     gas: Option<ConnectionManagerGasLimits>,
 }
 
@@ -39,7 +38,7 @@ where
         submitter: TxSubmitter<W>,
         read_provider: Arc<R>,
         ContractLocator {
-            name,
+            name: _,
             domain,
             address,
         }: &ContractLocator,
@@ -52,7 +51,6 @@ where
                 read_provider,
             )),
             domain: *domain,
-            name: name.to_owned(),
             gas,
         }
     }
