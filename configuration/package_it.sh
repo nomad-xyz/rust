@@ -13,7 +13,7 @@ if ! [ -x "$(command -v jq)" ]; then
 fi
 
 
-# Check if jq is installed
+# Check if wasm-pack is installed
 if ! [ -x "$(command -v wasm-pack)" ]; then
     echo "wasm-pack is not installed" >& 2
     exit 1
