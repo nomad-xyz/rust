@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- add arbitrum and optimism testnets to dev config
+
 ### v0.1.0-rc.24
 
 - remove `FromEnv` trait and make env loading conf-struct-specific
