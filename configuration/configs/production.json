@@ -63,6 +63,56 @@
       "id": "0x93277b8f5939975b9e6694d5fd2837143afbf68a"
     },
     "networks": {
+      "fuse": {
+        "name": "fuse",
+        "rpc": "https://rpc.fuse.io/",
+        "domain": 102117115101,
+        "connections": [
+          "moonbeam",
+          "ethereum",
+          "milkomedaC1",
+          "xdai",
+          "evmos",
+          "optimism",
+          "arbitrum",
+          "harmony",
+          "fantom",
+          "godwoken",
+          "cronos",
+          "moonriver",
+          "bobaL2",
+          "avalanche"
+        ],
+        "specs": {
+          "chainId": 122,
+          "blockTime": 5,
+          "finalizationBlocks": 1,
+          "supports1559": false,
+          "confirmations": 6,
+          "blockExplorer": "https://explorer.fuse.io/",
+          "indexPageSize": 2000
+        },
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "processGas": 850000,
+          "reserveGas": 25000,
+          "maximumGas": 1000000,
+          "governance": {
+            "recoveryManager": "TODO",
+            "recoveryTimelock": 86400
+          },
+          "updater": "TODO",
+          "watchers": [
+            "TODO"
+          ]
+        },
+        "bridgeConfiguration": {
+          "weth": "0x0be9e53fd7edac9f859882afdda116645287c629",
+          "customs": [],
+          "mintGas": 200000,
+          "deployGas": 850000
+        }
+      },
       "bobaL2": {
         "name": "bobaL2",
         "rpc": "https://mainnet.boba.network/",
@@ -79,7 +129,9 @@
           "fantom",
           "godwoken",
           "cronos",
-          "moonriver"
+          "moonriver",
+          "fuse",
+          "avalanche"
         ],
         "specs": {
           "chainId": 288,
@@ -127,7 +179,8 @@
           "fantom",
           "bobaL2",
           "cronos",
-          "fuse"
+          "fuse",
+          "avalanche"
         ],
         "specs": {
           "chainId": 71394,
