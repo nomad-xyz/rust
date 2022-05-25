@@ -57,9 +57,9 @@
         ],
         "configuration": {
           "optimisticSeconds": 10,
-          "processGas": 850000,
-          "reserveGas": 15000,
-          "maximumGas": 1000000,
+          "processGas": 85000000,
+          "reserveGas": 1500000,
+          "maximumGas": 100000000,
           "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4c",
           "watchers": [
             "0x8ad65ba028cae9e3932959d5c167a09ede941d2c"
@@ -81,8 +81,8 @@
         "bridgeConfiguration": {
           "weth": "0xc778417e063141139fce010982780140aa0cd5ab",
           "customs": [],
-          "mintGas": 200000,
-          "deployGas": 850000
+          "mintGas": 20000000,
+          "deployGas": 85000000
         }
       },
       "arbitrum-rinkeby": {
@@ -99,12 +99,12 @@
         ],
         "configuration": {
           "optimisticSeconds": 1800,
-          "processGas": 850000,
-          "reserveGas": 25000,
-          "maximumGas": 1000000,
-          "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4c",
+          "processGas": 85000000,
+          "reserveGas": 2500000,
+          "maximumGas": 100000000,
+          "updater": "0xbfCEc115C9019c40855130714a2450f22728594A",
           "watchers": [
-            "0x8ad65ba028cae9e3932959d5c167a09ede941d2c"
+            "0xE6252C87D801D8D9008d1b7b2886FB788675db29"
           ],
           "governance": {
             "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
@@ -123,8 +123,8 @@
         "bridgeConfiguration": {
           "weth": "0xebbc3452cc911591e4f18f3b36727df45d6bd1f9",
           "customs": [],
-          "mintGas": 200000,
-          "deployGas": 850000
+          "mintGas": 20000000,
+          "deployGas": 85000000
         }
       },
       "kovan": {
@@ -141,9 +141,9 @@
         ],
         "configuration": {
           "optimisticSeconds": 10,
-          "processGas": 850000,
-          "reserveGas": 15000,
-          "maximumGas": 1000000,
+          "processGas": 85000000,
+          "reserveGas": 1500000,
+          "maximumGas": 100000000,
           "updater": "0x45818549c1e7d16c915fe23c1524b524507a184b",
           "watchers": [
             "0xe8c6bf61d5f5744f465865772e1de88059267bac"
@@ -165,8 +165,8 @@
         "bridgeConfiguration": {
           "weth": "0xd0a1e359811322d97991e03f863a0c30c2cf029c",
           "customs": [],
-          "mintGas": 200000,
-          "deployGas": 850000
+          "mintGas": 20000000,
+          "deployGas": 85000000
         }
       },
       "neontestnet": {
@@ -183,9 +183,9 @@
         ],
         "configuration": {
           "optimisticSeconds": 1800,
-          "processGas": 850000,
-          "reserveGas": 25000,
-          "maximumGas": 1000000,
+          "processGas": 85000000,
+          "reserveGas": 2500000,
+          "maximumGas": 100000000,
           "updater": "0xa4e6e0953443882f448b93de52abfe7eb8b2efd4",
           "watchers": [
             "0xdc030a4e198dd6d08a7497b3deaf644ad755c10b"
@@ -208,7 +208,7 @@
           "weth": "0xf8ad328e98f85fccbf09e43b16dcbbda7e84beab",
           "customs": [],
           "mintGas": 20000,
-          "deployGas": 850000
+          "deployGas": 85000000
         }
       },
       "optimism-kovan": {
@@ -225,12 +225,12 @@
         ],
         "configuration": {
           "optimisticSeconds": 1800,
-          "processGas": 850000,
-          "reserveGas": 25000,
-          "maximumGas": 1000000,
-          "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4c",
+          "processGas": 85000000,
+          "reserveGas": 2500000,
+          "maximumGas": 100000000,
+          "updater": "0xbd8f1387b91c3E91EA836d871e8e7A2C26c118E0",
           "watchers": [
-            "0x8ad65ba028cae9e3932959d5c167a09ede941d2c"
+            "0x295D72CB3753d9E38A8fcE5024Cf8b9e280385F1"
           ],
           "governance": {
             "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
@@ -249,8 +249,8 @@
         "bridgeConfiguration": {
           "weth": "0xebbc3452cc911591e4f18f3b36727df45d6bd1f9",
           "customs": [],
-          "mintGas": 200000,
-          "deployGas": 850000
+          "mintGas": 20000000,
+          "deployGas": 85000000
         }
       },
       "goerli": {
@@ -267,9 +267,9 @@
         ],
         "configuration": {
           "optimisticSeconds": 10,
-          "processGas": 850000,
-          "reserveGas": 15000,
-          "maximumGas": 1000000,
+          "processGas": 85000000,
+          "reserveGas": 1500000,
+          "maximumGas": 100000000,
           "updater": "0xd16bdbbc56090156ec609ebebc8bace1240fa22e",
           "watchers": [
             "0x69520f1cec6199fe93c6c77881b5de701e0efeff"
@@ -291,8 +291,8 @@
         "bridgeConfiguration": {
           "weth": "0x0bb7509324ce409f7bbc4b701f932eaca9736ab7",
           "customs": [],
-          "mintGas": 200000,
-          "deployGas": 850000
+          "mintGas": 20000000,
+          "deployGas": 85000000
         }
       },
       "milkomedaC1testnet": {
@@ -309,9 +309,9 @@
         ],
         "configuration": {
           "optimisticSeconds": 1800,
-          "processGas": 850000,
-          "reserveGas": 25000,
-          "maximumGas": 1000000,
+          "processGas": 85000000,
+          "reserveGas": 2500000,
+          "maximumGas": 100000000,
           "updater": "0xe80d5d65275208aee8e10609258e4e048eb86b4c",
           "watchers": [
             "0x8ad65ba028cae9e3932959d5c167a09ede941d2c"
@@ -333,8 +333,8 @@
         "bridgeConfiguration": {
           "weth": "0xebbc3452cc911591e4f18f3b36727df45d6bd1f9",
           "customs": [],
-          "mintGas": 200000,
-          "deployGas": 850000
+          "mintGas": 20000000,
+          "deployGas": 85000000
         }
       },
       "evmostestnet": {
@@ -351,9 +351,9 @@
         ],
         "configuration": {
           "optimisticSeconds": 10,
-          "processGas": 850000,
-          "reserveGas": 15000,
-          "maximumGas": 1000000,
+          "processGas": 85000000,
+          "reserveGas": 1500000,
+          "maximumGas": 100000000,
           "updater": "0x815d2281a9ebacfbffa4294375de6e14f2522d87",
           "watchers": [
             "0xafcf8db79e999cb79260572fb61c8e5006b855a4"
@@ -375,8 +375,8 @@
         "bridgeConfiguration": {
           "weth": "0xcc491f589b45d4a3c679016195b3fb87d7848210",
           "customs": [],
-          "mintGas": 200000,
-          "deployGas": 850000
+          "mintGas": 20000000,
+          "deployGas": 85000000
         }
       }
     }
@@ -1192,10 +1192,146 @@
     }
   },
   "gas": {
-    "rinkeby": "evmDefault",
-    "goerli": "evmDefault",
-    "kovan": "evmDefault",
-    "evmostestnet": "evmDefault"
+    "evmostestnet": {
+      "core": {
+        "home": {
+          "update": {
+            "perMessage": 10000,
+            "base": 100000
+          },
+          "improperUpdate": {
+            "perMessage": 10000,
+            "base": 100000
+          },
+          "doubleUpdate": 200000
+        },
+        "replica": {
+          "update": 140000,
+          "prove": 200000,
+          "process": 1700000,
+          "proveAndProcess": 1900000,
+          "doubleUpdate": 200000
+        },
+        "connectionManager": {
+          "ownerUnenrollReplica": 120000,
+          "unenrollReplica": 120000
+        }
+      },
+      "bridge": {
+        "bridgeRouter": {
+          "send": 500000
+        },
+        "ethHelper": {
+          "send": 800000,
+          "sendToEvmLike": 800000
+        }
+      }
+    },
+    "rinkeby": {
+      "core": {
+        "home": {
+          "update": {
+            "perMessage": 10000,
+            "base": 100000
+          },
+          "improperUpdate": {
+            "perMessage": 10000,
+            "base": 100000
+          },
+          "doubleUpdate": 200000
+        },
+        "replica": {
+          "update": 140000,
+          "prove": 200000,
+          "process": 1700000,
+          "proveAndProcess": 1900000,
+          "doubleUpdate": 200000
+        },
+        "connectionManager": {
+          "ownerUnenrollReplica": 120000,
+          "unenrollReplica": 120000
+        }
+      },
+      "bridge": {
+        "bridgeRouter": {
+          "send": 500000
+        },
+        "ethHelper": {
+          "send": 800000,
+          "sendToEvmLike": 800000
+        }
+      }
+    },
+    "kovan": {
+      "core": {
+        "home": {
+          "update": {
+            "perMessage": 10000,
+            "base": 100000
+          },
+          "improperUpdate": {
+            "perMessage": 10000,
+            "base": 100000
+          },
+          "doubleUpdate": 200000
+        },
+        "replica": {
+          "update": 140000,
+          "prove": 200000,
+          "process": 1700000,
+          "proveAndProcess": 1900000,
+          "doubleUpdate": 200000
+        },
+        "connectionManager": {
+          "ownerUnenrollReplica": 120000,
+          "unenrollReplica": 120000
+        }
+      },
+      "bridge": {
+        "bridgeRouter": {
+          "send": 500000
+        },
+        "ethHelper": {
+          "send": 800000,
+          "sendToEvmLike": 800000
+        }
+      }
+    },
+    "goerli": {
+      "core": {
+        "home": {
+          "update": {
+            "perMessage": 10000,
+            "base": 100000
+          },
+          "improperUpdate": {
+            "perMessage": 10000,
+            "base": 100000
+          },
+          "doubleUpdate": 200000
+        },
+        "replica": {
+          "update": 140000,
+          "prove": 200000,
+          "process": 1700000,
+          "proveAndProcess": 1900000,
+          "doubleUpdate": 200000
+        },
+        "connectionManager": {
+          "ownerUnenrollReplica": 120000,
+          "unenrollReplica": 120000
+        }
+      },
+      "bridge": {
+        "bridgeRouter": {
+          "send": 500000
+        },
+        "ethHelper": {
+          "send": 800000,
+          "sendToEvmLike": 800000
+        }
+      }
+    }
   },
   "bridgeGui": {
     "evmostestnet": {
