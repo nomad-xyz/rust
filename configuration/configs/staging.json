@@ -571,6 +571,123 @@
     }
   },
   "agent": {
+    "fuji": {
+      "rpcStyle": "ethereum",
+      "db": "/usr/share/nomad",
+      "metrics": 9090,
+      "logging": {
+        "fmt": "json",
+        "level": "info"
+      },
+      "updater": {
+        "interval": 5,
+        "enabled": true
+      },
+      "relayer": {
+        "interval": 10,
+        "enabled": true
+      },
+      "processor": {
+        "allowed": null,
+        "denied": null,
+        "subsidizedRemotes": ["neontestnet", "rinkeby", "evmostestnet", "kovan", "mumbai", "milkomedaC1testnet"],
+        "s3": {
+          "bucket": "nomadxyz-development-proofs",
+          "region": "us-west-2"
+        },
+        "interval": 5,
+        "enabled": true
+      },
+      "watcher": {
+        "interval": 5,
+        "enabled": true
+      },
+      "kathy": {
+        "chat": {
+          "type": "default"
+        },
+        "interval": 500,
+        "enabled": true
+      }
+    },
+    "mumbai": {
+      "rpcStyle": "ethereum",
+      "db": "/usr/share/nomad",
+      "metrics": 9090,
+      "logging": {
+        "fmt": "json",
+        "level": "info"
+      },
+      "updater": {
+        "interval": 5,
+        "enabled": true
+      },
+      "relayer": {
+        "interval": 10,
+        "enabled": true
+      },
+      "processor": {
+        "allowed": null,
+        "denied": null,
+        "subsidizedRemotes": ["neontestnet", "rinkeby", "evmostestnet", "kovan", "fuji", "milkomedaC1testnet"],
+        "s3": {
+          "bucket": "nomadxyz-development-proofs",
+          "region": "us-west-2"
+        },
+        "interval": 5,
+        "enabled": true
+      },
+      "watcher": {
+        "interval": 5,
+        "enabled": true
+      },
+      "kathy": {
+        "chat": {
+          "type": "default"
+        },
+        "interval": 500,
+        "enabled": true
+      }
+    },
+    "milkomedaC1testnet": {
+      "rpcStyle": "ethereum",
+      "db": "/usr/share/nomad",
+      "metrics": 9090,
+      "logging": {
+        "fmt": "json",
+        "level": "info"
+      },
+      "updater": {
+        "interval": 5,
+        "enabled": true
+      },
+      "relayer": {
+        "interval": 10,
+        "enabled": true
+      },
+      "processor": {
+        "allowed": null,
+        "denied": null,
+        "subsidizedRemotes": ["neontestnet", "rinkeby", "evmostestnet", "kovan", "fuji", "mumbai"],
+        "s3": {
+          "bucket": "nomadxyz-development-proofs",
+          "region": "us-west-2"
+        },
+        "interval": 5,
+        "enabled": true
+      },
+      "watcher": {
+        "interval": 5,
+        "enabled": true
+      },
+      "kathy": {
+        "chat": {
+          "type": "default"
+        },
+        "interval": 500,
+        "enabled": true
+      }
+    },
     "rinkeby": {
       "rpcStyle": "ethereum",
       "db": "/usr/share/nomad",
@@ -590,7 +707,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": ["kovan", "goerli", "evmostestnet", "neontestnet"],
+        "subsidizedRemotes": ["neontestnet", "evmostestnet", "kovan", "fuji", "mumbai", "milkomedaC1testnet"],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
@@ -629,12 +746,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": [
-          "rinkeby",
-          "kovan",
-          "evmostestnet",
-          "neontestnet"
-        ],
+        "subsidizedRemotes": ["neontestnet", "rinkeby", "evmostestnet", "kovan", "fuji", "mumbai", "milkomedaC1testnet"],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
@@ -673,7 +785,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": ["rinkeby", "kovan", "goerli", "evmostestnet"],
+        "subsidizedRemotes": ["rinkeby", "evmostestnet", "kovan", "fuji", "mumbai", "milkomedaC1testnet"],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
@@ -712,7 +824,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": ["rinkeby", "goerli", "kovan", "neontestnet"],
+        "subsidizedRemotes": ["neontestnet", "rinkeby", "kovan", "fuji", "mumbai", "milkomedaC1testnet"],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
@@ -751,12 +863,7 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": [
-          "rinkeby",
-          "goerli",
-          "evmostestnet",
-          "neontestnet"
-        ],
+        "subsidizedRemotes": ["neontestnet", "rinkeby", "evmostestnet", "fuji", "mumbai", "milkomedaC1testnet"],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
