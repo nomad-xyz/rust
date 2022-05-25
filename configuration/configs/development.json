@@ -3,9 +3,9 @@
   "environment": "development",
   "networks": [
     "neontestnet",
-    "optimism-kovan",
+    "optimismkovan",
     "evmostestnet",
-    "arbitrum-rinkeby",
+    "arbitrumrinkeby",
     "goerli",
     "kovan",
     "rinkeby"
@@ -13,11 +13,11 @@
   "rpcs": {
     "rinkeby": ["https://rinkeby-light.eth.linkpool.io"],
     "evmostestnet": ["https://eth.bd.evmos.dev:8545"],
-    "arbitrum-rinkeby": ["https://rinkeby.arbitrum.io/rpc"],
+    "arbitrumrinkeby": ["https://rinkeby.arbitrum.io/rpc"],
     "neontestnet": ["https://proxy.devnet.neonlabs.org/solana"],
     "goerli": ["https://goerli-light.eth.linkpool.io"],
     "kovan": ["https://kovan.poa.network"],
-    "optimism-kovan": ["https://kovan.optimism.io"]
+    "optimismkovan": ["https://kovan.optimism.io"]
   },
   "protocol": {
     "governor": {
@@ -29,8 +29,8 @@
         "name": "rinkeby",
         "domain": 1001,
         "connections": [
-          "arbitrum-rinkeby",
-          "optimism-kovan",
+          "arbitrumrinkeby",
+          "optimismkovan",
           "kovan",
           "neontestnet",
           "evmostestnet",
@@ -64,12 +64,12 @@
           "deployGas": 85000000
         }
       },
-      "arbitrum-rinkeby": {
-        "name": "arbitrum-rinkeby",
+      "arbitrumrinkeby": {
+        "name": "arbitrumrinkeby",
         "domain": 6661,
         "connections": [
           "neontestnet",
-          "optimism-kovan",
+          "optimismkovan",
           "evmostestnet",
           "kovan",
           "goerli",
@@ -107,12 +107,12 @@
         "name": "kovan",
         "domain": 2001,
         "connections": [
-          "arbitrum-rinkeby",
+          "arbitrumrinkeby",
           "neontestnet",
           "goerli",
           "evmostestnet",
           "rinkeby",
-          "optimism-kovan"
+          "optimismkovan"
         ],
         "configuration": {
           "optimisticSeconds": 10,
@@ -146,11 +146,11 @@
         "name": "neontestnet",
         "domain": 5001,
         "connections": [
-          "arbitrum-rinkeby",
+          "arbitrumrinkeby",
           "rinkeby",
           "goerli",
           "kovan",
-          "optimism-kovan",
+          "optimismkovan",
           "evmostestnet"
         ],
         "configuration": {
@@ -181,11 +181,11 @@
           "deployGas": 85000000
         }
       },
-      "optimism-kovan": {
-        "name": "optimism-kovan",
+      "optimismkovan": {
+        "name": "optimismkovan",
         "domain": 8881,
         "connections": [
-          "arbitrum-rinkeby",
+          "arbitrumrinkeby",
           "neontestnet",
           "kovan",
           "rinkeby",
@@ -226,8 +226,8 @@
         "connections": [
           "kovan",
           "rinkeby",
-          "arbitrum-rinkeby",
-          "optimism-kovan",
+          "arbitrumrinkeby",
+          "optimismkovan",
           "neontestnet",
           "evmostestnet"
         ],
@@ -263,12 +263,12 @@
         "name": "evmostestnet",
         "domain": 4001,
         "connections": [
-          "arbitrum-rinkeby",
+          "arbitrumrinkeby",
           "goerli",
           "kovan",
           "rinkeby",
           "neontestnet",
-          "optimism-kovan"
+          "optimismkovan"
         ],
         "configuration": {
           "optimisticSeconds": 10,
@@ -317,7 +317,7 @@
         "beacon": "0x1c29678a918b8b4823a76b542b199b82cf4629ba"
       },
       "replicas": {
-        "arbitrum-rinkeby": {
+        "arbitrumrinkeby": {
           "implementation": "0x18f4019f6620e1593059b5a0518ceed6a6634373",
           "proxy": "0x7694f68d6d6084c9ac27fc9d3f227b605b2cc3d3",
           "beacon": "0x6c6b091665520088dbfe8ccb1ecb1d0556814e0d"
@@ -337,7 +337,7 @@
           "proxy": "0x5dcbdfe40ef9e865b3cc2c90c517c557b2fa91c8",
           "beacon": "0x6c6b091665520088dbfe8ccb1ecb1d0556814e0d"
         },
-        "optimism-kovan": {
+        "optimismkovan": {
           "implementation": "0x18f4019f6620e1593059b5a0518ceed6a6634373",
           "proxy": "0xf8c1ed7f36eb944d8b40af86b998d7b1be47143d",
           "beacon": "0x6c6b091665520088dbfe8ccb1ecb1d0556814e0d"
@@ -349,7 +349,7 @@
         }
       }
     },
-    "optimism-kovan": {
+    "optimismkovan": {
       "deployHeight": 3348750,
       "upgradeBeaconController": "0x5235cd80c9a35af0a5deba021912826ae435d824",
       "xAppConnectionManager": "0x4edaefba2e07099d9c18e166efe2ce943702df82",
@@ -390,7 +390,7 @@
           "proxy": "0xb8ef12b109bfae65d3035bed1a13746031d7b945",
           "beacon": "0x9e3a397fa1b743ea373ba231bf9098cea7cc8356"
         },
-        "arbitrum-rinkeby": {
+        "arbitrumrinkeby": {
           "implementation": "0xc0820555b33bc561254e61db4222f4311e1d3575",
           "proxy": "0xae72fd780c3f51014644a7939ab2e8d44cd3e546",
           "beacon": "0x9e3a397fa1b743ea373ba231bf9098cea7cc8356"
@@ -418,7 +418,7 @@
           "proxy": "0x124a74f83f6dceef8b6e712f5977e2e0c924bfbf",
           "beacon": "0xb02a38bdf558321ac00f823d2593e216bee873dd"
         },
-        "optimism-kovan": {
+        "optimismkovan": {
           "implementation": "0xd14eebfb2c1267f88dd0b362c86e41517680dbc3",
           "proxy": "0xf8c1ed7f36eb944d8b40af86b998d7b1be47143d",
           "beacon": "0xb02a38bdf558321ac00f823d2593e216bee873dd"
@@ -438,7 +438,7 @@
           "proxy": "0x9eedb4e71296a17a52dba260906394bc559e35e2",
           "beacon": "0xb02a38bdf558321ac00f823d2593e216bee873dd"
         },
-        "arbitrum-rinkeby": {
+        "arbitrumrinkeby": {
           "implementation": "0xd14eebfb2c1267f88dd0b362c86e41517680dbc3",
           "proxy": "0x7694f68d6d6084c9ac27fc9d3f227b605b2cc3d3",
           "beacon": "0xb02a38bdf558321ac00f823d2593e216bee873dd"
@@ -471,7 +471,7 @@
           "proxy": "0xf405c58d95a8f2617505841bdacef6de27006d74",
           "beacon": "0x4a455cbabd96dc9b0dba2f0ccbb58a2dad403df2"
         },
-        "arbitrum-rinkeby": {
+        "arbitrumrinkeby": {
           "implementation": "0x8a36fbccc8d844aaacbca71e7ec8847215bb82f2",
           "proxy": "0xd2264e20d2b1f451bac9d48e1635d4c3d5997480",
           "beacon": "0x4a455cbabd96dc9b0dba2f0ccbb58a2dad403df2"
@@ -481,7 +481,7 @@
           "proxy": "0xf1b83d100860887aef35e50b3794e28dc744e5ce",
           "beacon": "0x4a455cbabd96dc9b0dba2f0ccbb58a2dad403df2"
         },
-        "optimism-kovan": {
+        "optimismkovan": {
           "implementation": "0x8a36fbccc8d844aaacbca71e7ec8847215bb82f2",
           "proxy": "0x7694f68d6d6084c9ac27fc9d3f227b605b2cc3d3",
           "beacon": "0x4a455cbabd96dc9b0dba2f0ccbb58a2dad403df2"
@@ -509,12 +509,12 @@
         "beacon": "0x3fbcb5d882d706c9dea852700c7c35d1087d8740"
       },
       "replicas": {
-        "optimism-kovan": {
+        "optimismkovan": {
           "implementation": "0x67e9837aa16f425b379aaf7e4d5581e59d577cf2",
           "proxy": "0x7694f68d6d6084c9ac27fc9d3f227b605b2cc3d3",
           "beacon": "0xa38bdbd738e81a93e006959f1ea6565bb033c8d7"
         },
-        "arbitrum-rinkeby": {
+        "arbitrumrinkeby": {
           "implementation": "0x67e9837aa16f425b379aaf7e4d5581e59d577cf2",
           "proxy": "0xd2264e20d2b1f451bac9d48e1635d4c3d5997480",
           "beacon": "0xa38bdbd738e81a93e006959f1ea6565bb033c8d7"
@@ -541,7 +541,7 @@
         }
       }
     },
-    "arbitrum-rinkeby": {
+    "arbitrumrinkeby": {
       "deployHeight": 12046137,
       "upgradeBeaconController": "0x9929746430aa76ac6814cb37ed5c8b8a27140d2c",
       "xAppConnectionManager": "0x1ba0c269ad0b49bb078ad83f1cc3ff27fd9ee8da",
@@ -557,7 +557,7 @@
         "beacon": "0x8e72b769766f4f2a826b2a780c6c5e39a8eef804"
       },
       "replicas": {
-        "optimism-kovan": {
+        "optimismkovan": {
           "implementation": "0xeeffc52826f60164bff4baa8a6ced2ba2edd0edc",
           "proxy": "0x289241f1fcfeb158f59ce6369be8a3d980d1560a",
           "beacon": "0xdd5f594f31a8c0770610dfeb54c6b377ba798535"
@@ -615,12 +615,12 @@
           "proxy": "0x097a3eb6cd351ab28de67a0a0bda9e0e32733da7",
           "beacon": "0x8dc1c77718b6f97f4a1e06e234ba2c8defd9cf9a"
         },
-        "optimism-kovan": {
+        "optimismkovan": {
           "implementation": "0xad74bef73458ddb8646af7a2e9a56734fa44694c",
           "proxy": "0x05445ee794d34bf16573697b3c6c6d009032f251",
           "beacon": "0x8dc1c77718b6f97f4a1e06e234ba2c8defd9cf9a"
         },
-        "arbitrum-rinkeby": {
+        "arbitrumrinkeby": {
           "implementation": "0xad74bef73458ddb8646af7a2e9a56734fa44694c",
           "proxy": "0x5d7ad3c2bfdc58fceb514f38fbf6547ecd177e49",
           "beacon": "0x8dc1c77718b6f97f4a1e06e234ba2c8defd9cf9a"
@@ -639,7 +639,7 @@
     }
   },
   "bridge": {
-    "arbitrum-rinkeby": {
+    "arbitrumrinkeby": {
       "deployHeight": 12046229,
       "bridgeRouter": {
         "implementation": "0x966cfa3030b4a5126ea46d9b8289b6f402072567",
@@ -659,7 +659,7 @@
       "ethHelper": "0x6d01a31cd1a7c8e66ad3dec7c7aee214df4a59e5",
       "customs": []
     },
-    "optimism-kovan": {
+    "optimismkovan": {
       "deployHeight": 3348909,
       "bridgeRouter": {
         "implementation": "0x3b0f343653615c85ed8de94bd440f9b649015474",
@@ -805,8 +805,8 @@
           "goerli",
           "evmostestnet",
           "neontestnet",
-          "arbitrum-rinkeby",
-          "optimism-kovan"
+          "arbitrumrinkeby",
+          "optimismkovan"
         ],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
@@ -851,8 +851,8 @@
           "goerli",
           "evmostestnet",
           "neontestnet",
-          "arbitrum-rinkeby",
-          "optimism-kovan"
+          "arbitrumrinkeby",
+          "optimismkovan"
         ],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
@@ -873,7 +873,7 @@
         "enabled": true
       }
     },
-    "optimism-kovan": {
+    "optimismkovan": {
       "rpcStyle": "ethereum",
       "db": "/usr/share/nomad",
       "metrics": 9090,
@@ -898,7 +898,7 @@
           "kovan",
           "evmostestnet",
           "neontestnet",
-          "arbitrum-rinkeby"
+          "arbitrumrinkeby"
         ],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
@@ -919,7 +919,7 @@
         "enabled": true
       }
     },
-    "arbitrum-rinkeby": {
+    "arbitrumrinkeby": {
       "rpcStyle": "ethereum",
       "db": "/usr/share/nomad",
       "metrics": 9090,
@@ -944,7 +944,7 @@
           "kovan",
           "evmostestnet",
           "neontestnet",
-          "optimism-kovan"
+          "optimismkovan"
         ],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
@@ -989,8 +989,8 @@
           "goerli",
           "evmostestnet",
           "kovan",
-          "arbitrum-rinkeby",
-          "optimism-kovan"
+          "arbitrumrinkeby",
+          "optimismkovan"
         ],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
@@ -1035,8 +1035,8 @@
           "kovan",
           "evmostestnet",
           "neontestnet",
-          "arbitrum-rinkeby",
-          "optimism-kovan"
+          "arbitrumrinkeby",
+          "optimismkovan"
         ],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
@@ -1080,8 +1080,8 @@
           "rinkeby",
           "kovan",
           "goerli",
-          "arbitrum-rinkeby",
-          "optimism-kovan",
+          "arbitrumrinkeby",
+          "optimismkovan",
           "neontestnet"
         ],
         "s3": {
