@@ -7,7 +7,7 @@ use nomad_core::{ChainCommunicationError, Signers, TxOutcome};
 use std::{str::FromStr, sync::Arc};
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
-use tracing::{debug, info};
+use tracing::info;
 use utils::CHAIN_ID_TO_FORWARDER;
 
 /// EIP-712 forward request structure
@@ -157,8 +157,11 @@ where
                     return Ok(TxOutcome { txid });
                 }
 
-                debug!(task_id = ?task_id, "Polling Gelato task.");
-                sleep(Duration::from_millis(500)).await;
+                if &status.task_state == &TaskState::CheckPending {
+                    info!(status = ?status, "Polling pending Gelato task...");
+                }
+
+                sleep(Duration::from_secs(3)).await;
             }
         })
     }
