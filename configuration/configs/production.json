@@ -153,7 +153,7 @@
           ]
         },
         "bridgeConfiguration": {
-          "weth": "TODO",
+          "weth": "0xe934f463d026d97f6ce0a10215d0ac4224f0a930",
           "customs": [],
           "mintGas": 200000,
           "deployGas": 850000
@@ -194,7 +194,9 @@
             "recoveryTimelock": 86400
           },
           "updater": "TODO",
-          "watchers": ["TODO"]
+          "watchers": [
+            "TODO"
+          ]
         },
         "bridgeConfiguration": {
           "weth": "0x98878B06940aE243284CA214f92Bb71a2b032B8A",
@@ -284,7 +286,9 @@
             "recoveryTimelock": 86400
           },
           "updater": "TODO",
-          "watchers": ["TODO"]
+          "watchers": [
+            "TODO"
+          ]
         },
         "bridgeConfiguration": {
           "weth": "0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23",
