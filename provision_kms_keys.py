@@ -35,7 +35,7 @@ logger.setLevel(logging.DEBUG)
 
 # Agent Keys
 agent_keys = {
-    "staging": [
+    "development": [
         "watcher-signer",
         "watcher-attestation",
         "updater-signer",
@@ -58,17 +58,38 @@ networks = {
     "production": [
         "ethereum",
         "moonbeam",
-        "evmos"
+        "evmos",
+        "milkomeda-c1",
+        "xdai",
+        "polygonPOS",
+        "avalanche",
+        "binanceSmartChain",
+        "optimism",
+        "harmony",
+        "arbitrum",
+        "fantom",
+        "bobaL2",
+        "cronos",
+        "godwoken",
+        "moonriver",
+        "fuse",
+        "gather"
     ],
-    "staging": [
-        "moonbasealpha",
-        "kovan"    
+    "development": [
+        "rinkeby",
+        "kovan",
+        "goerli",
+        "xdai",
+        "evmostestnet",
+        "neontestnet",
+        "optimism-kovan",
+        "arbitrum-rinkeby"    
     ]
 }
 
 # nAgentKeys * nEnvironments
 environments = [
-    "staging",
+    #"development"
     "production"
 ]
 
@@ -113,15 +134,20 @@ def calc_eth_address(pub_key) -> str:
     return eth_checksum_addr
 
 
-kms = boto3.client('kms', region_name=region)
-
 data_headers = ["Alias Name", "Region", "Key ID", "ARN", "Key Description", "Ethereum Address"]
 data_rows = []
 
-# If you have more than 100 aliases, this will break
-current_aliases = kms.list_aliases(Limit=100)
+kms = boto3.client('kms', region_name=region)
+response = kms.list_aliases(Limit=100)
+truncated = response['Truncated']
+current_aliases = response['Aliases']
 
-logger.debug(f"Fetched {len(current_aliases['Aliases'])} aliases from KMS")
+while truncated:
+    response = kms.list_aliases(Limit=100, Marker=response['NextMarker'])
+    truncated = response['Truncated']
+    current_aliases = current_aliases + response['Aliases']
+
+logger.debug(f"Fetched {len(current_aliases)} aliases from KMS")
 logger.debug(json.dumps(current_aliases, indent=2, default=str))
 for environment in environments:
     for network in networks[environment]:
@@ -130,7 +156,7 @@ for environment in environments:
             key_name = f"{environment}-{network}-{key}"
             alias_name = f"alias/{key_name}"
 
-            existing_alias = next((alias for alias in current_aliases["Aliases"] if alias["AliasName"] == alias_name), None)
+            existing_alias = next((alias for alias in current_aliases if alias["AliasName"] == alias_name), None)
 
             if existing_alias == None:
                 logger.info(f"No existing alias found for {key_name}, creating new key")
