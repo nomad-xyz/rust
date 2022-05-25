@@ -800,7 +800,14 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": ["kovan", "goerli", "evmostestnet", "neontestnet"],
+        "subsidizedRemotes": [
+          "kovan",
+          "goerli",
+          "evmostestnet",
+          "neontestnet",
+          "arbitrum-rinkeby",
+          "optimism-kovan"
+        ],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
@@ -843,7 +850,9 @@
           "rinkeby",
           "goerli",
           "evmostestnet",
-          "neontestnet"
+          "neontestnet",
+          "arbitrum-rinkeby",
+          "optimism-kovan"
         ],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
@@ -886,8 +895,10 @@
         "subsidizedRemotes": [
           "rinkeby",
           "goerli",
+          "kovan",
           "evmostestnet",
-          "neontestnet"
+          "neontestnet",
+          "arbitrum-rinkeby"
         ],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
@@ -930,8 +941,10 @@
         "subsidizedRemotes": [
           "rinkeby",
           "goerli",
+          "kovan",
           "evmostestnet",
-          "neontestnet"
+          "neontestnet",
+          "optimism-kovan"
         ],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
@@ -971,7 +984,14 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": ["rinkeby", "goerli", "evmostestnet", "kovan"],
+        "subsidizedRemotes": [
+          "rinkeby",
+          "goerli",
+          "evmostestnet",
+          "kovan",
+          "arbitrum-rinkeby",
+          "optimism-kovan"
+        ],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
@@ -1014,7 +1034,9 @@
           "rinkeby",
           "kovan",
           "evmostestnet",
-          "neontestnet"
+          "neontestnet",
+          "arbitrum-rinkeby",
+          "optimism-kovan"
         ],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
@@ -1054,7 +1076,14 @@
       "processor": {
         "allowed": null,
         "denied": null,
-        "subsidizedRemotes": ["rinkeby", "kovan", "goerli", "neontestnet"],
+        "subsidizedRemotes": [
+          "rinkeby",
+          "kovan",
+          "goerli",
+          "arbitrum-rinkeby",
+          "optimism-kovan",
+          "neontestnet"
+        ],
         "s3": {
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
@@ -1109,17 +1138,6 @@
       "displayName": "Rinkeby",
       "nativeTokenSymbol": "rETH",
       "connections": ["goerli"],
-      "connextEnabled": true
-    },
-    "neontestnet": {
-      "displayName": "Neon Testnet",
-      "nativeTokenSymbol": "tNEON",
-      "connections": ["rinkeby"]
-    },
-    "goerli": {
-      "displayName": "Goerli",
-      "nativeTokenSymbol": "gETH",
-      "connections": ["rinkeby"],
       "connextEnabled": true
     }
   }
