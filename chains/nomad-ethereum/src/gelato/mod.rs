@@ -208,6 +208,8 @@ where
 
         let filled_request = unfilled_request.into_filled(sponsor_signature.to_vec());
 
+        info!(request = ?filled_request, "Signed gelato forward request.");
+
         self.gelato()
             .send_forward_request(&filled_request)
             .await
