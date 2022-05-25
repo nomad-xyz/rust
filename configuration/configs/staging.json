@@ -37,8 +37,8 @@
         "specs": {
           "chainId": 200101,
           "blockTime": 4,
-          "finalizationBlocks": 5,
-          "supports1559": true,
+          "finalizationBlocks": 15,
+          "supports1559": false,
           "confirmations": 6,
           "blockExplorer": "https://explorer-devnet-cardano-evm.c1.milkomeda.com/",
           "indexPageSize": 2000
