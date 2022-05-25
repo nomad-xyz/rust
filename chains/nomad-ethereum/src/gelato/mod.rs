@@ -198,6 +198,8 @@ where
             enforce_sponsor_nonce_ordering: false,
         };
 
+        info!(request = ?unfilled_request, "Signing gelato forward request.");
+
         let sponsor_signature = self
             .sponsor
             .sign_typed_data(&unfilled_request)
