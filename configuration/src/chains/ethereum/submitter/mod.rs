@@ -5,15 +5,6 @@ use crate::agent::SignerConf;
 mod gelato;
 pub use gelato::*;
 
-fn get_submitter_type(network: &str) -> Option<String> {
-    let mut submitter_type = std::env::var(&format!("{}_SUBMITTER_TYPE", network)).ok();
-    if submitter_type.is_none() {
-        submitter_type = std::env::var("DEFAULT_SUBMITTER_TYPE").ok();
-    }
-
-    submitter_type
-}
-
 /// Local or relay-based transaction submission
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 #[serde(tag = "submitterType", content = "submitter", rename_all = "camelCase")]
@@ -35,7 +26,7 @@ impl TxSubmitterConf {
     /// Build ethereum TxSubmitterConf from env. Looks for default submitter
     /// type if network-specific not defined.
     pub fn from_env(network: &str) -> Option<Self> {
-        let submitter_type = get_submitter_type(network)?;
+        let submitter_type = crate::utils::network_or_default_from_env(network, "SUBMITTER_TYPE")?;
 
         return match submitter_type.as_ref() {
             "local" => {

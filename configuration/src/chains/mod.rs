@@ -4,15 +4,6 @@ pub mod ethereum;
 
 use serde_json::json;
 
-fn get_rpc_style(network: &str) -> Option<String> {
-    let mut rpc_style = std::env::var(&format!("{}_RPCSTYLE", network)).ok();
-    if rpc_style.is_none() {
-        rpc_style = std::env::var("DEFAULT_RPCSTYLE").ok();
-    }
-
-    rpc_style
-}
-
 /// A connection to _some_ blockchain.
 ///
 /// Specify the chain name (enum variant) in toml under the `chain` key
@@ -66,7 +57,7 @@ impl TxSubmitterConf {
     /// Build TxSubmitterConf from env. Looks for default RPC style if
     /// network-specific not defined.
     pub fn from_env(network: &str) -> Option<Self> {
-        let rpc_style = get_rpc_style(network)?;
+        let rpc_style = crate::utils::network_or_default_from_env(network, "RPCSTYLE")?;
 
         match rpc_style.as_ref() {
             "ethereum" => Some(Self::Ethereum(ethereum::TxSubmitterConf::from_env(
