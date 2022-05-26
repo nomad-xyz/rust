@@ -107,14 +107,14 @@ def get_kms_public_key(key_id: str) -> bytes:
 
 def get_all_kms_aliases() -> list:
     kms = boto3.client('kms', region_name=region)
-    response = kms.list_aliases(Limit=100)
-    truncated = response['Truncated']
-    aliases = response['Aliases']
-
+    truncated = True
+    aliases = list()
+    kwargs = { 'Limit': 100 }
     while truncated:
-        response = kms.list_aliases(Limit=100, Marker=response['NextMarker'])
-        truncated = response['Truncated']
+        response = kms.list_aliases(**kwargs)
         aliases = aliases + response['Aliases']
+        truncated = response['Truncated']
+        kwargs['Marker'] = response['NextMarker'] if truncated else ""
 
     return aliases
 
