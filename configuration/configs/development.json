@@ -13,11 +13,11 @@
   "rpcs": {
     "rinkeby": ["https://rinkeby-light.eth.linkpool.io"],
     "evmostestnet": ["https://eth.bd.evmos.dev:8545"],
-    "arbitrum-rinkeby": ["https://rinkeby.arbitrum.io/rpc"],
+    "arbitrumrinkeby": ["https://rinkeby.arbitrum.io/rpc"],
     "neontestnet": ["https://proxy.devnet.neonlabs.org/solana"],
     "goerli": ["https://goerli-light.eth.linkpool.io"],
     "kovan": ["https://kovan.poa.network"],
-    "optimism-kovan": ["https://kovan.optimism.io"]
+    "optimismkovan": ["https://kovan.optimism.io"]
   },
   "protocol": {
     "governor": {
