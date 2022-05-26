@@ -14,12 +14,12 @@ lazy_static! {
     // Goerli
     (
         5,
-        Address::from_str("0xDde7416baE4CcfB1f131038482D424AdD61cF378").expect("!forwarder proxy"),
+        Address::from_str("0x61BF11e6641C289d4DA1D59dC3E03E15D2BA971c").expect("!forwarder proxy"),
     ),
     // Rinkeby
     (
         4,
-        Address::from_str("0x0343Af039E2E1c25A9691eEb654Ce0de1910C3e2").expect("!forwarder proxy"),
+        Address::from_str("0x9B79b798563e538cc326D03696B3Be38b971D282").expect("!forwarder proxy"),
     ),
     ]);
 }
