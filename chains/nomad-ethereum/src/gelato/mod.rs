@@ -166,7 +166,7 @@ where
         })
     }
 
-    /// Send relay transaction
+    /// Format and sign forward request, then dispatch to Gelato relay service.
     pub async fn send_forward_request(
         &self,
         target: Address,
@@ -183,7 +183,7 @@ where
         let sponsor = format!("{:#x}", self.sponsor.address());
         let data = data.to_string().strip_prefix("0x").unwrap().to_owned();
 
-        let unfilled_request = UnfilledFowardRequest {
+        let unfilled_request = UnsignedFowardRequest {
             chain_id: self.chain_id,
             target,
             data,
