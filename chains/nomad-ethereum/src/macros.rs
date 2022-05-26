@@ -1,11 +1,11 @@
 /// Dispatches a transaction, logs the tx id, and returns the result
 #[allow(unused_macros)]
 macro_rules! report_tx {
-    ($tx:expr, $($tail:tt)*) => {{
+    ($tx:expr, $provider:expr, $($tail:tt)*) => {{
         // Simple switch between 2 implementations:
         //  * @escalating for new implementation with gas escalation
         //  * @legacy for simple transaction send implementation
-        report_tx!(@legacy $tx, $($tail)*)
+        report_tx!(@legacy $tx, $provider $($tail)*)
     }};
 
     // Escalating cutting edge implementation, but we have to put it aside, while there is a bug
@@ -13,7 +13,7 @@ macro_rules! report_tx {
         log_tx_details!($tx);
 
         let dispatch_fut = $provider.send_escalating(
-            &$tx.tx,
+            &$tx,
             5,
             Box::new(|original, index| original * (index + 1))
         );
@@ -36,11 +36,13 @@ macro_rules! report_tx {
     }};
 
     // Legacy way of sending transactions.
-    (@legacy $tx:expr, $($tail:tt)*) => {{
+    (@legacy $tx:expr, $provider:expr) => {{
         log_tx_details!($tx);
 
-        let dispatch_fut = $tx.send();
-        let dispatched = dispatch_fut.await?;
+        let dispatched = $provider
+            .send_transaction($tx, None)
+            .await
+            .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?;
 
         let tx_hash: ethers::core::types::H256 = *dispatched;
         let result = dispatched
@@ -60,9 +62,9 @@ macro_rules! report_tx {
 macro_rules! log_tx_details {
     ($tx:expr) => {
         // "0x..."
-        let data = format!("0x{}", hex::encode(&$tx.tx.data().map(|b| b.to_vec()).unwrap_or_default()));
+        let data = format!("0x{}", hex::encode(&$tx.data().map(|b| b.to_vec()).unwrap_or_default()));
 
-        let to = $tx.tx.to().cloned().unwrap_or_else(|| ethers::types::NameOrAddress::Address(Default::default()));
+        let to = $tx.to().cloned().unwrap_or_else(|| ethers::types::NameOrAddress::Address(Default::default()));
 
         tracing::info!(
             to = ?to,

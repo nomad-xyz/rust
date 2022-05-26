@@ -4,7 +4,6 @@ use ethers::prelude::*;
 use ethers::types::transaction::eip2718::TypedTransaction;
 use nomad_core::{ChainCommunicationError, TxOutcome};
 use std::sync::Arc;
-use tracing::info;
 
 /// Component responsible for submitting transactions to the chain. Can
 /// sign/submit locally or use a transaction relay service.
@@ -54,27 +53,7 @@ where
         let tx: TypedTransaction = tx.into();
 
         match &self.client {
-            SubmitterClient::Local(client) => {
-                let dispatched = client
-                    .send_transaction(tx, None)
-                    .await
-                    .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?;
-
-                let tx_hash: ethers::core::types::H256 = *dispatched;
-                info!("dispatched transaction with tx_hash {:?}", tx_hash);
-
-                let result = dispatched
-                    .await?
-                    .ok_or(ChainCommunicationError::DroppedError(tx_hash))?;
-
-                info!(
-                    "confirmed transaction with tx_hash {:?}",
-                    result.transaction_hash
-                );
-
-                let outcome = result.try_into()?;
-                Ok(outcome)
-            }
+            SubmitterClient::Local(client) => report_tx!(tx, client,).try_into(),
             SubmitterClient::Gelato(client) => {
                 client.submit_blocking(domain, contract_address, &tx).await
             }
