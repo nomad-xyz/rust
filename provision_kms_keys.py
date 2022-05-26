@@ -105,6 +105,19 @@ def get_kms_public_key(key_id: str) -> bytes:
 
     return response['PublicKey']
 
+def get_all_kms_aliases() -> list:
+    kms = boto3.client('kms', region_name=region)
+    response = kms.list_aliases(Limit=100)
+    truncated = response['Truncated']
+    aliases = response['Aliases']
+
+    while truncated:
+        response = kms.list_aliases(Limit=100, Marker=response['NextMarker'])
+        truncated = response['Truncated']
+        aliases = aliases + response['Aliases']
+
+    return aliases
+
 def calc_eth_address(pub_key) -> str:
     SUBJECT_ASN = '''
     Key DEFINITIONS ::= BEGIN
@@ -140,17 +153,11 @@ def main():
     data_rows = []
 
     kms = boto3.client('kms', region_name=region)
-    response = kms.list_aliases(Limit=100)
-    truncated = response['Truncated']
-    current_aliases = response['Aliases']
-
-    while truncated:
-        response = kms.list_aliases(Limit=100, Marker=response['NextMarker'])
-        truncated = response['Truncated']
-        current_aliases = current_aliases + response['Aliases']
+    current_aliases = get_all_kms_aliases()
 
     logger.debug(f"Fetched {len(current_aliases)} aliases from KMS")
     logger.debug(json.dumps(current_aliases, indent=2, default=str))
+    
     for environment in environments:
         for network in networks[environment]:
             for key in agent_keys[environment]:
@@ -173,8 +180,7 @@ def main():
                             {
                                 'TagKey': 'environment',
                                 'TagValue': environment
-                            },
-                        ]
+                        },]
                     )
 
                     alias_response = kms.create_alias(
