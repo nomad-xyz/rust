@@ -3,7 +3,7 @@
 //! This struct built from environment variables. It is used alongside a
 //! NomadConfig to build an agents `Settings` block (see settings/mod.rs).
 
-use crate::{agent::SignerConf, chains::ethereum, ChainConf, FromEnv};
+use crate::{agent::SignerConf, chains::ethereum, ChainConf};
 use eyre::Result;
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
@@ -37,13 +37,9 @@ impl AgentSecrets {
         for network in networks.iter() {
             let network_upper = network.to_uppercase();
 
-            let chain_conf =
-                ChainConf::from_env(&format!("RPCS_{}", network_upper), Some("RPCS_DEFAULT"))?;
+            let chain_conf = ChainConf::from_env(&network_upper)?;
 
-            let transaction_signer = SignerConf::from_env(
-                &format!("TRANSACTIONSIGNERS_{}", network_upper),
-                Some("TRANSACTIONSIGNERS_DEFAULT"),
-            )?;
+            let transaction_signer = SignerConf::from_env(Some("TXSIGNER"), Some(&network_upper))?;
 
             secrets.rpcs.insert(network.to_owned(), chain_conf);
             secrets
@@ -51,7 +47,7 @@ impl AgentSecrets {
                 .insert(network.to_owned(), transaction_signer);
         }
 
-        let attestation_signer = SignerConf::from_env("ATTESTATION_SIGNER", None);
+        let attestation_signer = SignerConf::from_env(Some("ATTESTATION_SIGNER"), None);
         secrets.attestation_signer = attestation_signer;
 
         Some(secrets)
@@ -96,13 +92,8 @@ impl AgentSecrets {
                         network,
                     );
                 }
-                SignerConf::Aws { id, region } => {
+                SignerConf::Aws { id } => {
                     eyre::ensure!(!id.is_empty(), "ID for {} aws signer key empty!", network,);
-                    eyre::ensure!(
-                        !region.is_empty(),
-                        "Region for {} aws signer key empty!",
-                        network,
-                    );
                 }
                 SignerConf::Node => (),
             }
@@ -130,7 +121,6 @@ mod test {
                 *secrets.transaction_signers.get("moonbeam").unwrap(),
                 SignerConf::Aws {
                     id: "moonbeam_id".into(),
-                    region: "moonbeam_region".into(),
                 }
             );
             assert_eq!(
@@ -145,7 +135,6 @@ mod test {
                 *secrets.transaction_signers.get("evmos").unwrap(),
                 SignerConf::Aws {
                     id: "default_id".into(),
-                    region: "default_region".into(),
                 }
             );
             assert_eq!(
@@ -175,7 +164,6 @@ mod test {
 
             let default_config = SignerConf::Aws {
                 id: "default_id".into(),
-                region: "default_region".into(),
             };
             for (_, config) in &secrets.transaction_signers {
                 assert_eq!(*config, default_config);

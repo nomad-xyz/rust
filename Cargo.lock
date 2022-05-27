@@ -2489,6 +2489,7 @@ dependencies = [
  "prometheus",
  "rocksdb",
  "rusoto_core",
+ "rusoto_credential",
  "rusoto_kms",
  "serde 1.0.136",
  "serde_json",
@@ -2569,7 +2570,7 @@ dependencies = [
 
 [[package]]
 name = "nomad-xyz-configuration"
-version = "0.1.0-rc.23"
+version = "0.1.0-rc.24"
 dependencies = [
  "affix",
  "dotenv",

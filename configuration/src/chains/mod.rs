@@ -2,7 +2,6 @@
 
 pub mod ethereum;
 
-use crate::FromEnv;
 use serde_json::json;
 
 /// A connection to _some_ blockchain.
@@ -22,15 +21,17 @@ impl Default for ChainConf {
     }
 }
 
-impl FromEnv for ChainConf {
-    fn from_env(prefix: &str, default_prefix: Option<&str>) -> Option<Self> {
-        let mut rpc_style = std::env::var(&format!("{}_RPCSTYLE", prefix)).ok();
+impl ChainConf {
+    /// Build ChainConf from env vars. Will use default RPCSTYLE if
+    /// network-specific not provided.
+    pub fn from_env(network: &str) -> Option<Self> {
+        let mut rpc_style = std::env::var(&format!("{}_RPCSTYLE", network)).ok();
 
-        if let (None, Some(prefix)) = (&rpc_style, default_prefix) {
-            rpc_style = std::env::var(&format!("{}_RPCSTYLE", prefix)).ok();
+        if rpc_style.is_none() {
+            rpc_style = std::env::var("DEFAULT_RPCSTYLE").ok();
         }
 
-        let rpc_url = std::env::var(&format!("{}_CONNECTION_URL", prefix)).ok()?;
+        let rpc_url = std::env::var(&format!("{}_CONNECTION_URL", network)).ok()?;
 
         let json = json!({
             "rpcStyle": rpc_style?,
@@ -39,7 +40,7 @@ impl FromEnv for ChainConf {
 
         Some(
             serde_json::from_value(json)
-                .unwrap_or_else(|_| panic!("malformed json for {} rpc", prefix)),
+                .unwrap_or_else(|_| panic!("malformed json for {} rpc", network)),
         )
     }
 }
