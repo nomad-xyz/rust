@@ -35,7 +35,7 @@ logger.setLevel(logging.DEBUG)
 
 # Agent Keys
 agent_keys = {
-    "staging": [
+    "development": [
         "watcher-signer",
         "watcher-attestation",
         "updater-signer",
@@ -58,17 +58,38 @@ networks = {
     "production": [
         "ethereum",
         "moonbeam",
-        "evmos"
+        "evmos",
+        "milkomeda-c1",
+        "xdai",
+        "polygonPOS",
+        "avalanche",
+        "binanceSmartChain",
+        "optimism",
+        "harmony",
+        "arbitrum",
+        "fantom",
+        "bobaL2",
+        "cronos",
+        "godwoken",
+        "moonriver",
+        "fuse",
+        "gather"
     ],
-    "staging": [
-        "moonbasealpha",
-        "kovan"    
+    "development": [
+        "rinkeby",
+        "kovan",
+        "goerli",
+        "xdai",
+        "evmostestnet",
+        "neontestnet",
+        "optimism-kovan",
+        "arbitrum-rinkeby"    
     ]
 }
 
 # nAgentKeys * nEnvironments
 environments = [
-    "staging",
+    #"development"
     "production"
 ]
 
@@ -83,6 +104,19 @@ def get_kms_public_key(key_id: str) -> bytes:
     )
 
     return response['PublicKey']
+
+def get_all_kms_aliases() -> list:
+    kms = boto3.client('kms', region_name=region)
+    truncated = True
+    aliases = list()
+    kwargs = { 'Limit': 100 }
+    while truncated:
+        response = kms.list_aliases(**kwargs)
+        aliases = aliases + response['Aliases']
+        truncated = response['Truncated']
+        kwargs['Marker'] = response['NextMarker'] if truncated else ""
+
+    return aliases
 
 def calc_eth_address(pub_key) -> str:
     SUBJECT_ASN = '''
@@ -113,77 +147,80 @@ def calc_eth_address(pub_key) -> str:
     return eth_checksum_addr
 
 
-kms = boto3.client('kms', region_name=region)
+def main():
 
-data_headers = ["Alias Name", "Region", "Key ID", "ARN", "Key Description", "Ethereum Address"]
-data_rows = []
+    data_headers = ["Alias Name", "Region", "Key ID", "ARN", "Key Description", "Ethereum Address"]
+    data_rows = []
 
-# If you have more than 100 aliases, this will break
-current_aliases = kms.list_aliases(Limit=100)
+    kms = boto3.client('kms', region_name=region)
+    current_aliases = get_all_kms_aliases()
 
-logger.debug(f"Fetched {len(current_aliases['Aliases'])} aliases from KMS")
-logger.debug(json.dumps(current_aliases, indent=2, default=str))
-for environment in environments:
-    for network in networks[environment]:
-        for key in agent_keys[environment]:
-
-            key_name = f"{environment}-{network}-{key}"
-            alias_name = f"alias/{key_name}"
-
-            existing_alias = next((alias for alias in current_aliases["Aliases"] if alias["AliasName"] == alias_name), None)
-
-            if existing_alias == None:
-                logger.info(f"No existing alias found for {key_name}, creating new key")
-
-                key_response = kms.create_key(
-                    Description=f'{environment} {network} {key}',
-                    KeyUsage='SIGN_VERIFY',
-                    Origin='AWS_KMS',
-                    BypassPolicyLockoutSafetyCheck=False,
-                    CustomerMasterKeySpec="ECC_SECG_P256K1",
-                    Tags=[
-                        {
-                            'TagKey': 'environment',
-                            'TagValue': environment
-                        },
-                    ]
-                )
-
-                alias_response = kms.create_alias(
-                    # The alias to create. Aliases must begin with 'alias/'.
-                    AliasName=alias_name,
-                    # The identifier of the CMK whose alias you are creating. You can use the key ID or the Amazon Resource Name (ARN) of the CMK.
-                    TargetKeyId=key_response["KeyMetadata"]["KeyId"],
-                )
-
-                logger.debug(json.dumps(key_response, indent=2, default=str))
-                logger.debug(json.dumps(alias_response, indent=2, default=str))
-
-
-                key_id = key_response["KeyMetadata"]["KeyId"]
-                key_arn = key_response["KeyMetadata"]["Arn"]
-                key_description = key_response["KeyMetadata"]["Description"]
-            else: 
-                logger.info(f"Existing alias for {key_name}, fetching key.")
-
-                key_response = kms.describe_key(
-                    KeyId=existing_alias["TargetKeyId"],
-                )
-
-                key_id = key_response["KeyMetadata"]["KeyId"]
-                key_arn = key_response["KeyMetadata"]["Arn"]
-                key_description = key_response["KeyMetadata"]["Description"]
-                
-            logger.debug(f"Key Id: {key_id}")
-            logger.debug(f"Key Arn: {key_arn}")
-            logger.debug(f"Key Description: {key_description}")
-
-            # Get the Ethereum Address from the KMS CMK
-            public_key = get_kms_public_key(key_id)
-            ethereum_address = calc_eth_address(public_key)
-
-            data_rows.append([f'alias/{key_name}', region, key_id, key_arn, key_description, ethereum_address])
+    logger.debug(f"Fetched {len(current_aliases)} aliases from KMS")
+    logger.debug(json.dumps(current_aliases, indent=2, default=str))
     
+    for environment in environments:
+        for network in networks[environment]:
+            for key in agent_keys[environment]:
 
-# Print out the results of the operation
-print(tabulate(data_rows, data_headers, tablefmt="fancy_grid"))
+                key_name = f"{environment}-{network}-{key}"
+                alias_name = f"alias/{key_name}"
+
+                existing_alias = next((alias for alias in current_aliases if alias["AliasName"] == alias_name), None)
+
+                if existing_alias == None:
+                    logger.info(f"No existing alias found for {key_name}, creating new key")
+
+                    key_response = kms.create_key(
+                        Description=f'{environment} {network} {key}',
+                        KeyUsage='SIGN_VERIFY',
+                        Origin='AWS_KMS',
+                        BypassPolicyLockoutSafetyCheck=False,
+                        CustomerMasterKeySpec="ECC_SECG_P256K1",
+                        Tags=[
+                            {
+                                'TagKey': 'environment',
+                                'TagValue': environment
+                        },]
+                    )
+
+                    alias_response = kms.create_alias(
+                        # The alias to create. Aliases must begin with 'alias/'.
+                        AliasName=alias_name,
+                        # The identifier of the CMK whose alias you are creating. You can use the key ID or the Amazon Resource Name (ARN) of the CMK.
+                        TargetKeyId=key_response["KeyMetadata"]["KeyId"],
+                    )
+
+                    logger.debug(json.dumps(key_response, indent=2, default=str))
+                    logger.debug(json.dumps(alias_response, indent=2, default=str))
+
+
+                    key_id = key_response["KeyMetadata"]["KeyId"]
+                    key_arn = key_response["KeyMetadata"]["Arn"]
+                    key_description = key_response["KeyMetadata"]["Description"]
+                else: 
+                    logger.info(f"Existing alias for {key_name}, fetching key.")
+
+                    key_response = kms.describe_key(
+                        KeyId=existing_alias["TargetKeyId"],
+                    )
+
+                    key_id = key_response["KeyMetadata"]["KeyId"]
+                    key_arn = key_response["KeyMetadata"]["Arn"]
+                    key_description = key_response["KeyMetadata"]["Description"]
+                    
+                logger.debug(f"Key Id: {key_id}")
+                logger.debug(f"Key Arn: {key_arn}")
+                logger.debug(f"Key Description: {key_description}")
+
+                # Get the Ethereum Address from the KMS CMK
+                public_key = get_kms_public_key(key_id)
+                ethereum_address = calc_eth_address(public_key)
+
+                data_rows.append([f'alias/{key_name}', region, key_id, key_arn, key_description, ethereum_address])
+        
+
+    # Print out the results of the operation
+    print(tabulate(data_rows, data_headers, tablefmt="fancy_grid"))
+
+if __name__ == '__main__':
+    main()
