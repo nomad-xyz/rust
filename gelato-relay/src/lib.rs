@@ -51,10 +51,7 @@ impl GelatoClient {
         &self,
         params: &ForwardRequest,
     ) -> Result<RelayResponse, reqwest::Error> {
-        let url = format!(
-            "https://gateway.api.gelato.digital/metabox-relays/{}",
-            params.chain_id
-        );
+        let url = format!("{}/metabox-relays/{}", self.url, params.chain_id);
 
         let res = reqwest::Client::new()
             .post(url)
@@ -71,7 +68,7 @@ impl GelatoClient {
     }
 
     pub async fn get_gelato_relay_chains(&self) -> Result<Vec<String>, reqwest::Error> {
-        let url = format!("{}/relays", &self.url);
+        let url = format!("{}/relays", self.url);
         let res = reqwest::get(url).await?;
         Ok(res.json::<RelayChainsResponse>().await?.relays)
     }
@@ -92,10 +89,7 @@ impl GelatoClient {
             ("isHighPriority", is_high_priority),
         ]);
 
-        let base_url = format!(
-            "https://gateway.api.gelato.digital/oracles/{}/estimate",
-            chain_id
-        );
+        let base_url = format!("{}/oracles/{}/estimate", self.url, chain_id);
         let url = reqwest::Url::parse_with_params(&base_url, params).expect("!url");
         let res = reqwest::get(url).await?;
 
@@ -111,10 +105,7 @@ impl GelatoClient {
         &self,
         task_id: &str,
     ) -> Result<Option<TaskStatus>, reqwest::Error> {
-        let url = format!(
-            "https://gateway.api.gelato.digital/tasks/GelatoMetaBox/{}",
-            task_id
-        );
+        let url = format!("{}/tasks/GelatoMetaBox/{}", self.url, task_id);
         let res = reqwest::get(url).await?;
         let task_status: TaskStatusResponse = res.json().await?;
         Ok(task_status.data.first().cloned())
