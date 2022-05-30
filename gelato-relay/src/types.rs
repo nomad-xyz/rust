@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-/// Request for forwarding tx to gas-tank based relay service
+/// Request for forwarding tx to gas-tank based relay service.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ForwardRequest {

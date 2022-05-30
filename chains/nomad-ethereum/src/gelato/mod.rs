@@ -183,7 +183,7 @@ where
         let sponsor = format!("{:#x}", self.sponsor.address());
         let data = data.to_string().strip_prefix("0x").unwrap().to_owned();
 
-        let unfilled_request = UnsignedFowardRequest {
+        let unfilled_request = UnfilledForwardRequest {
             chain_id: self.chain_id,
             target,
             data,

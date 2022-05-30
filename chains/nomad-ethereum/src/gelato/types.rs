@@ -8,26 +8,28 @@ use std::str::FromStr;
 
 const FORWARD_REQUEST_TYPE: &str = "ForwardRequest(uint256 chainId,address target,bytes data,address feeToken,uint256 paymentType,uint256 maxFee,uint256 gas,address sponsor,uint256 sponsorChainId,uint256 nonce,bool enforceSponsorNonce,bool enforceSponsorNonceOrdering)";
 
-/// Unsigned forward request
+/// Unfilled Gelato forward request. This request is signed and filled according
+/// to EIP-712 then sent to Gelato. Gelato executes the provided tx `data` on
+/// the `target` contract address.
 #[derive(Debug, Clone)]
-pub struct UnsignedFowardRequest {
-    /// Chain id
+pub struct UnfilledForwardRequest {
+    /// Target chain id
     pub chain_id: usize,
-    /// Target contract
+    /// Target contract address
     pub target: String,
     /// Encoded tx data
     pub data: String,
-    /// Fee token
+    /// Fee token address
     pub fee_token: String,
     /// Payment method
     pub payment_type: usize, // 1 = gas tank
     /// Max fee
     pub max_fee: usize,
-    /// Gas limit
+    /// Contract call gas limit + buffer for gelato forwarder
     pub gas: usize,
     /// Sponsor address
     pub sponsor: String,
-    /// Sponsor chain id
+    /// Sponsor resident chain id
     pub sponsor_chain_id: usize, // same as chain_id
     /// Nonce for replay protection
     pub nonce: usize, // can default 0 if next field false
@@ -46,7 +48,7 @@ pub enum ForwardRequestError {
     FromHexError(#[from] FromHexError),
 }
 
-impl Eip712 for UnsignedFowardRequest {
+impl Eip712 for UnfilledForwardRequest {
     type Error = ForwardRequestError;
 
     fn domain(&self) -> Result<EIP712Domain, Self::Error> {
@@ -86,7 +88,7 @@ impl Eip712 for UnsignedFowardRequest {
     }
 }
 
-impl UnsignedFowardRequest {
+impl UnfilledForwardRequest {
     /// Fill ForwardRequest with sponsor signature and return full request struct
     pub fn into_filled(self, sponsor_signature: Vec<u8>) -> ForwardRequest {
         let hex_sig = format!("0x{}", hex::encode(sponsor_signature));
@@ -113,7 +115,7 @@ impl UnsignedFowardRequest {
 
 #[cfg(test)]
 mod test {
-    use crate::UnsignedFowardRequest;
+    use crate::UnfilledForwardRequest;
     use ethers::signers::LocalWallet;
     use ethers::signers::Signer;
     use ethers::types::transaction::eip712::Eip712;
@@ -127,7 +129,7 @@ mod test {
     const SPONSOR_SIGNATURE: &str = "0x23c272c0cba2b897de0fd8fe87d419f0f273c82ef10917520b733da889688b1c6fec89412c6f121fccbc30ce89b20a3de2f405018f1ac1249b9ff705fdb62a521b";
 
     lazy_static! {
-        pub static ref REQUEST: UnsignedFowardRequest = UnsignedFowardRequest {
+        pub static ref REQUEST: UnfilledForwardRequest = UnfilledForwardRequest {
             chain_id: 42,
             target: "0x61bBe925A5D646cE074369A6335e5095Ea7abB7A".to_owned(),
             data: "4b327067000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeaeeeeeeeeeeeeeeeee"
