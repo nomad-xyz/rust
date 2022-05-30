@@ -2,7 +2,7 @@
 
 ### Unreleased
 
-- adds transaction submitters type and to replace transaction signers
+- adds transaction submitters type to replace transaction signers
 - adds gelato config struct
 
 ### v0.1.0-rc.24

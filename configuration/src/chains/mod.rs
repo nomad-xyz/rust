@@ -59,7 +59,7 @@ impl TxSubmitterConf {
     pub fn from_env(network: &str) -> Option<Self> {
         let rpc_style = crate::utils::network_or_default_from_env(network, "RPCSTYLE")?;
 
-        match rpc_style.as_ref() {
+        match rpc_style.to_lowercase().as_ref() {
             "ethereum" => Some(Self::Ethereum(ethereum::TxSubmitterConf::from_env(
                 network,
             )?)),

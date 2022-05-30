@@ -48,7 +48,6 @@ mod test {
         .await
     }
 
-
     #[tokio::test]
     #[serial_test::serial]
     async fn it_builds_settings_from_env() {

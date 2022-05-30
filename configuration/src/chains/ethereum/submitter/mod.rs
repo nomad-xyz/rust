@@ -28,7 +28,7 @@ impl TxSubmitterConf {
     pub fn from_env(network: &str) -> Option<Self> {
         let submitter_type = crate::utils::network_or_default_from_env(network, "SUBMITTER_TYPE")?;
 
-        return match submitter_type.as_ref() {
+        return match submitter_type.to_lowercase().as_ref() {
             "local" => {
                 let signer_conf = SignerConf::from_env(Some("TXSIGNER"), Some(network))?;
                 Some(Self::Local(signer_conf))
