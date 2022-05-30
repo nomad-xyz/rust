@@ -5,7 +5,7 @@ macro_rules! report_tx {
         // Simple switch between 2 implementations:
         //  * @escalating for new implementation with gas escalation
         //  * @legacy for simple transaction send implementation
-        report_tx!(@legacy $tx, $provider $($tail)*)
+        report_tx!(@legacy $tx, $provider, $($tail)*)
     }};
 
     // Escalating cutting edge implementation, but we have to put it aside, while there is a bug
@@ -36,7 +36,7 @@ macro_rules! report_tx {
     }};
 
     // Legacy way of sending transactions.
-    (@legacy $tx:expr, $provider:expr) => {{
+    (@legacy $tx:expr, $provider:expr,) => {{
         log_tx_details!($tx);
 
         let dispatched = $provider
@@ -127,34 +127,9 @@ macro_rules! ws_provider {
     }};
 }
 
-/// Create ethers::SignerMiddleware from http connection
-#[macro_export]
-macro_rules! wrap_http {
-    ($provider:expr, $signer:ident) => {{
-        // First set the chain ID locally
-        let provider_chain_id = $provider.get_chainid().await?;
-        let signer = ethers::signers::Signer::with_chain_id($signer, provider_chain_id.as_u64());
-
-        // Manage the nonce locally
-        let address = ethers::prelude::Signer::address(&signer);
-        let provider =
-            ethers::middleware::nonce_manager::NonceManagerMiddleware::new($provider, address);
-
-        // Kludge. Increase the gas by multiplication of every estimated gas by
-        // 2, except the gas for chain id 1 (Ethereum Mainnet)
-        let provider = crate::gas::GasAdjusterMiddleware::with_default_policy(
-            provider,
-            provider_chain_id.as_u64(),
-        );
-
-        // Manage signing locally
-        Arc::new(ethers::middleware::SignerMiddleware::new(provider, signer))
-    }};
-}
-
 /// Create ethers::SignerMiddleware from websockets connection
 #[macro_export]
-macro_rules! wrap_ws {
+macro_rules! wrap_with_signer {
     ($provider:expr, $signer:expr) => {{
         // First set the chain ID locally
         let provider_chain_id = $provider.get_chainid().await?;
@@ -182,7 +157,7 @@ macro_rules! wrap_ws {
 macro_rules! tx_submitter_local {
     ($base_provider:expr, $signer_conf:ident) => {{
         let signer = Signers::try_from_signer_conf(&$signer_conf).await?;
-        let signing_provider: Arc<_> = wrap_http!($base_provider.clone(), signer);
+        let signing_provider: Arc<_> = wrap_with_signer!($base_provider.clone(), signer);
         TxSubmitter::new(signing_provider.into())
     }};
 }
@@ -194,7 +169,7 @@ macro_rules! tx_submitter_gelato {
         let signer = Signers::try_from_signer_conf(&$gelato_conf.sponsor).await?;
         let sponsor = signer.clone();
         let chain_id = $base_provider.get_chainid().await?.as_usize();
-        let signing_provider: Arc<_> = wrap_http!($base_provider.clone(), signer); // kludge: only using signing provider for type consistency with TxSubmitter::Local
+        let signing_provider: Arc<_> = wrap_with_signer!($base_provider.clone(), signer); // kludge: only using signing provider for type consistency with TxSubmitter::Local
 
         let client = SingleChainGelatoClient::with_default_url(
             signing_provider,
