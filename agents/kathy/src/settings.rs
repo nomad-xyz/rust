@@ -48,17 +48,6 @@ mod test {
         .await
     }
 
-    #[tokio::test]
-    #[serial_test::serial]
-    async fn it_builds_settings_from_env_mixed() {
-        test_build_from_env_file("../../fixtures/env.test-local-signer-mixed").await;
-    }
-
-    #[tokio::test]
-    #[serial_test::serial]
-    async fn it_builds_settings_from_env_default() {
-        test_build_from_env_file("../../fixtures/env.test-local-signer-default").await;
-    }
 
     #[tokio::test]
     #[serial_test::serial]
