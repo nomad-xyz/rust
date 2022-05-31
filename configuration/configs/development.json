@@ -50,7 +50,7 @@
         },
         "specs": {
           "chainId": 69,
-          "blockTime": 150000,
+          "blockTime": 15,
           "finalizationBlocks": 3,
           "supports1559": false,
           "confirmations": 1,
@@ -128,7 +128,7 @@
         },
         "specs": {
           "chainId": 421611,
-          "blockTime": 150000,
+          "blockTime": 15,
           "finalizationBlocks": 3,
           "supports1559": false,
           "confirmations": 1,
