@@ -2,7 +2,6 @@ mod types;
 pub use types::*;
 
 use color_eyre::eyre::Result;
-use std::collections::HashMap;
 
 const DEFAULT_URL: &str = "https://relay.gelato.digital";
 
@@ -83,14 +82,14 @@ impl GelatoClient {
         let payment_token = payment_token.to_string();
         let gas_limit = gas_limit.to_string();
         let is_high_priority = is_high_priority.to_string();
-        let params = HashMap::from([
+        let params = [
             ("paymentToken", payment_token),
             ("gasLimit", gas_limit),
             ("isHighPriority", is_high_priority),
-        ]);
+        ];
 
         let base_url = format!("{}/oracles/{}/estimate", self.url, chain_id);
-        let url = reqwest::Url::parse_with_params(&base_url, params).expect("!url");
+        let url = reqwest::Url::parse_with_params(&base_url, &params).expect("!url");
         let res = reqwest::get(url).await?;
 
         Ok(res
