@@ -549,7 +549,7 @@
           "neontestnet"
         ],
         "s3": {
-          "bucket": "nomadxyz-development-proofs",
+          "bucket": "nomadxyz-staging-proofs",
           "region": "us-west-2"
         },
         "interval": 5,
@@ -593,7 +593,7 @@
           "neontestnet"
         ],
         "s3": {
-          "bucket": "nomadxyz-development-proofs",
+          "bucket": "nomadxyz-staging-proofs",
           "region": "us-west-2"
         },
         "interval": 5,
@@ -637,7 +637,7 @@
           "evmostestnet"
         ],
         "s3": {
-          "bucket": "nomadxyz-development-proofs",
+          "bucket": "nomadxyz-staging-proofs",
           "region": "us-west-2"
         },
         "interval": 5,
@@ -681,7 +681,7 @@
           "neontestnet"
         ],
         "s3": {
-          "bucket": "nomadxyz-development-proofs",
+          "bucket": "nomadxyz-staging-proofs",
           "region": "us-west-2"
         },
         "interval": 5,
@@ -725,7 +725,7 @@
           "neontestnet"
         ],
         "s3": {
-          "bucket": "nomadxyz-development-proofs",
+          "bucket": "nomadxyz-staging-proofs",
           "region": "us-west-2"
         },
         "interval": 5,
