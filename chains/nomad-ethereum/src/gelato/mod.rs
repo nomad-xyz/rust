@@ -16,6 +16,8 @@ pub use types::*;
 
 pub mod utils;
 
+pub(crate) const GAS_TANK_PAYMENT: usize = 1;
+
 pub(crate) const ACCEPTABLE_STATES: [TaskState; 4] = [
     TaskState::CheckPending,
     TaskState::ExecPending,
@@ -188,7 +190,7 @@ where
             target,
             data,
             fee_token: self.fee_token.to_owned(),
-            payment_type: 1, // gas tank
+            payment_type: GAS_TANK_PAYMENT, // gas tank
             max_fee,
             gas: gas_limit,
             sponsor,
