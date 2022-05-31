@@ -12,7 +12,6 @@ ethers-signers = { git = "https://github.com/gakonst/ethers-rs", branch = "maste
 ethers-providers = { git = "https://github.com/gakonst/ethers-rs", branch = "master", features=["ws", "rustls"] }
 hex = "0.4.3"
 sha3 = "0.9.1"
-lazy_static = "*"
 thiserror = "*"
 async-trait = { version = "0.1.42", default-features = false }
 tokio = { version = "1.0.1", features = ["rt", "macros"] }

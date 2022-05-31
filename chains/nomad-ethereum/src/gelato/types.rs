@@ -119,7 +119,7 @@ mod test {
     use ethers::signers::LocalWallet;
     use ethers::signers::Signer;
     use ethers::types::transaction::eip712::Eip712;
-    use lazy_static::lazy_static;
+    use once_cell::sync::Lazy;
 
     const DOMAIN_SEPARATOR: &str =
         "0x1b927f522830945610cf8f0521ef8b3f69352936e1b0920968dcad9cf1e30762";
@@ -128,23 +128,21 @@ mod test {
     const DUMMY_SPONSOR_ADDRESS: &str = "0x4e4f0d95bc1a4275b748a63221796080b1aa5c10";
     const SPONSOR_SIGNATURE: &str = "0x23c272c0cba2b897de0fd8fe87d419f0f273c82ef10917520b733da889688b1c6fec89412c6f121fccbc30ce89b20a3de2f405018f1ac1249b9ff705fdb62a521b";
 
-    lazy_static! {
-        pub static ref REQUEST: UnfilledForwardRequest = UnfilledForwardRequest {
-            chain_id: 42,
-            target: "0x61bBe925A5D646cE074369A6335e5095Ea7abB7A".to_owned(),
-            data: "4b327067000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeaeeeeeeeeeeeeeeeee"
-                .to_owned(),
-            fee_token: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE".to_owned(),
-            payment_type: 1,
-            max_fee: 10000000000000000000,
-            gas: 200000,
-            sponsor: DUMMY_SPONSOR_ADDRESS.to_owned(),
-            sponsor_chain_id: 42,
-            nonce: 0,
-            enforce_sponsor_nonce: false,
-            enforce_sponsor_nonce_ordering: false,
-        };
-    }
+    static REQUEST: Lazy<UnfilledForwardRequest> = Lazy::new(|| UnfilledForwardRequest {
+        chain_id: 42,
+        target: "0x61bBe925A5D646cE074369A6335e5095Ea7abB7A".to_owned(),
+        data: "4b327067000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeaeeeeeeeeeeeeeeeee"
+            .to_owned(),
+        fee_token: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE".to_owned(),
+        payment_type: 1,
+        max_fee: 10000000000000000000,
+        gas: 200000,
+        sponsor: DUMMY_SPONSOR_ADDRESS.to_owned(),
+        sponsor_chain_id: 42,
+        nonce: 0,
+        enforce_sponsor_nonce: false,
+        enforce_sponsor_nonce_ordering: false,
+    });
 
     #[test]
     fn it_computes_domain_separator() {
