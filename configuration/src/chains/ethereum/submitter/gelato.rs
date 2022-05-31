@@ -14,12 +14,7 @@ impl GelatoConf {
     /// Build GelatoConf from env. Looks for default configuration if
     /// network-specific not defined.
     pub fn from_env(network: &str) -> Option<Self> {
-        let opt_conf = GelatoConf::from_full_prefix(network);
-        if opt_conf.is_some() {
-            return opt_conf;
-        }
-
-        Self::from_full_prefix("DEFAULT")
+        GelatoConf::from_full_prefix(network).or_else(|| Self::from_full_prefix("DEFAULT"))
     }
 
     fn from_full_prefix(network: &str) -> Option<Self> {
@@ -27,8 +22,6 @@ impl GelatoConf {
             if let Ok(fee_token) = std::env::var(&format!("{}_GELATO_FEETOKEN", network)) {
                 return Some(Self { sponsor, fee_token });
             }
-
-            return None;
         }
 
         None

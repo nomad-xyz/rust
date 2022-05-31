@@ -2,7 +2,27 @@
 
 pub mod ethereum;
 
+use std::str::FromStr;
+
 use serde_json::json;
+
+/// Rpc style of chain
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum RpcStyle {
+    /// Ethereum
+    Ethereum,
+}
+
+impl FromStr for RpcStyle {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_ref() {
+            "ethereum" => Ok(Self::Ethereum),
+            _ => panic!("Unknown RpcStyle"),
+        }
+    }
+}
 
 /// A connection to _some_ blockchain.
 ///
@@ -59,11 +79,10 @@ impl TxSubmitterConf {
     pub fn from_env(network: &str) -> Option<Self> {
         let rpc_style = crate::utils::network_or_default_from_env(network, "RPCSTYLE")?;
 
-        match rpc_style.to_lowercase().as_ref() {
-            "ethereum" => Some(Self::Ethereum(ethereum::TxSubmitterConf::from_env(
+        match RpcStyle::from_str(&rpc_style).unwrap() {
+            RpcStyle::Ethereum => Some(Self::Ethereum(ethereum::TxSubmitterConf::from_env(
                 network,
             )?)),
-            _ => panic!("Unknown transaction submission rpc style: {}", rpc_style),
         }
     }
 }
