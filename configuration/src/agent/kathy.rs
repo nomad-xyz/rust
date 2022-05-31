@@ -63,3 +63,55 @@ impl Default for ChatGenConfig {
         Self::Default
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use nomad_test::test_utils;
+    use std::{env, str::FromStr};
+
+    #[test]
+    #[serial_test::serial]
+    fn it_overrides_config_from_env() {
+        test_utils::run_test_with_env_sync("../fixtures/env.test-agents", move || {
+            let mut config = KathyConfig::default();
+            config.load_env_overrides();
+            assert_eq!(
+                config.chat,
+                ChatGenConfig::OrderedList {
+                    messages: vec![
+                        "Chat message 1".to_string(),
+                        "Chat message 2".to_string(),
+                        "Chat message 3".to_string()
+                    ]
+                }
+            );
+            assert_eq!(config.interval, 999);
+            assert_eq!(config.enabled, true);
+
+            env::remove_var("KATHY_CHAT_MESSAGES");
+            env::set_var(
+                "KATHY_CHAT_RECIPIENT",
+                "0x1111111111111111111111111111111111111111111111111111111111111111",
+            );
+            env::set_var("KATHY_CHAT_MESSAGE", "Chat message");
+            config.load_env_overrides();
+            assert_eq!(
+                config.chat,
+                ChatGenConfig::Static {
+                    recipient: H256::from_str(
+                        "0x1111111111111111111111111111111111111111111111111111111111111111"
+                    )
+                    .unwrap(),
+                    message: "Chat message".to_string(),
+                }
+            );
+
+            env::remove_var("KATHY_CHAT_RECIPIENT");
+            env::remove_var("KATHY_CHAT_MESSAGE");
+            env::set_var("KATHY_CHAT_RANDOM", "99");
+            config.load_env_overrides();
+            assert_eq!(config.chat, ChatGenConfig::Random { length: 99 });
+        });
+    }
+}
