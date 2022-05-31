@@ -19,30 +19,30 @@ decl_config!(Processor {
 decl_env_overrides!(Processor {self, {
     if let Ok(var) = std::env::var("PROCESSOR_ALLOWED") {
         let allowed = var
-            .split(",")
+            .split(',')
             .map(|v| v.parse::<H256>().expect("invalid PROCESSOR_ALLOWED"))
             .collect::<HashSet<H256>>();
-        if allowed.len() < 1 {
+        if allowed.is_empty() {
             panic!("invalid PROCESSOR_ALLOWED");
         }
         self.allowed = Some(allowed)
     }
     if let Ok(var) = std::env::var("PROCESSOR_DENIED") {
         let denied = var
-            .split(",")
+            .split(',')
             .map(|v| v.parse::<H256>().expect("invalid PROCESSOR_DENIED"))
             .collect::<HashSet<H256>>();
-        if denied.len() < 1 {
+        if denied.is_empty() {
             panic!("invalid PROCESSOR_DENIED");
         }
         self.denied = Some(denied)
     }
     if let Ok(var) = std::env::var("PROCESSOR_SUBSIDIZED_REMOTES") {
         let subsidized_remotes = var
-            .split(",")
+            .split(',')
             .map(String::from)
             .collect::<HashSet<String>>();
-        if subsidized_remotes.len() < 1 {
+        if subsidized_remotes.is_empty() {
             panic!("invalid PROCESSOR_SUBSIDIZED_REMOTES");
         }
         self.subsidized_remotes = subsidized_remotes

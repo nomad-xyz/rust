@@ -20,8 +20,8 @@ decl_env_overrides!(Kathy {self, {
         }
     }
     else if let Ok(var) = std::env::var("KATHY_CHAT_MESSAGES") {
-        let messages = var.split(",").map(String::from).collect::<Vec<String>>();
-        if messages.len() < 1 {
+        let messages = var.split(',').map(String::from).collect::<Vec<String>>();
+        if messages.is_empty() {
             panic!("invalid KATHY_CHAT_MESSAGES");
         }
         self.chat = ChatGenConfig::OrderedList { messages }
