@@ -18,4 +18,5 @@ members = [
     "tools/kms-cli",
     "tools/nomad-cli",
     "tools/balance-exporter",
+    "gelato-relay",
 ]

@@ -1,5 +1,5 @@
 use ethers::core::types::H256;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 
 use crate::{error::IngestionError, hash_concat, EMPTY_SLICE, TREE_DEPTH, ZERO_HASHES};
 
@@ -12,12 +12,9 @@ use crate::{error::IngestionError, hash_concat, EMPTY_SLICE, TREE_DEPTH, ZERO_HA
 //    - remove ring dependency
 // In accordance with its license terms, the apache2 license is reproduced below
 
-lazy_static! {
-    /// Zero nodes to act as "synthetic" left and right subtrees of other zero nodes.
-    pub static ref ZERO_NODES: Vec<MerkleTree> = {
-        (0..=TREE_DEPTH).map(MerkleTree::Zero).collect()
-    };
-}
+/// Zero nodes to act as "synthetic" left and right subtrees of other zero nodes.
+pub static ZERO_NODES: Lazy<Vec<MerkleTree>> =
+    Lazy::new(|| (0..=TREE_DEPTH).map(MerkleTree::Zero).collect());
 
 /// Right-sparse Merkle tree.
 ///

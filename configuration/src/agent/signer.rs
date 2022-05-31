@@ -95,6 +95,19 @@ impl SignerConf {
 
         None
     }
+
+    /// Validate signer conf fields
+    pub fn validate(&self, network: &str) -> eyre::Result<()> {
+        match self {
+            SignerConf::HexKey(_) => (), // length check implicit in hexkey type
+            SignerConf::Aws { id } => {
+                eyre::ensure!(!id.is_empty(), "ID for {} aws signer key empty!", network);
+            }
+            SignerConf::Node => (),
+        };
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]

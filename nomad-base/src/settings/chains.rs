@@ -1,10 +1,10 @@
 use color_eyre::Result;
-use nomad_core::{ContractLocator, Signers};
+use nomad_core::ContractLocator;
 use nomad_ethereum::{make_conn_manager, make_home, make_replica};
 use nomad_types::NomadIdentifier;
 use nomad_xyz_configuration::{
     contracts::CoreContracts, AgentSecrets, ChainConf, ConnectionManagerGasLimits, HomeGasLimits,
-    NomadConfig, ReplicaGasLimits,
+    NomadConfig, ReplicaGasLimits, TxSubmitterConf,
 };
 use serde::Deserialize;
 
@@ -132,60 +132,70 @@ impl ChainSetup {
     /// Try to convert the chain setting into a Home contract
     pub async fn try_into_home(
         &self,
-        signer: Option<Signers>,
+        submitter_conf: Option<TxSubmitterConf>,
         timelag: Option<u8>,
         gas: Option<HomeGasLimits>,
     ) -> Result<Homes> {
         match &self.chain {
-            ChainConf::Ethereum(conf) => Ok(HomeVariants::Ethereum(
-                make_home(
-                    conf.clone(),
-                    &ContractLocator {
-                        name: self.name.clone(),
-                        domain: self.domain,
-                        address: self.address,
-                    },
-                    signer,
-                    timelag,
-                    gas,
+            ChainConf::Ethereum(conf) => {
+                let submitter_conf = submitter_conf.map(std::convert::Into::into);
+
+                Ok(HomeVariants::Ethereum(
+                    make_home(
+                        conf.clone(),
+                        &ContractLocator {
+                            name: self.name.clone(),
+                            domain: self.domain,
+                            address: self.address,
+                        },
+                        submitter_conf,
+                        timelag,
+                        gas,
+                    )
+                    .await?,
                 )
-                .await?,
-            )
-            .into()),
+                .into())
+            }
         }
     }
 
     /// Try to convert the chain setting into a replica contract
     pub async fn try_into_replica(
         &self,
-        signer: Option<Signers>,
+        submitter_conf: Option<TxSubmitterConf>,
         gas: Option<ReplicaGasLimits>,
     ) -> Result<Replicas> {
         match &self.chain {
-            ChainConf::Ethereum(conf) => Ok(ReplicaVariants::Ethereum(
-                make_replica(
-                    conf.clone(),
-                    &ContractLocator {
-                        name: self.name.clone(),
-                        domain: self.domain,
-                        address: self.address,
-                    },
-                    signer,
-                    None, // never need timelag for replica
-                    gas,
+            ChainConf::Ethereum(conf) => {
+                let submitter_conf = submitter_conf.map(std::convert::Into::into);
+
+                Ok(ReplicaVariants::Ethereum(
+                    make_replica(
+                        conf.clone(),
+                        &ContractLocator {
+                            name: self.name.clone(),
+                            domain: self.domain,
+                            address: self.address,
+                        },
+                        submitter_conf,
+                        None, // never need timelag for replica
+                        gas,
+                    )
+                    .await?,
                 )
-                .await?,
-            )
-            .into()),
+                .into())
+            }
         }
     }
 
     /// Try to convert chain setting into XAppConnectionManager contract
     pub async fn try_into_connection_manager(
         &self,
-        signer: Option<Signers>,
+        submitter_conf: Option<TxSubmitterConf>,
         gas: Option<ConnectionManagerGasLimits>,
     ) -> Result<ConnectionManagers> {
+        let submitter_conf = submitter_conf.map(std::convert::Into::into);
+
         match &self.chain {
             ChainConf::Ethereum(conf) => Ok(ConnectionManagers::Ethereum(
                 make_conn_manager(
@@ -195,7 +205,7 @@ impl ChainSetup {
                         domain: self.domain,
                         address: self.address,
                     },
-                    signer,
+                    submitter_conf,
                     None, // Never need timelag for xapp connection manager
                     gas,
                 )

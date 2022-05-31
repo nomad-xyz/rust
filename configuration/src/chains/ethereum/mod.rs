@@ -2,6 +2,9 @@
 
 use std::str::FromStr;
 
+mod submitter;
+pub use submitter::*;
+
 /// Ethereum connection configuration
 #[derive(Debug, Clone, PartialEq)]
 pub enum Connection {

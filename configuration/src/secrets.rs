@@ -3,7 +3,7 @@
 //! This struct built from environment variables. It is used alongside a
 //! NomadConfig to build an agents `Settings` block (see settings/mod.rs).
 
-use crate::{agent::SignerConf, chains::ethereum, ChainConf};
+use crate::{agent::SignerConf, chains::ethereum, ChainConf, TxSubmitterConf};
 use eyre::Result;
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
@@ -15,8 +15,8 @@ use std::{fs::File, io::BufReader, path::Path};
 pub struct AgentSecrets {
     /// RPC endpoints
     pub rpcs: HashMap<String, ChainConf>,
-    /// Transaction signers
-    pub transaction_signers: HashMap<String, SignerConf>,
+    /// Transaction submission variants
+    pub tx_submitters: HashMap<String, TxSubmitterConf>,
     /// Attestation signers
     pub attestation_signer: Option<SignerConf>,
 }
@@ -38,13 +38,12 @@ impl AgentSecrets {
             let network_upper = network.to_uppercase();
 
             let chain_conf = ChainConf::from_env(&network_upper)?;
-
-            let transaction_signer = SignerConf::from_env(Some("TXSIGNER"), Some(&network_upper))?;
+            let tx_submitter = TxSubmitterConf::from_env(&network_upper)?;
 
             secrets.rpcs.insert(network.to_owned(), chain_conf);
             secrets
-                .transaction_signers
-                .insert(network.to_owned(), transaction_signer);
+                .tx_submitters
+                .insert(network.to_owned(), tx_submitter);
         }
 
         let attestation_signer = SignerConf::from_env(Some("ATTESTATION_SIGNER"), None);
@@ -80,23 +79,20 @@ impl AgentSecrets {
                 },
             }
 
-            let signer_conf = self
-                .transaction_signers
+            let submitter_conf = self
+                .tx_submitters
                 .get(network)
-                .unwrap_or_else(|| panic!("no signerconf for {}", network));
-            match signer_conf {
-                SignerConf::HexKey(key) => {
-                    eyre::ensure!(
-                        !key.as_ref().is_empty(),
-                        "Hex signer key for {} empty!",
-                        network,
-                    );
-                }
-                SignerConf::Aws { id } => {
-                    eyre::ensure!(!id.is_empty(), "ID for {} aws signer key empty!", network,);
-                }
-                SignerConf::Node => (),
-            }
+                .unwrap_or_else(|| panic!("no submitter conf for {}", network));
+            match submitter_conf {
+                TxSubmitterConf::Ethereum(conf) => match conf {
+                    ethereum::TxSubmitterConf::Local(signer_conf) => {
+                        signer_conf.validate(network)?
+                    }
+                    ethereum::TxSubmitterConf::Gelato(gelato_conf) => {
+                        gelato_conf.sponsor.validate(network)?
+                    }
+                },
+            };
         }
 
         Ok(())
@@ -106,36 +102,36 @@ impl AgentSecrets {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::ethereum::Connection;
+    use crate::ethereum::{Connection, GelatoConf};
     use nomad_test::test_utils;
 
     #[test]
     #[serial_test::serial]
-    fn it_builds_from_env_mixed() {
-        test_utils::run_test_with_env_sync("../fixtures/env.test-signer-mixed", move || {
+    fn it_builds_from_env_local_mixed() {
+        test_utils::run_test_with_env_sync("../fixtures/env.test-local-signer-mixed", move || {
             let networks = &crate::get_builtin("test").unwrap().networks;
             let secrets =
                 AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
 
             assert_eq!(
-                *secrets.transaction_signers.get("moonbeam").unwrap(),
-                SignerConf::Aws {
+                *secrets.tx_submitters.get("moonbeam").unwrap(),
+                TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Local(SignerConf::Aws {
                     id: "moonbeam_id".into(),
-                }
+                }))
             );
             assert_eq!(
-                *secrets.transaction_signers.get("ethereum").unwrap(),
-                SignerConf::HexKey(
+                *secrets.tx_submitters.get("ethereum").unwrap(),
+                TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Local(SignerConf::HexKey(
                     "0x1111111111111111111111111111111111111111111111111111111111111111"
                         .parse()
                         .unwrap()
-                )
+                )))
             );
             assert_eq!(
-                *secrets.transaction_signers.get("evmos").unwrap(),
-                SignerConf::Aws {
+                *secrets.tx_submitters.get("evmos").unwrap(),
+                TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Local(SignerConf::Aws {
                     id: "default_id".into(),
-                }
+                }))
             );
             assert_eq!(
                 *secrets.rpcs.get("moonbeam").unwrap(),
@@ -156,16 +152,44 @@ mod test {
 
     #[test]
     #[serial_test::serial]
-    fn it_builds_from_env_default() {
-        test_utils::run_test_with_env_sync("../fixtures/env.test-signer-default", move || {
+    fn it_builds_from_env_local_default() {
+        test_utils::run_test_with_env_sync(
+            "../fixtures/env.test-local-signer-default",
+            move || {
+                let networks = &crate::get_builtin("test").unwrap().networks;
+                let secrets =
+                    AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
+
+                let default_config =
+                    TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Local(SignerConf::Aws {
+                        id: "default_id".into(),
+                    }));
+                for (_, config) in &secrets.tx_submitters {
+                    assert_eq!(*config, default_config);
+                }
+                for (_, config) in &secrets.rpcs {
+                    assert!(matches!(*config, ChainConf::Ethereum { .. }));
+                }
+            },
+        );
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn it_builds_from_env_gelato_default() {
+        test_utils::run_test_with_env_sync("../fixtures/env.test-gelato-default", move || {
             let networks = &crate::get_builtin("test").unwrap().networks;
             let secrets =
                 AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
 
-            let default_config = SignerConf::Aws {
-                id: "default_id".into(),
-            };
-            for (_, config) in &secrets.transaction_signers {
+            let default_config =
+                TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Gelato(GelatoConf {
+                    sponsor: SignerConf::Aws {
+                        id: "default_id".into(),
+                    },
+                    fee_token: "0x1234".to_owned(),
+                }));
+            for (_, config) in &secrets.tx_submitters {
                 assert_eq!(*config, default_config);
             }
             for (_, config) in &secrets.rpcs {
@@ -179,13 +203,21 @@ mod test {
     fn it_builds_from_env() {
         test_utils::run_test_with_env_sync("../fixtures/env.test", move || {
             let networks = &crate::get_builtin("test").unwrap().networks;
-            AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
+            let secrets =
+                AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
+            secrets
+                .validate("", networks)
+                .expect("Failed to validate secrets");
         });
     }
 
     #[test]
     fn it_builds_from_file() {
-        AgentSecrets::from_file("../fixtures/test_secrets.json")
+        let networks = &crate::get_builtin("test").unwrap().networks;
+        let secrets = AgentSecrets::from_file("../fixtures/test_secrets.json")
             .expect("Failed to load secrets from file");
+        secrets
+            .validate("", networks)
+            .expect("Failed to validate secrets");
     }
 }

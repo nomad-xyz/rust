@@ -15,9 +15,9 @@ use crate::{
     ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes, NomadDB, Replicas,
 };
 use color_eyre::{eyre::bail, Result};
-use nomad_core::{db::DB, Common, ContractLocator, Signers};
+use nomad_core::{db::DB, Common, ContractLocator};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
-use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets};
+use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets, TxSubmitterConf};
 use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig, NomadGasConfig};
 use serde::Deserialize;
 use std::collections::HashSet;
@@ -161,7 +161,7 @@ pub struct Settings {
     /// The tracing configuration
     pub logging: LogConfig,
     /// Transaction signers
-    pub signers: HashMap<String, SignerConf>,
+    pub submitters: HashMap<String, TxSubmitterConf>,
     /// Optional attestation signer
     pub attestation_signer: Option<SignerConf>,
 }
@@ -178,7 +178,7 @@ impl Settings {
             managers: self.managers.clone(),
             gas: self.gas.clone(),
             logging: self.logging,
-            signers: self.signers.clone(),
+            submitters: self.submitters.clone(),
             attestation_signer: self.attestation_signer.clone(),
         }
     }
@@ -186,13 +186,8 @@ impl Settings {
 
 impl Settings {
     /// Try to get a signer instance by name
-    pub async fn get_signer(&self, name: &str) -> Option<Result<Signers>> {
-        let conf = self.signers.get(name);
-        if let Some(conf) = conf {
-            Some(Signers::try_from_signer_conf(conf).await)
-        } else {
-            None
-        }
+    pub fn get_submitter_conf(&self, name: &str) -> Option<TxSubmitterConf> {
+        self.submitters.get(name).cloned()
     }
 
     /// Set agent-specific index data types
@@ -228,9 +223,11 @@ impl Settings {
     pub async fn try_home(&self) -> Result<Homes> {
         let opt_home_timelag = self.home_timelag();
         let name = &self.home.name;
-        let signer = self.get_signer(name).await.transpose()?;
+        let submitter_conf = self.get_submitter_conf(name);
         let gas = self.gas.get(name).map(|c| c.core.home);
-        self.home.try_into_home(signer, opt_home_timelag, gas).await
+        self.home
+            .try_into_home(submitter_conf, opt_home_timelag, gas)
+            .await
     }
 
     /// Try to get a home ContractSync
@@ -280,9 +277,9 @@ impl Settings {
     /// Try to get a Replicas object
     pub async fn try_replica(&self, replica_name: &str) -> Result<Replicas> {
         let replica_setup = self.replicas.get(replica_name).expect("!replica");
-        let signer = self.get_signer(replica_name).await.transpose()?;
+        let submitter_conf = self.get_submitter_conf(replica_name);
         let gas = self.gas.get(replica_name).map(|c| c.core.replica);
-        replica_setup.try_into_replica(signer, gas).await
+        replica_setup.try_into_replica(submitter_conf, gas).await
     }
 
     /// Try to get a replica ContractSync
@@ -374,8 +371,6 @@ impl Settings {
                         address: self.home.address,
                     },
                     timelag,
-                    self.home.page_settings.from,
-                    self.home.page_settings.page_size,
                 )
                 .await?,
             )
@@ -397,8 +392,6 @@ impl Settings {
                         address: setup.address,
                     },
                     None, // Will never need timelag for replica data/events
-                    setup.page_settings.from,
-                    setup.page_settings.page_size,
                 )
                 .await?,
             )
@@ -504,7 +497,7 @@ impl Settings {
             gas,
             index,
             logging: agent.logging,
-            signers: secrets.transaction_signers.clone(),
+            submitters: secrets.tx_submitters.clone(),
             attestation_signer: secrets.attestation_signer.clone(),
         }
     }
@@ -585,9 +578,9 @@ impl Settings {
             assert_eq!(&replica_setup.chain, replica_chain_conf);
         }
 
-        for (network, signer) in self.signers.iter() {
-            let secret_signer = secrets.transaction_signers.get(network).unwrap();
-            assert_eq!(signer, secret_signer);
+        for (network, signer) in self.submitters.iter() {
+            let secret_submitter = secrets.tx_submitters.get(network).unwrap();
+            assert_eq!(signer, secret_submitter);
         }
 
         Ok(())

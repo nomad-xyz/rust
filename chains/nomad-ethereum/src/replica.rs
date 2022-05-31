@@ -14,7 +14,7 @@ use nomad_xyz_configuration::ReplicaGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
 use tracing::instrument;
 
-use crate::{bindings::replica::Replica as EthereumReplicaInternal, report_tx};
+use crate::{bindings::replica::Replica as EthereumReplicaInternal, TxSubmitter};
 
 #[derive(Debug)]
 /// Struct that retrieves indexes event data for Ethereum replica
@@ -24,8 +24,6 @@ where
 {
     contract: Arc<EthereumReplicaInternal<R>>,
     provider: Arc<R>,
-    from_height: u32,
-    chunk_size: u32,
 }
 
 impl<R> EthereumReplicaIndexer<R>
@@ -40,8 +38,6 @@ where
             domain: _,
             address,
         }: &ContractLocator,
-        from_height: u32,
-        chunk_size: u32,
     ) -> Self {
         Self {
             contract: Arc::new(EthereumReplicaInternal::new(
@@ -49,8 +45,6 @@ where
                 provider.clone(),
             )),
             provider,
-            from_height,
-            chunk_size,
         }
     }
 }
@@ -126,8 +120,8 @@ where
     W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
-    write_contract: Arc<EthereumReplicaInternal<W>>,
-    read_contract: Arc<EthereumReplicaInternal<R>>,
+    submitter: TxSubmitter<W>,
+    contract: Arc<EthereumReplicaInternal<R>>,
     domain: u32,
     name: String,
     gas: Option<ReplicaGasLimits>,
@@ -141,7 +135,7 @@ where
     /// Create a reference to a Replica at a specific Ethereum address on some
     /// chain
     pub fn new(
-        write_provider: Arc<W>,
+        submitter: TxSubmitter<W>,
         read_provider: Arc<R>,
         ContractLocator {
             name,
@@ -151,11 +145,8 @@ where
         gas: Option<ReplicaGasLimits>,
     ) -> Self {
         Self {
-            write_contract: Arc::new(EthereumReplicaInternal::new(
-                address.as_ethereum_address().expect("!eth address"),
-                write_provider,
-            )),
-            read_contract: Arc::new(EthereumReplicaInternal::new(
+            submitter,
+            contract: Arc::new(EthereumReplicaInternal::new(
                 address.as_ethereum_address().expect("!eth address"),
                 read_provider,
             )),
@@ -178,7 +169,7 @@ where
 
     #[tracing::instrument(err)]
     async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
-        self.read_contract
+        self.contract
             .client()
             .get_transaction_receipt(txid)
             .await
@@ -189,12 +180,12 @@ where
 
     #[tracing::instrument(err)]
     async fn updater(&self) -> Result<H256, ChainCommunicationError> {
-        Ok(self.read_contract.updater().call().await?.into())
+        Ok(self.contract.updater().call().await?.into())
     }
 
     #[tracing::instrument(err)]
     async fn state(&self) -> Result<State, ChainCommunicationError> {
-        let state = self.read_contract.state().call().await?;
+        let state = self.contract.state().call().await?;
         match state {
             0 => Ok(State::Uninitialized),
             1 => Ok(State::Active),
@@ -205,12 +196,12 @@ where
 
     #[tracing::instrument(err)]
     async fn committed_root(&self) -> Result<H256, ChainCommunicationError> {
-        Ok(self.read_contract.committed_root().call().await?.into())
+        Ok(self.contract.committed_root().call().await?.into())
     }
 
     #[tracing::instrument(err)]
     async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
-        let mut tx = self.write_contract.update(
+        let mut tx = self.contract.update(
             update.update.previous_root.to_fixed_bytes(),
             update.update.new_root.to_fixed_bytes(),
             update.signature.to_vec().into(),
@@ -220,7 +211,9 @@ where
             tx.tx.set_gas(U256::from(limits.update));
         }
 
-        report_tx!(tx, &self.provider).try_into()
+        self.submitter
+            .submit(self.domain, self.contract.address(), tx.tx)
+            .await
     }
 
     #[tracing::instrument(err)]
@@ -228,7 +221,7 @@ where
         &self,
         double: &DoubleUpdate,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        let mut tx = self.write_contract.double_update(
+        let mut tx = self.contract.double_update(
             double.0.update.previous_root.to_fixed_bytes(),
             [
                 double.0.update.new_root.to_fixed_bytes(),
@@ -242,7 +235,9 @@ where
             tx.tx.set_gas(U256::from(limits.double_update));
         }
 
-        report_tx!(tx, &self.provider).try_into()
+        self.submitter
+            .submit(self.domain, self.contract.address(), tx.tx)
+            .await
     }
 }
 
@@ -257,7 +252,7 @@ where
     }
 
     async fn remote_domain(&self) -> Result<u32, ChainCommunicationError> {
-        Ok(self.read_contract.remote_domain().call().await?)
+        Ok(self.contract.remote_domain().call().await?)
     }
 
     #[tracing::instrument(err)]
@@ -269,25 +264,29 @@ where
             .for_each(|(i, elem)| *elem = proof.path[i].to_fixed_bytes());
 
         let mut tx = self
-            .write_contract
+            .contract
             .prove(proof.leaf.into(), sol_proof, proof.index.into());
 
         if let Some(limits) = &self.gas {
             tx.tx.set_gas(U256::from(limits.prove));
         }
 
-        report_tx!(tx, &self.provider).try_into()
+        self.submitter
+            .submit(self.domain, self.contract.address(), tx.tx)
+            .await
     }
 
     #[tracing::instrument(err)]
     async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError> {
-        let mut tx = self.write_contract.process(message.to_vec().into());
+        let mut tx = self.contract.process(message.to_vec().into());
 
         if let Some(limits) = &self.gas {
             tx.tx.set_gas(U256::from(limits.process));
         }
 
-        report_tx!(tx, &self.provider).try_into()
+        self.submitter
+            .submit(self.domain, self.contract.address(), tx.tx)
+            .await
     }
 
     #[tracing::instrument(err)]
@@ -303,7 +302,7 @@ where
             .for_each(|(i, elem)| *elem = proof.path[i].to_fixed_bytes());
 
         let mut tx = self
-            .write_contract
+            .contract
             .prove_and_process(message.to_vec().into(), sol_proof, proof.index.into())
             .gas(1_900_000);
 
@@ -311,12 +310,14 @@ where
             tx.tx.set_gas(U256::from(limits.prove_and_process));
         }
 
-        report_tx!(tx, &self.provider).try_into()
+        self.submitter
+            .submit(self.domain, self.contract.address(), tx.tx)
+            .await
     }
 
     #[tracing::instrument(err)]
     async fn message_status(&self, leaf: H256) -> Result<MessageStatus, ChainCommunicationError> {
-        let status = self.read_contract.messages(leaf.into()).call().await?;
+        let status = self.contract.messages(leaf.into()).call().await?;
         match status {
             0 => Ok(MessageStatus::None),
             1 => Ok(MessageStatus::Proven),
@@ -326,10 +327,6 @@ where
     }
 
     async fn acceptable_root(&self, root: H256) -> Result<bool, ChainCommunicationError> {
-        Ok(self
-            .read_contract
-            .acceptable_root(root.into())
-            .call()
-            .await?)
+        Ok(self.contract.acceptable_root(root.into()).call().await?)
     }
 }

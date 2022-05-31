@@ -28,6 +28,8 @@ pub use secrets::*;
 pub mod gas;
 pub use gas::*;
 
+mod utils;
+
 #[cfg(target_arch = "wasm32")]
 /// Wasm bindings for common operations
 pub mod wasm;

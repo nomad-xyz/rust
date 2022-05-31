@@ -2,6 +2,9 @@
 
 ### Unreleased
 
+- adds transaction submitters type to replace transaction signers
+- adds gelato config struct
+
 ### v0.1.0-rc.24
 
 - remove `FromEnv` trait and make env loading conf-struct-specific
