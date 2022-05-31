@@ -82,7 +82,7 @@ mod test {
                     messages: vec![
                         "Chat message 1".to_string(),
                         "Chat message 2".to_string(),
-                        "Chat message 3".to_string()
+                        "Chat message 3".to_string(),
                     ]
                 }
             );
