@@ -59,7 +59,7 @@ decl_env_overrides!(Processor {self, {
 mod test {
     use super::*;
     use nomad_test::test_utils;
-    use std::{env, str::FromStr};
+    use std::str::FromStr;
 
     #[test]
     #[serial_test::serial]
