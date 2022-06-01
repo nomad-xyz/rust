@@ -4,6 +4,7 @@
 
 - adds transaction submitters type to replace transaction signers
 - adds gelato config struct
+- uses correct staging s3 bucket in staging environment
 
 ### v0.1.0-rc.24
 
