@@ -1,8 +1,15 @@
 [package]
 name = "kathy"
-version = "0.1.0"
-authors = ["James Prestwich <james@prestwi.ch>"]
+version = "1.0.0"
+authors = ["James Prestwich <james@nomad.xyz>", "Luke Tchang <luke@nomad.xyz>"]
 edition = "2021"
+description = "Nomad kathy agent"
+repository = "https://github.com/nomad-xyz/rust/tree/main/agents/kathy"
+license = "MIT OR Apache-2.0"
+exclude = [
+    "*.sh",
+    ".git*"
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

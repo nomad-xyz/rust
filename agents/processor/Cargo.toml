@@ -1,8 +1,15 @@
 [package]
 name = "processor"
-version = "0.1.0"
-authors = ["anna-caroll <anna.s.carroll@gmail.com>"]
+version = "1.0.0"
+authors = ["Luke Tchang <luke@nomad.xyz>", "James Prestwich <james@nomad.xyz>"]
 edition = "2021"
+description = "Nomad processor agent"
+repository = "https://github.com/nomad-xyz/rust/tree/main/agents/processor"
+license = "MIT OR Apache-2.0"
+exclude = [
+    "*.sh",
+    ".git*"
+]
 
 [dependencies]
 tokio = { version = "1.0.1", features = ["rt", "macros"] }
