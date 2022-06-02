@@ -79,7 +79,7 @@ Note that default values are only used if a network-specific value is not provid
 AWS Keys:
 Note that the AWS `key_id` field can be a key id, key name, alias name, or alias ARN, as documented in the [Rusoto KMS docs](https://docs.rs/rusoto_kms/latest/rusoto_kms/struct.GetPublicKeyRequest.html#structfield.key_id). For more information on configuring AWS credentials, please refer to the [Rusoto AWS credentials usage documentation](https://github.com/rusoto/rusoto/blob/master/AWS-CREDENTIALS.md#credentials).
 
-For more info on our different run environments and key configuration/provisioning, please refer to our [agents operations page](./agent-operations.md).
+For more info on our different run environments and key configuration/provisioning, please refer to our [agents operations page](./AGENT-OPERATIONS.md).
 
 You can see an example .env file below:
 
