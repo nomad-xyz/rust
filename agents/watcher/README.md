@@ -11,4 +11,4 @@ It is an off-chain actor that does the following:
 - Submit invalid update proofs
 - If configured, issue an emergency halt transaction
 
-For more info on how to run a watcher, refer to our [guide on running agents](../RUNNING-AGENTS.md).
+For more info on how to run a watcher, refer to our [running watcher guide](./RUNNING-WATCHER.md) and our [general guide on running agents](../RUNNING-AGENTS.md).
