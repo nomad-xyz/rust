@@ -62,6 +62,8 @@ In order to run a watcher, you must configure the watcher's environment to recei
 | Arbitrum     | TBD            |
 | Optimism     | TBD            |
 
+<br>
+
 **Reasoning for Funding Amounts**
 
 The highest daily average gas price on Ethereum to-date is ~710 gwei. A watcher `unenrollReplica` transaction is ~120k gas while a `doubleUpdate` transaction is ~200k gas. If we 10x the highest daily average gas price, we get 7100 gwei. This means that calling `unenrollReplica` will cost 0.852 ETH and calling `doubleUpdate` will cost 1.42 ETH.
