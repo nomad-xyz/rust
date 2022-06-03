@@ -52,12 +52,22 @@ In order to run a watcher, you must configure the watcher's environment to recei
 
 | Chain        | Funding Amount |
 | ------------ | -------------- |
-| Ethereum     | 2 ETH          |
+| Ethereum     | 3 ETH          |
 | Moonbeam     | 5 GLMR         |
 | Milkomeda C1 | 5 milkADA      |
 | Evmos        | 5 EVMOS        |
 | xDai         | 5 xDAI         |
-| Avalanche    | 3 AVAX         |
+| Avalanche    | 4 AVAX         |
 | Polygon      | 5 MATIC        |
 | Arbitrum     | TBD            |
 | Optimism     | TBD            |
+
+**Reasoning for Funding Amounts**
+
+The highest daily average gas price on Ethereum to-date is ~710 gwei. A watcher `unenrollReplica` transaction is ~120k gas while a `doubleUpdate` transaction is ~200k gas. If we 10x the highest daily average gas price, we get 7100 gwei. This means that calling `unenrollReplica` will cost 0.852 ETH and calling `doubleUpdate` will cost 1.42 ETH.
+
+unenrollReplica: (710 x 10 x 120,000) / 1e9 = 0.852 ETH
+
+doubleUpdate: (710 x 10 x 200,000) / 1e9 = 1.42 ETH
+
+A minimum of 3 ETH worth of funds per watcher transaction signer is recommended. For networks outside of Ethereum, the funding amount is inflated due to the fact that the dollar cost of funds is much cheaper on other chains.
