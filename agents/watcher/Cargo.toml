@@ -1,8 +1,15 @@
 [package]
 name = "watcher"
 version = "0.1.0"
-authors = ["Luke Tchang <ltchang@stanford.edu>"]
+authors = ["Luke Tchang <luke@nomad.xyz>", "James Prestwich <james@nomad.xyz>"]
 edition = "2021"
+description = "Nomad watcher agent"
+repository = "https://github.com/nomad-xyz/rust"
+license = "MIT OR Apache-2.0"
+exclude = [
+    "*.sh",
+    ".git*"
+]
 
 [dependencies]
 tokio = { version = "1.0.1", features = ["rt", "macros"] }
