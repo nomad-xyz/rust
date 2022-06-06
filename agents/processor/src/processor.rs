@@ -9,7 +9,9 @@ use std::{
     time::Duration,
 };
 use tokio::{sync::RwLock, task::JoinHandle, time::sleep};
-use tracing::{debug, error, info, info_span, instrument, instrument::Instrumented, Instrument, warn};
+use tracing::{
+    debug, error, info, info_span, instrument, instrument::Instrumented, warn, Instrument,
+};
 
 use nomad_base::{
     cancel_task, decl_agent, decl_channel, AgentCore, CachingHome, CachingReplica, NomadAgent,
@@ -254,7 +256,8 @@ impl Replica {
         match status {
             MessageStatus::None => {
                 info!("Submitting message for proving & processing.");
-                let result = self.replica
+                let result = self
+                    .replica
                     .prove_and_process(message.as_ref(), &proof)
                     .await;
                 if let Err(e) = result {
