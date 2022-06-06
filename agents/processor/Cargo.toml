@@ -1,6 +1,6 @@
 [package]
 name = "processor"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Luke Tchang <luke@nomad.xyz>", "James Prestwich <james@nomad.xyz>"]
 edition = "2021"
 description = "Nomad processor agent"
