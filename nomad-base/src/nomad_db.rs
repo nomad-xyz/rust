@@ -389,7 +389,6 @@ impl NomadDB {
             None => Ok(false),
         }
     }
-
 }
 
 #[cfg(test)]

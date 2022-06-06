@@ -233,51 +233,40 @@ impl Replica {
         Ok(Flow::Advance)
     }
 
-    #[instrument(err, level = "trace", skip(self), fields(self = %self))]
+    #[instrument(err, level = "info", skip(self), fields(self = %self, domain = message.message.destination, nonce = message.message.nonce, leaf_index = message.leaf_index, leaf = ?message.message.to_leaf()))]
     /// Dispatch a message for processing. If the message is already proven, process only.
     async fn process(&self, message: CommittedMessage, proof: NomadProof) -> Result<()> {
         use nomad_core::Replica;
 
+        // First check locally to see if we've tried before
         if self.db.previously_attempted(&message)? {
-            return Ok(())
+            info!("Message already attempted");
+            return Ok(());
         }
+        // immediately store that we've attempted processing
         self.db.set_previously_attempted(&message)?;
 
+        // Then check on-chain status
         let status = self.replica.message_status(message.to_leaf()).await?;
 
+        // We don't care if the prove/process succeeds. We just want it to be
+        // dispatched to the chain
+        #[allow(unused_must_use)]
         match status {
             MessageStatus::None => {
+                info!("Submitting message for proving & processing.");
                 self.replica
                     .prove_and_process(message.as_ref(), &proof)
-                    .await?;
+                    .await;
             }
             MessageStatus::Proven => {
-                self.replica.process(message.as_ref()).await?;
+                info!("Message already proven. Submitting message for processing only.");
+                self.replica.process(message.as_ref()).await;
             }
             MessageStatus::Processed => {
-                info!(
-                    domain = message.message.destination,
-                    nonce = message.message.nonce,
-                    leaf_index = message.leaf_index,
-                    leaf = ?message.message.to_leaf(),
-                    "Message {}:{} already processed",
-                    message.message.destination,
-                    message.message.nonce
-                )
+                info!("Message already processed")
             }
         };
-
-        info!(
-            domain = message.message.destination,
-            nonce = message.message.nonce,
-            leaf_index = message.leaf_index,
-            leaf = ?message.message.to_leaf(),
-            "Processed message. Destination: {}. Nonce: {}. Leaf index: {}.",
-            message.message.destination,
-            message.message.nonce,
-            message.leaf_index,
-        );
-
         Ok(())
     }
 }
