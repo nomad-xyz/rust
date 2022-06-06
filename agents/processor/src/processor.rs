@@ -237,6 +237,12 @@ impl Replica {
     /// Dispatch a message for processing. If the message is already proven, process only.
     async fn process(&self, message: CommittedMessage, proof: NomadProof) -> Result<()> {
         use nomad_core::Replica;
+
+        if self.db.previously_attempted(&message)? {
+            return Ok(())
+        }
+        self.db.set_previously_attempted(&message)?;
+
         let status = self.replica.message_status(message.to_leaf()).await?;
 
         match status {
