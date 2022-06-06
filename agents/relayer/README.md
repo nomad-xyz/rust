@@ -8,5 +8,3 @@ It is an off-chain actor that does the following:
 - Observe 1 or more replicas
 - Polls home for new signed updates (since replica's current root) and submits them to replica
 - Polls replica for confirmable updates (that have passed their optimistic time window) and confirms if available (updating replica's current root)
-
-For more info on how to run a processor, refer to our [guide on running agents](../RUNNING-AGENTS.md).

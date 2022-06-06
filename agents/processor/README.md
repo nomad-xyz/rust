@@ -10,5 +10,3 @@ It is an off-chain actor that does the following:
 - Maintain list of messages corresponding to each leaf
 - Generate and submit merkle proofs for pending (unproven) messages
 - Dispatch proven messages to end recipients
-
-For more info on how to run a processor, refer to our [guide on running agents](../RUNNING-AGENTS.md).
