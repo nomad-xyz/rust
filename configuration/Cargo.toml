@@ -4,7 +4,7 @@ version = "0.1.0-rc.24"
 edition = "2021"
 authors = ["James Prestwich <james@nomad.xyz>", "The Nomad Developers <eng@nomad.xyz>"]
 description = "Nomad project configuration file utilities"
-repository = "https://github.com/nomad-xyz/rust/tree/main/configuration"
+repository = "https://github.com/nomad-xyz/rust"
 license = "MIT OR Apache-2.0"
 exclude = [
     "*.sh",

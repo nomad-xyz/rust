@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Luke Tchang <luke@nomad.xyz>", "James Prestwich <james@nomad.xyz>"]
 edition = "2021"
 description = "Nomad watcher agent"
-repository = "https://github.com/nomad-xyz/rust/tree/main/agents/watcher"
+repository = "https://github.com/nomad-xyz/rust"
 license = "MIT OR Apache-2.0"
 exclude = [
     "*.sh",
