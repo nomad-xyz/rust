@@ -9,7 +9,7 @@ use std::{
     time::Duration,
 };
 use tokio::{sync::RwLock, task::JoinHandle, time::sleep};
-use tracing::{debug, error, info, info_span, instrument, instrument::Instrumented, Instrument};
+use tracing::{debug, error, info, info_span, instrument, instrument::Instrumented, Instrument, warn};
 
 use nomad_base::{
     cancel_task, decl_agent, decl_channel, AgentCore, CachingHome, CachingReplica, NomadAgent,
@@ -250,18 +250,23 @@ impl Replica {
         let status = self.replica.message_status(message.to_leaf()).await?;
 
         // We don't care if the prove/process succeeds. We just want it to be
-        // dispatched to the chain
-        #[allow(unused_must_use)]
+        // dispatched to the chain. We'll still log warnings if they fail
         match status {
             MessageStatus::None => {
                 info!("Submitting message for proving & processing.");
-                self.replica
+                let result = self.replica
                     .prove_and_process(message.as_ref(), &proof)
                     .await;
+                if let Err(e) = result {
+                    warn!(error = %e, "error in prove/process");
+                }
             }
             MessageStatus::Proven => {
                 info!("Message already proven. Submitting message for processing only.");
-                self.replica.process(message.as_ref()).await;
+                let result = self.replica.process(message.as_ref()).await;
+                if let Err(e) = result {
+                    warn!(error = %e, "error in process");
+                }
             }
             MessageStatus::Processed => {
                 info!("Message already processed")
