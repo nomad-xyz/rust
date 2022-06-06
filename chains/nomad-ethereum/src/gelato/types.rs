@@ -1,9 +1,10 @@
 use super::utils::CHAIN_ID_TO_FORWARDER;
 use ethers::abi::{self, Token};
+use ethers::prelude::{H160, Bytes, U64};
 use ethers::types::{transaction::eip712::*, Address};
 use ethers::utils::hex::FromHexError;
 use ethers::utils::keccak256;
-use gelato_relay::ForwardRequest;
+use gelato_sdk::{ForwardRequest, PaymentType};
 use std::str::FromStr;
 
 const FORWARD_REQUEST_TYPE: &str = "ForwardRequest(uint256 chainId,address target,bytes data,address feeToken,uint256 paymentType,uint256 maxFee,uint256 gas,address sponsor,uint256 sponsorChainId,uint256 nonce,bool enforceSponsorNonce,bool enforceSponsorNonceOrdering)";
@@ -16,19 +17,19 @@ pub struct UnfilledForwardRequest {
     /// Target chain id
     pub chain_id: usize,
     /// Target contract address
-    pub target: String,
+    pub target: H160,
     /// Encoded tx data
-    pub data: String,
+    pub data: Bytes,
     /// Fee token address
-    pub fee_token: String,
+    pub fee_token: H160,
     /// Payment method
-    pub payment_type: usize, // 1 = gas tank
+    pub payment_type: PaymentType, // 1 = gas tank
     /// Max fee
-    pub max_fee: usize,
+    pub max_fee: U64,
     /// Contract call gas limit + buffer for gelato forwarder
-    pub gas: usize,
+    pub gas: U64,
     /// Sponsor address
-    pub sponsor: String,
+    pub sponsor: H160,
     /// Sponsor resident chain id
     pub sponsor_chain_id: usize, // same as chain_id
     /// Nonce for replay protection
@@ -37,7 +38,7 @@ pub struct UnfilledForwardRequest {
     pub enforce_sponsor_nonce: bool, // default false given replay safe
     /// Enforce ordering based on provided nonces. Only considered if
     /// `enforce_sponsor_nonce` true.
-    pub enforce_sponsor_nonce_ordering: bool,
+    pub enforce_sponsor_nonce_ordering: Option<bool>,
 }
 
 /// ForwardRequest error
@@ -71,17 +72,17 @@ impl Eip712 for UnfilledForwardRequest {
         let encoded_request = abi::encode(&[
             Token::FixedBytes(Self::type_hash()?.to_vec()),
             Token::Uint(self.chain_id.into()),
-            Token::Address(Address::from_str(&self.target).expect("!target")),
+            Token::Address(self.target),
             Token::FixedBytes(keccak256(hex::decode(&self.data)?).to_vec()),
-            Token::Address(Address::from_str(&self.fee_token).expect("!fee token")),
-            Token::Uint(self.payment_type.into()),
-            Token::Uint(self.max_fee.into()),
-            Token::Uint(self.gas.into()),
-            Token::Address(Address::from_str(&self.sponsor).expect("!sponsor")),
+            Token::Address(self.fee_token),
+            Token::Uint((self.payment_type as u8).into()),
+            Token::Uint(self.max_fee.as_u64().into()),
+            Token::Uint(self.gas.as_u64().into()),
+            Token::Address(self.sponsor),
             Token::Uint(self.sponsor_chain_id.into()),
             Token::Uint(self.nonce.into()),
             Token::Bool(self.enforce_sponsor_nonce),
-            Token::Bool(self.enforce_sponsor_nonce_ordering),
+            Token::Bool(self.enforce_sponsor_nonce_ordering.unwrap_or(true)),
         ]);
 
         Ok(keccak256(encoded_request))
@@ -90,15 +91,13 @@ impl Eip712 for UnfilledForwardRequest {
 
 impl UnfilledForwardRequest {
     /// Fill ForwardRequest with sponsor signature and return full request struct
-    pub fn into_filled(self, sponsor_signature: Vec<u8>) -> ForwardRequest {
-        let hex_sig = format!("0x{}", hex::encode(sponsor_signature));
-        let hex_data = format!("0x{}", self.data);
+    pub fn into_filled(self, sponsor_signature: ethers::core::types::Signature) -> ForwardRequest {
 
         ForwardRequest {
-            type_id: "ForwardRequest".to_owned(),
+            type_id: "ForwardRequest",
             chain_id: self.chain_id,
             target: self.target,
-            data: hex_data,
+            data: self.data,
             fee_token: self.fee_token,
             payment_type: self.payment_type,
             max_fee: self.max_fee.to_string(),
@@ -108,7 +107,7 @@ impl UnfilledForwardRequest {
             nonce: self.nonce,
             enforce_sponsor_nonce: self.enforce_sponsor_nonce,
             enforce_sponsor_nonce_ordering: self.enforce_sponsor_nonce_ordering,
-            sponsor_signature: hex_sig,
+            sponsor_signature,
         }
     }
 }
@@ -141,7 +140,7 @@ mod test {
         sponsor_chain_id: 42,
         nonce: 0,
         enforce_sponsor_nonce: false,
-        enforce_sponsor_nonce_ordering: false,
+        enforce_sponsor_nonce_ordering: Some(false),
     });
 
     #[test]
