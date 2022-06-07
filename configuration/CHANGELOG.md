@@ -10,6 +10,7 @@
 - remove gnosis chain from list of bridgeGUI networks
 - add environment variable overrides for agent configuration
 - add tests for agent environment variable overrides
+- remove `enabled` flag from agents project-wide
 
 ### v0.1.0-rc.24
 
