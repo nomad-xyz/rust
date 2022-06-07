@@ -91,7 +91,7 @@ mod test {
             assert_eq!(settings.agent.interval, agent_config.interval);
             assert_eq!(settings.agent.chat, agent_config.chat);
         })
-            .await
+        .await
     }
 
     #[tokio::test]
@@ -118,7 +118,7 @@ mod test {
             let config = nomad_xyz_configuration::NomadConfig::from_file(
                 "../../fixtures/external_config.json",
             )
-                .unwrap();
+            .unwrap();
 
             let remotes = get_remotes_from_env!(agent_home, config);
             let mut networks = remotes.clone();
@@ -144,6 +144,6 @@ mod test {
             assert_eq!(settings.agent.interval, agent_config.interval);
             assert_eq!(settings.agent.chat, agent_config.chat);
         })
-            .await
+        .await
     }
 }
