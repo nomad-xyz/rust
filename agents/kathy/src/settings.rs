@@ -11,9 +11,8 @@ mod test {
     use nomad_base::{get_remotes_from_env, NomadAgent};
     use nomad_test::test_utils;
     use nomad_xyz_configuration::{
-        agent::{kathy::ChatGenConfig, SignerConf},
-        ethereum::Connection,
-        AgentSecrets, ChainConf,
+        agent::kathy::ChatGenConfig,
+        AgentSecrets,
     };
 
     #[test]
