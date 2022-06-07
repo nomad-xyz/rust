@@ -245,14 +245,16 @@ impl Replica {
             info!("Message already attempted");
             return Ok(());
         }
-        // immediately store that we've attempted processing
-        self.db.set_previously_attempted(&message)?;
 
         // Then check on-chain status
         let status = self.replica.message_status(message.to_leaf()).await?;
 
+        // Store that we've attempted processing
+        self.db.set_previously_attempted(&message)?;
+
         // We don't care if the prove/process succeeds. We just want it to be
         // dispatched to the chain. We'll still log warnings if they fail
+        const PROCESS_ERR_MESSAGE: &str = "Error in processing. May indicate an internal revert of the handler.";
         match status {
             MessageStatus::None => {
                 info!("Submitting message for proving & processing.");
@@ -261,14 +263,14 @@ impl Replica {
                     .prove_and_process(message.as_ref(), &proof)
                     .await;
                 if let Err(e) = result {
-                    warn!(error = %e, "error in prove/process");
+                    warn!(error = %e, PROCESS_ERR_MESSAGE);
                 }
             }
             MessageStatus::Proven => {
                 info!("Message already proven. Submitting message for processing only.");
                 let result = self.replica.process(message.as_ref()).await;
                 if let Err(e) = result {
-                    warn!(error = %e, "error in process");
+                    warn!(error = %e, PROCESS_ERR_MESSAGE);
                 }
             }
             MessageStatus::Processed => {
