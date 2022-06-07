@@ -150,13 +150,7 @@ impl Replica {
         let message = match self.home.message_by_nonce(domain, nonce).await {
             Ok(Some(m)) => m,
             Ok(None) => {
-                info!(
-                    domain = domain,
-                    sequence = nonce,
-                    "Message not yet found {}:{}",
-                    domain,
-                    nonce,
-                );
+                info!(domain = domain, sequence = nonce, "Message not yet found",);
                 return Ok(Flow::Repeat);
             }
             Err(e) => bail!(e),
@@ -169,11 +163,9 @@ impl Replica {
         if let Some(false) = self.allowed.as_ref().map(|set| set.contains(&sender)) {
             info!(
                 sender = ?sender,
+                domain = domain,
                 nonce = nonce,
-                "Skipping message because sender not on allow list. Sender: {}. Domain: {}. Nonce: {}",
-                sender,
-                domain,
-                nonce
+                "Skipping message because sender not on allow list."
             );
             return Ok(Flow::Advance);
         }
@@ -182,11 +174,9 @@ impl Replica {
         if let Some(true) = self.denied.as_ref().map(|set| set.contains(&sender)) {
             info!(
                 sender = ?sender,
+                domain = domain,
                 nonce = nonce,
-                "Skipping message because sender on deny list. Sender: {}. Domain: {}. Nonce: {}",
-                sender,
-                domain,
-                nonce
+                "Skipping message because sender on deny list."
             );
             return Ok(Flow::Advance);
         }
@@ -254,7 +244,8 @@ impl Replica {
 
         // We don't care if the prove/process succeeds. We just want it to be
         // dispatched to the chain. We'll still log warnings if they fail
-        const PROCESS_ERR_MESSAGE: &str = "Error in processing. May indicate an internal revert of the handler.";
+        const PROCESS_ERR_MESSAGE: &str =
+            "Error in processing. May indicate an internal revert of the handler.";
         match status {
             MessageStatus::None => {
                 info!("Submitting message for proving & processing.");
