@@ -242,24 +242,15 @@ impl Replica {
         // shortcut here to DRY up later function
         if let MessageStatus::Processed = status {
             self.db.set_previously_attempted(&message)?;
-            return Ok(())
+            return Ok(());
         }
-
 
         // We don't care if the prove/process succeeds. We just want it to be
         // dispatched to the chain. We'll still log warnings if they fail
         let fut = match status {
-            MessageStatus::None => {
-                self
-                .replica
-                .prove_and_process(message.as_ref(), &proof)
-
-            }
-            MessageStatus::Proven => {
-                self.replica.process(message.as_ref())
-
-            }
-            _ => unreachable!()
+            MessageStatus::None => self.replica.prove_and_process(message.as_ref(), &proof),
+            MessageStatus::Proven => self.replica.process(message.as_ref()),
+            _ => unreachable!(),
         };
         info!("Submitting message for processing");
         let result = fut.await;
@@ -267,11 +258,13 @@ impl Replica {
         // handle reverts specifically by logging and ignoring.
         // Other errors are bubbled up
         match result {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(ChainCommunicationError::NotExecuted(txid)) => {
                 warn!(txid = ?txid, "Error in processing. May indicate an internal revert of the handler.");
             }
-            Err(e) => { bail!(e) },
+            Err(e) => {
+                bail!(e)
+            }
         }
         // Store that we've attempted processing
         self.db.set_previously_attempted(&message)?;
