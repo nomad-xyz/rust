@@ -19,7 +19,7 @@ use nomad_base::{
 };
 use nomad_core::{
     accumulator::{MerkleProof, NomadProof},
-    CommittedMessage, Common, Home, HomeEvents, MessageStatus,
+    ChainCommunicationError, CommittedMessage, Common, Home, HomeEvents, MessageStatus,
 };
 
 use crate::{prover_sync::ProverSync, push::Pusher, settings::ProcessorSettings as Settings};
@@ -239,35 +239,42 @@ impl Replica {
         // Then check on-chain status
         let status = self.replica.message_status(message.to_leaf()).await?;
 
-        // Store that we've attempted processing
-        self.db.set_previously_attempted(&message)?;
+        // shortcut here to DRY up later function
+        if let MessageStatus::Processed = status {
+            self.db.set_previously_attempted(&message)?;
+            return Ok(())
+        }
+
 
         // We don't care if the prove/process succeeds. We just want it to be
         // dispatched to the chain. We'll still log warnings if they fail
-        const PROCESS_ERR_MESSAGE: &str =
-            "Error in processing. May indicate an internal revert of the handler.";
-        match status {
+        let fut = match status {
             MessageStatus::None => {
-                info!("Submitting message for proving & processing.");
-                let result = self
-                    .replica
-                    .prove_and_process(message.as_ref(), &proof)
-                    .await;
-                if let Err(e) = result {
-                    warn!(error = %e, PROCESS_ERR_MESSAGE);
-                }
+                self
+                .replica
+                .prove_and_process(message.as_ref(), &proof)
+
             }
             MessageStatus::Proven => {
-                info!("Message already proven. Submitting message for processing only.");
-                let result = self.replica.process(message.as_ref()).await;
-                if let Err(e) = result {
-                    warn!(error = %e, PROCESS_ERR_MESSAGE);
-                }
+                self.replica.process(message.as_ref())
+
             }
-            MessageStatus::Processed => {
-                info!("Message already processed")
-            }
+            _ => unreachable!()
         };
+        info!("Submitting message for processing");
+        let result = fut.await;
+
+        // handle reverts specifically by logging and ignoring.
+        // Other errors are bubbled up
+        match result {
+            Ok(_) => {},
+            Err(ChainCommunicationError::NotExecuted(txid)) => {
+                warn!(txid = ?txid, "Error in processing. May indicate an internal revert of the handler.");
+            }
+            Err(e) => { bail!(e) },
+        }
+        // Store that we've attempted processing
+        self.db.set_previously_attempted(&message)?;
         Ok(())
     }
 }
