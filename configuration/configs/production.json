@@ -904,6 +904,13 @@
     "avalanche": "evmDefault"
   },
   "bridgeGui": {
+    "ethereum": {
+      "displayName": "Ethereum",
+      "nativeTokenSymbol": "ETH",
+      "connections": ["avalanche", "moonbeam", "milkomedaC1", "xDai"],
+      "manualProcessing": true,
+      "connextEnabled": true
+    },
     "avalanche": {
       "displayName": "Avalanche",
       "nativeTokenSymbol": "AVAX",
@@ -916,23 +923,10 @@
       "connections": ["ethereum"],
       "connextEnabled": true
     },
-    "ethereum": {
-      "displayName": "Ethereum",
-      "nativeTokenSymbol": "ETH",
-      "connections": ["avalanche", "moonbeam", "milkomedaC1", "xDai"],
-      "manualProcessing": true,
-      "connextEnabled": true
-    },
     "milkomedaC1": {
       "displayName": "Milkomeda C1",
       "nativeTokenSymbol": "milkADA",
       "connections": ["ethereum"]
-    },
-    "xdai": {
-      "displayName": "Gnosis Chain",
-      "nativeTokenSymbol": "xDAI",
-      "connections": ["ethereum"],
-      "connextEnabled": true
     },
     "moonbeam": {
       "displayName": "Moonbeam",

@@ -2,9 +2,12 @@
 
 ### Unreleased
 
+### v0.1.0-rc.25
+
 - adds transaction submitters type to replace transaction signers
 - adds gelato config struct
 - uses correct staging s3 bucket in staging environment
+- remove gnosis chain from list of bridgeGUI networks
 
 ### v0.1.0-rc.24
 
