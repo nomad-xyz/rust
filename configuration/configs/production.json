@@ -928,12 +928,6 @@
       "nativeTokenSymbol": "milkADA",
       "connections": ["ethereum"]
     },
-    "xdai": {
-      "displayName": "Gnosis Chain",
-      "nativeTokenSymbol": "xDAI",
-      "connections": ["ethereum"],
-      "connextEnabled": true
-    },
     "moonbeam": {
       "displayName": "Moonbeam",
       "nativeTokenSymbol": "GLMR",
