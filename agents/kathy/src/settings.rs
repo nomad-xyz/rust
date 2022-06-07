@@ -10,10 +10,7 @@ mod test {
     use super::*;
     use nomad_base::{get_remotes_from_env, NomadAgent};
     use nomad_test::test_utils;
-    use nomad_xyz_configuration::{
-        agent::kathy::ChatGenConfig,
-        AgentSecrets,
-    };
+    use nomad_xyz_configuration::{agent::kathy::ChatGenConfig, AgentSecrets};
 
     #[test]
     #[serial_test::serial]
