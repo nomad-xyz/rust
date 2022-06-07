@@ -87,7 +87,6 @@ mod test {
                 }
             );
             assert_eq!(config.interval, 999);
-            assert_eq!(config.enabled, true);
 
             env::remove_var("KATHY_CHAT_MESSAGES");
             env::set_var(

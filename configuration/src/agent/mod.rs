@@ -90,8 +90,6 @@ macro_rules! decl_config {
                 )*
                 /// Agent interval
                 pub interval: u64,
-                /// Whether or not agent is enabled
-                pub enabled: bool,
             }
 
             impl [<$name Config>] {
@@ -101,11 +99,6 @@ macro_rules! decl_config {
                         self.interval = var
                             .parse::<u64>()
                             .expect(std::stringify!([invalid <$name:upper _INTERVAL> value]));
-                    }
-                    if let Ok(var) = std::env::var(std::stringify!([<$name:upper _ENABLED>])) {
-                        self.enabled = var
-                            .parse::<bool>()
-                            .expect(std::stringify!([invalid <$name:upper _ENABLED> value]));
                     }
                     self.load_env_overrides_private();
                 }

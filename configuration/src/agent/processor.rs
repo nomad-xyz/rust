@@ -100,7 +100,6 @@ mod test {
                 })
             );
             assert_eq!(config.interval, 999);
-            assert_eq!(config.enabled, true);
         });
     }
 }

@@ -50,7 +50,6 @@ mod test {
                 }
             );
             assert_eq!(settings.agent.interval, 999);
-            assert_eq!(settings.agent.enabled, true);
         });
     }
 

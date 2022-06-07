@@ -20,7 +20,6 @@ export interface LogConfig {
 }
 
 export interface BaseAgentConfig {
-  enabled: boolean;
   interval: number | string;
 }
 

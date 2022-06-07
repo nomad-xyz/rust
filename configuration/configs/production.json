@@ -663,12 +663,10 @@
         "level": "info"
       },
       "updater": {
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "relayer": {
-        "interval": 10,
-        "enabled": true
+        "interval": 10
       },
       "processor": {
         "allowed": null,
@@ -684,19 +682,16 @@
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
         },
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "watcher": {
-        "interval": 10,
-        "enabled": true
+        "interval": 10
       },
       "kathy": {
         "chat": {
           "type": "default"
         },
-        "interval": 100,
-        "enabled": false
+        "interval": 100
       }
     },
     "xdai": {
@@ -708,12 +703,10 @@
         "level": "info"
       },
       "updater": {
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "relayer": {
-        "interval": 10,
-        "enabled": true
+        "interval": 10
       },
       "processor": {
         "allowed": null,
@@ -723,19 +716,16 @@
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
         },
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "watcher": {
-        "interval": 10,
-        "enabled": true
+        "interval": 10
       },
       "kathy": {
         "chat": {
           "type": "default"
         },
-        "interval": 100,
-        "enabled": false
+        "interval": 100
       }
     },
     "milkomedaC1": {
@@ -747,12 +737,10 @@
         "level": "info"
       },
       "updater": {
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "relayer": {
-        "interval": 10,
-        "enabled": true
+        "interval": 10
       },
       "processor": {
         "allowed": null,
@@ -762,19 +750,16 @@
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
         },
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "watcher": {
-        "interval": 10,
-        "enabled": true
+        "interval": 10
       },
       "kathy": {
         "chat": {
           "type": "default"
         },
-        "interval": 100,
-        "enabled": false
+        "interval": 100
       }
     },
     "evmos": {
@@ -786,12 +771,10 @@
         "level": "info"
       },
       "updater": {
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "relayer": {
-        "interval": 10,
-        "enabled": true
+        "interval": 10
       },
       "processor": {
         "allowed": null,
@@ -801,19 +784,16 @@
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
         },
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "watcher": {
-        "interval": 10,
-        "enabled": true
+        "interval": 10
       },
       "kathy": {
         "chat": {
           "type": "default"
         },
-        "interval": 100,
-        "enabled": false
+        "interval": 100
       }
     },
     "avalanche": {
@@ -825,12 +805,10 @@
         "level": "info"
       },
       "updater": {
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "relayer": {
-        "interval": 10,
-        "enabled": true
+        "interval": 10
       },
       "processor": {
         "allowed": null,
@@ -840,19 +818,16 @@
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
         },
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "watcher": {
-        "interval": 10,
-        "enabled": true
+        "interval": 10
       },
       "kathy": {
         "chat": {
           "type": "default"
         },
-        "interval": 100,
-        "enabled": false
+        "interval": 100
       }
     },
     "moonbeam": {
@@ -864,12 +839,10 @@
         "level": "info"
       },
       "updater": {
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "relayer": {
-        "interval": 10,
-        "enabled": true
+        "interval": 10
       },
       "processor": {
         "allowed": null,
@@ -879,19 +852,16 @@
           "bucket": "nomadxyz-production-proofs",
           "region": "us-west-2"
         },
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "watcher": {
-        "interval": 10,
-        "enabled": true
+        "interval": 10
       },
       "kathy": {
         "chat": {
           "type": "default"
         },
-        "interval": 100,
-        "enabled": false
+        "interval": 100
       }
     }
   },

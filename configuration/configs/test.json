@@ -295,16 +295,13 @@
         "fmt": "json"
       },
       "updater": {
-        "enabled": true,
         "interval": 5
       },
       "relayer": {
-        "enabled": true,
         "interval": 10
       },
       "processor": {
         "subsidizedRemotes": ["moonbeam"],
-        "enabled": true,
         "interval": 5,
         "s3": {
           "bucket": "dummy-bucket",
@@ -312,11 +309,9 @@
         }
       },
       "watcher": {
-        "enabled": true,
         "interval": 10
       },
       "kathy": {
-        "enabled": false,
         "interval": 100
       }
     },
@@ -329,16 +324,13 @@
         "fmt": "json"
       },
       "updater": {
-        "enabled": true,
         "interval": 5
       },
       "relayer": {
-        "enabled": true,
         "interval": 10
       },
       "processor": {
         "subsidizedRemotes": [],
-        "enabled": true,
         "interval": 5,
         "s3": {
           "bucket": "dummy-bucket",
@@ -346,11 +338,9 @@
         }
       },
       "watcher": {
-        "enabled": true,
         "interval": 10
       },
       "kathy": {
-        "enabled": false,
         "interval": 100
       }
     },
@@ -363,16 +353,13 @@
         "fmt": "json"
       },
       "updater": {
-        "enabled": true,
         "interval": 5
       },
       "relayer": {
-        "enabled": true,
         "interval": 10
       },
       "processor": {
         "subsidizedRemotes": ["moonbeam"],
-        "enabled": true,
         "interval": 5,
         "s3": {
           "bucket": "dummy-bucket",
@@ -380,11 +367,9 @@
         }
       },
       "watcher": {
-        "enabled": true,
         "interval": 10
       },
       "kathy": {
-        "enabled": false,
         "interval": 100
       }
     }
