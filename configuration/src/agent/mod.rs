@@ -50,6 +50,7 @@ pub struct AgentConfig {
 
 #[macro_export]
 /// Creates environment variable override block for overriding non-base settings
+/// Use of `$self_`: https://veykril.github.io/tlborm/decl-macros/minutiae/identifiers.html
 macro_rules! decl_env_overrides {
     ($name:ident {$self_:ident, $block:block}) => {
         affix::paste! {
