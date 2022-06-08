@@ -13,17 +13,18 @@ use std::time::Duration;
 
 use nomad_core::db::iterator::PrefixIterator;
 
-static LEAF_IDX: &str = "leaf_index_";
-static LEAF: &str = "leaf_";
-static PREV_ROOT: &str = "update_prev_root_";
-static PROOF: &str = "proof_";
-static MESSAGE: &str = "message_";
-static UPDATE: &str = "update_";
-static UPDATE_META: &str = "update_metadata_";
-static LATEST_ROOT: &str = "update_latest_root_";
-static LATEST_LEAF_INDEX: &str = "latest_known_leaf_index_";
-static UPDATER_PRODUCED_UPDATE: &str = "updater_produced_update_";
-static PROVER_LATEST_COMMITTED: &str = "prover_latest_committed_";
+const LEAF_IDX: &str = "leaf_index_";
+const LEAF: &str = "leaf_";
+const PREV_ROOT: &str = "update_prev_root_";
+const PROOF: &str = "proof_";
+const MESSAGE: &str = "message_";
+const UPDATE: &str = "update_";
+const UPDATE_META: &str = "update_metadata_";
+const LATEST_ROOT: &str = "update_latest_root_";
+const LATEST_LEAF_INDEX: &str = "latest_known_leaf_index_";
+const UPDATER_PRODUCED_UPDATE: &str = "updater_produced_update_";
+const PROVER_LATEST_COMMITTED: &str = "prover_latest_committed_";
+const PROCESSOR_ATTEMPTED: &str = "processor_attempted_";
 
 /// DB handle for storing data tied to a specific home.
 ///
@@ -372,6 +373,21 @@ impl NomadDB {
     /// root
     pub fn retrieve_prover_latest_committed(&self) -> Result<Option<H256>, DbError> {
         self.retrieve_decodable("", PROVER_LATEST_COMMITTED)
+    }
+
+    /// Set a DB entry stating that the processor has previously attempted to
+    /// process a message
+    pub fn set_previously_attempted(&self, message: &CommittedMessage) -> Result<(), DbError> {
+        self.store_encodable(PROCESSOR_ATTEMPTED, message.to_leaf(), &true)
+    }
+
+    /// Returns `true` if the processor has previously attempted to process the
+    /// mesage
+    pub fn previously_attempted(&self, message: &CommittedMessage) -> Result<bool, DbError> {
+        match self.retrieve_decodable(PROCESSOR_ATTEMPTED, message.to_leaf())? {
+            Some(inner) => Ok(inner),
+            None => Ok(false),
+        }
     }
 }
 

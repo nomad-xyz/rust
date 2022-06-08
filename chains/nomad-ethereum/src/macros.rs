@@ -28,8 +28,8 @@ macro_rules! report_tx {
             .await?;
 
         tracing::info!(
-            "confirmed transaction with tx_hash {:?}",
-            result.transaction_hash
+            tx_hash = ?result.transaction_hash,
+            "Confirmed transaction",
         );
 
         result
@@ -50,8 +50,8 @@ macro_rules! report_tx {
             .ok_or_else(|| nomad_core::ChainCommunicationError::DroppedError(tx_hash))?;
 
         tracing::info!(
-            "confirmed transaction with tx_hash {:?}",
-            result.transaction_hash
+            tx_hash = ?tx_hash,
+            "Confirmed transaction",
         );
 
         result

@@ -152,3 +152,29 @@ impl<const N: usize> Decode for accumulator::Proof<N> {
         Ok(Self { leaf, index, path })
     }
 }
+
+impl Encode for bool {
+    fn write_to<W>(&self, writer: &mut W) -> std::io::Result<usize>
+    where
+        W: std::io::Write,
+    {
+        writer.write_all(&[(*self).into()])?;
+        Ok(1)
+    }
+}
+
+impl Decode for bool {
+    fn read_from<R>(reader: &mut R) -> Result<Self, NomadError>
+    where
+        R: std::io::Read,
+        Self: Sized,
+    {
+        let mut buf = [0u8; 1];
+        reader.read_exact(&mut buf)?;
+
+        match buf[0] {
+            0 => Ok(false),
+            _ => Ok(true),
+        }
+    }
+}

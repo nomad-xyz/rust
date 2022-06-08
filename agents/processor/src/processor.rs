@@ -9,7 +9,9 @@ use std::{
     time::Duration,
 };
 use tokio::{sync::RwLock, task::JoinHandle, time::sleep};
-use tracing::{debug, error, info, info_span, instrument, instrument::Instrumented, Instrument};
+use tracing::{
+    debug, error, info, info_span, instrument, instrument::Instrumented, warn, Instrument,
+};
 
 use nomad_base::{
     cancel_task, decl_agent, decl_channel, AgentCore, CachingHome, CachingReplica, NomadAgent,
@@ -17,7 +19,7 @@ use nomad_base::{
 };
 use nomad_core::{
     accumulator::{MerkleProof, NomadProof},
-    CommittedMessage, Common, Home, HomeEvents, MessageStatus,
+    ChainCommunicationError, CommittedMessage, Common, Home, HomeEvents, MessageStatus,
 };
 
 use crate::{prover_sync::ProverSync, push::Pusher, settings::ProcessorSettings as Settings};
@@ -148,13 +150,7 @@ impl Replica {
         let message = match self.home.message_by_nonce(domain, nonce).await {
             Ok(Some(m)) => m,
             Ok(None) => {
-                info!(
-                    domain = domain,
-                    sequence = nonce,
-                    "Message not yet found {}:{}",
-                    domain,
-                    nonce,
-                );
+                info!(domain = domain, sequence = nonce, "Message not yet found",);
                 return Ok(Flow::Repeat);
             }
             Err(e) => bail!(e),
@@ -167,11 +163,9 @@ impl Replica {
         if let Some(false) = self.allowed.as_ref().map(|set| set.contains(&sender)) {
             info!(
                 sender = ?sender,
+                domain = domain,
                 nonce = nonce,
-                "Skipping message because sender not on allow list. Sender: {}. Domain: {}. Nonce: {}",
-                sender,
-                domain,
-                nonce
+                "Skipping message because sender not on allow list."
             );
             return Ok(Flow::Advance);
         }
@@ -180,11 +174,9 @@ impl Replica {
         if let Some(true) = self.denied.as_ref().map(|set| set.contains(&sender)) {
             info!(
                 sender = ?sender,
+                domain = domain,
                 nonce = nonce,
-                "Skipping message because sender on deny list. Sender: {}. Domain: {}. Nonce: {}",
-                sender,
-                domain,
-                nonce
+                "Skipping message because sender on deny list."
             );
             return Ok(Flow::Advance);
         }
@@ -233,45 +225,49 @@ impl Replica {
         Ok(Flow::Advance)
     }
 
-    #[instrument(err, level = "trace", skip(self), fields(self = %self))]
+    #[instrument(err, level = "info", skip(self), fields(self = %self, domain = message.message.destination, nonce = message.message.nonce, leaf_index = message.leaf_index, leaf = ?message.message.to_leaf()))]
     /// Dispatch a message for processing. If the message is already proven, process only.
     async fn process(&self, message: CommittedMessage, proof: NomadProof) -> Result<()> {
         use nomad_core::Replica;
+
+        // First check locally to see if we've tried before
+        if self.db.previously_attempted(&message)? {
+            info!("Message already attempted");
+            return Ok(());
+        }
+
+        // Then check on-chain status
         let status = self.replica.message_status(message.to_leaf()).await?;
 
-        match status {
-            MessageStatus::None => {
-                self.replica
-                    .prove_and_process(message.as_ref(), &proof)
-                    .await?;
-            }
-            MessageStatus::Proven => {
-                self.replica.process(message.as_ref()).await?;
-            }
-            MessageStatus::Processed => {
-                info!(
-                    domain = message.message.destination,
-                    nonce = message.message.nonce,
-                    leaf_index = message.leaf_index,
-                    leaf = ?message.message.to_leaf(),
-                    "Message {}:{} already processed",
-                    message.message.destination,
-                    message.message.nonce
-                )
-            }
+        // shortcut here to DRY up later function
+        if let MessageStatus::Processed = status {
+            self.db.set_previously_attempted(&message)?;
+            return Ok(());
+        }
+
+        // We don't care if the prove/process succeeds. We just want it to be
+        // dispatched to the chain. We'll still log warnings if they fail
+        let fut = match status {
+            MessageStatus::None => self.replica.prove_and_process(message.as_ref(), &proof),
+            MessageStatus::Proven => self.replica.process(message.as_ref()),
+            _ => unreachable!(),
         };
+        info!("Submitting message for processing");
+        let result = fut.await;
 
-        info!(
-            domain = message.message.destination,
-            nonce = message.message.nonce,
-            leaf_index = message.leaf_index,
-            leaf = ?message.message.to_leaf(),
-            "Processed message. Destination: {}. Nonce: {}. Leaf index: {}.",
-            message.message.destination,
-            message.message.nonce,
-            message.leaf_index,
-        );
-
+        // handle reverts specifically by logging and ignoring.
+        // Other errors are bubbled up
+        match result {
+            Ok(_) => {}
+            Err(ChainCommunicationError::NotExecuted(txid)) => {
+                warn!(txid = ?txid, "Error in processing. May indicate an internal revert of the handler.");
+            }
+            Err(e) => {
+                bail!(e)
+            }
+        }
+        // Store that we've attempted processing
+        self.db.set_previously_attempted(&message)?;
         Ok(())
     }
 }
