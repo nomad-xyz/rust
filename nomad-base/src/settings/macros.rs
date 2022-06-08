@@ -104,7 +104,10 @@ macro_rules! decl_settings {
                     let base = nomad_base::Settings::from_config_and_secrets(&agent, &home, &remote_networks, &config, &secrets);
                     base.validate_against_config_and_secrets(&agent, &home, &remote_networks, &config, &secrets)?;
 
-                    let agent = config.agent().get(&home).expect("agent config").[<$name:lower>].clone();
+                    let mut agent = config.agent().get(&home).expect("agent config").[<$name:lower>].clone();
+
+                    // Override with environment vars, if present
+                    agent.load_env_overrides();
 
                     Ok(Self {
                         base,

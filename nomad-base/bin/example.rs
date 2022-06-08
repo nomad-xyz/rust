@@ -9,7 +9,6 @@ use color_eyre::Result;
 // #[derive(Debug, Clone, serde::Deserialize)]
 // pub struct ExampleConfig {
 //     interval: u64,
-//     enabled: bool,
 // }
 
 // // Generate ExampleSettings which includes base and agent-specific settings

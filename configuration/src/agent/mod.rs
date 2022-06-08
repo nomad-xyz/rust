@@ -49,6 +49,24 @@ pub struct AgentConfig {
 }
 
 #[macro_export]
+/// Creates environment variable override block for overriding non-base settings
+/// Use of `$self_`: https://veykril.github.io/tlborm/decl-macros/minutiae/identifiers.html
+macro_rules! decl_env_overrides {
+    ($name:ident {$self_:ident, $block:block}) => {
+        affix::paste! {
+            impl EnvOverridablePrivate for [<$name Config>] {
+                fn load_env_overrides_private(&mut $self_) $block
+            }
+        }
+    };
+    ($name:ident $block:block) => {
+        affix::paste! {
+            impl EnvOverridablePrivate for [<$name Config>] {}
+        }
+    };
+}
+
+#[macro_export]
 /// Creates agent config block on that comes with interval and enabled by
 /// default
 macro_rules! decl_config {
@@ -58,6 +76,10 @@ macro_rules! decl_config {
         }
     ) => {
         affix::paste! {
+            pub(self) trait EnvOverridablePrivate {
+                fn load_env_overrides_private(&mut self) {}
+            }
+
             #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
             #[serde(rename_all = "camelCase")]
             #[doc = "Config for `" $name]
@@ -69,8 +91,18 @@ macro_rules! decl_config {
                 )*
                 /// Agent interval
                 pub interval: u64,
-                /// Whether or not agent is enabled
-                pub enabled: bool,
+            }
+
+            impl [<$name Config>] {
+                /// Override config with environment variables if present
+                pub fn load_env_overrides(&mut self) {
+                    if let Ok(var) = std::env::var(std::stringify!([<$name:upper _INTERVAL>])) {
+                        self.interval = var
+                            .parse::<u64>()
+                            .expect(std::stringify!([invalid <$name:upper _INTERVAL> value]));
+                    }
+                    self.load_env_overrides_private();
+                }
             }
         }
     }

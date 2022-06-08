@@ -532,12 +532,10 @@
         "level": "info"
       },
       "updater": {
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "relayer": {
-        "interval": 10,
-        "enabled": true
+        "interval": 10
       },
       "processor": {
         "allowed": null,
@@ -552,19 +550,16 @@
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
         },
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "watcher": {
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "kathy": {
         "chat": {
           "type": "default"
         },
-        "interval": 500,
-        "enabled": true
+        "interval": 500
       }
     },
     "goerli": {
@@ -576,12 +571,10 @@
         "level": "info"
       },
       "updater": {
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "relayer": {
-        "interval": 10,
-        "enabled": true
+        "interval": 10
       },
       "processor": {
         "allowed": null,
@@ -596,19 +589,16 @@
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
         },
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "watcher": {
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "kathy": {
         "chat": {
           "type": "default"
         },
-        "interval": 500,
-        "enabled": true
+        "interval": 500
       }
     },
     "evmostestnet": {
@@ -620,12 +610,10 @@
         "level": "info"
       },
       "updater": {
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "relayer": {
-        "interval": 10,
-        "enabled": true
+        "interval": 10
       },
       "processor": {
         "allowed": null,
@@ -640,19 +628,16 @@
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
         },
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "watcher": {
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "kathy": {
         "chat": {
           "type": "default"
         },
-        "interval": 500,
-        "enabled": true
+        "interval": 500
       }
     },
     "kovan": {
@@ -664,12 +649,10 @@
         "level": "info"
       },
       "updater": {
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "relayer": {
-        "interval": 10,
-        "enabled": true
+        "interval": 10
       },
       "processor": {
         "allowed": null,
@@ -684,19 +667,16 @@
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
         },
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "watcher": {
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "kathy": {
         "chat": {
           "type": "default"
         },
-        "interval": 500,
-        "enabled": true
+        "interval": 500
       }
     },
     "neontestnet": {
@@ -708,12 +688,10 @@
         "level": "info"
       },
       "updater": {
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "relayer": {
-        "interval": 10,
-        "enabled": true
+        "interval": 10
       },
       "processor": {
         "allowed": null,
@@ -728,19 +706,16 @@
           "bucket": "nomadxyz-development-proofs",
           "region": "us-west-2"
         },
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "watcher": {
-        "interval": 5,
-        "enabled": true
+        "interval": 5
       },
       "kathy": {
         "chat": {
           "type": "default"
         },
-        "interval": 500,
-        "enabled": true
+        "interval": 500
       }
     }
   },
