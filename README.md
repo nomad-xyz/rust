@@ -4,7 +4,7 @@
 
 Nomad is a cross-chain communication standard that supports passing messages between blockchains easily and inexpensively. Like [IBC](https://ibcprotocol.org) light clients and similar systems, Nomad establishes message-passing channels between chains. Once a channel is established, any application on that chain can use it to send messages to others chains.
 
-Nomad is an implementation and extension of the [Optics protocol](https://medium.com/celoorg/announcing-optics-a-gas-efficient-interoperability-standard-for-cross-chain-communication-e597163b2) (**OPT**imistic **I**nterchain **C**ommunication), originally developed at Celo. 
+Nomad is an implementation and extension of the [Optics protocol](https://medium.com/celoorg/announcing-optics-a-gas-efficient-interoperability-standard-for-cross-chain-communication-e597163b2) (**OPT**imistic **I**nterchain **C**ommunication), originally developed at Celo.
 
 Compared to light clients, Nomad has weaker security guarantees and a longer latency period. However, these tradeoffs allow Nomad to be implemented on any smart contract chain without expensive light client development. Unlike light clients, Nomad does not use gas verifying remote chain block headers.
 
@@ -26,6 +26,7 @@ Nomad's off-chain systems are written in Rust for speed, safety and reliability.
 - Install `rustup` from [here](https://rustup.rs/) and run it
 
 Note: You should be running at least version `1.52.1` of the rustc compiler. Check it with `rustup --version`
+
 ```
 $ rustup --version
 rustup 1.24.2 (755e2b07e 2021-05-12)
@@ -86,7 +87,7 @@ The off-chain portion of Nomad is a set of agents each with a specific role:
     - VM-agnostic contract sync
     - Common metrics
 - `nomad-core`
-  - Contains implementations of core primitives  
+  - Contains implementations of core primitives
     - Core primitives
     - Core data types
     - Contract and chain traits
@@ -105,10 +106,10 @@ The off-chain portion of Nomad is a set of agents each with a specific role:
     - JSON config files (for development, staging, production)
     - An interface for retrieving agent and system config
     - An interface for retrieving agent secrets
-  
+
 ## Contributing
 
-All contributions, big and small, are welcome. All contributions require signature verification and contributions that touch code will have to pass linting and formatting checks as well as tests. 
+All contributions, big and small, are welcome. All contributions require signature verification and contributions that touch code will have to pass linting and formatting checks as well as tests.
 
 ### Commit signature verification
 
@@ -129,15 +130,47 @@ cargo fmt --all
 cargo clippy --workspace --all-features -- -D warnings
 ```
 
+## Release Process
+
+### Overview
+
+We make releases within the `rust` repository specific to the crate(s) that will be consumed (e.g. agents@1.0.0, configuration@1.0.0, accumulator@1.0.0, etc).
+
+We follow [Semantic Versioning](https://semver.org/), where breaking changes constitute changes that break agent configuration compatibility.
+
+Releases are managed on GitHub [here](https://github.com/nomad-xyz/rust/releases).
+
+### Aggregating Release Notes
+
+- Want to aggregate list of all changes since last release
+- Run `git diff <sha of last release> HEAD -- **CHANGELOG.md`
+- Manually consolidate diffs into a single list for release notes
+
+### Bumping Versions
+
+- Bump package versions in all relevant `Cargo.toml` files
+- Bump the package versions in all relevant `CHANGELOG.md` files
+- E.g. for an `agents` release, this would entail bumping all agents in `rust/agents`
+- Make/merge a PR declaring the new version you are releasing (e.g. "Bumping agents for release agents@1.0.1")
+
+### Making a New Release
+
+- Visit the [releases page](https://github.com/nomad-xyz/rust/releases) for the `rust` repo
+- Draft a new release using the name of the release as the title and tag (e.g. agents@1.0.1)
+- Include your compiled list of release notes
+- Publish release
+
 ## Advanced Usage
 
 ### Building Agent Images
 
 There exists a docker build for the agent binaries. These docker images are used for deploying the agents in a production environment.
+
 ```
 ./build.sh <image_tag>
 ./release.sh <image_tag>
 ```
+
 ### Adding a New Agent
 
 - Run `cargo new $AGENT_NAME`
