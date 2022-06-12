@@ -143,7 +143,7 @@ Releases are managed on GitHub [here](https://github.com/nomad-xyz/rust/releases
 ### Aggregating Release Notes
 
 - Want to aggregate list of all changes since last release
-- Run `git diff <sha of last release> HEAD -- **CHANGELOG.md`
+- Run `git diff <tag of last release> HEAD -- **CHANGELOG.md`
 - Manually consolidate diffs into a single list for release notes
 
 ### Bumping Versions
@@ -155,8 +155,10 @@ Releases are managed on GitHub [here](https://github.com/nomad-xyz/rust/releases
 
 ### Making a New Release
 
+- Tag newly-merged PR by running `git tag -s <package(s)-release-name>@<new-package-version>` (e.g. `git tag -s agents@1.0.1`)
+- Push tags by running `git push --tags`
 - Visit the [releases page](https://github.com/nomad-xyz/rust/releases) for the `rust` repo
-- Draft a new release using the name of the release as the title and tag (e.g. agents@1.0.1)
+- Draft a new release using the newly published tag
 - Include your compiled list of release notes
 - Publish release
 
