@@ -30,5 +30,17 @@ pub static CHAIN_ID_TO_FORWARDER: Lazy<HashMap<usize, Address>> = Lazy::new(|| {
             Address::from_str("0x9561aCdf04C2B639dFfeCB357438e7B3eD979C5C")
                 .expect("!forwarder proxy"),
         ),
+        // BSC
+        (
+            56,
+            Address::from_str("0xeeea839E2435873adA11d5dD4CAE6032742C0445")
+                .expect("!forwarder proxy"),
+        ),
+        // Polygon
+        (
+            137,
+            Address::from_str("0xc2336e796F77E4E57b6630b6dEdb01f5EE82383e")
+                .expect("!forwarder proxy"),
+        ),
     ])
 });
