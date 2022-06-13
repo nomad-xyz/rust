@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use ethers::{types::Address};
+use ethers::types::Address;
 use once_cell::sync::Lazy;
 use std::str::FromStr;
 
@@ -44,7 +44,6 @@ pub static CHAIN_ID_TO_FORWARDER: Lazy<HashMap<usize, Address>> = Lazy::new(|| {
         ),
     ])
 });
-
 
 /// Get the forwarder for a chain id
 pub fn get_forwarder(chain_id: usize) -> Option<Address> {

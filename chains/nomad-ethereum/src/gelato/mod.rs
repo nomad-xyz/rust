@@ -5,7 +5,7 @@ use ethers::types::{Address, H256};
 use ethers::{prelude::Bytes, providers::Middleware};
 use gelato_sdk::{GelatoClient, RelayResponse, TaskState};
 use nomad_core::{ChainCommunicationError, Signers, TxOutcome};
-use std::{sync::Arc};
+use std::sync::Arc;
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
 use tracing::info;

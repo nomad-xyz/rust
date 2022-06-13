@@ -1,7 +1,7 @@
 use super::utils::get_forwarder;
 use ethers::abi::{self, Token};
-use ethers::prelude::{H160, Bytes, U64};
-use ethers::types::{transaction::eip712::*};
+use ethers::prelude::{Bytes, H160, U64};
+use ethers::types::transaction::eip712::*;
 use ethers::utils::hex::FromHexError;
 use ethers::utils::keccak256;
 use gelato_sdk::{ForwardRequest, PaymentType};
@@ -55,7 +55,8 @@ impl Eip712 for UnfilledForwardRequest {
     type Error = ForwardRequestError;
 
     fn domain(&self) -> Result<EIP712Domain, Self::Error> {
-        let verifying_contract = get_forwarder(self.chain_id).ok_or_else(|| ForwardRequestError::UnknownForwarderError(self.chain_id))?;
+        let verifying_contract = get_forwarder(self.chain_id)
+            .ok_or_else(|| ForwardRequestError::UnknownForwarderError(self.chain_id))?;
 
         Ok(EIP712Domain {
             name: "GelatoRelayForwarder".to_owned(),
@@ -94,7 +95,6 @@ impl Eip712 for UnfilledForwardRequest {
 impl UnfilledForwardRequest {
     /// Fill ForwardRequest with sponsor signature and return full request struct
     pub fn into_filled(self, sponsor_signature: ethers::core::types::Signature) -> ForwardRequest {
-
         ForwardRequest {
             type_id: "ForwardRequest",
             chain_id: self.chain_id,
@@ -131,10 +131,15 @@ mod test {
 
     static REQUEST: Lazy<UnfilledForwardRequest> = Lazy::new(|| UnfilledForwardRequest {
         chain_id: 42,
-        target: "0x61bBe925A5D646cE074369A6335e5095Ea7abB7A".parse().unwrap(),
+        target: "0x61bBe925A5D646cE074369A6335e5095Ea7abB7A"
+            .parse()
+            .unwrap(),
         data: "4b327067000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeaeeeeeeeeeeeeeeeee"
-            .parse().unwrap(),
-        fee_token: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE".parse().unwrap(),
+            .parse()
+            .unwrap(),
+        fee_token: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+            .parse()
+            .unwrap(),
         payment_type: gelato_sdk::PaymentType::AsyncGasTank,
         max_fee: 10000000000000000000u64.into(),
         gas: 200000u64.into(),
