@@ -866,10 +866,13 @@ mod test {
 
             // Second update_history call returns zero -> first update
             // and should return WatcherError::SyncingFinished
-            history_sync
+            let res = history_sync
                 .update_history()
-                .await
-                .expect_err("Should have received WatcherError::SyncingFinished");
+                .await;
+            assert_eq!(
+                res.unwrap_err().source().unwrap().to_string(), WatcherError::SyncingFinished.to_string(),
+                "Should have received WatcherError::SyncingFinished"
+            );
 
             assert_eq!(history_sync.committed_root, zero_root);
             assert_eq!(rx.recv().await.unwrap(), first_signed_update)

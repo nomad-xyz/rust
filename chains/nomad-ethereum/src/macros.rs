@@ -175,7 +175,7 @@ macro_rules! tx_submitter_gelato {
             signing_provider,
             sponsor,
             chain_id,
-            $gelato_conf.fee_token,
+            $gelato_conf.fee_token.parse().expect("invalid gelato fee token"),
             false,
         );
         TxSubmitter::new(client.into())

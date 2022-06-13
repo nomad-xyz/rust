@@ -1,11 +1,10 @@
-use super::utils::CHAIN_ID_TO_FORWARDER;
+use super::utils::get_forwarder;
 use ethers::abi::{self, Token};
 use ethers::prelude::{H160, Bytes, U64};
-use ethers::types::{transaction::eip712::*, Address};
+use ethers::types::{transaction::eip712::*};
 use ethers::utils::hex::FromHexError;
 use ethers::utils::keccak256;
 use gelato_sdk::{ForwardRequest, PaymentType};
-use std::str::FromStr;
 
 const FORWARD_REQUEST_TYPE: &str = "ForwardRequest(uint256 chainId,address target,bytes data,address feeToken,uint256 paymentType,uint256 maxFee,uint256 gas,address sponsor,uint256 sponsorChainId,uint256 nonce,bool enforceSponsorNonce,bool enforceSponsorNonceOrdering)";
 
@@ -47,19 +46,22 @@ pub enum ForwardRequestError {
     /// Hex decoding error
     #[error("Hex decoding error: {0}")]
     FromHexError(#[from] FromHexError),
+    /// Unknown forwarder
+    #[error("Forwarder contract unknown for domain: {0}")]
+    UnknownForwarderError(usize),
 }
 
 impl Eip712 for UnfilledForwardRequest {
     type Error = ForwardRequestError;
 
     fn domain(&self) -> Result<EIP712Domain, Self::Error> {
+        let verifying_contract = get_forwarder(self.chain_id).ok_or_else(|| ForwardRequestError::UnknownForwarderError(self.chain_id))?;
+
         Ok(EIP712Domain {
             name: "GelatoRelayForwarder".to_owned(),
             version: "V1".to_owned(),
             chain_id: self.chain_id.into(),
-            verifying_contract: *CHAIN_ID_TO_FORWARDER
-                .get(&self.chain_id)
-                .expect("!forwarder"),
+            verifying_contract,
             salt: None,
         })
     }
@@ -73,7 +75,7 @@ impl Eip712 for UnfilledForwardRequest {
             Token::FixedBytes(Self::type_hash()?.to_vec()),
             Token::Uint(self.chain_id.into()),
             Token::Address(self.target),
-            Token::FixedBytes(keccak256(hex::decode(&self.data)?).to_vec()),
+            Token::FixedBytes(keccak256(&self.data).to_vec()),
             Token::Address(self.fee_token),
             Token::Uint((self.payment_type as u8).into()),
             Token::Uint(self.max_fee.as_u64().into()),
@@ -100,8 +102,8 @@ impl UnfilledForwardRequest {
             data: self.data,
             fee_token: self.fee_token,
             payment_type: self.payment_type,
-            max_fee: self.max_fee.to_string(),
-            gas: self.gas.to_string(),
+            max_fee: self.max_fee,
+            gas: self.gas,
             sponsor: self.sponsor,
             sponsor_chain_id: self.sponsor_chain_id,
             nonce: self.nonce,
@@ -129,14 +131,14 @@ mod test {
 
     static REQUEST: Lazy<UnfilledForwardRequest> = Lazy::new(|| UnfilledForwardRequest {
         chain_id: 42,
-        target: "0x61bBe925A5D646cE074369A6335e5095Ea7abB7A".to_owned(),
+        target: "0x61bBe925A5D646cE074369A6335e5095Ea7abB7A".parse().unwrap(),
         data: "4b327067000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeaeeeeeeeeeeeeeeeee"
-            .to_owned(),
-        fee_token: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE".to_owned(),
-        payment_type: 1,
-        max_fee: 10000000000000000000,
-        gas: 200000,
-        sponsor: DUMMY_SPONSOR_ADDRESS.to_owned(),
+            .parse().unwrap(),
+        fee_token: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE".parse().unwrap(),
+        payment_type: gelato_sdk::PaymentType::AsyncGasTank,
+        max_fee: 10000000000000000000u64.into(),
+        gas: 200000u64.into(),
+        sponsor: DUMMY_SPONSOR_ADDRESS.parse().unwrap(),
         sponsor_chain_id: 42,
         nonce: 0,
         enforce_sponsor_nonce: false,
