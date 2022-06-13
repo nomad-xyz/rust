@@ -134,17 +134,20 @@ cargo clippy --workspace --all-features -- -D warnings
 
 ### Overview
 
-We make releases within the `rust` repository specific to the crate(s) that will be consumed (e.g. agents@1.0.0, configuration@1.0.0, accumulator@1.0.0, etc).
+We make releases within the `rust` repository specific to the crate(s) that will be consumed. This includes the below crates/groups of crates below.
+
+- agents@X.Y.Z
+- configuration@X.Y.Z
+- accumulator@X.Y.Z
 
 We follow [Semantic Versioning](https://semver.org/), where breaking changes constitute changes that break agent configuration compatibility.
 
 Releases are managed on GitHub [here](https://github.com/nomad-xyz/rust/releases).
 
-### Aggregating Release Notes
+### Aggregating the Changelog
 
-- Want to aggregate list of all changes since last release
-- Run `git diff <tag of last release> HEAD -- **CHANGELOG.md`
-- Manually consolidate diffs into a single list for release notes
+- Output a patch file by running `git diff <tag of last release> --no-prefix --output <location to output patch txt file> -- */CHANGELOG.md */*/CHANGELOG.md`
+- Organize and format patch file into a changelog (for tag message and release notes)
 
 ### Bumping Versions
 
@@ -155,7 +158,7 @@ Releases are managed on GitHub [here](https://github.com/nomad-xyz/rust/releases
 
 ### Making a New Release
 
-- Tag newly-merged PR by running `git tag -s <package(s)-release-name>@<new-package-version>` (e.g. `git tag -s agents@1.0.1`)
+- Tag newly-merged PR by running `git tag -s <package(s)-release-name>@<new-package-version>`, using your compiled changelog as the tag message
 - Push tags by running `git push --tags`
 - Visit the [releases page](https://github.com/nomad-xyz/rust/releases) for the `rust` repo
 - Draft a new release using the newly published tag
