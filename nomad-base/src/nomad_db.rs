@@ -2,8 +2,8 @@ use color_eyre::Result;
 use ethers::core::types::H256;
 use nomad_core::db::{DbError, TypedDB, DB};
 use nomad_core::{
-    accumulator::NomadProof, utils, CommittedMessage, Decode, NomadMessage, RawCommittedMessage,
-    SignedUpdate, SignedUpdateWithMeta, UpdateMeta,
+    accumulator::NomadProof, utils, CommittedMessage, Decode, NomadMessage, PersistedTransaction,
+    RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, UpdateMeta,
 };
 use tokio::time::sleep;
 use tracing::{debug, info};
@@ -24,6 +24,7 @@ static LATEST_ROOT: &str = "update_latest_root_";
 static LATEST_LEAF_INDEX: &str = "latest_known_leaf_index_";
 static UPDATER_PRODUCED_UPDATE: &str = "updater_produced_update_";
 static PROVER_LATEST_COMMITTED: &str = "prover_latest_committed_";
+static PERSISTED_TRANSACTION: &str = "persisted_transaction_";
 
 /// DB handle for storing data tied to a specific home.
 ///
@@ -373,6 +374,21 @@ impl NomadDB {
     pub fn retrieve_prover_latest_committed(&self) -> Result<Option<H256>, DbError> {
         self.retrieve_decodable("", PROVER_LATEST_COMMITTED)
     }
+
+    /// Store PersistedTransaction
+    pub fn store_persisted_transaction(&self, tx: PersistedTransaction) -> Result<(), DbError> {
+        debug!("storing transaction in DB {:?}", tx);
+
+        self.store_encodable(PERSISTED_TRANSACTION, "", &tx) // TODO(matthew): Key
+    }
+
+    /// Retrieve PersistedTransaction
+    pub fn retrieve_persisted_transaction(
+        &self,
+        tx: PersistedTransaction,
+    ) -> Result<Option<PersistedTransaction>, DbError> {
+        self.retrieve_decodable(PERSISTED_TRANSACTION, "")
+    }
 }
 
 #[cfg(test)]
@@ -439,6 +455,17 @@ mod test {
 
             let by_index = db.proof_by_leaf_index(13).unwrap().unwrap();
             assert_eq!(by_index, proof);
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn db_stores_and_retrieves_transactions() {
+        run_test_db(|db| async move {
+            let home_name = "home_1".to_owned();
+            let db = NomadDB::new(home_name, db);
+
+            assert_eq!(true, false); // TODO(matthew):
         })
         .await;
     }
