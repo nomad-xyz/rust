@@ -28,6 +28,7 @@ rusoto_kms = "0.48.0"
 rusoto_credential = "0.47.0"
 once_cell = "1.8.0"
 num = { version="0", features=["serde"] }
+bincode = "1.3.3"
 
 accumulator = { path = "../accumulator" }
 nomad-types = { path = "../nomad-types" }

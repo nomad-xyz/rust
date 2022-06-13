@@ -2543,6 +2543,7 @@ version = "0.1.0"
 dependencies = [
  "accumulator",
  "async-trait",
+ "bincode",
  "bytes",
  "color-eyre 0.5.11",
  "ethers",
