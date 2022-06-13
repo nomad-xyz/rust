@@ -868,7 +868,7 @@ mod test {
             // and should return WatcherError::SyncingFinished
             let res = history_sync.update_history().await;
             assert_eq!(
-                res.unwrap_err().source().unwrap().to_string(),
+                res.unwrap_err().to_string(),
                 WatcherError::SyncingFinished.to_string(),
                 "Should have received WatcherError::SyncingFinished"
             );
