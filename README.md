@@ -134,7 +134,7 @@ cargo clippy --workspace --all-features -- -D warnings
 
 ### Overview
 
-We make releases within the `rust` repository specific to the crate(s) that will be consumed. This includes the below crates/groups of crates below.
+We make releases within the `rust` repository specific to the crate(s) that will be consumed. This includes the below crates/groups of crates.
 
 - agents@X.Y.Z
 - configuration@X.Y.Z
