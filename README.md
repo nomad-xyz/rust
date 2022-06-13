@@ -162,7 +162,7 @@ Releases are managed on GitHub [here](https://github.com/nomad-xyz/rust/releases
 - Push tags by running `git push --tags`
 - Visit the [releases page](https://github.com/nomad-xyz/rust/releases) for the `rust` repo
 - Draft a new release using the newly published tag
-- Include your compiled list of release notes
+- Include your changelog as the release notes
 - Publish release
 
 ## Advanced Usage
