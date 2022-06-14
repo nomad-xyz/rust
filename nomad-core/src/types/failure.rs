@@ -9,7 +9,7 @@ use nomad_types::NomadIdentifier;
 use sha3::{Digest, Keccak256};
 
 /// Failure notification produced by watcher
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct FailureNotification {
     /// Domain of failed home
     pub home_domain: u32,
@@ -49,7 +49,7 @@ impl FailureNotification {
 }
 
 /// Signed failure notification produced by watcher
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct SignedFailureNotification {
     /// Failure notification
     pub notification: FailureNotification,
