@@ -72,8 +72,8 @@ impl Decode for PersistedTransaction {
         reader.read_exact(&mut encoded_len)?;
         let encoded_len = u64::from_be_bytes(encoded_len) as usize;
 
-        let mut encoded: Vec<u8> = vec![];
-        reader.read_exact(&mut encoded[..encoded_len])?;
+        let mut encoded: Vec<u8> = vec![0; encoded_len];
+        reader.read_exact(&mut encoded[..])?;
         // We should never encounter an error here outside of development
         let decoded: PersistedTransaction =
             bincode::deserialize(&encoded).expect("bincode deserialization error");
