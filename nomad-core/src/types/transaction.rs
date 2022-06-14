@@ -1,5 +1,5 @@
 use crate::{
-    accumulator::NomadProof, utils, Decode, Encode, Message, NomadError, NomadMessage,
+    accumulator::NomadProof, Decode, Encode, Message, NomadError, NomadMessage,
     SignedFailureNotification, SignedUpdate,
 };
 use nomad_types::NomadIdentifier;
@@ -35,7 +35,9 @@ pub enum NomadMethod {
 
 // TODO(matthew): Maybe this should be a status enum
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-pub enum NomadEvent {}
+pub enum NomadEvent {
+    Dummy, // TODO(matthew):
+}
 
 /// A transaction
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -73,8 +75,7 @@ impl Decode for PersistedTransaction {
         let mut encoded: Vec<u8> = vec![];
         reader.read_exact(&mut encoded[..encoded_len])?;
         // We should never encounter an error here outside of development
-        let decoded: PersistedTransaction =
-            bincode::deserialize(&encoded).expect("bincode deserialization error");
+        let decoded: PersistedTransaction = bincode::deserialize(&encoded).expect("bincode deserialization error");
 
         Ok(decoded)
     }

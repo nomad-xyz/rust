@@ -383,10 +383,7 @@ impl NomadDB {
     }
 
     /// Retrieve PersistedTransaction
-    pub fn retrieve_persisted_transaction(
-        &self,
-        tx: PersistedTransaction,
-    ) -> Result<Option<PersistedTransaction>, DbError> {
+    pub fn retrieve_persisted_transaction(&self) -> Result<Option<PersistedTransaction>, DbError> {
         self.retrieve_decodable(PERSISTED_TRANSACTION, "")
     }
 }
