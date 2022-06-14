@@ -4,7 +4,7 @@ use crate::{
 };
 use nomad_types::NomadIdentifier;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub enum NomadMethod {
     /// Dispatch a message
     Dispatch(Message),
@@ -34,13 +34,13 @@ pub enum NomadMethod {
 }
 
 // TODO(matthew): Maybe this should be a status enum
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub enum NomadEvent {
     Dummy, // TODO(matthew):
 }
 
 /// A transaction
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct PersistedTransaction {
     /// The method this transaction will be processed by
     pub method: NomadMethod,
@@ -75,7 +75,8 @@ impl Decode for PersistedTransaction {
         let mut encoded: Vec<u8> = vec![];
         reader.read_exact(&mut encoded[..encoded_len])?;
         // We should never encounter an error here outside of development
-        let decoded: PersistedTransaction = bincode::deserialize(&encoded).expect("bincode deserialization error");
+        let decoded: PersistedTransaction =
+            bincode::deserialize(&encoded).expect("bincode deserialization error");
 
         Ok(decoded)
     }

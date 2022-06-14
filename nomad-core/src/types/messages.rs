@@ -5,7 +5,7 @@ use crate::{utils, Decode, Encode, NomadError};
 const NOMAD_MESSAGE_PREFIX_LEN: usize = 76;
 
 /// A full Nomad message between chains
-#[derive(serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Default, Clone, PartialEq)]
 pub struct NomadMessage {
     /// 4   SLIP-44 ID
     pub origin: u32,
@@ -22,7 +22,7 @@ pub struct NomadMessage {
 }
 
 /// A partial Nomad message between chains
-#[derive(serde::Serialize, serde::Deserialize, Debug, Default, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Default, Clone, PartialEq)]
 pub struct Message {
     /// 4   SLIP-44 ID
     pub destination: u32,
