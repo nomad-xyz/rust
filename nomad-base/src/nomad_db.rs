@@ -375,16 +375,21 @@ impl NomadDB {
         self.retrieve_decodable("", PROVER_LATEST_COMMITTED)
     }
 
+    // TODO(matthew): Figure out how we're actually storing / retrieving these
+
     /// Store PersistedTransaction
-    pub fn store_persisted_transaction(&self, tx: PersistedTransaction) -> Result<(), DbError> {
+    pub fn store_persisted_transaction(&self, tx: &PersistedTransaction) -> Result<(), DbError> {
         debug!("storing transaction in DB {:?}", tx);
 
-        self.store_encodable(PERSISTED_TRANSACTION, "", &tx) // TODO(matthew): Key
+        self.store_keyed_encodable(PERSISTED_TRANSACTION, &tx.counter, tx)
     }
 
     /// Retrieve PersistedTransaction
-    pub fn retrieve_persisted_transaction(&self) -> Result<Option<PersistedTransaction>, DbError> {
-        self.retrieve_decodable(PERSISTED_TRANSACTION, "")
+    pub fn retrieve_persisted_transaction_by_counter(
+        &self,
+        counter: u64,
+    ) -> Result<Option<PersistedTransaction>, DbError> {
+        self.retrieve_keyed_decodable(PERSISTED_TRANSACTION, &counter)
     }
 }
 
@@ -392,7 +397,10 @@ impl NomadDB {
 mod test {
     use super::*;
     use ethers::types::H256;
-    use nomad_core::{accumulator::Proof, Encode, NomadMessage, RawCommittedMessage};
+    use nomad_core::{
+        accumulator::Proof, Encode, Message, NomadEvent, NomadMessage, NomadMethod,
+        RawCommittedMessage,
+    };
     use nomad_test::test_utils::run_test_db;
 
     #[tokio::test]
@@ -462,7 +470,21 @@ mod test {
             let home_name = "home_1".to_owned();
             let db = NomadDB::new(home_name, db);
 
-            assert_eq!(true, false); // TODO(matthew):
+            let tx = PersistedTransaction {
+                method: NomadMethod::Dispatch(Message {
+                    destination: 0,
+                    recipient: Default::default(),
+                    body: vec![],
+                }),
+                counter: 0,
+                confirm_event: NomadEvent::Dummy,
+            };
+
+            db.store_persisted_transaction(&tx).unwrap();
+
+            let db_tx = db.retrieve_persisted_transaction_by_counter(0).unwrap();
+
+            assert_eq!(db_tx.unwrap(), tx);
         })
         .await;
     }
