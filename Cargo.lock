@@ -2556,8 +2556,9 @@ dependencies = [
  "prometheus",
  "rocksdb",
  "rusoto_core",
- "rusoto_credential 0.47.0",
+ "rusoto_credential",
  "rusoto_kms",
+ "rusoto_sts",
  "serde 1.0.136",
  "serde_json",
  "sha3 0.9.1",
@@ -3606,31 +3607,13 @@ dependencies = [
  "hyper-tls",
  "lazy_static",
  "log",
- "rusoto_credential 0.48.0",
+ "rusoto_credential",
  "rusoto_signature",
  "rustc_version",
  "serde 1.0.136",
  "serde_json",
  "tokio",
  "xml-rs",
-]
-
-[[package]]
-name = "rusoto_credential"
-version = "0.47.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a46b67db7bb66f5541e44db22b0a02fed59c9603e146db3a9e633272d3bac2f"
-dependencies = [
- "async-trait",
- "chrono",
- "dirs-next",
- "futures",
- "hyper",
- "serde 1.0.136",
- "serde_json",
- "shlex",
- "tokio",
- "zeroize",
 ]
 
 [[package]]
@@ -3697,11 +3680,26 @@ dependencies = [
  "md-5 0.9.1",
  "percent-encoding",
  "pin-project-lite",
- "rusoto_credential 0.48.0",
+ "rusoto_credential",
  "rustc_version",
  "serde 1.0.136",
  "sha2 0.9.9",
  "tokio",
+]
+
+[[package]]
+name = "rusoto_sts"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d1643f49aa67cb7cb895ebac5a2ff3f991c6dbdc58ad98b28158cd5706aecd1d"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "chrono",
+ "futures",
+ "rusoto_core",
+ "serde_urlencoded",
+ "xml-rs",
 ]
 
 [[package]]

@@ -113,12 +113,14 @@ impl NomadAgent for Updater {
     where
         Self: Sized,
     {
+        let kms_client = nomad_core::aws::get_kms_client().await;
         let signer = Signers::try_from_signer_conf(
             settings
                 .as_ref()
                 .attestation_signer
                 .as_ref()
                 .expect("!signer"),
+            Some(kms_client),
         )
         .await?;
         let interval_seconds = settings.agent.interval;
