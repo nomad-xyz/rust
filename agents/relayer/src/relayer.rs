@@ -5,7 +5,7 @@ use tokio::{sync::Mutex, task::JoinHandle, time::sleep};
 use tracing::{info, instrument::Instrumented, Instrument};
 
 use nomad_base::{decl_agent, decl_channel, AgentCore, CachingHome, CachingReplica, NomadAgent};
-use nomad_core::{Common, CommonEvents};
+use nomad_core::{Common, CommonEvents, CommonTxHandling, TxDispatchKind};
 
 use crate::settings::RelayerSettings as Settings;
 
@@ -74,7 +74,12 @@ impl UpdatePoller {
             }
 
             // Relay update and increment counters if tx successful
-            match self.replica.update(&signed_update).await {
+            match self
+                .replica
+                .update(&signed_update, TxDispatchKind::WaitForResult)
+                .await
+            {
+                // TODO(matthew): kind
                 Ok(_) => self.updates_relayed_count.inc(),
                 Err(e) => {
                     drop(lock.unwrap());

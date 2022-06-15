@@ -17,7 +17,7 @@ use nomad_base::{
 };
 use nomad_core::{
     accumulator::{MerkleProof, NomadProof},
-    CommittedMessage, Common, Home, HomeEvents, MessageStatus,
+    CommittedMessage, Common, Home, HomeEvents, MessageStatus, ReplicaTxHandling, TxDispatchKind,
 };
 
 use crate::{prover_sync::ProverSync, push::Pusher, settings::ProcessorSettings as Settings};
@@ -242,11 +242,13 @@ impl Replica {
         match status {
             MessageStatus::None => {
                 self.replica
-                    .prove_and_process(message.as_ref(), &proof)
+                    .prove_and_process(message.as_ref(), &proof, TxDispatchKind::WaitForResult) // TODO(matthew): kind
                     .await?;
             }
             MessageStatus::Proven => {
-                self.replica.process(message.as_ref()).await?;
+                self.replica
+                    .process(message.as_ref(), TxDispatchKind::WaitForResult)
+                    .await?;
             }
             MessageStatus::Processed => {
                 info!(

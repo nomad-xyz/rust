@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use nomad_base::{CachingHome, NomadDB};
-use nomad_core::Common;
+use nomad_core::{Common, CommonTxHandling, TxDispatchKind};
 use prometheus::IntCounter;
 use std::time::Duration;
 
@@ -57,7 +57,7 @@ impl UpdateSubmitter {
 
                     // Submit update and let the home indexer pick up the
                     // update once it is confirmed state in the chain
-                    let tx = self.home.update(&signed).await?;
+                    let tx = self.home.update(&signed, TxDispatchKind::WaitForResult).await?; // TODO(matthew): kind
 
                     self.submitted_update_count.inc();
 

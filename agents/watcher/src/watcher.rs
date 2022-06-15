@@ -18,8 +18,9 @@ use nomad_base::{
     cancel_task, AgentCore, BaseError, CachingHome, ConnectionManagers, NomadAgent, NomadDB,
 };
 use nomad_core::{
-    ChainCommunicationError, Common, CommonEvents, ConnectionManager, DoubleUpdate,
-    FailureNotification, Home, SignedFailureNotification, SignedUpdate, Signers, TxOutcome,
+    ChainCommunicationError, Common, CommonEvents, CommonTxHandling, ConnectionManager,
+    DoubleUpdate, FailureNotification, Home, SignedFailureNotification, SignedUpdate, Signers,
+    TxDispatchKind, TxOutcome,
 };
 
 use crate::settings::WatcherSettings as Settings;
@@ -270,7 +271,10 @@ impl UpdateHandler {
 
                 if old_root == self.home.committed_root().await? {
                     // It is okay if tx reverts
-                    let _ = self.home.update(&update).await;
+                    let _ = self
+                        .home
+                        .update(&update, TxDispatchKind::WaitForResult)
+                        .await; // TODO(matthew): kind
                 }
 
                 if let Err(double_update) = self.check_double_update(&update) {
@@ -452,9 +456,13 @@ impl Watcher {
             .core
             .replicas
             .values()
-            .map(|replica| replica.double_update(double))
+            .map(|replica| replica.double_update(double, TxDispatchKind::WaitForResult)) // TODO(matthew): kind
             .collect();
-        double_update_futs.push(self.core.home.double_update(double));
+        double_update_futs.push(
+            self.core
+                .home
+                .double_update(double, TxDispatchKind::WaitForResult),
+        );
 
         // Created signed failure notification
         let signed_failure = self.create_signed_failure().await;
