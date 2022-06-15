@@ -4,6 +4,12 @@ use crate::{
 };
 use nomad_types::NomadIdentifier;
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum TxDispatchKind {
+    FireAndForget,
+    WaitForResult,
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub enum NomadMethod {
     /// Dispatch a message
