@@ -1,7 +1,7 @@
-use nomad_core::{PersistedTransaction, TxDispatchKind};
 use crate::NomadDB;
-
-
+use color_eyre::Result;
+use nomad_core::db::DbError;
+use nomad_core::{PersistedTransaction, TxDispatchKind};
 
 /// Transaction manager for handling PersistentTransaction
 #[derive(Debug, Clone)]
@@ -10,9 +10,18 @@ pub struct TxManager {
 }
 
 impl TxManager {
+    /// Create a new TxManager with a DB ref
+    pub fn new(db: NomadDB) -> Self {
+        Self { db }
+    }
+
     /// Submit abstract transaction for sending and monitoring
-    pub fn submit_transaction(&self, tx: PersistedTransaction, dispatch_kind: TxDispatchKind) {
-        unimplemented!()
+    pub fn submit_transaction(
+        &self,
+        tx: PersistedTransaction,
+        dispatch_kind: TxDispatchKind,
+    ) -> Result<(), DbError> {
+        self.db.store_persisted_transaction(&tx)
     }
 }
 

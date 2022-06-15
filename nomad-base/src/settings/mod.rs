@@ -13,6 +13,7 @@
 use crate::{
     agent::AgentCore, CachingHome, CachingReplica, CommonIndexerVariants, CommonIndexers,
     ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes, NomadDB, Replicas,
+    TxManager,
 };
 use color_eyre::{eyre::bail, Result};
 use nomad_core::{db::DB, Common, ContractLocator};
@@ -270,8 +271,9 @@ impl Settings {
             .try_home_contract_sync(agent_name, db.clone(), metrics)
             .await?;
         let nomad_db = NomadDB::new(home.name(), db);
+        let tx_manager = TxManager::new(nomad_db.clone());
 
-        Ok(CachingHome::new(home, contract_sync, nomad_db))
+        Ok(CachingHome::new(home, contract_sync, nomad_db, tx_manager))
     }
 
     /// Try to get a Replicas object

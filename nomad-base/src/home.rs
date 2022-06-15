@@ -1,4 +1,4 @@
-use crate::{ContractSync, HomeIndexers, NomadDB};
+use crate::{ContractSync, HomeIndexers, NomadDB, TxManager};
 use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use ethers::core::types::{H256, U256};
@@ -20,6 +20,7 @@ pub struct CachingHome {
     home: Homes,
     contract_sync: ContractSync<HomeIndexers>,
     db: NomadDB,
+    tx_manager: TxManager,
 }
 
 impl std::fmt::Display for CachingHome {
@@ -30,11 +31,17 @@ impl std::fmt::Display for CachingHome {
 
 impl CachingHome {
     /// Instantiate new CachingHome
-    pub fn new(home: Homes, contract_sync: ContractSync<HomeIndexers>, db: NomadDB) -> Self {
+    pub fn new(
+        home: Homes,
+        contract_sync: ContractSync<HomeIndexers>,
+        db: NomadDB,
+        tx_manager: TxManager,
+    ) -> Self {
         Self {
             home,
             contract_sync,
             db,
+            tx_manager,
         }
     }
 
