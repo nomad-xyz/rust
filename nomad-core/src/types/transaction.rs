@@ -4,12 +4,16 @@ use crate::{
 };
 use nomad_types::NomadIdentifier;
 
+/// Behavior of transaction submission
 #[derive(Debug, Clone, PartialEq)]
 pub enum TxDispatchKind {
-    FireAndForget,
+    /// Block until transaction has either succeeded for failed
     WaitForResult,
+    /// Do not block, ignore outcome
+    FireAndForget,
 }
 
+/// Contract method called for transaction submission
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub enum NomadMethod {
     /// Dispatch a message
@@ -29,6 +33,7 @@ pub enum NomadMethod {
     /// onlyOwner function. Sets contract's home to provided home.
     SetHome(NomadIdentifier),
     /// onlyOwner function. Sets permission for watcher at given domain.
+    #[allow(missing_docs)]
     SetWatcherPermission {
         watcher: NomadIdentifier,
         domain: u32,
@@ -40,12 +45,14 @@ pub enum NomadMethod {
 }
 
 // TODO(matthew): Maybe this should be a status enum
+/// Event representing the final state a transaction
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub enum NomadEvent {
+    /// Dummy
     Dummy, // TODO(matthew):
 }
 
-/// A transaction
+/// An abstract transaction
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct PersistedTransaction {
     /// The method this transaction will be processed by
