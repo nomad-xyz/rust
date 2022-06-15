@@ -9,9 +9,9 @@ use ethers::{
 };
 use futures_util::future::join_all;
 use nomad_core::{
-    ChainCommunicationError, Common, CommonIndexer, ContractLocator, DoubleUpdate, Home,
-    HomeIndexer, Message, RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State,
-    TxOutcome, Update, UpdateMeta,
+    ChainCommunicationError, Common, CommonIndexer, CommonTxSubmission, ContractLocator,
+    DoubleUpdate, Home, HomeIndexer, HomeTxSubmission, Message, RawCommittedMessage, SignedUpdate,
+    SignedUpdateWithMeta, State, TxOutcome, Update, UpdateMeta,
 };
 use nomad_xyz_configuration::HomeGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
@@ -208,17 +208,6 @@ where
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
-        self.contract
-            .client()
-            .get_transaction_receipt(txid)
-            .await
-            .map_err(|e| Box::new(e) as Box<dyn StdError + Send + Sync>)?
-            .map(|receipt| receipt.try_into())
-            .transpose()
-    }
-
-    #[tracing::instrument(err, skip(self))]
     async fn updater(&self) -> Result<H256, ChainCommunicationError> {
         Ok(self.contract.updater().call().await?.into())
     }
@@ -237,6 +226,24 @@ where
     #[tracing::instrument(err, skip(self))]
     async fn committed_root(&self) -> Result<H256, ChainCommunicationError> {
         Ok(self.contract.committed_root().call().await?.into())
+    }
+}
+
+#[async_trait]
+impl<W, R> CommonTxSubmission for EthereumHome<W, R>
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
+{
+    #[tracing::instrument(err, skip(self))]
+    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+        self.contract
+            .client()
+            .get_transaction_receipt(txid)
+            .await
+            .map_err(|e| Box::new(e) as Box<dyn StdError + Send + Sync>)?
+            .map(|receipt| receipt.try_into())
+            .transpose()
     }
 
     #[tracing::instrument(err, skip(self, update), fields(update = %update))]
@@ -300,6 +307,39 @@ where
         Ok(self.contract.nonces(destination).call().await?)
     }
 
+    async fn queue_length(&self) -> Result<U256, ChainCommunicationError> {
+        Ok(self.contract.queue_length().call().await?)
+    }
+
+    async fn queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError> {
+        Ok(self.contract.queue_contains(root.into()).call().await?)
+    }
+
+    #[tracing::instrument(err, skip(self))]
+    async fn produce_update(&self) -> Result<Option<Update>, ChainCommunicationError> {
+        let (a, b) = self.contract.suggest_update().call().await?;
+
+        let previous_root: H256 = a.into();
+        let new_root: H256 = b.into();
+
+        if new_root.is_zero() {
+            return Ok(None);
+        }
+
+        Ok(Some(Update {
+            home_domain: self.local_domain(),
+            previous_root,
+            new_root,
+        }))
+    }
+}
+
+#[async_trait]
+impl<W, R> HomeTxSubmission for EthereumHome<W, R>
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
+{
     #[tracing::instrument(err, skip(self))]
     async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
         let tx = self.contract.dispatch(
@@ -311,14 +351,6 @@ where
         self.submitter
             .submit(self.domain, self.contract.address(), tx.tx)
             .await
-    }
-
-    async fn queue_length(&self) -> Result<U256, ChainCommunicationError> {
-        Ok(self.contract.queue_length().call().await?)
-    }
-
-    async fn queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError> {
-        Ok(self.contract.queue_contains(root.into()).call().await?)
     }
 
     #[tracing::instrument(err, skip(self), fields(hex_signature = %format!("0x{}", hex::encode(update.signature.to_vec()))))]
@@ -343,23 +375,5 @@ where
         self.submitter
             .submit(self.domain, self.contract.address(), tx.tx)
             .await
-    }
-
-    #[tracing::instrument(err, skip(self))]
-    async fn produce_update(&self) -> Result<Option<Update>, ChainCommunicationError> {
-        let (a, b) = self.contract.suggest_update().call().await?;
-
-        let previous_root: H256 = a.into();
-        let new_root: H256 = b.into();
-
-        if new_root.is_zero() {
-            return Ok(None);
-        }
-
-        Ok(Some(Update {
-            home_domain: self.local_domain(),
-            previous_root,
-            new_root,
-        }))
     }
 }

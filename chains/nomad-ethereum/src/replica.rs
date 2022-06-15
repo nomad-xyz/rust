@@ -6,9 +6,9 @@ use color_eyre::Result;
 use ethers::core::types::{Signature, H256, U256};
 use futures_util::future::join_all;
 use nomad_core::{
-    accumulator::NomadProof, ChainCommunicationError, Common, CommonIndexer, ContractLocator,
-    DoubleUpdate, Encode, MessageStatus, NomadMessage, Replica, SignedUpdate, SignedUpdateWithMeta,
-    State, TxOutcome, Update, UpdateMeta,
+    accumulator::NomadProof, ChainCommunicationError, Common, CommonIndexer, CommonTxSubmission,
+    ContractLocator, DoubleUpdate, Encode, MessageStatus, NomadMessage, Replica,
+    ReplicaTxSubmission, SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, Update, UpdateMeta,
 };
 use nomad_xyz_configuration::ReplicaGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
@@ -168,17 +168,6 @@ where
     }
 
     #[tracing::instrument(err)]
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
-        self.contract
-            .client()
-            .get_transaction_receipt(txid)
-            .await
-            .map_err(|e| Box::new(e) as Box<dyn StdError + Send + Sync>)?
-            .map(|receipt| receipt.try_into())
-            .transpose()
-    }
-
-    #[tracing::instrument(err)]
     async fn updater(&self) -> Result<H256, ChainCommunicationError> {
         Ok(self.contract.updater().call().await?.into())
     }
@@ -197,6 +186,24 @@ where
     #[tracing::instrument(err)]
     async fn committed_root(&self) -> Result<H256, ChainCommunicationError> {
         Ok(self.contract.committed_root().call().await?.into())
+    }
+}
+
+#[async_trait]
+impl<W, R> CommonTxSubmission for EthereumReplica<W, R>
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
+{
+    #[tracing::instrument(err)]
+    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+        self.contract
+            .client()
+            .get_transaction_receipt(txid)
+            .await
+            .map_err(|e| Box::new(e) as Box<dyn StdError + Send + Sync>)?
+            .map(|receipt| receipt.try_into())
+            .transpose()
     }
 
     #[tracing::instrument(err)]
@@ -256,6 +263,28 @@ where
     }
 
     #[tracing::instrument(err)]
+    async fn message_status(&self, leaf: H256) -> Result<MessageStatus, ChainCommunicationError> {
+        let status = self.contract.messages(leaf.into()).call().await?;
+        match status {
+            0 => Ok(MessageStatus::None),
+            1 => Ok(MessageStatus::Proven),
+            2 => Ok(MessageStatus::Processed),
+            _ => panic!("Bad status from solidity"),
+        }
+    }
+
+    async fn acceptable_root(&self, root: H256) -> Result<bool, ChainCommunicationError> {
+        Ok(self.contract.acceptable_root(root.into()).call().await?)
+    }
+}
+
+#[async_trait]
+impl<W, R> ReplicaTxSubmission for EthereumReplica<W, R>
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
+{
+    #[tracing::instrument(err)]
     async fn prove(&self, proof: &NomadProof) -> Result<TxOutcome, ChainCommunicationError> {
         let mut sol_proof: [[u8; 32]; 32] = Default::default();
         sol_proof
@@ -313,20 +342,5 @@ where
         self.submitter
             .submit(self.domain, self.contract.address(), tx.tx)
             .await
-    }
-
-    #[tracing::instrument(err)]
-    async fn message_status(&self, leaf: H256) -> Result<MessageStatus, ChainCommunicationError> {
-        let status = self.contract.messages(leaf.into()).call().await?;
-        match status {
-            0 => Ok(MessageStatus::None),
-            1 => Ok(MessageStatus::Proven),
-            2 => Ok(MessageStatus::Processed),
-            _ => panic!("Bad status from solidity"),
-        }
-    }
-
-    async fn acceptable_root(&self, root: H256) -> Result<bool, ChainCommunicationError> {
-        Ok(self.contract.acceptable_root(root.into()).call().await?)
     }
 }
