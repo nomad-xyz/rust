@@ -63,6 +63,17 @@ impl Replica for MockReplicaContract {
         self._remote_domain()
     }
 
+    async fn message_status(&self, leaf: H256) -> Result<MessageStatus, ChainCommunicationError> {
+        self._message_status(leaf)
+    }
+
+    async fn acceptable_root(&self, root: H256) -> Result<bool, ChainCommunicationError> {
+        self._acceptable_root(root)
+    }
+}
+
+#[async_trait]
+impl ReplicaTxSubmission for MockReplicaContract {
     async fn prove(&self, proof: &NomadProof) -> Result<TxOutcome, ChainCommunicationError> {
         self._prove(proof)
     }
@@ -78,24 +89,12 @@ impl Replica for MockReplicaContract {
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self._prove_and_process(message, proof)
     }
-
-    async fn message_status(&self, leaf: H256) -> Result<MessageStatus, ChainCommunicationError> {
-        self._message_status(leaf)
-    }
-
-    async fn acceptable_root(&self, root: H256) -> Result<bool, ChainCommunicationError> {
-        self._acceptable_root(root)
-    }
 }
 
 #[async_trait]
 impl Common for MockReplicaContract {
     fn name(&self) -> &str {
         self._name()
-    }
-
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
-        self._status(txid)
     }
 
     async fn updater(&self) -> Result<H256, ChainCommunicationError> {
@@ -108,6 +107,13 @@ impl Common for MockReplicaContract {
 
     async fn committed_root(&self) -> Result<H256, ChainCommunicationError> {
         self._committed_root()
+    }
+}
+
+#[async_trait]
+impl CommonTxSubmission for MockReplicaContract {
+    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+        self._status(txid)
     }
 
     async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {

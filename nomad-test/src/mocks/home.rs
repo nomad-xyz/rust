@@ -86,10 +86,6 @@ impl Home for MockHomeContract {
         self._nonces(destination)
     }
 
-    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
-        self._dispatch(message)
-    }
-
     async fn queue_length(&self) -> Result<U256, ChainCommunicationError> {
         self._queue_length()
     }
@@ -98,15 +94,22 @@ impl Home for MockHomeContract {
         self._queue_contains(root)
     }
 
+    async fn produce_update(&self) -> Result<Option<Update>, ChainCommunicationError> {
+        self._produce_update()
+    }
+}
+
+#[async_trait]
+impl HomeTxSubmission for MockHomeContract {
+    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
+        self._dispatch(message)
+    }
+
     async fn improper_update(
         &self,
         update: &SignedUpdate,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self._improper_update(update)
-    }
-
-    async fn produce_update(&self) -> Result<Option<Update>, ChainCommunicationError> {
-        self._produce_update()
     }
 }
 
@@ -114,10 +117,6 @@ impl Home for MockHomeContract {
 impl Common for MockHomeContract {
     fn name(&self) -> &str {
         self._name()
-    }
-
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
-        self._status(txid)
     }
 
     async fn updater(&self) -> Result<H256, ChainCommunicationError> {
@@ -130,6 +129,13 @@ impl Common for MockHomeContract {
 
     async fn committed_root(&self) -> Result<H256, ChainCommunicationError> {
         self._committed_root()
+    }
+}
+
+#[async_trait]
+impl CommonTxSubmission for MockHomeContract {
+    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+        self._status(txid)
     }
 
     async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
