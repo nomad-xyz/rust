@@ -175,9 +175,17 @@ where
         data: &Bytes,
         gas_limit: usize,
     ) -> Result<RelayResponse, ChainCommunicationError> {
+        let adjusted_gas = gas_limit + 100_000;
+
+        info!(
+            chain_id = ?self.chain_id,
+            fee_token = ?self.fee_token,
+            gas_limit = ?adjusted_gas,
+            "Estimating gelato fee."
+        );
         let max_fee = self
             .gelato()
-            .get_estimated_fee(self.chain_id, &self.fee_token, gas_limit + 100_000, false)
+            .get_estimated_fee(self.chain_id, &self.fee_token, adjusted_gas, false)
             .await
             .map_err(|e| ChainCommunicationError::CustomError(e.into()))?; // add 100k gas padding for Gelato contract ops
 
