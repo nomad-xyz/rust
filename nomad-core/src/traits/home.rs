@@ -4,7 +4,8 @@ use crate::{
     db::DbError,
     traits::{ChainCommunicationError, Common, TxOutcome},
     utils::home_domain_hash,
-    Decode, Encode, Message, NomadError, NomadMessage, SignedUpdate, Update,
+    CommonTxHandling, CommonTxSubmission, Decode, Encode, Message, NomadError, NomadMessage,
+    SignedUpdate, TxDispatchKind, Update,
 };
 use async_trait::async_trait;
 use color_eyre::Result;
@@ -121,20 +122,11 @@ pub trait Home: Common + Send + Sync + std::fmt::Debug {
     /// Fetch the nonce
     async fn nonces(&self, destination: u32) -> Result<u32, ChainCommunicationError>;
 
-    /// Dispatch a message.
-    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError>;
-
     /// Return length of queue.
     async fn queue_length(&self) -> Result<U256, ChainCommunicationError>;
 
     /// Check if queue contains root.
     async fn queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError>;
-
-    /// Submit an improper update for slashing
-    async fn improper_update(
-        &self,
-        update: &SignedUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError>;
 
     /// Create a valid update based on the chain's current state.
     /// This merely suggests an update. It does NOT ensure that no other valid
@@ -192,4 +184,37 @@ pub trait HomeEvents: Home + Send + Sync + std::fmt::Debug {
     /// emits the index at which the leaf was inserted in (`tree.count() - 1`),
     /// thus the first inserted leaf has an index of 0.
     async fn leaf_by_tree_index(&self, tree_index: usize) -> Result<Option<H256>, DbError>;
+}
+
+// TODO(matthew): Naming
+
+/// Interface for chain-agnostic tx submission used by the home
+#[async_trait]
+pub trait HomeTxHandling: CommonTxHandling + Home + Send + Sync + std::fmt::Debug {
+    /// Dispatch a message.
+    async fn dispatch(
+        &self,
+        message: &Message,
+        dispatch_kind: TxDispatchKind,
+    ) -> Result<TxOutcome, ChainCommunicationError>;
+
+    /// Submit an improper update for slashing
+    async fn improper_update(
+        &self,
+        update: &SignedUpdate,
+        dispatch_kind: TxDispatchKind,
+    ) -> Result<TxOutcome, ChainCommunicationError>;
+}
+
+/// Interface for chain-specific tx submission used by the home
+#[async_trait]
+pub trait HomeTxSubmission: CommonTxSubmission + Home + Send + Sync + std::fmt::Debug {
+    /// Dispatch a message.
+    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError>;
+
+    /// Submit an improper update for slashing
+    async fn improper_update(
+        &self,
+        update: &SignedUpdate,
+    ) -> Result<TxOutcome, ChainCommunicationError>;
 }
