@@ -5,7 +5,7 @@ use crate::{replicas, rpc};
 
 use nomad_core::{
     accumulator::NomadProof, db::DB, ContractLocator, Decode, MessageStatus, NomadMessage, Replica,
-    Signers,
+    ReplicaTxSubmission, Signers,
 };
 
 use nomad_base::NomadDB;
