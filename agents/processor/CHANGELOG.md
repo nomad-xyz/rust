@@ -2,6 +2,7 @@
 
 ### Unreleased
 
+- refactor: processor now uses global AWS client when proof pushing is enabled
 - prevent processor from retrying messages it has previously attempted to
   process
 - improve prove/process tracing
