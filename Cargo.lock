@@ -1600,14 +1600,18 @@ dependencies = [
 [[package]]
 name = "gelato-sdk"
 version = "0.1.0-alpha"
-source = "git+https://github.com/nomad-xyz/gelato-sdk?branch=main#b9d888b7ad6baef9c709e001c6da947247e0f0a9"
+source = "git+https://github.com/nomad-xyz/gelato-sdk?branch=main#750818a197a59d7099856ebbb2b7f0c592eb9ad0"
 dependencies = [
  "ethers-core",
+ "ethers-signers",
+ "eyre",
+ "hex",
  "once_cell",
  "reqwest",
  "serde 1.0.137",
  "serde_json",
  "serde_repr",
+ "thiserror",
 ]
 
 [[package]]

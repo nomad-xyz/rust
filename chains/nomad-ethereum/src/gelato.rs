@@ -1,21 +1,20 @@
-use ethers::prelude::H160;
-use ethers::signers::Signer;
-use ethers::types::transaction::eip2718::TypedTransaction;
-use ethers::types::{Address, H256};
-use ethers::{prelude::Bytes, providers::Middleware};
-use gelato_sdk::{GelatoClient, RelayResponse, TaskState};
-use nomad_core::{ChainCommunicationError, Signers, TxOutcome};
+use ethers::{
+    prelude::{Address, Bytes, H256, U64},
+    providers::Middleware,
+    signers::Signer,
+    types::transaction::eip2718::TypedTransaction,
+};
+use gelato_sdk::{
+    get_forwarder,
+    rpc::{ForwardRequest, RelayResponse, TaskState},
+    FeeToken, GelatoClient,
+};
 use std::sync::Arc;
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
 use tracing::info;
-use utils::CHAIN_ID_TO_FORWARDER;
 
-/// EIP-712 forward request structure
-mod types;
-pub use types::*;
-
-pub mod utils;
+use nomad_core::{ChainCommunicationError, Signers, TxOutcome};
 
 pub(crate) const ACCEPTABLE_STATES: [TaskState; 4] = [
     TaskState::CheckPending,
@@ -36,9 +35,9 @@ pub struct SingleChainGelatoClient<M> {
     /// Gelato relay forwarder address
     pub forwarder: Address,
     /// Chain id
-    pub chain_id: usize,
+    pub chain_id: u64,
     /// Fee token
-    pub fee_token: Address,
+    pub fee_token: FeeToken,
     /// Transactions are of high priority
     pub is_high_priority: bool,
 }
@@ -56,19 +55,17 @@ where
     pub fn with_default_url(
         eth_client: Arc<M>,
         sponsor: Signers,
-        chain_id: usize,
-        fee_token: H160,
+        chain_id: u64,
+        fee_token: impl Into<FeeToken>,
         is_high_priority: bool,
     ) -> Self {
         Self {
             gelato: GelatoClient::default().into(),
             eth_client,
             sponsor,
-            forwarder: *CHAIN_ID_TO_FORWARDER
-                .get(&chain_id)
-                .expect("!forwarder proxy"),
+            forwarder: get_forwarder(chain_id).expect("!forwarder proxy"),
             chain_id,
-            fee_token,
+            fee_token: fee_token.into(),
             is_high_priority,
         }
     }
@@ -80,7 +77,10 @@ where
         contract_address: Address,
         tx: &TypedTransaction,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        let RelayResponse { task_id } = self.dispatch_tx(domain, contract_address, tx).await?;
+        let task_id = self
+            .dispatch_tx(domain, contract_address, tx)
+            .await?
+            .task_id();
 
         info!(task_id = ?&task_id, "Submitted tx to Gelato relay.");
 
@@ -107,7 +107,8 @@ where
                     .await
                     .map_err(|e| ChainCommunicationError::MiddlewareError(e.into()))?,
             )
-            .as_usize();
+            .as_u64()
+            .into();
         let data = tx.data().cloned().unwrap_or_default();
 
         info!(
@@ -170,25 +171,25 @@ where
         &self,
         target: Address,
         data: impl Into<Bytes>,
-        gas_limit: usize,
+        gas_limit: U64,
     ) -> Result<RelayResponse, ChainCommunicationError> {
+        let adjusted_limit = gas_limit + U64::from(100_000);
         let max_fee = self
             .gelato()
-            .get_estimated_fee(self.chain_id, self.fee_token, gas_limit + 100_000, false)
+            .get_estimated_fee(self.chain_id, self.fee_token, adjusted_limit, false)
             .await
-            .map_err(|e| ChainCommunicationError::CustomError(e.into()))?
-            .into(); // add 100k gas padding for Gelato contract ops
+            .map_err(|e| ChainCommunicationError::CustomError(e.into()))?; // add 100k gas padding for Gelato contract ops
 
         let sponsor = self.sponsor.address();
 
-        let unfilled_request = UnfilledForwardRequest {
+        let unfilled_request = ForwardRequest {
             chain_id: self.chain_id,
             target,
             data: data.into(),
-            fee_token: self.fee_token.to_owned(),
+            fee_token: self.fee_token,
             payment_type: gelato_sdk::PaymentType::AsyncGasTank, // gas tank
             max_fee,
-            gas: gas_limit.into(),
+            gas: gas_limit,
             sponsor,
             sponsor_chain_id: self.chain_id,
             nonce: 0,                     // default, not needed
@@ -198,18 +199,15 @@ where
 
         info!(request = ?unfilled_request, "Signing gelato forward request.");
 
-        let sponsor_signature = self
-            .sponsor
-            .sign_typed_data(&unfilled_request)
+        let request = unfilled_request
+            .sponsor(&self.sponsor)
             .await
-            .unwrap();
+            .expect("signers don't fail");
 
-        let filled_request = unfilled_request.into_filled(sponsor_signature);
-
-        info!(request = ?filled_request, "Signed gelato forward request.");
+        info!(request = ?request, "Signed gelato forward request.");
 
         self.gelato()
-            .send_forward_request(&filled_request)
+            .send_forward_request(&request)
             .await
             .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))
     }
