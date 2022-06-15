@@ -60,11 +60,16 @@ pub struct Chain {
 boxed_indexer!(make_home_indexer, EthereumHomeIndexer, HomeIndexer,);
 boxed_indexer!(make_replica_indexer, EthereumReplicaIndexer, CommonIndexer,);
 
-boxed_contract!(make_home, EthereumHome, Home, gas: Option<HomeGasLimits>);
+boxed_contract!(
+    make_home,
+    EthereumHome,
+    HomeTxSubmission,
+    gas: Option<HomeGasLimits>
+);
 boxed_contract!(
     make_replica,
     EthereumReplica,
-    Replica,
+    ReplicaTxSubmission,
     gas: Option<ReplicaGasLimits>
 );
 boxed_contract!(
