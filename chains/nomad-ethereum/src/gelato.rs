@@ -1,13 +1,12 @@
 use ethers::{
     prelude::{Address, Bytes, H256, U64},
     providers::Middleware,
-    signers::Signer,
     types::transaction::eip2718::TypedTransaction,
 };
 use gelato_sdk::{
     get_forwarder,
-    rpc::{ForwardRequest, RelayResponse, TaskState},
-    FeeToken, GelatoClient,
+    rpc::{RelayResponse, TaskState},
+    FeeToken, ForwardRequestBuilder, GelatoClient,
 };
 use std::sync::Arc;
 use tokio::task::JoinHandle;
@@ -167,42 +166,36 @@ where
     }
 
     /// Format and sign forward request, then dispatch to Gelato relay service.
+    ///
+    /// This function pads gas by 100k to allow for gelato ops
     pub async fn send_forward_request(
         &self,
         target: Address,
         data: impl Into<Bytes>,
         gas_limit: U64,
     ) -> Result<RelayResponse, ChainCommunicationError> {
+        // add 100k gas padding for Gelato contract ops
         let adjusted_limit = gas_limit + U64::from(100_000);
+
         let max_fee = self
             .gelato()
             .get_estimated_fee(self.chain_id, self.fee_token, adjusted_limit, false)
             .await
-            .map_err(|e| ChainCommunicationError::CustomError(e.into()))?; // add 100k gas padding for Gelato contract ops
+            .map_err(|e| ChainCommunicationError::CustomError(e.into()))?;
 
-        let sponsor = self.sponsor.address();
-
-        let unfilled_request = ForwardRequest {
-            chain_id: self.chain_id,
-            target,
-            data: data.into(),
-            fee_token: self.fee_token,
-            payment_type: gelato_sdk::PaymentType::AsyncGasTank, // gas tank
-            max_fee,
-            gas: gas_limit,
-            sponsor,
-            sponsor_chain_id: self.chain_id,
-            nonce: 0,                     // default, not needed
-            enforce_sponsor_nonce: false, // replay safety builtin to contracts
-            enforce_sponsor_nonce_ordering: Some(false),
-        };
-
-        info!(request = ?unfilled_request, "Signing gelato forward request.");
-
-        let request = unfilled_request
-            .sponsor(&self.sponsor)
+        let request = ForwardRequestBuilder::default()
+            .chain_id(self.chain_id)
+            .target(target)
+            .data(data.into())
+            .fee_token(self.fee_token)
+            .max_fee(max_fee)
+            .gas(gas_limit)
+            .sponsored_by(&self.sponsor)
+            .sponsor_chain_id(self.chain_id)
+            .enforce_sponsor_nonce(false)
+            .build()
             .await
-            .expect("signers don't fail");
+            .expect("signer doesn't fail");
 
         info!(request = ?request, "Signed gelato forward request.");
 
