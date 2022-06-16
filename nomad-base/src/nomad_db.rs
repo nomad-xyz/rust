@@ -24,6 +24,7 @@ static LATEST_ROOT: &str = "update_latest_root_";
 static LATEST_LEAF_INDEX: &str = "latest_known_leaf_index_";
 static UPDATER_PRODUCED_UPDATE: &str = "updater_produced_update_";
 static PROVER_LATEST_COMMITTED: &str = "prover_latest_committed_";
+static PERSISTED_TRANSACTION_COUNTER: &str = "persisted_transaction_counter_";
 static PERSISTED_TRANSACTION: &str = "persisted_transaction_";
 
 /// DB handle for storing data tied to a specific home.
@@ -377,11 +378,29 @@ impl NomadDB {
 
     // TODO(matthew): Figure out how we're actually storing / retrieving these
 
+    /// Store PersistedTransaction counter
+    pub fn store_persisted_transaction_counter(&self, counter: u64) -> Result<(), DbError> {
+        debug!("storing transaction counter in DB {:?}", counter);
+
+        self.store_encodable("", PERSISTED_TRANSACTION_COUNTER, &counter)
+    }
+
+    /// Retrieve PersistedTransaction counter
+    pub fn retrieve_persisted_transaction_counter(&self) -> Result<Option<u64>, DbError> {
+        self.retrieve_decodable("", PERSISTED_TRANSACTION_COUNTER)
+    }
+
     /// Store PersistedTransaction
-    pub fn store_persisted_transaction(&self, tx: &PersistedTransaction) -> Result<(), DbError> {
+    pub fn store_persisted_transaction(&self, tx: &PersistedTransaction) -> Result<u64, DbError> {
         debug!("storing transaction in DB {:?}", tx);
 
-        self.store_keyed_encodable(PERSISTED_TRANSACTION, &tx.counter, tx)
+        let counter = 1 + match self.retrieve_persisted_transaction_counter()? {
+            Some(counter) => counter,
+            None => 0,
+        };
+        self.store_keyed_encodable(PERSISTED_TRANSACTION, &counter, tx)?;
+        self.store_persisted_transaction_counter(counter)?;
+        Ok(counter)
     }
 
     /// Retrieve PersistedTransaction
@@ -390,6 +409,14 @@ impl NomadDB {
         counter: u64,
     ) -> Result<Option<PersistedTransaction>, DbError> {
         self.retrieve_keyed_decodable(PERSISTED_TRANSACTION, &counter)
+    }
+
+    /// Iterate over all PersistedTransaction
+    pub fn persisted_transaction_iterator(&self) -> PrefixIterator<PersistedTransaction> {
+        PrefixIterator::new(
+            self.0.as_ref().prefix_iterator(PERSISTED_TRANSACTION),
+            PERSISTED_TRANSACTION.as_ref(),
+        )
     }
 }
 
