@@ -1,8 +1,7 @@
 use crate::NomadDB;
 use color_eyre::Result;
-use nomad_core::{
-    ChainCommunicationError, NomadError, PersistedTransaction, TxDispatchKind, TxOutcome,
-};
+use nomad_core::{ChainCommunicationError, PersistedTransaction, TxDispatchKind, TxOutcome};
+use std::time::Duration;
 
 /// Transaction manager for handling PersistentTransaction
 #[derive(Debug, Clone)]
@@ -28,9 +27,15 @@ impl TxManager {
         match dispatch_kind {
             TxDispatchKind::FireAndForget => Ok(TxOutcome::Dummy),
             TxDispatchKind::WaitForResult => {
+                let db = self.db.clone();
                 tokio::spawn(async move {
-                    // TODO(matthew):
-                    Ok(TxOutcome::Dummy)
+                    loop {
+                        let _ = db.retrieve_persisted_transaction_by_counter(0);
+                        // TODO:
+                        tokio::time::sleep(Duration::from_millis(100)).await;
+                        // TODO:
+                        return Ok(TxOutcome::Dummy);
+                    }
                 })
                 .await
                 .map_err(|e| ChainCommunicationError::NomadError(e.into()))?
