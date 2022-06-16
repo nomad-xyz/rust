@@ -492,7 +492,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn db_stores_and_retrieves_transactions() {
+    async fn db_stores_and_retrieves_transaction() {
         run_test_db(|db| async move {
             let home_name = "home_1".to_owned();
             let db = NomadDB::new(home_name, db);
@@ -503,15 +503,50 @@ mod test {
                     recipient: Default::default(),
                     body: vec![],
                 }),
-                counter: 0,
+                counter: 999,
+                confirm_event: NomadEvent::Dummy,
+            };
+            assert_eq!(tx.counter, 999);
+
+            db.store_persisted_transaction(&tx).unwrap();
+            let counter = db
+                .retrieve_persisted_transaction_counter()
+                .unwrap()
+                .unwrap();
+            assert_eq!(counter, 1);
+
+            let db_tx = db
+                .retrieve_persisted_transaction_by_counter(counter)
+                .unwrap()
+                .unwrap();
+            assert_eq!(db_tx, tx);
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn db_retrieves_transactions_with_iter() {
+        run_test_db(|db| async move {
+            let home_name = "home_1".to_owned();
+            let db = NomadDB::new(home_name, db);
+
+            let tx = PersistedTransaction {
+                method: NomadMethod::Dispatch(Message {
+                    destination: 0,
+                    recipient: Default::default(),
+                    body: vec![],
+                }),
+                counter: 999,
                 confirm_event: NomadEvent::Dummy,
             };
 
             db.store_persisted_transaction(&tx).unwrap();
+            db.store_persisted_transaction(&tx).unwrap();
+            db.store_persisted_transaction(&tx).unwrap();
 
-            let db_tx = db.retrieve_persisted_transaction_by_counter(0).unwrap();
+            let iter = db.persisted_transaction_iterator();
 
-            assert_eq!(db_tx.unwrap(), tx);
+            assert_eq!(iter.count(), 3);
         })
         .await;
     }
