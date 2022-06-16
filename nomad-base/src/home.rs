@@ -5,8 +5,7 @@ use ethers::core::types::{H256, U256};
 use nomad_core::{
     db::DbError, ChainCommunicationError, Common, CommonEvents, CommonTxHandling,
     CommonTxSubmission, DoubleUpdate, Home, HomeEvents, HomeTxHandling, HomeTxSubmission, Message,
-    NomadMethod, PersistedTransaction, RawCommittedMessage, SignedUpdate, State, TxDispatchKind,
-    TxOutcome, Update,
+    NomadMethod, RawCommittedMessage, SignedUpdate, State, TxDispatchKind, TxOutcome, Update,
 };
 use nomad_ethereum::EthereumHome;
 use nomad_test::mocks::MockHomeContract;
