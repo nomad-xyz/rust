@@ -84,4 +84,18 @@ pub enum NomadError {
     /// IO error from Read/Write usage
     #[error(transparent)]
     IoError(#[from] std::io::Error),
+    /// JoinError from tokio::spawn
+    #[error(transparent)]
+    JoinError(tokio::task::JoinError),
+}
+
+/// A JoinError can be either a caught panic or a regular error
+/// panics should be allowed to propagate
+impl From<tokio::task::JoinError> for NomadError {
+    fn from(error: tokio::task::JoinError) -> Self {
+        if error.is_panic() {
+            std::panic::resume_unwind(error.into_panic())
+        }
+        NomadError::JoinError(error)
+    }
 }
