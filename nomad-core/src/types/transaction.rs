@@ -63,6 +63,16 @@ pub struct PersistedTransaction {
     pub confirm_event: NomadEvent,
 }
 
+impl From<NomadMethod> for PersistedTransaction {
+    fn from(method: NomadMethod) -> Self {
+        PersistedTransaction {
+            method,
+            counter: 0,
+            confirm_event: NomadEvent::Dummy,
+        }
+    }
+}
+
 impl Encode for PersistedTransaction {
     fn write_to<W>(&self, writer: &mut W) -> std::io::Result<usize>
     where
