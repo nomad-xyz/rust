@@ -52,12 +52,10 @@ pub async fn get_client() -> &'static Client {
 /// Get a shared KMS client
 pub async fn get_kms_client() -> &'static KmsClient {
     if KMS_CLIENT.get().is_none() {
-        let _ = get_client().await;
+        let client = get_client().await.clone();
 
-        let kms = KmsClient::new_with_client(
-            CLIENT.get().expect("just init").clone(),
-            Default::default(),
-        );
+        let kms = KmsClient::new_with_client(client, Default::default());
+
         if KMS_CLIENT.set(kms).is_err() {
             panic!("unable to set KmsClient")
         };
