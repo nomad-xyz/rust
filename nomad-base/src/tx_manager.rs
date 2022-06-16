@@ -1,7 +1,8 @@
 use crate::NomadDB;
 use color_eyre::Result;
-use nomad_core::db::DbError;
-use nomad_core::{PersistedTransaction, TxDispatchKind};
+use nomad_core::{
+    ChainCommunicationError, PersistedTransaction, TxDispatchKind, TxOutcome,
+};
 
 /// Transaction manager for handling PersistentTransaction
 #[derive(Debug, Clone)]
@@ -16,12 +17,15 @@ impl TxManager {
     }
 
     /// Submit abstract transaction for sending and monitoring
-    pub fn submit_transaction(
+    pub async fn submit_transaction(
         &self,
-        tx: PersistedTransaction,
+        tx: impl Into<PersistedTransaction>,
         dispatch_kind: TxDispatchKind,
-    ) -> Result<(), DbError> {
-        self.db.store_persisted_transaction(&tx)
+    ) -> Result<TxOutcome, ChainCommunicationError> {
+        self.db
+            .store_persisted_transaction(&tx.into())
+            .map_err(|e| ChainCommunicationError::DbError(e))
+            .map(|_| TxOutcome::Dummy)
     }
 }
 
