@@ -10,12 +10,18 @@ static CLIENT: OnceCell<Client> = OnceCell::new();
 static KMS_CLIENT: OnceCell<KmsClient> = OnceCell::new();
 
 // Try to get an irsa provider
+#[tracing::instrument]
 async fn try_irsa_provider() -> Option<AutoRefreshingProvider<WebIdentityProvider>> {
     let irsa_provider = WebIdentityProvider::from_k8s_env();
+
     // if there are no IRSA credentials this will error
-    irsa_provider
-        .credentials()
-        .await
+    let result = irsa_provider.credentials().await;
+
+    if result.is_err() {
+        tracing::debug!(error = %result.as_ref().unwrap_err(), "Error in irsa provider instantiation");
+    }
+
+    result
         .ok()
         .and_then(|_| AutoRefreshingProvider::new(irsa_provider).ok())
 }
