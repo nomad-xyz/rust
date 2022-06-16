@@ -82,6 +82,9 @@ impl TryFrom<TransactionReceipt> for TxOutcome {
 /// call a chain or dispatch a transaction
 #[derive(Debug, thiserror::Error)]
 pub enum ChainCommunicationError {
+    /// Database error
+    #[error(transparent)]
+    DbError(#[from] DbError),
     /// Nomad Error
     #[error("{0}")]
     NomadError(#[from] NomadError),
