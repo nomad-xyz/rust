@@ -156,7 +156,7 @@ where
                     let txid = H256::from_str(tx_hash)
                         .unwrap_or_else(|_| panic!("Malformed tx hash from Gelato"));
 
-                    return Ok(TxOutcome { txid });
+                    return Ok(TxOutcome::TxId(txid));
                 }
 
                 if status.task_state == TaskState::CheckPending {

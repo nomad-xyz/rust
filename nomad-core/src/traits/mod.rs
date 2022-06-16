@@ -47,10 +47,23 @@ impl Display for DoubleUpdate {
 
 /// The result of a transaction
 #[derive(Debug, Clone, Copy)]
-pub struct TxOutcome {
-    /// The txid
-    pub txid: H256,
+pub enum TxOutcome {
+    // TODO(matthew): Map this to a state vs 'has id'
+    /// Tx has a tx id / hash
+    TxId(H256),
     // TODO: more? What can be abstracted across all chains?
+    /// Dummy
+    Dummy,
+}
+
+impl TxOutcome {
+    /// Return the txid value if present
+    pub fn txid(&self) -> Option<H256> {
+        match self {
+            TxOutcome::TxId(txid) => Some(*txid),
+            _ => None,
+        }
+    }
 }
 
 impl TryFrom<TransactionReceipt> for TxOutcome {
@@ -58,9 +71,7 @@ impl TryFrom<TransactionReceipt> for TxOutcome {
 
     fn try_from(t: TransactionReceipt) -> Result<Self, Self::Error> {
         if t.status.unwrap().low_u32() == 1 {
-            Ok(Self {
-                txid: t.transaction_hash,
-            })
+            Ok(Self::TxId(t.transaction_hash))
         } else {
             Err(ChainCommunicationError::NotExecuted(t.transaction_hash))
         }

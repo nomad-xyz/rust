@@ -6,6 +6,7 @@ use prometheus::IntCounter;
 use std::time::Duration;
 
 use color_eyre::Result;
+use ethers::types::H256;
 use tokio::{task::JoinHandle, time::sleep};
 use tracing::{info, info_span, instrument::Instrumented, Instrument};
 
@@ -64,12 +65,14 @@ impl UpdateSubmitter {
                     // Continue from local state
                     committed_root = signed.update.new_root;
 
+                    let txid = tx.txid().unwrap_or(H256::zero()); // TODO(matthew):
+
                     // Sleep for finality x blocktime seconds to wait for
                     // timelag reader to catch up
                     info!(
-                        tx_hash = ?tx.txid,
+                        tx_hash = ?txid,
                         sleep = self.finalization_seconds,
-                        "Submitted update with tx hash {:?}. Sleeping before next tx submission.", tx.txid,
+                        "Submitted update with tx hash {:?}. Sleeping before next tx submission.", txid,
                     );
                     sleep(Duration::from_secs(self.finalization_seconds)).await;
                 } else {
