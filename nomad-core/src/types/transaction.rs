@@ -57,8 +57,6 @@ pub enum NomadEvent {
 pub struct PersistedTransaction {
     /// The method this transaction will be processed by
     pub method: NomadMethod,
-    /// Nonce for ordering
-    pub counter: u64,
     /// TODO(matthew):
     pub confirm_event: NomadEvent,
 }
@@ -67,7 +65,6 @@ impl From<NomadMethod> for PersistedTransaction {
     fn from(method: NomadMethod) -> Self {
         PersistedTransaction {
             method,
-            counter: 0,
             confirm_event: NomadEvent::Dummy,
         }
     }
@@ -109,8 +106,8 @@ impl std::fmt::Display for PersistedTransaction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "PersistedTransaction ({}) {:?} {:?}",
-            self.counter, self.method, self.confirm_event,
+            "PersistedTransaction {:?} {:?}",
+            self.method, self.confirm_event,
         )
     }
 }

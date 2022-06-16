@@ -503,10 +503,8 @@ mod test {
                     recipient: Default::default(),
                     body: vec![],
                 }),
-                counter: 999,
                 confirm_event: NomadEvent::Dummy,
             };
-            assert_eq!(tx.counter, 999);
 
             db.store_persisted_transaction(&tx).unwrap();
             let counter = db
@@ -536,7 +534,6 @@ mod test {
                     recipient: Default::default(),
                     body: vec![],
                 }),
-                counter: 999,
                 confirm_event: NomadEvent::Dummy,
             };
 
