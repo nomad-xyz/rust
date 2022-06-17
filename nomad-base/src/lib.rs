@@ -56,3 +56,6 @@ pub use submitter::*;
 
 mod tx_manager;
 pub use tx_manager::*;
+
+mod tx_poller;
+pub use tx_poller::*;
