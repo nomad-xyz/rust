@@ -197,7 +197,10 @@ where
             .await
             .expect("signer doesn't fail");
 
-        info!(request = ?request, "Signed gelato forward request.");
+        info!(
+            request = serde_json::to_string(&request).unwrap().as_str(),
+            "Signed gelato forward request."
+        );
 
         self.gelato()
             .send_forward_request(&request)
