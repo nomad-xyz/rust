@@ -26,11 +26,13 @@ where
 {
     type Item = V;
 
+    /// This will continue to the last contiguous item of type V
     fn next(&mut self) -> Option<Self::Item> {
         let prefix = &self.prefix[..];
         self.iter
             .find(|(k, _)| k.strip_prefix(prefix).is_some())
             .map(|(_, v)| v.to_vec())
-            .map(|v| V::read_from(&mut v.as_slice()).expect("!corrupt"))
+            .map(|v| V::read_from(&mut v.as_slice()).ok())
+            .flatten()
     }
 }
