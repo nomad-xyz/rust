@@ -5,6 +5,8 @@ use nomad_core::{
 };
 use std::time::Duration;
 
+const TX_STATUS_POLL_MS: u64 = 100;
+
 /// Transaction manager for handling PersistentTransaction
 #[derive(Debug, Clone)]
 pub struct TxManager {
@@ -28,7 +30,7 @@ impl TxManager {
             .store_persisted_transaction(&tx.into())
             .map_err(|e| ChainCommunicationError::DbError(e))?;
         match dispatch_kind {
-            TxDispatchKind::FireAndForget => Ok(TxOutcome::Dummy),
+            TxDispatchKind::FireAndForget => Ok(TxOutcome::Dummy), // TODO(matthew):
             TxDispatchKind::WaitForResult => {
                 let db = self.db.clone();
                 tokio::spawn(async move {
@@ -37,9 +39,9 @@ impl TxManager {
                             .retrieve_persisted_transaction_by_counter(counter)?
                             .expect("tx missing from db");
                         if tx.confirm_event == NomadEvent::Dummy {
-                            break Ok(TxOutcome::Dummy);
+                            break Ok(TxOutcome::Dummy); // TODO(matthew):
                         }
-                        tokio::time::sleep(Duration::from_millis(100)).await;
+                        tokio::time::sleep(Duration::from_millis(TX_STATUS_POLL_MS)).await;
                     }
                 })
                 .await
