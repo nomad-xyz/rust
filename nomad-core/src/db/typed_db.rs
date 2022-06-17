@@ -53,6 +53,15 @@ impl TypedDB {
         self.db.retrieve_decodable(self.full_prefix(prefix), key)
     }
 
+    /// Delete value
+    pub fn delete_value(
+        &self,
+        prefix: impl AsRef<[u8]>,
+        key: impl AsRef<[u8]>,
+    ) -> Result<(), DbError> {
+        self.db.delete_value(self.full_prefix(prefix), key)
+    }
+
     /// Store encodable kv pair
     pub fn store_keyed_encodable<K: Encode, V: Encode>(
         &self,
@@ -72,6 +81,15 @@ impl TypedDB {
     ) -> Result<Option<V>, DbError> {
         self.db
             .retrieve_keyed_decodable(self.full_prefix(prefix), key)
+    }
+
+    /// Delete value given encodable key
+    pub fn delete_keyed_value<K: Encode, V: Decode>(
+        &self,
+        prefix: impl AsRef<[u8]>,
+        key: &K,
+    ) -> Result<(), DbError> {
+        self.db.delete_keyed_value(self.full_prefix(prefix), key)
     }
 
     /// Get prefix db iterator for `prefix`, respecting `full_prefix`
