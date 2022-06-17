@@ -317,7 +317,7 @@ impl NomadDB {
 
     /// Iterate over all leaves
     pub fn leaf_iterator(&self) -> PrefixIterator<H256> {
-        PrefixIterator::new(self.0.as_ref().prefix_iterator(LEAF_IDX), LEAF_IDX.as_ref())
+        self.prefix_iterator(LEAF_IDX)
     }
 
     /// Store a proof by its leaf index
@@ -413,10 +413,7 @@ impl NomadDB {
 
     /// Iterate over all PersistedTransaction
     pub fn persisted_transaction_iterator(&self) -> PrefixIterator<PersistedTransaction> {
-        PrefixIterator::new(
-            self.0.as_ref().prefix_iterator(PERSISTED_TRANSACTION),
-            PERSISTED_TRANSACTION.as_ref(),
-        )
+        self.prefix_iterator(PERSISTED_TRANSACTION)
     }
 }
 
@@ -542,7 +539,6 @@ mod test {
             db.store_persisted_transaction(&tx).unwrap();
 
             let iter = db.persisted_transaction_iterator();
-
             assert_eq!(iter.count(), 3);
         })
         .await;
