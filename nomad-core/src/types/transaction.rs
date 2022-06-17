@@ -50,6 +50,8 @@ pub enum NomadMethod {
 pub enum NomadEvent {
     /// Dummy
     Dummy, // TODO(matthew):
+    /// Also Dummy
+    Dummy2,
 }
 
 /// An abstract transaction
