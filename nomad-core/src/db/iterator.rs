@@ -5,13 +5,13 @@ use std::marker::PhantomData;
 /// An iterator over a prefix that deserializes values
 pub struct PrefixIterator<'a, V> {
     iter: DBIterator<'a>,
-    prefix: &'a [u8],
+    prefix: Vec<u8>,
     _phantom: PhantomData<*const V>,
 }
 
 impl<'a, V> PrefixIterator<'a, V> {
     /// Return new prefix iterator
-    pub fn new(iter: DBIterator<'a>, prefix: &'a [u8]) -> Self {
+    pub fn new(iter: DBIterator<'a>, prefix: Vec<u8>) -> Self {
         Self {
             iter,
             prefix,
@@ -27,7 +27,7 @@ where
     type Item = V;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let prefix = self.prefix;
+        let prefix = &self.prefix[..];
         self.iter
             .find(|(k, _)| k.strip_prefix(prefix).is_some())
             .map(|(_, v)| v.to_vec())
