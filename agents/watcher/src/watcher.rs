@@ -559,12 +559,9 @@ impl NomadAgent for Watcher {
 
         let core = settings.as_ref().try_into_core("watcher").await?;
 
-        let kms_client = nomad_core::aws::get_kms_client().await;
-        let signer = Signers::try_from_signer_conf(
-            &settings.base.attestation_signer.expect("signer"),
-            Some(kms_client),
-        )
-        .await?;
+        let signer =
+            Signers::try_from_signer_conf(&settings.base.attestation_signer.expect("signer"))
+                .await?;
 
         Ok(Self::new(
             signer,

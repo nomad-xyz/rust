@@ -13,7 +13,6 @@ use ethers::{
     signers::{AwsSignerError, LocalWallet, Signer},
 };
 use nomad_xyz_configuration::agent::SignerConf;
-use rusoto_kms::KmsClient;
 
 /// Error types for Signers
 #[derive(Debug, thiserror::Error)]
@@ -55,14 +54,12 @@ impl From<AwsSigner<'static>> for Signers {
 
 impl Signers {
     /// Try to build Signer from SignerConf object
-    pub async fn try_from_signer_conf(
-        conf: &SignerConf,
-        kms_client: Option<&'static KmsClient>,
-    ) -> Result<Self> {
+    pub async fn try_from_signer_conf(conf: &SignerConf) -> Result<Self> {
         match conf {
             SignerConf::HexKey(key) => Ok(Self::Local(key.as_ref().parse()?)),
             SignerConf::Aws { id } => {
-                let signer = AwsSigner::new(kms_client.unwrap(), id, 0).await?;
+                let kms_client = crate::aws::get_kms_client().await;
+                let signer = AwsSigner::new(kms_client, id, 0).await?;
                 Ok(Self::Aws(signer))
             }
             SignerConf::Node => bail!("Node signer"),
