@@ -1,8 +1,6 @@
 use crate::NomadDB;
 use color_eyre::Result;
-use nomad_core::{
-    NomadEvent, PersistedTransaction, TxDispatchKind, TxOutcome,
-};
+use nomad_core::{NomadEvent, PersistedTransaction, TxDispatchKind, TxOutcome};
 use std::time::Duration;
 
 const TX_STATUS_POLL_MS: u64 = 100;

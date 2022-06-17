@@ -103,11 +103,7 @@ impl DB {
     }
 
     /// Prefix delete a value
-    fn prefix_delete(
-        &self,
-        prefix: impl AsRef<[u8]>,
-        key: impl AsRef<[u8]>,
-    ) -> Result<()> {
+    fn prefix_delete(&self, prefix: impl AsRef<[u8]>, key: impl AsRef<[u8]>) -> Result<()> {
         let mut buf = vec![];
         buf.extend(prefix.as_ref());
         buf.extend(key.as_ref());
@@ -137,11 +133,7 @@ impl DB {
     }
 
     /// Delete value
-    pub fn delete_value(
-        &self,
-        prefix: impl AsRef<[u8]>,
-        key: impl AsRef<[u8]>,
-    ) -> Result<()> {
+    pub fn delete_value(&self, prefix: impl AsRef<[u8]>, key: impl AsRef<[u8]>) -> Result<()> {
         Ok(self.prefix_delete(prefix, key)?)
     }
 
@@ -165,11 +157,7 @@ impl DB {
     }
 
     /// Delete any value by key
-    pub fn delete_keyed_value<K: Encode>(
-        &self,
-        prefix: impl AsRef<[u8]>,
-        key: &K,
-    ) -> Result<()> {
+    pub fn delete_keyed_value<K: Encode>(&self, prefix: impl AsRef<[u8]>, key: &K) -> Result<()> {
         self.delete_value(prefix, key.to_vec())
     }
 

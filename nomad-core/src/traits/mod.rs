@@ -2,8 +2,8 @@ mod encode;
 mod home;
 mod indexer;
 mod replica;
-mod xapp;
 mod transaction;
+mod xapp;
 
 use async_trait::async_trait;
 use color_eyre::Result;
@@ -20,8 +20,8 @@ pub use encode::*;
 pub use home::*;
 pub use indexer::*;
 pub use replica::*;
-pub use xapp::*;
 pub use transaction::*;
+pub use xapp::*;
 
 /// Contract states
 #[derive(Debug, PartialEq, Eq)]
