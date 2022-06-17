@@ -84,7 +84,7 @@ impl TypedDB {
     }
 
     /// Delete value given encodable key
-    pub fn delete_keyed_value<K: Encode, V: Decode>(
+    pub fn delete_keyed_value<K: Encode>(
         &self,
         prefix: impl AsRef<[u8]>,
         key: &K,
