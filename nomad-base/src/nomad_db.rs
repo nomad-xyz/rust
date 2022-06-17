@@ -411,6 +411,11 @@ impl NomadDB {
         self.retrieve_keyed_decodable(PERSISTED_TRANSACTION, &counter)
     }
 
+    /// Delete PersistedTransaction
+    pub fn delete_persisted_transaction_by_counter(&self, counter: u64) -> Result<(), DbError> {
+        self.delete_keyed_value(PERSISTED_TRANSACTION, &counter)
+    }
+
     /// Iterate over all PersistedTransaction
     pub fn persisted_transaction_iterator(&self) -> PrefixIterator<PersistedTransaction> {
         self.prefix_iterator(PERSISTED_TRANSACTION)

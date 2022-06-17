@@ -39,6 +39,7 @@ impl TxManager {
                             .retrieve_persisted_transaction_by_counter(counter)?
                             .expect("tx missing from db");
                         if tx.confirm_event == NomadEvent::Dummy {
+                            db.delete_persisted_transaction_by_counter(counter)?;
                             break Ok(TxOutcome::Dummy); // TODO(matthew):
                         }
                         tokio::time::sleep(Duration::from_millis(TX_STATUS_POLL_MS)).await;
