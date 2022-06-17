@@ -6,7 +6,7 @@ use crate::{
         fmt::{log_level_to_level_filter, LogOutputLayer},
         TimeSpanLifetime,
     },
-    BaseError, CachingHome, CachingReplica, NomadDB,
+    BaseError, CachingHome, CachingReplica, NomadDB, TxPoller,
 };
 use async_trait::async_trait;
 use color_eyre::{eyre::WrapErr, Result};
@@ -274,5 +274,13 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
 
         subscriber.try_init()?;
         Ok(())
+    }
+
+    /// Run tx poller
+    fn run_tx_poller(&self, name: &str) -> Instrumented<JoinHandle<Result<()>>> {
+        let span = info_span!("run_tx_poller");
+        let nomad_db = NomadDB::new(name, self.db());
+        let tx_poller = TxPoller::new(nomad_db);
+        tokio::spawn(async move { tx_poller.run().await }).instrument(span)
     }
 }
