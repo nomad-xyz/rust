@@ -22,9 +22,17 @@ impl TxPoller {
     /// Run the polling loop to send off new transactions
     pub async fn run(&self) -> Result<()> {
         loop {
-            let tx = self.db.retrieve_persisted_transaction_by_counter(0)?;
-            //
             tokio::time::sleep(Duration::from_millis(TX_STATUS_POLL_MS)).await;
+
+            let iter = self.db.persisted_transaction_iterator();
+            for tx in iter {
+                match tx.confirm_event {
+                    NomadEvent::Dummy2 => {
+                        // send this off
+                    }
+                    _ => continue,
+                }
+            }
         }
     }
 }
