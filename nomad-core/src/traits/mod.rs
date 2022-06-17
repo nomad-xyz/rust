@@ -3,6 +3,7 @@ mod home;
 mod indexer;
 mod replica;
 mod xapp;
+mod transaction;
 
 use async_trait::async_trait;
 use color_eyre::Result;
@@ -20,6 +21,7 @@ pub use home::*;
 pub use indexer::*;
 pub use replica::*;
 pub use xapp::*;
+pub use transaction::*;
 
 /// Contract states
 #[derive(Debug, PartialEq, Eq)]
