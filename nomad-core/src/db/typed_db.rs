@@ -1,5 +1,5 @@
 use crate::{
-    db::{DbError, DB},
+    db::{iterator::PrefixIterator, DbError, DB},
     Decode, Encode,
 };
 use color_eyre::Result;
@@ -72,5 +72,11 @@ impl TypedDB {
     ) -> Result<Option<V>, DbError> {
         self.db
             .retrieve_keyed_decodable(self.full_prefix(prefix), key)
+    }
+
+    /// Get prefix db iterator for `prefix`, respecting `full_prefix`
+    pub fn prefix_iterator<V>(&self, prefix: impl AsRef<[u8]>) -> PrefixIterator<V> {
+        let full_prefix = self.full_prefix(prefix);
+        PrefixIterator::new(self.db.prefix_iterator(full_prefix.clone()), full_prefix)
     }
 }
