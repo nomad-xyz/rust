@@ -10,6 +10,9 @@
 
 pub use accumulator;
 
+/// AWS global state and init
+pub mod aws;
+
 /// DB related utilities
 pub mod db;
 

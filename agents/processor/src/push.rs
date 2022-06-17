@@ -39,9 +39,10 @@ impl std::fmt::Debug for Pusher {
 
 impl Pusher {
     /// Instantiate a new pusher with a region
-    pub fn new(name: &str, bucket: &str, db: NomadDB) -> Self {
+    pub async fn new(name: &str, bucket: &str, db: NomadDB) -> Self {
         let region: Region = Default::default(); // loads from aws env
-        let client = S3Client::new(region.clone());
+        let client =
+            S3Client::new_with_client(nomad_core::aws::get_client().await.clone(), region.clone());
         Self {
             name: name.to_owned(),
             bucket: bucket.to_owned(),

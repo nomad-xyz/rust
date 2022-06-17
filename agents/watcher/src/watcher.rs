@@ -559,9 +559,12 @@ impl NomadAgent for Watcher {
 
         let core = settings.as_ref().try_into_core("watcher").await?;
 
-        Ok(Self::new(
+        let signer =
             Signers::try_from_signer_conf(&settings.base.attestation_signer.expect("signer"))
-                .await?,
+                .await?;
+
+        Ok(Self::new(
+            signer,
             settings.agent.interval,
             connection_managers,
             core,

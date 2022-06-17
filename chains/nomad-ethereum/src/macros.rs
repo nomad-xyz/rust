@@ -156,7 +156,7 @@ macro_rules! wrap_with_signer {
 #[macro_export]
 macro_rules! tx_submitter_local {
     ($base_provider:expr, $signer_conf:ident) => {{
-        let signer = Signers::try_from_signer_conf(&$signer_conf).await?;
+        let signer = nomad_core::Signers::try_from_signer_conf(&$signer_conf).await?;
         let signing_provider: Arc<_> = wrap_with_signer!($base_provider.clone(), signer);
         TxSubmitter::new(signing_provider.into())
     }};
@@ -166,7 +166,7 @@ macro_rules! tx_submitter_local {
 #[macro_export]
 macro_rules! tx_submitter_gelato {
     ($base_provider:expr, $gelato_conf:ident) => {{
-        let signer = Signers::try_from_signer_conf(&$gelato_conf.sponsor).await?;
+        let signer = nomad_core::Signers::try_from_signer_conf(&$gelato_conf.sponsor).await?;
         let sponsor = signer.clone();
         let chain_id = $base_provider.get_chainid().await?.as_usize();
         let signing_provider: Arc<_> = wrap_with_signer!($base_provider.clone(), signer); // kludge: only using signing provider for type consistency with TxSubmitter::Local
