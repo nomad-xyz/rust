@@ -99,6 +99,16 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
         self.as_ref().db.clone()
     }
 
+    /// Return a handle to the tx pollers
+    fn tx_pollers(&self) -> HashMap<String, TxPoller> {
+        self.as_ref().tx_pollers.clone()
+    }
+
+    /// Return a handle to the tx senders
+    fn tx_senders(&self) -> HashMap<String, TxSender> {
+        self.as_ref().tx_senders.clone()
+    }
+
     /// Return a reference to a home contract
     fn home(&self) -> Arc<CachingHome> {
         self.as_ref().home.clone()
@@ -212,6 +222,9 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
                 tasks.push(sync_task);
             }
 
+            let poller_task = self.run_tx_pollers();
+            tasks.push(poller_task);
+
             let (res, _, remaining) = select_all(tasks).await;
 
             for task in remaining.into_iter() {
@@ -280,11 +293,25 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
         Ok(())
     }
 
-    /// Run tx poller
-    fn run_tx_poller(&self, name: &str) -> Instrumented<JoinHandle<Result<()>>> {
-        let span = info_span!("run_tx_poller");
-        let nomad_db = NomadDB::new(name, self.db());
-        let tx_poller = TxPoller::new(nomad_db);
-        tokio::spawn(async move { tx_poller.run().await }).instrument(span)
+    /// Run tx pollers
+    fn run_tx_pollers(&self) -> Instrumented<JoinHandle<Result<()>>> {
+        let span = info_span!("run_tx_pollers");
+
+        let handles = self
+            .tx_pollers()
+            .into_iter()
+            .map(|(_, tx_poller)| {
+                tokio::spawn(async move { tx_poller.run().await }).in_current_span()
+            })
+            .collect::<Vec<_>>();
+
+        tokio::spawn(async move {
+            let (res, _, remaining) = select_all(handles).await;
+            for task in remaining.into_iter() {
+                cancel_task!(task);
+            }
+            res?
+        })
+        .instrument(span)
     }
 }
