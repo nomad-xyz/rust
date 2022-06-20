@@ -13,7 +13,7 @@
 use crate::{
     agent::AgentCore, CachingHome, CachingReplica, CommonIndexerVariants, CommonIndexers,
     ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes, NomadDB, Replicas,
-    TxManager,
+    TxManager, TxPoller, TxSender,
 };
 use color_eyre::{eyre::bail, Result};
 use nomad_core::{db::DB, Common, ContractLocator};
@@ -182,6 +182,34 @@ impl Settings {
             submitters: self.submitters.clone(),
             attestation_signer: self.attestation_signer.clone(),
         }
+    }
+
+    /// All networks
+    fn networks(&self) -> Vec<String> {
+        let mut replicas = self
+            .replicas
+            .clone()
+            .into_iter()
+            .map(|(k, _)| k)
+            .collect::<Vec<String>>();
+        replicas.insert(0, self.home.name.clone());
+        replicas
+    }
+
+    /// Make transaction pollers
+    fn transaction_pollers(&self, db: DB) -> HashMap<String, TxPoller> {
+        self.networks()
+            .into_iter()
+            .map(|n| (n.clone(), TxPoller::new(NomadDB::new(n, db.clone()))))
+            .collect::<_>()
+    }
+
+    /// Make transaction senders
+    fn transaction_senders(&self) -> HashMap<String, TxSender> {
+        self.networks()
+            .into_iter()
+            .map(|n| (n.clone(), TxSender::new()))
+            .collect::<_>()
     }
 }
 
@@ -420,10 +448,15 @@ impl Settings {
             .try_caching_replicas(name, db.clone(), sync_metrics.clone())
             .await?;
 
+        let tx_pollers = self.transaction_pollers(db.clone());
+        let tx_senders = self.transaction_senders();
+
         Ok(AgentCore {
             home,
             replicas,
             db,
+            tx_pollers,
+            tx_senders,
             settings: self.clone(),
             metrics,
             indexer: self.index.clone(),
