@@ -225,6 +225,9 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
             let poller_task = self.run_tx_pollers();
             tasks.push(poller_task);
 
+            let sender_task = self.run_tx_senders();
+            tasks.push(sender_task);
+
             let (res, _, remaining) = select_all(tasks).await;
 
             for task in remaining.into_iter() {
@@ -302,6 +305,28 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
             .into_iter()
             .map(|(_, tx_poller)| {
                 tokio::spawn(async move { tx_poller.run().await }).in_current_span()
+            })
+            .collect::<Vec<_>>();
+
+        tokio::spawn(async move {
+            let (res, _, remaining) = select_all(handles).await;
+            for task in remaining.into_iter() {
+                cancel_task!(task);
+            }
+            res?
+        })
+        .instrument(span)
+    }
+
+    /// Run tx senders
+    fn run_tx_senders(&self) -> Instrumented<JoinHandle<Result<()>>> {
+        let span = info_span!("run_tx_senders");
+
+        let handles = self
+            .tx_senders()
+            .into_iter()
+            .map(|(_, tx_sender)| {
+                tokio::spawn(async move { tx_sender.run().await }).in_current_span()
             })
             .collect::<Vec<_>>();
 
