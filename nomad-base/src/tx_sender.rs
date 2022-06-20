@@ -1,3 +1,5 @@
+use color_eyre::Result;
+
 /// Transaction poller for submitting PersistentTransaction
 #[derive(Debug, Clone)]
 pub struct TxSender;
@@ -5,6 +7,11 @@ pub struct TxSender;
 impl TxSender {
     pub fn new() -> Self {
         Self {}
+    }
+
+    /// TODO:
+    pub async fn run(&self) -> Result<()> {
+        unimplemented!()
     }
 }
 
