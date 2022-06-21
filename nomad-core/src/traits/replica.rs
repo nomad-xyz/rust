@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use color_eyre::Result;
-use ethers::{core::types::H256, prelude::U256};
+use ethers::core::types::{H256, U256};
 
 use crate::{
     accumulator::NomadProof,
@@ -28,7 +28,7 @@ impl From<U256> for MessageStatus {
         } else if u == U256::from(2) {
             Self::Processed
         } else {
-            panic!("Bad status from solidity")
+            panic!("Unknown MessageStatus number")
         }
     }
 }

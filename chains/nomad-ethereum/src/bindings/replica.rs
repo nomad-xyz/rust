@@ -18,7 +18,7 @@ mod replica_mod {
     use std::sync::Arc;
     pub static REPLICA_ABI: ethers::contract::Lazy<ethers::core::abi::Abi> =
         ethers::contract::Lazy::new(|| {
-            serde_json :: from_str ("[\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"_localDomain\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"constructor\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": false,\n        \"internalType\": \"address\",\n        \"name\": \"oldUpdater\",\n        \"type\": \"address\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"address\",\n        \"name\": \"newUpdater\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"NewUpdater\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"address\",\n        \"name\": \"previousOwner\",\n        \"type\": \"address\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"address\",\n        \"name\": \"newOwner\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"OwnershipTransferred\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"messageHash\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bool\",\n        \"name\": \"success\",\n        \"type\": \"bool\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes\",\n        \"name\": \"returnData\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"Process\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"root\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"uint256\",\n        \"name\": \"previousConfirmAt\",\n        \"type\": \"uint256\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"uint256\",\n        \"name\": \"newConfirmAt\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"SetConfirmation\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": false,\n        \"internalType\": \"uint256\",\n        \"name\": \"timeout\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"SetOptimisticTimeout\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"uint32\",\n        \"name\": \"homeDomain\",\n        \"type\": \"uint32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"newRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes\",\n        \"name\": \"signature\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"Update\",\n    \"type\": \"event\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"LEGACY_STATUS_NONE\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"LEGACY_STATUS_PROCESSED\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"LEGACY_STATUS_PROVEN\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"VERSION\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint8\",\n        \"name\": \"\",\n        \"type\": \"uint8\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_root\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"name\": \"acceptableRoot\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bool\",\n        \"name\": \"\",\n        \"type\": \"bool\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"committedRoot\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"name\": \"confirmAt\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"homeDomainHash\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"_remoteDomain\",\n        \"type\": \"uint32\"\n      },\n      {\n        \"internalType\": \"address\",\n        \"name\": \"_updater\",\n        \"type\": \"address\"\n      },\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_committedRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_optimisticSeconds\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"initialize\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"localDomain\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"name\": \"messages\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"optimisticSeconds\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"owner\",\n    \"outputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"\",\n        \"type\": \"address\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_message\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"process\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bool\",\n        \"name\": \"_success\",\n        \"type\": \"bool\"\n      }\n    ],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_leaf\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes32[32]\",\n        \"name\": \"_proof\",\n        \"type\": \"bytes32[32]\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_index\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"prove\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bool\",\n        \"name\": \"\",\n        \"type\": \"bool\"\n      }\n    ],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_message\",\n        \"type\": \"bytes\"\n      },\n      {\n        \"internalType\": \"bytes32[32]\",\n        \"name\": \"_proof\",\n        \"type\": \"bytes32[32]\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_index\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"proveAndProcess\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"remoteDomain\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"renounceOwnership\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_root\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_confirmAt\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"setConfirmation\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_optimisticSeconds\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"setOptimisticTimeout\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"_updater\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"setUpdater\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"state\",\n    \"outputs\": [\n      {\n        \"internalType\": \"enum NomadBase.States\",\n        \"name\": \"\",\n        \"type\": \"uint8\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"newOwner\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"transferOwnership\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_newRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_signature\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"update\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"updater\",\n    \"outputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"\",\n        \"type\": \"address\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  }\n]\n") . expect ("invalid abi")
+            serde_json :: from_str ("[\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"_localDomain\",\n        \"type\": \"uint32\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_processGas\",\n        \"type\": \"uint256\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_reserveGas\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"constructor\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes32\",\n        \"name\": \"oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes32[2]\",\n        \"name\": \"newRoot\",\n        \"type\": \"bytes32[2]\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes\",\n        \"name\": \"signature\",\n        \"type\": \"bytes\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes\",\n        \"name\": \"signature2\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"DoubleUpdate\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": false,\n        \"internalType\": \"address\",\n        \"name\": \"oldUpdater\",\n        \"type\": \"address\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"address\",\n        \"name\": \"newUpdater\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"NewUpdater\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"address\",\n        \"name\": \"previousOwner\",\n        \"type\": \"address\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"address\",\n        \"name\": \"newOwner\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"OwnershipTransferred\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"messageHash\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bool\",\n        \"name\": \"success\",\n        \"type\": \"bool\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes\",\n        \"name\": \"returnData\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"Process\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"root\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"uint256\",\n        \"name\": \"previousConfirmAt\",\n        \"type\": \"uint256\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"uint256\",\n        \"name\": \"newConfirmAt\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"SetConfirmation\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": false,\n        \"internalType\": \"uint256\",\n        \"name\": \"timeout\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"SetOptimisticTimeout\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"uint32\",\n        \"name\": \"homeDomain\",\n        \"type\": \"uint32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"newRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes\",\n        \"name\": \"signature\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"Update\",\n    \"type\": \"event\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"PROCESS_GAS\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"RESERVE_GAS\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"VERSION\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint8\",\n        \"name\": \"\",\n        \"type\": \"uint8\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_root\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"name\": \"acceptableRoot\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bool\",\n        \"name\": \"\",\n        \"type\": \"bool\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"committedRoot\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"name\": \"confirmAt\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes32[2]\",\n        \"name\": \"_newRoot\",\n        \"type\": \"bytes32[2]\"\n      },\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_signature\",\n        \"type\": \"bytes\"\n      },\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_signature2\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"doubleUpdate\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"homeDomainHash\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"_remoteDomain\",\n        \"type\": \"uint32\"\n      },\n      {\n        \"internalType\": \"address\",\n        \"name\": \"_updater\",\n        \"type\": \"address\"\n      },\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_committedRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_optimisticSeconds\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"initialize\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"localDomain\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"name\": \"messages\",\n    \"outputs\": [\n      {\n        \"internalType\": \"enum Replica.MessageStatus\",\n        \"name\": \"\",\n        \"type\": \"uint8\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"optimisticSeconds\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"owner\",\n    \"outputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"\",\n        \"type\": \"address\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_message\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"process\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bool\",\n        \"name\": \"_success\",\n        \"type\": \"bool\"\n      }\n    ],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_leaf\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes32[32]\",\n        \"name\": \"_proof\",\n        \"type\": \"bytes32[32]\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_index\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"prove\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bool\",\n        \"name\": \"\",\n        \"type\": \"bool\"\n      }\n    ],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_message\",\n        \"type\": \"bytes\"\n      },\n      {\n        \"internalType\": \"bytes32[32]\",\n        \"name\": \"_proof\",\n        \"type\": \"bytes32[32]\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_index\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"proveAndProcess\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"remoteDomain\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"renounceOwnership\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_root\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_confirmAt\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"setConfirmation\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_optimisticSeconds\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"setOptimisticTimeout\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"_updater\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"setUpdater\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"state\",\n    \"outputs\": [\n      {\n        \"internalType\": \"enum NomadBase.States\",\n        \"name\": \"\",\n        \"type\": \"uint8\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"newOwner\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"transferOwnership\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_newRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_signature\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"update\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"updater\",\n    \"outputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"\",\n        \"type\": \"address\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  }\n]\n") . expect ("invalid abi")
         });
     pub struct Replica<M>(ethers::contract::Contract<M>);
     impl<M> Clone for Replica<M> {
@@ -49,26 +49,20 @@ mod replica_mod {
         ) -> Self {
             ethers::contract::Contract::new(address.into(), REPLICA_ABI.clone(), client).into()
         }
-        #[doc = "Calls the contract's `LEGACY_STATUS_NONE` (0x18810b89) function"]
-        pub fn legacy_status_none(&self) -> ethers::contract::builders::ContractCall<M, [u8; 32]> {
+        #[doc = "Calls the contract's `PROCESS_GAS` (0xd88beda2) function"]
+        pub fn process_gas(
+            &self,
+        ) -> ethers::contract::builders::ContractCall<M, ethers::core::types::U256> {
             self.0
-                .method_hash([24, 129, 11, 137], ())
+                .method_hash([216, 139, 237, 162], ())
                 .expect("method not found (this should never happen)")
         }
-        #[doc = "Calls the contract's `LEGACY_STATUS_PROCESSED` (0xb1e3fb8c) function"]
-        pub fn legacy_status_processed(
+        #[doc = "Calls the contract's `RESERVE_GAS` (0x25e3beda) function"]
+        pub fn reserve_gas(
             &self,
-        ) -> ethers::contract::builders::ContractCall<M, [u8; 32]> {
+        ) -> ethers::contract::builders::ContractCall<M, ethers::core::types::U256> {
             self.0
-                .method_hash([177, 227, 251, 140], ())
-                .expect("method not found (this should never happen)")
-        }
-        #[doc = "Calls the contract's `LEGACY_STATUS_PROVEN` (0x2e7bb32c) function"]
-        pub fn legacy_status_proven(
-            &self,
-        ) -> ethers::contract::builders::ContractCall<M, [u8; 32]> {
-            self.0
-                .method_hash([46, 123, 179, 44], ())
+                .method_hash([37, 227, 190, 218], ())
                 .expect("method not found (this should never happen)")
         }
         #[doc = "Calls the contract's `VERSION` (0xffa1ad74) function"]
@@ -101,6 +95,21 @@ mod replica_mod {
                 .method_hash([113, 191, 183, 184], p0)
                 .expect("method not found (this should never happen)")
         }
+        #[doc = "Calls the contract's `doubleUpdate` (0x19d9d21a) function"]
+        pub fn double_update(
+            &self,
+            old_root: [u8; 32],
+            new_root: [[u8; 32]; 2usize],
+            signature: ethers::core::types::Bytes,
+            signature_2: ethers::core::types::Bytes,
+        ) -> ethers::contract::builders::ContractCall<M, ()> {
+            self.0
+                .method_hash(
+                    [25, 217, 210, 26],
+                    (old_root, new_root, signature, signature_2),
+                )
+                .expect("method not found (this should never happen)")
+        }
         #[doc = "Calls the contract's `homeDomainHash` (0x45630b1a) function"]
         pub fn home_domain_hash(&self) -> ethers::contract::builders::ContractCall<M, [u8; 32]> {
             self.0
@@ -129,10 +138,7 @@ mod replica_mod {
                 .expect("method not found (this should never happen)")
         }
         #[doc = "Calls the contract's `messages` (0x2bbd59ca) function"]
-        pub fn messages(
-            &self,
-            p0: [u8; 32],
-        ) -> ethers::contract::builders::ContractCall<M, [u8; 32]> {
+        pub fn messages(&self, p0: [u8; 32]) -> ethers::contract::builders::ContractCall<M, u8> {
             self.0
                 .method_hash([43, 189, 89, 202], p0)
                 .expect("method not found (this should never happen)")
@@ -258,6 +264,12 @@ mod replica_mod {
                 .method_hash([223, 3, 76, 208], ())
                 .expect("method not found (this should never happen)")
         }
+        #[doc = "Gets the contract's `DoubleUpdate` event"]
+        pub fn double_update_filter(
+            &self,
+        ) -> ethers::contract::builders::Event<M, DoubleUpdateFilter> {
+            self.0.event()
+        }
         #[doc = "Gets the contract's `NewUpdater` event"]
         pub fn new_updater_filter(&self) -> ethers::contract::builders::Event<M, NewUpdaterFilter> {
             self.0.event()
@@ -297,6 +309,25 @@ mod replica_mod {
         fn from(contract: ethers::contract::Contract<M>) -> Self {
             Self(contract)
         }
+    }
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthEvent,
+        ethers :: contract :: EthDisplay,
+    )]
+    #[ethevent(
+        name = "DoubleUpdate",
+        abi = "DoubleUpdate(bytes32,bytes32[2],bytes,bytes)"
+    )]
+    pub struct DoubleUpdateFilter {
+        pub old_root: [u8; 32],
+        pub new_root: [[u8; 32]; 2],
+        pub signature: ethers::core::types::Bytes,
+        pub signature_2: ethers::core::types::Bytes,
     }
     #[derive(
         Clone,
@@ -402,6 +433,7 @@ mod replica_mod {
     }
     #[derive(Debug, Clone, PartialEq, Eq, ethers :: contract :: EthAbiType)]
     pub enum ReplicaEvents {
+        DoubleUpdateFilter(DoubleUpdateFilter),
         NewUpdaterFilter(NewUpdaterFilter),
         OwnershipTransferredFilter(OwnershipTransferredFilter),
         ProcessFilter(ProcessFilter),
@@ -414,6 +446,9 @@ mod replica_mod {
         where
             Self: Sized,
         {
+            if let Ok(decoded) = DoubleUpdateFilter::decode_log(log) {
+                return Ok(ReplicaEvents::DoubleUpdateFilter(decoded));
+            }
             if let Ok(decoded) = NewUpdaterFilter::decode_log(log) {
                 return Ok(ReplicaEvents::NewUpdaterFilter(decoded));
             }
@@ -438,6 +473,7 @@ mod replica_mod {
     impl ::std::fmt::Display for ReplicaEvents {
         fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
             match self {
+                ReplicaEvents::DoubleUpdateFilter(element) => element.fmt(f),
                 ReplicaEvents::NewUpdaterFilter(element) => element.fmt(f),
                 ReplicaEvents::OwnershipTransferredFilter(element) => element.fmt(f),
                 ReplicaEvents::ProcessFilter(element) => element.fmt(f),
@@ -447,7 +483,7 @@ mod replica_mod {
             }
         }
     }
-    #[doc = "Container type for all input parameters for the `LEGACY_STATUS_NONE`function with signature `LEGACY_STATUS_NONE()` and selector `[24, 129, 11, 137]`"]
+    #[doc = "Container type for all input parameters for the `PROCESS_GAS`function with signature `PROCESS_GAS()` and selector `[216, 139, 237, 162]`"]
     #[derive(
         Clone,
         Debug,
@@ -457,9 +493,9 @@ mod replica_mod {
         ethers :: contract :: EthCall,
         ethers :: contract :: EthDisplay,
     )]
-    #[ethcall(name = "LEGACY_STATUS_NONE", abi = "LEGACY_STATUS_NONE()")]
-    pub struct LegacyStatusNoneCall;
-    #[doc = "Container type for all input parameters for the `LEGACY_STATUS_PROCESSED`function with signature `LEGACY_STATUS_PROCESSED()` and selector `[177, 227, 251, 140]`"]
+    #[ethcall(name = "PROCESS_GAS", abi = "PROCESS_GAS()")]
+    pub struct ProcessGasCall;
+    #[doc = "Container type for all input parameters for the `RESERVE_GAS`function with signature `RESERVE_GAS()` and selector `[37, 227, 190, 218]`"]
     #[derive(
         Clone,
         Debug,
@@ -469,20 +505,8 @@ mod replica_mod {
         ethers :: contract :: EthCall,
         ethers :: contract :: EthDisplay,
     )]
-    #[ethcall(name = "LEGACY_STATUS_PROCESSED", abi = "LEGACY_STATUS_PROCESSED()")]
-    pub struct LegacyStatusProcessedCall;
-    #[doc = "Container type for all input parameters for the `LEGACY_STATUS_PROVEN`function with signature `LEGACY_STATUS_PROVEN()` and selector `[46, 123, 179, 44]`"]
-    #[derive(
-        Clone,
-        Debug,
-        Default,
-        Eq,
-        PartialEq,
-        ethers :: contract :: EthCall,
-        ethers :: contract :: EthDisplay,
-    )]
-    #[ethcall(name = "LEGACY_STATUS_PROVEN", abi = "LEGACY_STATUS_PROVEN()")]
-    pub struct LegacyStatusProvenCall;
+    #[ethcall(name = "RESERVE_GAS", abi = "RESERVE_GAS()")]
+    pub struct ReserveGasCall;
     #[doc = "Container type for all input parameters for the `VERSION`function with signature `VERSION()` and selector `[255, 161, 173, 116]`"]
     #[derive(
         Clone,
@@ -533,6 +557,26 @@ mod replica_mod {
     )]
     #[ethcall(name = "confirmAt", abi = "confirmAt(bytes32)")]
     pub struct ConfirmAtCall(pub [u8; 32]);
+    #[doc = "Container type for all input parameters for the `doubleUpdate`function with signature `doubleUpdate(bytes32,bytes32[2],bytes,bytes)` and selector `[25, 217, 210, 26]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthCall,
+        ethers :: contract :: EthDisplay,
+    )]
+    #[ethcall(
+        name = "doubleUpdate",
+        abi = "doubleUpdate(bytes32,bytes32[2],bytes,bytes)"
+    )]
+    pub struct DoubleUpdateCall {
+        pub old_root: [u8; 32],
+        pub new_root: [[u8; 32]; 2usize],
+        pub signature: ethers::core::types::Bytes,
+        pub signature_2: ethers::core::types::Bytes,
+    }
     #[doc = "Container type for all input parameters for the `homeDomainHash`function with signature `homeDomainHash()` and selector `[69, 99, 11, 26]`"]
     #[derive(
         Clone,
@@ -785,13 +829,13 @@ mod replica_mod {
     pub struct UpdaterCall;
     #[derive(Debug, Clone, PartialEq, Eq, ethers :: contract :: EthAbiType)]
     pub enum ReplicaCalls {
-        LegacyStatusNone(LegacyStatusNoneCall),
-        LegacyStatusProcessed(LegacyStatusProcessedCall),
-        LegacyStatusProven(LegacyStatusProvenCall),
+        ProcessGas(ProcessGasCall),
+        ReserveGas(ReserveGasCall),
         Version(VersionCall),
         AcceptableRoot(AcceptableRootCall),
         CommittedRoot(CommittedRootCall),
         ConfirmAt(ConfirmAtCall),
+        DoubleUpdate(DoubleUpdateCall),
         HomeDomainHash(HomeDomainHashCall),
         Initialize(InitializeCall),
         LocalDomain(LocalDomainCall),
@@ -814,19 +858,14 @@ mod replica_mod {
     impl ethers::core::abi::AbiDecode for ReplicaCalls {
         fn decode(data: impl AsRef<[u8]>) -> Result<Self, ethers::core::abi::AbiError> {
             if let Ok(decoded) =
-                <LegacyStatusNoneCall as ethers::core::abi::AbiDecode>::decode(data.as_ref())
+                <ProcessGasCall as ethers::core::abi::AbiDecode>::decode(data.as_ref())
             {
-                return Ok(ReplicaCalls::LegacyStatusNone(decoded));
+                return Ok(ReplicaCalls::ProcessGas(decoded));
             }
             if let Ok(decoded) =
-                <LegacyStatusProcessedCall as ethers::core::abi::AbiDecode>::decode(data.as_ref())
+                <ReserveGasCall as ethers::core::abi::AbiDecode>::decode(data.as_ref())
             {
-                return Ok(ReplicaCalls::LegacyStatusProcessed(decoded));
-            }
-            if let Ok(decoded) =
-                <LegacyStatusProvenCall as ethers::core::abi::AbiDecode>::decode(data.as_ref())
-            {
-                return Ok(ReplicaCalls::LegacyStatusProven(decoded));
+                return Ok(ReplicaCalls::ReserveGas(decoded));
             }
             if let Ok(decoded) =
                 <VersionCall as ethers::core::abi::AbiDecode>::decode(data.as_ref())
@@ -847,6 +886,11 @@ mod replica_mod {
                 <ConfirmAtCall as ethers::core::abi::AbiDecode>::decode(data.as_ref())
             {
                 return Ok(ReplicaCalls::ConfirmAt(decoded));
+            }
+            if let Ok(decoded) =
+                <DoubleUpdateCall as ethers::core::abi::AbiDecode>::decode(data.as_ref())
+            {
+                return Ok(ReplicaCalls::DoubleUpdate(decoded));
             }
             if let Ok(decoded) =
                 <HomeDomainHashCall as ethers::core::abi::AbiDecode>::decode(data.as_ref())
@@ -940,13 +984,13 @@ mod replica_mod {
     impl ethers::core::abi::AbiEncode for ReplicaCalls {
         fn encode(self) -> Vec<u8> {
             match self {
-                ReplicaCalls::LegacyStatusNone(element) => element.encode(),
-                ReplicaCalls::LegacyStatusProcessed(element) => element.encode(),
-                ReplicaCalls::LegacyStatusProven(element) => element.encode(),
+                ReplicaCalls::ProcessGas(element) => element.encode(),
+                ReplicaCalls::ReserveGas(element) => element.encode(),
                 ReplicaCalls::Version(element) => element.encode(),
                 ReplicaCalls::AcceptableRoot(element) => element.encode(),
                 ReplicaCalls::CommittedRoot(element) => element.encode(),
                 ReplicaCalls::ConfirmAt(element) => element.encode(),
+                ReplicaCalls::DoubleUpdate(element) => element.encode(),
                 ReplicaCalls::HomeDomainHash(element) => element.encode(),
                 ReplicaCalls::Initialize(element) => element.encode(),
                 ReplicaCalls::LocalDomain(element) => element.encode(),
@@ -971,13 +1015,13 @@ mod replica_mod {
     impl ::std::fmt::Display for ReplicaCalls {
         fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
             match self {
-                ReplicaCalls::LegacyStatusNone(element) => element.fmt(f),
-                ReplicaCalls::LegacyStatusProcessed(element) => element.fmt(f),
-                ReplicaCalls::LegacyStatusProven(element) => element.fmt(f),
+                ReplicaCalls::ProcessGas(element) => element.fmt(f),
+                ReplicaCalls::ReserveGas(element) => element.fmt(f),
                 ReplicaCalls::Version(element) => element.fmt(f),
                 ReplicaCalls::AcceptableRoot(element) => element.fmt(f),
                 ReplicaCalls::CommittedRoot(element) => element.fmt(f),
                 ReplicaCalls::ConfirmAt(element) => element.fmt(f),
+                ReplicaCalls::DoubleUpdate(element) => element.fmt(f),
                 ReplicaCalls::HomeDomainHash(element) => element.fmt(f),
                 ReplicaCalls::Initialize(element) => element.fmt(f),
                 ReplicaCalls::LocalDomain(element) => element.fmt(f),
@@ -999,19 +1043,14 @@ mod replica_mod {
             }
         }
     }
-    impl ::std::convert::From<LegacyStatusNoneCall> for ReplicaCalls {
-        fn from(var: LegacyStatusNoneCall) -> Self {
-            ReplicaCalls::LegacyStatusNone(var)
+    impl ::std::convert::From<ProcessGasCall> for ReplicaCalls {
+        fn from(var: ProcessGasCall) -> Self {
+            ReplicaCalls::ProcessGas(var)
         }
     }
-    impl ::std::convert::From<LegacyStatusProcessedCall> for ReplicaCalls {
-        fn from(var: LegacyStatusProcessedCall) -> Self {
-            ReplicaCalls::LegacyStatusProcessed(var)
-        }
-    }
-    impl ::std::convert::From<LegacyStatusProvenCall> for ReplicaCalls {
-        fn from(var: LegacyStatusProvenCall) -> Self {
-            ReplicaCalls::LegacyStatusProven(var)
+    impl ::std::convert::From<ReserveGasCall> for ReplicaCalls {
+        fn from(var: ReserveGasCall) -> Self {
+            ReplicaCalls::ReserveGas(var)
         }
     }
     impl ::std::convert::From<VersionCall> for ReplicaCalls {
@@ -1032,6 +1071,11 @@ mod replica_mod {
     impl ::std::convert::From<ConfirmAtCall> for ReplicaCalls {
         fn from(var: ConfirmAtCall) -> Self {
             ReplicaCalls::ConfirmAt(var)
+        }
+    }
+    impl ::std::convert::From<DoubleUpdateCall> for ReplicaCalls {
+        fn from(var: DoubleUpdateCall) -> Self {
+            ReplicaCalls::DoubleUpdate(var)
         }
     }
     impl ::std::convert::From<HomeDomainHashCall> for ReplicaCalls {

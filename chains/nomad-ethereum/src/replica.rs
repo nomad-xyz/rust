@@ -11,15 +11,10 @@ use nomad_core::{
     State, TxOutcome, Update, UpdateMeta,
 };
 use nomad_xyz_configuration::ReplicaGasLimits;
-use once_cell::sync::Lazy;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
 use tracing::instrument;
 
 use crate::{bindings::replica::Replica as EthereumReplicaInternal, TxSubmitter};
-
-static MESSAGE_STATUS_NONE: Lazy<U256> = Lazy::new(|| U256::zero());
-static MESSAGE_STATUS_PROVEN: Lazy<U256> = Lazy::new(|| U256::one());
-static MESSAGE_STATUS_PROCESSED: Lazy<U256> = Lazy::new(|| U256::from(2));
 
 #[derive(Debug)]
 /// Struct that retrieves indexes event data for Ethereum replica
