@@ -28,10 +28,6 @@ pub use gelato::*;
 mod submitter;
 pub use submitter::*;
 
-/// Transactions
-mod transaction;
-pub use transaction::*;
-
 /// Contract binding
 #[cfg(not(doctest))]
 pub(crate) mod bindings;
