@@ -5,7 +5,9 @@ use nomad_core::{PersistedTransaction, TxTranslator};
 #[derive(Debug)]
 pub struct EthereumTxTranslator {}
 
-impl TxTranslator<TypedTransaction> for EthereumTxTranslator {
+impl TxTranslator for EthereumTxTranslator {
+    type Transaction = TypedTransaction;
+
     fn convert(&self, tx: &PersistedTransaction) -> TypedTransaction {
         unimplemented!()
     }
