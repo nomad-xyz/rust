@@ -5,5 +5,5 @@ pub trait TxTranslator {
     type Transaction;
 
     /// Translate to chain-specific type
-    fn convert(&self, tx: &PersistedTransaction) -> Self::Transaction;
+    fn convert(&self, tx: PersistedTransaction) -> Self::Transaction;
 }
