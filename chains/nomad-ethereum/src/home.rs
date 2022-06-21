@@ -7,11 +7,13 @@ use ethers::{
     core::types::{Signature, H256, U256},
     providers::Middleware,
 };
+use ethers_core::types::transaction::eip2718::TypedTransaction;
 use futures_util::future::join_all;
 use nomad_core::{
     ChainCommunicationError, Common, CommonIndexer, CommonTxSubmission, ContractLocator,
-    DoubleUpdate, Home, HomeIndexer, HomeTxSubmission, Message, RawCommittedMessage, SignedUpdate,
-    SignedUpdateWithMeta, State, TxOutcome, Update, UpdateMeta,
+    DoubleUpdate, Home, HomeIndexer, HomeTxSubmission, Message, NomadMethod, PersistedTransaction,
+    RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, TxTranslator,
+    Update, UpdateMeta,
 };
 use nomad_xyz_configuration::HomeGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
@@ -375,5 +377,47 @@ where
         self.submitter
             .submit(self.domain, self.contract.address(), tx.tx)
             .await
+    }
+}
+
+#[async_trait]
+impl<W, R> TxTranslator for EthereumHome<W, R>
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
+{
+    type Transaction = TypedTransaction;
+
+    async fn convert(
+        &self,
+        tx: PersistedTransaction,
+    ) -> Result<Self::Transaction, ChainCommunicationError> {
+        match tx.method {
+            // TODO(matthew):
+            NomadMethod::Dispatch(message) => Ok(self
+                .contract
+                .dispatch(
+                    message.destination,
+                    message.recipient.to_fixed_bytes(),
+                    message.body.clone().into(),
+                )
+                .tx),
+            NomadMethod::ImproperUpdate(update) => {
+                let mut tx = self.contract.improper_update(
+                    update.update.previous_root.to_fixed_bytes(),
+                    update.update.new_root.to_fixed_bytes(),
+                    update.signature.to_vec().into(),
+                );
+                if let Some(limits) = &self.gas {
+                    let queue_length = self.queue_length().await?;
+                    tx.tx.set_gas(
+                        U256::from(limits.improper_update.base)
+                            + U256::from(limits.improper_update.per_message) * queue_length,
+                    );
+                }
+                Ok(tx.tx)
+            }
+            _ => unimplemented!(),
+        }
     }
 }
