@@ -13,6 +13,7 @@ pub enum TxDispatchKind {
     FireAndForget,
 }
 
+// TODO(matthew): Add in missing method
 /// Contract method called for transaction submission
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub enum NomadMethod {
