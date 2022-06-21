@@ -13,6 +13,17 @@ pub enum TxDispatchKind {
     FireAndForget,
 }
 
+/// Contract type that transaction originates from
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
+pub enum NomadContract {
+    /// Home contract
+    Home,
+    /// Replica contract
+    Replica,
+    /// Connection manager contract
+    ConnectionManager,
+}
+
 // TODO(matthew): Add in missing method
 /// Contract method called for transaction submission
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
