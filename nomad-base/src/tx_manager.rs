@@ -22,7 +22,7 @@ impl TxManager {
     /// Submit abstract transaction for sending and monitoring
     pub async fn submit_transaction(
         &self,
-        tx: impl Into<PersistedTransaction>,
+        tx: PersistedTransaction,
         dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         let counter = self

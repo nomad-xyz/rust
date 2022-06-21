@@ -69,15 +69,19 @@ pub enum NomadEvent {
 /// An abstract transaction
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct PersistedTransaction {
+    /// The contract type that this message originates from
+    pub contract: NomadContract,
     /// The method this transaction will be processed by
     pub method: NomadMethod,
     /// TODO(matthew):
     pub confirm_event: NomadEvent,
 }
 
-impl From<NomadMethod> for PersistedTransaction {
-    fn from(method: NomadMethod) -> Self {
+impl PersistedTransaction {
+    /// Create a new PersistedTransaction
+    pub fn new(contract: NomadContract, method: NomadMethod) -> Self {
         PersistedTransaction {
+            contract,
             method,
             confirm_event: NomadEvent::Dummy,
         }
@@ -120,8 +124,8 @@ impl std::fmt::Display for PersistedTransaction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "PersistedTransaction {:?} {:?}",
-            self.method, self.confirm_event,
+            "PersistedTransaction {:?} {:?} {:?}",
+            self.contract, self.method, self.confirm_event,
         )
     }
 }
