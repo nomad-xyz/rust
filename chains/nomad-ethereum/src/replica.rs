@@ -11,10 +11,15 @@ use nomad_core::{
     State, TxOutcome, Update, UpdateMeta,
 };
 use nomad_xyz_configuration::ReplicaGasLimits;
+use once_cell::sync::Lazy;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
 use tracing::instrument;
 
 use crate::{bindings::replica::Replica as EthereumReplicaInternal, TxSubmitter};
+
+static MESSAGE_STATUS_NONE: Lazy<U256> = Lazy::new(|| U256::zero());
+static MESSAGE_STATUS_PROVEN: Lazy<U256> = Lazy::new(|| U256::one());
+static MESSAGE_STATUS_PROCESSED: Lazy<U256> = Lazy::new(|| U256::from(2));
 
 #[derive(Debug)]
 /// Struct that retrieves indexes event data for Ethereum replica
@@ -317,13 +322,8 @@ where
 
     #[tracing::instrument(err)]
     async fn message_status(&self, leaf: H256) -> Result<MessageStatus, ChainCommunicationError> {
-        let status = self.contract.messages(leaf.into()).call().await?;
-        match status {
-            0 => Ok(MessageStatus::None),
-            1 => Ok(MessageStatus::Proven),
-            2 => Ok(MessageStatus::Processed),
-            _ => panic!("Bad status from solidity"),
-        }
+        let status: U256 = self.contract.messages(leaf.into()).call().await?.into();
+        Ok(status.into())
     }
 
     async fn acceptable_root(&self, root: H256) -> Result<bool, ChainCommunicationError> {

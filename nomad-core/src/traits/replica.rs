@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use color_eyre::Result;
-use ethers::core::types::H256;
+use ethers::{core::types::H256, prelude::U256};
 
 use crate::{
     accumulator::NomadProof,
@@ -17,6 +17,20 @@ pub enum MessageStatus {
     Proven = 1,
     /// Message has been processed
     Processed = 2,
+}
+
+impl From<U256> for MessageStatus {
+    fn from(u: U256) -> Self {
+        if u == U256::zero() {
+            Self::None
+        } else if u == U256::one() {
+            Self::Proven
+        } else if u == U256::from(2) {
+            Self::Processed
+        } else {
+            panic!("Bad status from solidity")
+        }
+    }
 }
 
 /// Interface for on-chain replicas
