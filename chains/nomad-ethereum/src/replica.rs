@@ -217,27 +217,11 @@ where
     }
 
     #[tracing::instrument(err)]
-    async fn double_update(
-        &self,
-        double: &DoubleUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
-        let mut tx = self.contract.double_update(
-            double.0.update.previous_root.to_fixed_bytes(),
-            [
-                double.0.update.new_root.to_fixed_bytes(),
-                double.1.update.new_root.to_fixed_bytes(),
-            ],
-            double.0.signature.to_vec().into(),
-            double.1.signature.to_vec().into(),
-        );
-
-        if let Some(limits) = &self.gas {
-            tx.tx.set_gas(U256::from(limits.double_update));
-        }
-
-        self.submitter
-            .submit(self.domain, self.contract.address(), tx.tx)
-            .await
+    async fn double_update(&self, _: &DoubleUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+        tracing::warn!("double-update submission has been deprecated");
+        Ok(TxOutcome {
+            txid: Default::default(),
+        })
     }
 }
 
@@ -317,13 +301,7 @@ where
 
     #[tracing::instrument(err)]
     async fn message_status(&self, leaf: H256) -> Result<MessageStatus, ChainCommunicationError> {
-        let status = self.contract.messages(leaf.into()).call().await?;
-        match status {
-            0 => Ok(MessageStatus::None),
-            1 => Ok(MessageStatus::Proven),
-            2 => Ok(MessageStatus::Processed),
-            _ => panic!("Bad status from solidity"),
-        }
+        Ok(self.contract.messages(leaf.into()).call().await?.into())
     }
 
     async fn acceptable_root(&self, root: H256) -> Result<bool, ChainCommunicationError> {
