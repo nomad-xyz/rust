@@ -249,7 +249,7 @@ impl Replica {
         // dispatched to the chain. We'll still log warnings if they fail
         let fut = match status {
             MessageStatus::None => self.replica.prove_and_process(message.as_ref(), &proof),
-            MessageStatus::Proven => self.replica.process(message.as_ref()),
+            MessageStatus::Proven(_) => self.replica.process(message.as_ref()),
             _ => unreachable!(),
         };
         info!("Submitting message for processing");

@@ -9,14 +9,31 @@ use crate::{
 };
 
 /// The status of a message in the replica
-#[repr(u8)]
 pub enum MessageStatus {
     /// Message is unknown
-    None = 0,
+    None,
     /// Message has been proven but not processed
-    Proven = 1,
+    Proven(H256),
     /// Message has been processed
-    Processed = 2,
+    Processed,
+}
+impl From<H256> for MessageStatus {
+    fn from(status: H256) -> Self {
+        if status.is_zero() {
+            return MessageStatus::None;
+        }
+        if status == H256::from_low_u64_be(2) {
+            return MessageStatus::Processed;
+        }
+        MessageStatus::Proven(status)
+    }
+}
+
+impl From<[u8; 32]> for MessageStatus {
+    fn from(status: [u8; 32]) -> Self {
+        let status: H256 = status.into();
+        status.into()
+    }
 }
 
 /// Interface for on-chain replicas

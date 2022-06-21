@@ -78,7 +78,7 @@ impl ProveCommand {
         let status = replica.message_status(message.to_leaf()).await?;
         let outcome = match status {
             MessageStatus::None => replica.prove_and_process(&message, &proof).await?,
-            MessageStatus::Proven => replica.process(&message).await?,
+            MessageStatus::Proven(_) => replica.process(&message).await?,
             _ => {
                 println!("Message already processed.");
                 return Ok(());

@@ -5,51 +5,10 @@
         "internalType": "uint32",
         "name": "_localDomain",
         "type": "uint32"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_processGas",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_reserveGas",
-        "type": "uint256"
       }
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "oldRoot",
-        "type": "bytes32"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes32[2]",
-        "name": "newRoot",
-        "type": "bytes32[2]"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "signature",
-        "type": "bytes"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "signature2",
-        "type": "bytes"
-      }
-    ],
-    "name": "DoubleUpdate",
-    "type": "event"
   },
   {
     "anonymous": false,
@@ -185,12 +144,12 @@
   },
   {
     "inputs": [],
-    "name": "PROCESS_GAS",
+    "name": "LEGACY_STATUS_NONE",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "bytes32",
         "name": "",
-        "type": "uint256"
+        "type": "bytes32"
       }
     ],
     "stateMutability": "view",
@@ -198,12 +157,25 @@
   },
   {
     "inputs": [],
-    "name": "RESERVE_GAS",
+    "name": "LEGACY_STATUS_PROCESSED",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "bytes32",
         "name": "",
-        "type": "uint256"
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "LEGACY_STATUS_PROVEN",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
       }
     ],
     "stateMutability": "view",
@@ -274,34 +246,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "_oldRoot",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32[2]",
-        "name": "_newRoot",
-        "type": "bytes32[2]"
-      },
-      {
-        "internalType": "bytes",
-        "name": "_signature",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "_signature2",
-        "type": "bytes"
-      }
-    ],
-    "name": "doubleUpdate",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "homeDomainHash",
     "outputs": [
@@ -366,9 +310,9 @@
     "name": "messages",
     "outputs": [
       {
-        "internalType": "enum Replica.MessageStatus",
+        "internalType": "bytes32",
         "name": "",
-        "type": "uint8"
+        "type": "bytes32"
       }
     ],
     "stateMutability": "view",
