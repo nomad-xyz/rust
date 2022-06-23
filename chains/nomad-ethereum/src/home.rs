@@ -428,9 +428,10 @@ where
     W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
-    async fn send(&self, tx: PersistedTransaction) {
+    async fn send(&self, tx: PersistedTransaction) -> Result<(), ChainCommunicationError> {
         // TODO(matthew): We probably want to pass errors back up to the poller
-        let tx = self.convert(tx).await.unwrap();
+        let tx = self.convert(tx).await?;
         //
+        Ok(()) //
     }
 }

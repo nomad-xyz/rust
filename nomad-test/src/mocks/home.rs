@@ -152,7 +152,7 @@ impl CommonTxSubmission for MockHomeContract {
 
 #[async_trait]
 impl TxSender for MockHomeContract {
-    async fn send(&self, tx: PersistedTransaction) {
+    async fn send(&self, tx: PersistedTransaction) -> Result<(), ChainCommunicationError> {
         unimplemented!()
     }
 }

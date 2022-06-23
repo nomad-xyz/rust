@@ -29,7 +29,7 @@ impl TxPoller {
         let contract = self.contract.clone();
         loop {
             if let Some(tx) = self.next_transaction() {
-                contract.forward(tx).await;
+                contract.forward(tx).await; // TODO(matthew): Deal with this error here
             }
             tokio::time::sleep(Duration::from_millis(TX_STATUS_POLL_MS)).await;
         }

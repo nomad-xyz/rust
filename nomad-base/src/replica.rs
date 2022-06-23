@@ -180,7 +180,7 @@ impl CommonEvents for CachingReplica {
 
 #[async_trait]
 impl TxForwarder for CachingReplica {
-    async fn forward(&self, tx: PersistedTransaction) {
+    async fn forward(&self, tx: PersistedTransaction) -> Result<(), ChainCommunicationError> {
         self.replica.send(tx).await
     }
 }
@@ -391,7 +391,7 @@ impl CommonTxSubmission for ReplicaVariants {
 
 #[async_trait]
 impl TxSender for ReplicaVariants {
-    async fn send(&self, tx: PersistedTransaction) {
+    async fn send(&self, tx: PersistedTransaction) -> Result<(), ChainCommunicationError> {
         match self {
             ReplicaVariants::Ethereum(home) => home.send(tx).await,
             _ => unimplemented!(),
