@@ -391,14 +391,18 @@ impl NomadDB {
     }
 
     /// Store PersistedTransaction
-    pub fn store_persisted_transaction(&self, tx: &PersistedTransaction) -> Result<u64, DbError> {
+    pub fn store_persisted_transaction(
+        &self,
+        mut tx: PersistedTransaction,
+    ) -> Result<u64, DbError> {
         debug!("storing transaction in DB {:?}", tx);
 
         let counter = 1 + match self.retrieve_persisted_transaction_counter()? {
             Some(counter) => counter,
             None => 0,
         };
-        self.store_keyed_encodable(PERSISTED_TRANSACTION, &counter, tx)?;
+        tx.counter = counter;
+        self.store_keyed_encodable(PERSISTED_TRANSACTION, &counter, &tx)?;
         self.store_persisted_transaction_counter(counter)?;
         Ok(counter)
     }
@@ -409,6 +413,11 @@ impl NomadDB {
         counter: u64,
     ) -> Result<Option<PersistedTransaction>, DbError> {
         self.retrieve_keyed_decodable(PERSISTED_TRANSACTION, &counter)
+    }
+
+    /// Update PersistedTransaction
+    pub fn update_persisted_transaction(&self, tx: &PersistedTransaction) -> Result<(), DbError> {
+        self.store_keyed_encodable(PERSISTED_TRANSACTION, &tx.counter, tx)
     }
 
     /// Delete PersistedTransaction
@@ -505,10 +514,11 @@ mod test {
                     recipient: Default::default(),
                     body: vec![],
                 }),
+                counter: 1, // For eq, this will be one when it's retrieved
                 confirm_event: NomadTxStatus::Dummy,
             };
 
-            db.store_persisted_transaction(&tx).unwrap();
+            db.store_persisted_transaction(tx.clone()).unwrap();
             let counter = db
                 .retrieve_persisted_transaction_counter()
                 .unwrap()
@@ -536,15 +546,51 @@ mod test {
                     recipient: Default::default(),
                     body: vec![],
                 }),
+                counter: 999,
                 confirm_event: NomadTxStatus::Dummy,
             };
 
-            db.store_persisted_transaction(&tx).unwrap();
-            db.store_persisted_transaction(&tx).unwrap();
-            db.store_persisted_transaction(&tx).unwrap();
+            db.store_persisted_transaction(tx.clone()).unwrap();
+            db.store_persisted_transaction(tx.clone()).unwrap();
+            db.store_persisted_transaction(tx).unwrap();
 
             let iter = db.persisted_transaction_iterator();
             assert_eq!(iter.count(), 3);
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn db_stores_and_updates_transactions() {
+        run_test_db(|db| async move {
+            let home_name = "home_1".to_owned();
+            let db = NomadDB::new(home_name, db);
+
+            let tx = PersistedTransaction {
+                method: NomadMethod::Dispatch(Message {
+                    destination: 0,
+                    recipient: Default::default(),
+                    body: vec![],
+                }),
+                counter: 999,
+                confirm_event: NomadTxStatus::Dummy,
+            };
+
+            let counter = db.store_persisted_transaction(tx).unwrap();
+            let mut tx = db
+                .retrieve_persisted_transaction_by_counter(counter)
+                .unwrap()
+                .unwrap();
+            assert_eq!(tx.confirm_event, NomadTxStatus::Dummy);
+
+            tx.confirm_event = NomadTxStatus::Dummy2;
+            db.update_persisted_transaction(&tx).unwrap();
+            let tx = db
+                .retrieve_persisted_transaction_by_counter(counter)
+                .unwrap()
+                .unwrap();
+
+            assert_eq!(tx.confirm_event, NomadTxStatus::Dummy2);
         })
         .await;
     }
@@ -561,12 +607,13 @@ mod test {
                     recipient: Default::default(),
                     body: vec![],
                 }),
+                counter: 999,
                 confirm_event: NomadTxStatus::Dummy,
             };
 
-            db.store_persisted_transaction(&tx).unwrap();
-            db.store_persisted_transaction(&tx).unwrap();
-            db.store_persisted_transaction(&tx).unwrap();
+            db.store_persisted_transaction(tx.clone()).unwrap();
+            db.store_persisted_transaction(tx.clone()).unwrap();
+            db.store_persisted_transaction(tx).unwrap();
             let iter = db.persisted_transaction_iterator();
             assert_eq!(iter.count(), 3);
 
