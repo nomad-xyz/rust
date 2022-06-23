@@ -186,6 +186,8 @@ pub trait CommonTxHandling: Common + Send + Sync + std::fmt::Debug {
     ) -> Result<TxOutcome, ChainCommunicationError>;
 }
 
+// TODO(matthew): Replace this with TxTranslate or sth appropriate
+
 /// Interface for chain-specific tx submission used by both the home and replica
 #[async_trait]
 pub trait CommonTxSubmission: Common + Send + Sync + std::fmt::Debug {
