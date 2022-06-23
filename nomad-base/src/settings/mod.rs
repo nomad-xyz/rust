@@ -13,7 +13,7 @@
 use crate::{
     agent::AgentCore, CachingHome, CachingReplica, CommonIndexerVariants, CommonIndexers,
     ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes, NomadDB, Replicas,
-    TxManager, TxPoller, TxSender,
+    TxManager, TxPoller,
 };
 use color_eyre::{eyre::bail, Result};
 use nomad_core::{db::DB, Common, ContractLocator};
@@ -448,15 +448,13 @@ impl Settings {
             .try_caching_replicas(name, db.clone(), sync_metrics.clone())
             .await?;
 
-        let tx_pollers = self.transaction_pollers(db.clone());
-        let tx_senders = self.transaction_senders();
+        let tx_pollers = self.transaction_pollers(home.clone(), replicas.clone(), db.clone());
 
         Ok(AgentCore {
             home,
             replicas,
             db,
             tx_pollers,
-            tx_senders,
             settings: self.clone(),
             metrics,
             indexer: self.index.clone(),
