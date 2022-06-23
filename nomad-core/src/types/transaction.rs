@@ -45,10 +45,9 @@ pub enum NomadMethod {
     UnenrollReplica(SignedFailureNotification),
 }
 
-// TODO(matthew): Maybe this should be a status enum
 /// Event representing the final state a transaction
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
-pub enum NomadEvent {
+pub enum NomadTxStatus {
     /// Dummy
     Dummy, // TODO(matthew):
     /// Also Dummy
@@ -61,7 +60,7 @@ pub struct PersistedTransaction {
     /// The method this transaction will be processed by
     pub method: NomadMethod,
     /// TODO(matthew):
-    pub confirm_event: NomadEvent,
+    pub confirm_event: NomadTxStatus,
 }
 
 impl PersistedTransaction {
@@ -69,7 +68,7 @@ impl PersistedTransaction {
     pub fn new(method: NomadMethod) -> Self {
         PersistedTransaction {
             method,
-            confirm_event: NomadEvent::Dummy,
+            confirm_event: NomadTxStatus::Dummy,
         }
     }
 }
@@ -78,7 +77,7 @@ impl From<NomadMethod> for PersistedTransaction {
     fn from(method: NomadMethod) -> Self {
         PersistedTransaction {
             method,
-            confirm_event: NomadEvent::Dummy,
+            confirm_event: NomadTxStatus::Dummy,
         }
     }
 }

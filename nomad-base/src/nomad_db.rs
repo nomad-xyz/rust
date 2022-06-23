@@ -427,7 +427,7 @@ mod test {
     use super::*;
     use ethers::types::H256;
     use nomad_core::{
-        accumulator::Proof, Encode, Message, NomadEvent, NomadMessage, NomadMethod,
+        accumulator::Proof, Encode, Message, NomadMessage, NomadMethod, NomadTxStatus,
         RawCommittedMessage,
     };
     use nomad_test::test_utils::run_test_db;
@@ -505,7 +505,7 @@ mod test {
                     recipient: Default::default(),
                     body: vec![],
                 }),
-                confirm_event: NomadEvent::Dummy,
+                confirm_event: NomadTxStatus::Dummy,
             };
 
             db.store_persisted_transaction(&tx).unwrap();
@@ -536,7 +536,7 @@ mod test {
                     recipient: Default::default(),
                     body: vec![],
                 }),
-                confirm_event: NomadEvent::Dummy,
+                confirm_event: NomadTxStatus::Dummy,
             };
 
             db.store_persisted_transaction(&tx).unwrap();
@@ -561,7 +561,7 @@ mod test {
                     recipient: Default::default(),
                     body: vec![],
                 }),
-                confirm_event: NomadEvent::Dummy,
+                confirm_event: NomadTxStatus::Dummy,
             };
 
             db.store_persisted_transaction(&tx).unwrap();

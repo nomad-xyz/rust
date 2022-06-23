@@ -1,7 +1,7 @@
 use crate::NomadDB;
 use color_eyre::Result;
 use nomad_core::{
-    ChainCommunicationError, NomadEvent, PersistedTransaction, TxDispatchKind, TxOutcome,
+    ChainCommunicationError, NomadTxStatus, PersistedTransaction, TxDispatchKind, TxOutcome,
 };
 use std::time::Duration;
 
@@ -38,7 +38,7 @@ impl TxManager {
                         let tx = db
                             .retrieve_persisted_transaction_by_counter(counter)?
                             .expect("tx missing from db");
-                        if tx.confirm_event == NomadEvent::Dummy {
+                        if tx.confirm_event == NomadTxStatus::Dummy {
                             db.delete_persisted_transaction_by_counter(counter)?;
                             break Ok(TxOutcome::Dummy); // TODO(matthew):
                         }
