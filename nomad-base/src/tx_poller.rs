@@ -5,7 +5,7 @@ use std::{sync::Arc, time::Duration};
 
 const TX_STATUS_POLL_MS: u64 = 100;
 
-/// Transaction poller for submitting PersistentTransaction
+/// Transaction poller for forwarding PersistentTransaction to a concrete contract
 #[derive(Debug, Clone)]
 pub struct TxPoller {
     db: NomadDB,
@@ -13,7 +13,7 @@ pub struct TxPoller {
 }
 
 impl TxPoller {
-    /// Create a new TxPoller with a DB ref
+    /// Create a new TxPoller with a DB and contract ref
     pub fn new(db: NomadDB, contract: Arc<dyn TxForwarder>) -> Self {
         Self { db, contract }
     }
