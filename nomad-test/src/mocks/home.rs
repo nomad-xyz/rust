@@ -149,3 +149,10 @@ impl CommonTxSubmission for MockHomeContract {
         self._double_update(double)
     }
 }
+
+#[async_trait]
+impl TxSender for MockHomeContract {
+    async fn send(&self, tx: PersistedTransaction) {
+        unimplemented!()
+    }
+}
