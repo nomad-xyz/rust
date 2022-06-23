@@ -429,9 +429,12 @@ where
     R: ethers::providers::Middleware + 'static,
 {
     async fn send(&self, tx: PersistedTransaction) -> Result<(), ChainCommunicationError> {
-        // TODO(matthew): We probably want to pass errors back up to the poller
         let tx = self.convert(tx).await?;
-        //
-        Ok(()) //
+        // TODO(matthew): What do we do with the TxOutcome?
+        let result = self
+            .submitter
+            .submit(self.domain, self.contract.address(), tx)
+            .await;
+        Ok(())
     }
 }
