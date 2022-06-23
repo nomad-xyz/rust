@@ -27,7 +27,7 @@ impl TxManager {
     ) -> Result<TxOutcome, ChainCommunicationError> {
         let counter = self
             .db
-            .store_persisted_transaction(&tx.into())
+            .store_persisted_transaction(tx.into())
             .map_err(|e| ChainCommunicationError::DbError(e))?;
         match dispatch_kind {
             TxDispatchKind::FireAndForget => Ok(TxOutcome::Dummy), // TODO(matthew):
