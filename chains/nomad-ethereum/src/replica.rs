@@ -7,8 +7,9 @@ use ethers::core::types::{Signature, H256, U256};
 use futures_util::future::join_all;
 use nomad_core::{
     accumulator::NomadProof, ChainCommunicationError, Common, CommonIndexer, CommonTxSubmission,
-    ContractLocator, DoubleUpdate, Encode, MessageStatus, NomadMessage, Replica,
-    ReplicaTxSubmission, SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, Update, UpdateMeta,
+    ContractLocator, DoubleUpdate, Encode, MessageStatus, NomadMessage, PersistedTransaction,
+    Replica, ReplicaTxSubmission, SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, TxSender,
+    Update, UpdateMeta,
 };
 use nomad_xyz_configuration::ReplicaGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
@@ -342,5 +343,16 @@ where
         self.submitter
             .submit(self.domain, self.contract.address(), tx.tx)
             .await
+    }
+}
+
+#[async_trait]
+impl<W, R> TxSender for EthereumReplica<W, R>
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
+{
+    async fn send(&self, tx: PersistedTransaction) {
+        unimplemented!()
     }
 }
