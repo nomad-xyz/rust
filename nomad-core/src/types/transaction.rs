@@ -1,6 +1,6 @@
 use crate::{
-    accumulator::NomadProof, Decode, Encode, Message, NomadError, NomadMessage,
-    SignedFailureNotification, SignedUpdate,
+    accumulator::NomadProof, ChainCommunicationError, Decode, Encode, Message, NomadError,
+    NomadMessage, SignedFailureNotification, SignedUpdate,
 };
 use nomad_types::NomadIdentifier;
 
@@ -52,6 +52,17 @@ pub enum NomadTxStatus {
     Dummy, // TODO(matthew):
     /// Also Dummy
     Dummy2,
+}
+
+// TODO(matthew): Move me
+/// Convert between ChainCommunicationError and NomadTxStatus
+impl From<ChainCommunicationError> for NomadTxStatus {
+    fn from(error: ChainCommunicationError) -> Self {
+        match error {
+            ChainCommunicationError::NomadError(_) => NomadTxStatus::Dummy,
+            _ => unimplemented!(), // TODO:
+        }
+    }
 }
 
 /// An abstract transaction
