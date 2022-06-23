@@ -5,7 +5,7 @@ use crate::{
     traits::{ChainCommunicationError, Common, TxOutcome},
     utils::home_domain_hash,
     CommonTxHandling, CommonTxSubmission, Decode, Encode, Message, NomadError, NomadMessage,
-    SignedUpdate, TxDispatchKind, Update,
+    SignedUpdate, TxDispatchKind, TxSender, Update,
 };
 use async_trait::async_trait;
 use color_eyre::Result;
@@ -208,7 +208,9 @@ pub trait HomeTxHandling: CommonTxHandling + Home + Send + Sync + std::fmt::Debu
 
 /// Interface for chain-specific tx submission used by the home
 #[async_trait]
-pub trait HomeTxSubmission: CommonTxSubmission + Home + Send + Sync + std::fmt::Debug {
+pub trait HomeTxSubmission:
+    CommonTxSubmission + TxSender + Home + Send + Sync + std::fmt::Debug
+{
     /// Dispatch a message.
     async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError>;
 
