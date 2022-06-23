@@ -6,7 +6,7 @@ use nomad_core::{
     db::DbError, ChainCommunicationError, Common, CommonEvents, CommonTxHandling,
     CommonTxSubmission, DoubleUpdate, Home, HomeEvents, HomeTxHandling, HomeTxSubmission, Message,
     NomadContract, NomadMethod, PersistedTransaction, RawCommittedMessage, SignedUpdate, State,
-    TxDispatchKind, TxOutcome, Update,
+    TxDispatchKind, TxForwarder, TxOutcome, TxSender, Update,
 };
 use nomad_ethereum::EthereumHome;
 use nomad_test::mocks::MockHomeContract;
@@ -232,6 +232,13 @@ impl CommonEvents for CachingHome {
     }
 }
 
+#[async_trait]
+impl TxForwarder for CachingHome {
+    async fn forward(&self, tx: PersistedTransaction) {
+        self.home.send(tx).await
+    }
+}
+
 #[derive(Debug, Clone)]
 /// Arc wrapper for HomeVariants enum
 pub struct Homes(Arc<HomeVariants>);
@@ -440,6 +447,16 @@ impl CommonTxSubmission for HomeVariants {
             HomeVariants::Ethereum(home) => home.double_update(double).await,
             HomeVariants::Mock(mock_home) => mock_home.double_update(double).await,
             HomeVariants::Other(home) => home.double_update(double).await,
+        }
+    }
+}
+
+#[async_trait]
+impl TxSender for HomeVariants {
+    async fn send(&self, tx: PersistedTransaction) {
+        match self {
+            HomeVariants::Ethereum(home) => home.send(tx).await,
+            _ => unimplemented!(),
         }
     }
 }
