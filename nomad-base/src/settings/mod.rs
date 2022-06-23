@@ -16,7 +16,7 @@ use crate::{
     TxManager, TxPoller,
 };
 use color_eyre::{eyre::bail, Result};
-use nomad_core::{db::DB, Common, ContractLocator};
+use nomad_core::{db::DB, Common, ContractLocator, TxForwarder};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
 use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets, TxSubmitterConf};
 use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig, NomadGasConfig};
@@ -184,32 +184,22 @@ impl Settings {
         }
     }
 
-    /// All networks
-    fn networks(&self) -> Vec<String> {
-        let mut replicas = self
-            .replicas
-            .clone()
-            .into_iter()
-            .map(|(k, _)| k)
-            .collect::<Vec<String>>();
-        replicas.insert(0, self.home.name.clone());
-        replicas
-    }
-
     /// Make transaction pollers
-    fn transaction_pollers(&self, db: DB) -> HashMap<String, TxPoller> {
-        self.networks()
+    fn transaction_pollers(
+        &self,
+        home: Arc<CachingHome>,
+        replicas: HashMap<String, Arc<CachingReplica>>,
+        db: DB,
+    ) -> HashMap<String, TxPoller> {
+        let mut contracts = replicas
             .into_iter()
-            .map(|n| (n.clone(), TxPoller::new(NomadDB::new(n, db.clone()))))
-            .collect::<_>()
-    }
-
-    /// Make transaction senders
-    fn transaction_senders(&self) -> HashMap<String, TxSender> {
-        self.networks()
+            .map(|(n, c)| (n, c as Arc<dyn TxForwarder>))
+            .collect::<HashMap<_, _>>();
+        contracts.insert(self.home.name.clone(), home as Arc<dyn TxForwarder>);
+        contracts
             .into_iter()
-            .map(|n| (n.clone(), TxSender::new()))
-            .collect::<_>()
+            .map(|(k, c)| (k.clone(), TxPoller::new(NomadDB::new(k, db.clone()), c)))
+            .collect::<HashMap<_, _>>()
     }
 }
 
