@@ -5,8 +5,8 @@ use ethers::core::types::{H256, U256};
 use nomad_core::{
     db::DbError, ChainCommunicationError, Common, CommonEvents, CommonTxHandling,
     CommonTxSubmission, DoubleUpdate, Home, HomeEvents, HomeTxHandling, HomeTxSubmission, Message,
-    NomadContract, NomadMethod, PersistedTransaction, RawCommittedMessage, SignedUpdate, State,
-    TxDispatchKind, TxForwarder, TxOutcome, TxSender, Update,
+    NomadMethod, PersistedTransaction, RawCommittedMessage, SignedUpdate, State, TxDispatchKind,
+    TxForwarder, TxOutcome, TxSender, Update,
 };
 use nomad_ethereum::EthereumHome;
 use nomad_test::mocks::MockHomeContract;
@@ -100,10 +100,7 @@ impl HomeTxHandling for CachingHome {
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self.tx_manager
             .submit_transaction(
-                PersistedTransaction::new(
-                    NomadContract::Home,
-                    NomadMethod::Dispatch(message.to_owned()),
-                ),
+                NomadMethod::Dispatch(message.to_owned()).into(),
                 dispatch_kind,
             )
             .await

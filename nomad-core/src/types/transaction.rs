@@ -13,18 +13,6 @@ pub enum TxDispatchKind {
     FireAndForget,
 }
 
-// TODO(matthew): We can probably yank this
-/// Contract type that transaction originates from
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
-pub enum NomadContract {
-    /// Home contract
-    Home,
-    /// Replica contract
-    Replica,
-    /// Connection manager contract
-    ConnectionManager,
-}
-
 // TODO(matthew): Add in missing method
 /// Contract method called for transaction submission
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
@@ -70,8 +58,6 @@ pub enum NomadEvent {
 /// An abstract transaction
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct PersistedTransaction {
-    /// The contract type that this message originates from
-    pub contract: NomadContract,
     /// The method this transaction will be processed by
     pub method: NomadMethod,
     /// TODO(matthew):
@@ -80,9 +66,17 @@ pub struct PersistedTransaction {
 
 impl PersistedTransaction {
     /// Create a new PersistedTransaction
-    pub fn new(contract: NomadContract, method: NomadMethod) -> Self {
+    pub fn new(method: NomadMethod) -> Self {
         PersistedTransaction {
-            contract,
+            method,
+            confirm_event: NomadEvent::Dummy,
+        }
+    }
+}
+
+impl From<NomadMethod> for PersistedTransaction {
+    fn from(method: NomadMethod) -> Self {
+        PersistedTransaction {
             method,
             confirm_event: NomadEvent::Dummy,
         }
@@ -125,8 +119,8 @@ impl std::fmt::Display for PersistedTransaction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "PersistedTransaction {:?} {:?} {:?}",
-            self.contract, self.method, self.confirm_event,
+            "PersistedTransaction {:?} {:?}",
+            self.method, self.confirm_event,
         )
     }
 }
