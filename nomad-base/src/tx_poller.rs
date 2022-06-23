@@ -1,6 +1,7 @@
 use crate::NomadDB;
 use color_eyre::Result;
-use nomad_core::{NomadEvent, PersistedTransaction, TxForwarder};
+use nomad_core::db::DbError;
+use nomad_core::{NomadTxStatus, PersistedTransaction, TxForwarder};
 use std::{sync::Arc, time::Duration};
 
 const TX_STATUS_POLL_MS: u64 = 100;
@@ -21,15 +22,20 @@ impl TxPoller {
     /// Return the next tx that needs sending
     fn next_transaction(&self) -> Option<PersistedTransaction> {
         let mut iter = self.db.persisted_transaction_iterator();
-        iter.find(|tx| tx.confirm_event == NomadEvent::Dummy2)
+        iter.find(|tx| tx.confirm_event == NomadTxStatus::Dummy2)
     }
 
     /// Run the polling loop to send off new transactions
     pub async fn run(&self) -> Result<()> {
         let contract = self.contract.clone();
         loop {
-            if let Some(tx) = self.next_transaction() {
-                contract.forward(tx).await; // TODO(matthew): Deal with this error here
+            if let Some(mut tx) = self.next_transaction() {
+                let result = contract.forward(tx.clone()).await;
+                if result.is_err() {
+                    // TODO(matthew): Do we have retry states here?
+                    tx.confirm_event = result.unwrap_err().into();
+                    self.db.update_persisted_transaction(&tx)?;
+                }
             }
             tokio::time::sleep(Duration::from_millis(TX_STATUS_POLL_MS)).await;
         }
