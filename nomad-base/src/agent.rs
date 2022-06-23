@@ -102,11 +102,6 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
         self.as_ref().tx_pollers.clone()
     }
 
-    // /// Return a handle to the tx senders
-    // fn tx_senders(&self) -> HashMap<String, TxSender> {
-    //     self.as_ref().tx_senders.clone()
-    // }
-
     /// Return a reference to a home contract
     fn home(&self) -> Arc<CachingHome> {
         self.as_ref().home.clone()
@@ -222,9 +217,6 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
 
             let poller_task = self.run_tx_pollers();
             tasks.push(poller_task);
-
-            // let sender_task = self.run_tx_senders();
-            // tasks.push(sender_task);
 
             let (res, _, remaining) = select_all(tasks).await;
 
