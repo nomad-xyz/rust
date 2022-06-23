@@ -6,7 +6,7 @@ use crate::{
         fmt::{log_level_to_level_filter, LogOutputLayer},
         TimeSpanLifetime,
     },
-    BaseError, CachingHome, CachingReplica, NomadDB, TxManager, TxPoller, TxSender,
+    BaseError, CachingHome, CachingReplica, NomadDB, TxPoller,
 };
 use async_trait::async_trait;
 use color_eyre::{eyre::WrapErr, Result};
@@ -36,8 +36,6 @@ pub struct AgentCore {
     pub db: DB,
     /// A map of tx pollers per network
     pub tx_pollers: HashMap<String, TxPoller>,
-    /// A map of tx sender per network
-    pub tx_senders: HashMap<String, TxSender>,
     /// Prometheus metrics
     pub metrics: Arc<CoreMetrics>,
     /// The height at which to start indexing the Home
@@ -104,10 +102,10 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
         self.as_ref().tx_pollers.clone()
     }
 
-    /// Return a handle to the tx senders
-    fn tx_senders(&self) -> HashMap<String, TxSender> {
-        self.as_ref().tx_senders.clone()
-    }
+    // /// Return a handle to the tx senders
+    // fn tx_senders(&self) -> HashMap<String, TxSender> {
+    //     self.as_ref().tx_senders.clone()
+    // }
 
     /// Return a reference to a home contract
     fn home(&self) -> Arc<CachingHome> {
@@ -225,8 +223,8 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
             let poller_task = self.run_tx_pollers();
             tasks.push(poller_task);
 
-            let sender_task = self.run_tx_senders();
-            tasks.push(sender_task);
+            // let sender_task = self.run_tx_senders();
+            // tasks.push(sender_task);
 
             let (res, _, remaining) = select_all(tasks).await;
 
@@ -305,28 +303,6 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
             .into_iter()
             .map(|(_, tx_poller)| {
                 tokio::spawn(async move { tx_poller.run().await }).in_current_span()
-            })
-            .collect::<Vec<_>>();
-
-        tokio::spawn(async move {
-            let (res, _, remaining) = select_all(handles).await;
-            for task in remaining.into_iter() {
-                cancel_task!(task);
-            }
-            res?
-        })
-        .instrument(span)
-    }
-
-    /// Run tx senders
-    fn run_tx_senders(&self) -> Instrumented<JoinHandle<Result<()>>> {
-        let span = info_span!("run_tx_senders");
-
-        let handles = self
-            .tx_senders()
-            .into_iter()
-            .map(|(_, tx_sender)| {
-                tokio::spawn(async move { tx_sender.run().await }).in_current_span()
             })
             .collect::<Vec<_>>();
 
