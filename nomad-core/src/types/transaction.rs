@@ -13,6 +13,7 @@ pub enum TxDispatchKind {
     FireAndForget,
 }
 
+// TODO(matthew): We can probably yank this
 /// Contract type that transaction originates from
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub enum NomadContract {
