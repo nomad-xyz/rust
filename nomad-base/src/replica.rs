@@ -3,8 +3,9 @@ use color_eyre::eyre::Result;
 use ethers::core::types::H256;
 use nomad_core::{
     accumulator::NomadProof, db::DbError, ChainCommunicationError, Common, CommonEvents,
-    CommonTxHandling, CommonTxSubmission, DoubleUpdate, MessageStatus, NomadMessage, Replica,
-    ReplicaTxHandling, ReplicaTxSubmission, SignedUpdate, State, TxDispatchKind, TxOutcome,
+    CommonTxHandling, CommonTxSubmission, DoubleUpdate, MessageStatus, NomadMessage,
+    PersistedTransaction, Replica, ReplicaTxHandling, ReplicaTxSubmission, SignedUpdate, State,
+    TxDispatchKind, TxForwarder, TxOutcome, TxSender,
 };
 
 use crate::NomadDB;
@@ -174,6 +175,13 @@ impl CommonEvents for CachingReplica {
             }
             sleep(Duration::from_millis(500)).await;
         }
+    }
+}
+
+#[async_trait]
+impl TxForwarder for CachingReplica {
+    async fn forward(&self, tx: PersistedTransaction) {
+        self.replica.send(tx).await
     }
 }
 
@@ -377,6 +385,16 @@ impl CommonTxSubmission for ReplicaVariants {
             ReplicaVariants::Ethereum(replica) => replica.double_update(double).await,
             ReplicaVariants::Mock(mock_replica) => mock_replica.double_update(double).await,
             ReplicaVariants::Other(replica) => replica.double_update(double).await,
+        }
+    }
+}
+
+#[async_trait]
+impl TxSender for ReplicaVariants {
+    async fn send(&self, tx: PersistedTransaction) {
+        match self {
+            ReplicaVariants::Ethereum(home) => home.send(tx).await,
+            _ => unimplemented!(),
         }
     }
 }
