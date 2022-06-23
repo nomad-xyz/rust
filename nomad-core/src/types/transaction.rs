@@ -70,6 +70,8 @@ impl From<ChainCommunicationError> for NomadTxStatus {
 pub struct PersistedTransaction {
     /// The method this transaction will be processed by
     pub method: NomadMethod,
+    /// Nonce for ordering
+    pub counter: u64,
     /// TODO(matthew):
     pub confirm_event: NomadTxStatus,
 }
@@ -79,6 +81,7 @@ impl PersistedTransaction {
     pub fn new(method: NomadMethod) -> Self {
         PersistedTransaction {
             method,
+            counter: 0,
             confirm_event: NomadTxStatus::Dummy,
         }
     }
@@ -88,6 +91,7 @@ impl From<NomadMethod> for PersistedTransaction {
     fn from(method: NomadMethod) -> Self {
         PersistedTransaction {
             method,
+            counter: 0,
             confirm_event: NomadTxStatus::Dummy,
         }
     }
