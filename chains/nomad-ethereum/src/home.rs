@@ -12,8 +12,8 @@ use futures_util::future::join_all;
 use nomad_core::{
     ChainCommunicationError, Common, CommonIndexer, CommonTxSubmission, ContractLocator,
     DoubleUpdate, Home, HomeIndexer, HomeTxSubmission, Message, NomadMethod, PersistedTransaction,
-    RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, TxTranslator,
-    Update, UpdateMeta,
+    RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, TxSender,
+    TxTranslator, Update, UpdateMeta,
 };
 use nomad_xyz_configuration::HomeGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
@@ -419,5 +419,18 @@ where
             }
             _ => unimplemented!(),
         }
+    }
+}
+
+#[async_trait]
+impl<W, R> TxSender for EthereumHome<W, R>
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
+{
+    async fn send(&self, tx: PersistedTransaction) {
+        // TODO(matthew): We probably want to pass errors back up to the poller
+        let tx = self.convert(tx).await.unwrap();
+        //
     }
 }
