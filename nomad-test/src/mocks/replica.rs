@@ -127,3 +127,10 @@ impl CommonTxSubmission for MockReplicaContract {
         self._double_update(double)
     }
 }
+
+#[async_trait]
+impl TxSender for MockReplicaContract {
+    async fn send(&self, tx: PersistedTransaction) {
+        unimplemented!()
+    }
+}
