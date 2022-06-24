@@ -352,7 +352,7 @@ where
     W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
-    async fn send(&self, tx: PersistedTransaction) -> Result<(), ChainCommunicationError> {
+    async fn send(&self, tx: PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError> {
         unimplemented!()
     }
 }

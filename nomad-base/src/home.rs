@@ -231,7 +231,7 @@ impl CommonEvents for CachingHome {
 
 #[async_trait]
 impl TxForwarder for CachingHome {
-    async fn forward(&self, tx: PersistedTransaction) -> Result<(), ChainCommunicationError> {
+    async fn forward(&self, tx: PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError> {
         self.home.send(tx).await
     }
 }
@@ -450,7 +450,7 @@ impl CommonTxSubmission for HomeVariants {
 
 #[async_trait]
 impl TxSender for HomeVariants {
-    async fn send(&self, tx: PersistedTransaction) -> Result<(), ChainCommunicationError> {
+    async fn send(&self, tx: PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => home.send(tx).await,
             _ => unimplemented!(),

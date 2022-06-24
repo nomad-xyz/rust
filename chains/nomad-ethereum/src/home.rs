@@ -422,19 +422,19 @@ where
     }
 }
 
+// TODO(matthew): Where does the confirm task live?
+
 #[async_trait]
 impl<W, R> TxSender for EthereumHome<W, R>
 where
     W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
-    async fn send(&self, tx: PersistedTransaction) -> Result<(), ChainCommunicationError> {
+    async fn send(&self, tx: PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError> {
         let tx = self.convert(tx).await?;
-        // TODO(matthew): What do we do with the TxOutcome?
-        let result = self
+        self
             .submitter
             .submit(self.domain, self.contract.address(), tx)
-            .await;
-        Ok(())
+            .await
     }
 }
