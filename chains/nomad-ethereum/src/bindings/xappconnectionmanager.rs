@@ -1,6 +1,6 @@
 pub use xappconnectionmanager_mod::*;
-#[allow(clippy::too_many_arguments)]
-mod xappconnectionmanager_mod {
+#[allow(clippy::too_many_arguments, non_camel_case_types)]
+pub mod xappconnectionmanager_mod {
     #![allow(clippy::enum_variant_names)]
     #![allow(dead_code)]
     #![allow(clippy::type_complexity)]

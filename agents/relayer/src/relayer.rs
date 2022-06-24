@@ -194,7 +194,6 @@ mod test {
     use nomad_test::test_utils;
     use std::collections::HashMap;
     use tokio::time::{sleep, Duration};
-    use tokio_test::assert_err;
 
     use super::*;
 
@@ -293,7 +292,8 @@ mod test {
                 <Relayer as nomad_base::NomadAgent>::run(agent.build_channel("moonbeam"))
                     .await
                     .expect("Couldn't join relayer's run task");
-            assert_err!(run_result, "Must have returned error");
+
+            assert!(run_result.is_err(), "Must have returned error");
 
             let run_report_error_task = agent
                 .run_report_error(channel_name.to_string())
