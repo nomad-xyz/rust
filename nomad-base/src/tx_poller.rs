@@ -30,12 +30,11 @@ impl TxPoller {
         let contract = self.contract.clone();
         loop {
             if let Some(mut tx) = self.next_transaction() {
-                let result = contract.forward(tx.clone()).await;
-                if result.is_err() {
-                    // TODO(matthew): Do we have retry states here?
-                    tx.confirm_event = result.unwrap_err().into();
-                    self.db.update_persisted_transaction(&tx)?;
-                }
+                tx.confirm_event = match contract.forward(tx.clone()).await {
+                    Ok(outcome) => outcome.into(),
+                    Err(error) => error.into(),
+                };
+                self.db.update_persisted_transaction(&tx)?;
             }
             tokio::time::sleep(Duration::from_millis(TX_STATUS_POLL_MS)).await;
         }
