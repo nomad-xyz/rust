@@ -1,4 +1,7 @@
-use crate::{accumulator::NomadProof, ChainCommunicationError, Decode, Encode, Message, NomadError, NomadMessage, SignedFailureNotification, SignedUpdate, TxOutcome};
+use crate::{
+    accumulator::NomadProof, ChainCommunicationError, Decode, Encode, Message, NomadError,
+    NomadMessage, SignedFailureNotification, SignedUpdate, TxOutcome,
+};
 use nomad_types::NomadIdentifier;
 
 /// Behavior of transaction submission

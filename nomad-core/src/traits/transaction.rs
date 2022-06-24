@@ -18,7 +18,8 @@ pub trait TxTranslator {
 #[async_trait]
 pub trait TxForwarder: Send + Sync + std::fmt::Debug {
     /// Translate to chain-specific type
-    async fn forward(&self, tx: PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError>;
+    async fn forward(&self, tx: PersistedTransaction)
+        -> Result<TxOutcome, ChainCommunicationError>;
 }
 
 /// Interface for submitting PersistentTransaction to a contract

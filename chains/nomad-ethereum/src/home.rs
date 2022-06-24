@@ -432,8 +432,7 @@ where
 {
     async fn send(&self, tx: PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError> {
         let tx = self.convert(tx).await?;
-        self
-            .submitter
+        self.submitter
             .submit(self.domain, self.contract.address(), tx)
             .await
     }

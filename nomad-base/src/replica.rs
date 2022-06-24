@@ -180,7 +180,10 @@ impl CommonEvents for CachingReplica {
 
 #[async_trait]
 impl TxForwarder for CachingReplica {
-    async fn forward(&self, tx: PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn forward(
+        &self,
+        tx: PersistedTransaction,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
         self.replica.send(tx).await
     }
 }

@@ -231,7 +231,10 @@ impl CommonEvents for CachingHome {
 
 #[async_trait]
 impl TxForwarder for CachingHome {
-    async fn forward(&self, tx: PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn forward(
+        &self,
+        tx: PersistedTransaction,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
         self.home.send(tx).await
     }
 }
