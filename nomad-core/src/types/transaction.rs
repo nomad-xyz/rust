@@ -1,7 +1,4 @@
-use crate::{
-    accumulator::NomadProof, ChainCommunicationError, Decode, Encode, Message, NomadError,
-    NomadMessage, SignedFailureNotification, SignedUpdate,
-};
+use crate::{accumulator::NomadProof, ChainCommunicationError, Decode, Encode, Message, NomadError, NomadMessage, SignedFailureNotification, SignedUpdate, TxOutcome};
 use nomad_types::NomadIdentifier;
 
 /// Behavior of transaction submission
@@ -60,6 +57,17 @@ impl From<ChainCommunicationError> for NomadTxStatus {
     fn from(error: ChainCommunicationError) -> Self {
         match error {
             ChainCommunicationError::NomadError(_) => NomadTxStatus::Dummy,
+            _ => unimplemented!(), // TODO:
+        }
+    }
+}
+
+// TODO(matthew): Move me
+/// Convert between TxOutcome and NomadTxStatus
+impl From<TxOutcome> for NomadTxStatus {
+    fn from(outcome: TxOutcome) -> Self {
+        match outcome {
+            TxOutcome::Dummy => NomadTxStatus::Dummy,
             _ => unimplemented!(), // TODO:
         }
     }
