@@ -13,6 +13,7 @@ pub struct TxManager {
     db: NomadDB,
 }
 
+// TODO(matthew): Rename this to something that makes sense
 impl TxManager {
     /// Create a new TxManager with a DB ref
     pub fn new(db: NomadDB) -> Self {
