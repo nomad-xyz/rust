@@ -6,7 +6,7 @@ use nomad_core::{
     db::DbError, ChainCommunicationError, Common, CommonEvents, CommonTxHandling,
     CommonTxSubmission, DoubleUpdate, Home, HomeEvents, HomeTxHandling, HomeTxSubmission, Message,
     NomadMethod, PersistedTransaction, RawCommittedMessage, SignedUpdate, State, TxDispatchKind,
-    TxForwarder, TxOutcome, TxSender, Update,
+    TxOutcome, TxSender, Update,
 };
 use nomad_ethereum::EthereumHome;
 use nomad_test::mocks::MockHomeContract;
@@ -230,11 +230,8 @@ impl CommonEvents for CachingHome {
 }
 
 #[async_trait]
-impl TxForwarder for CachingHome {
-    async fn forward(
-        &self,
-        tx: PersistedTransaction,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+impl TxSender for CachingHome {
+    async fn send(&self, tx: PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError> {
         self.home.send(tx).await
     }
 }

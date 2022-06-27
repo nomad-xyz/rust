@@ -14,17 +14,9 @@ pub trait TxTranslator {
     ) -> Result<Self::Transaction, ChainCommunicationError>;
 }
 
-/// Interface for forwarding between abstract and concrete contract instances
-#[async_trait]
-pub trait TxForwarder: Send + Sync + std::fmt::Debug {
-    /// Translate to chain-specific type
-    async fn forward(&self, tx: PersistedTransaction)
-        -> Result<TxOutcome, ChainCommunicationError>;
-}
-
 /// Interface for submitting PersistentTransaction to a contract
 #[async_trait]
-pub trait TxSender {
+pub trait TxSender: Send + Sync + std::fmt::Debug {
     /// Translate to chain-specific type
     async fn send(&self, tx: PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError>;
 }
@@ -33,5 +25,6 @@ pub trait TxSender {
 #[async_trait]
 pub trait TxStatus {
     /// Translate to chain-specific type
-    async fn status(&self, tx: &PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError>;
+    async fn status(&self, tx: &PersistedTransaction)
+        -> Result<TxOutcome, ChainCommunicationError>;
 }
