@@ -1,6 +1,5 @@
 use crate::NomadDB;
 use color_eyre::Result;
-use nomad_core::db::DbError;
 use nomad_core::{NomadTxStatus, PersistedTransaction, TxForwarder};
 use std::{sync::Arc, time::Duration};
 
