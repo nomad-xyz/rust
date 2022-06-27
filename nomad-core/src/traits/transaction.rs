@@ -28,3 +28,10 @@ pub trait TxSender {
     /// Translate to chain-specific type
     async fn send(&self, tx: PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError>;
 }
+
+/// Interface for checking chain-specific / tx-specific tx status status via a contract
+#[async_trait]
+pub trait TxStatus {
+    /// Translate to chain-specific type
+    async fn status(&self, tx: &PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError>;
+}
