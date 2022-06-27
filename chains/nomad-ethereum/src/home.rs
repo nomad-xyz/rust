@@ -12,8 +12,8 @@ use futures_util::future::join_all;
 use nomad_core::{
     ChainCommunicationError, Common, CommonIndexer, CommonTxSubmission, ContractLocator,
     DoubleUpdate, Home, HomeIndexer, HomeTxSubmission, Message, NomadMethod, PersistedTransaction,
-    RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, TxSender,
-    TxTranslator, Update, UpdateMeta,
+    RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State, TxContractStatus,
+    TxEventStatus, TxOutcome, TxSender, TxTranslator, Update, UpdateMeta,
 };
 use nomad_xyz_configuration::HomeGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
@@ -152,6 +152,19 @@ where
                 message: f.message.to_vec(),
             })
             .collect())
+    }
+}
+
+#[async_trait]
+impl<R> TxEventStatus for EthereumHomeIndexer<R>
+where
+    R: ethers::providers::Middleware + 'static,
+{
+    async fn status(
+        &self,
+        _tx: &PersistedTransaction,
+    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
+        unimplemented!()
     }
 }
 
@@ -422,8 +435,6 @@ where
     }
 }
 
-// TODO(matthew): Where does the confirm task live?
-
 #[async_trait]
 impl<W, R> TxSender for EthereumHome<W, R>
 where
@@ -435,5 +446,19 @@ where
         self.submitter
             .submit(self.domain, self.contract.address(), tx)
             .await
+    }
+}
+
+#[async_trait]
+impl<W, R> TxContractStatus for EthereumHome<W, R>
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
+{
+    async fn status(
+        &self,
+        _tx: &PersistedTransaction,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
+        unimplemented!()
     }
 }
