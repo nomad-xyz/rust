@@ -21,10 +21,18 @@ pub trait TxSender: Send + Sync + std::fmt::Debug {
     async fn send(&self, tx: PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError>;
 }
 
-/// Interface for checking chain-specific / tx-specific tx status status via a contract
+/// Interface for checking tx status via emitted events
 #[async_trait]
-pub trait TxStatus {
-    /// Translate to chain-specific type
+pub trait TxEventStatus {
+    /// Get status of transaction via contract state
+    async fn status(&self, tx: &PersistedTransaction)
+        -> Result<TxOutcome, ChainCommunicationError>;
+}
+
+/// Interface for checking tx status via contract state
+#[async_trait]
+pub trait TxContractStatus {
+    /// Get status of transaction via contract state
     async fn status(&self, tx: &PersistedTransaction)
         -> Result<TxOutcome, ChainCommunicationError>;
 }
