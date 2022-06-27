@@ -89,7 +89,7 @@ impl ReplicaTxHandling for CachingReplica {
     async fn prove(
         &self,
         proof: &NomadProof,
-        dispatch_kind: TxDispatchKind,
+        _dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self.replica.prove(proof).await
     }
@@ -97,7 +97,7 @@ impl ReplicaTxHandling for CachingReplica {
     async fn process(
         &self,
         message: &NomadMessage,
-        dispatch_kind: TxDispatchKind,
+        _dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self.replica.process(message).await
     }
@@ -127,7 +127,7 @@ impl CommonTxHandling for CachingReplica {
     async fn status(
         &self,
         txid: H256,
-        dispatch_kind: TxDispatchKind,
+        _dispatch_kind: TxDispatchKind,
     ) -> Result<Option<TxOutcome>, ChainCommunicationError> {
         self.replica.status(txid).await
     }
@@ -135,7 +135,7 @@ impl CommonTxHandling for CachingReplica {
     async fn update(
         &self,
         update: &SignedUpdate,
-        dispatch_kind: TxDispatchKind,
+        _dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self.replica.update(update).await
     }
@@ -143,7 +143,7 @@ impl CommonTxHandling for CachingReplica {
     async fn double_update(
         &self,
         double: &DoubleUpdate,
-        dispatch_kind: TxDispatchKind,
+        _dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self.replica.double_update(double).await
     }

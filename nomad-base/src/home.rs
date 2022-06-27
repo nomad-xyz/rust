@@ -109,7 +109,7 @@ impl HomeTxHandling for CachingHome {
     async fn improper_update(
         &self,
         update: &SignedUpdate,
-        dispatch_kind: TxDispatchKind,
+        _dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self.home.improper_update(update).await
     }
@@ -178,7 +178,7 @@ impl CommonTxHandling for CachingHome {
     async fn status(
         &self,
         txid: H256,
-        dispatch_kind: TxDispatchKind,
+        _dispatch_kind: TxDispatchKind,
     ) -> Result<Option<TxOutcome>, ChainCommunicationError> {
         self.home.status(txid).await
     }
@@ -186,7 +186,7 @@ impl CommonTxHandling for CachingHome {
     async fn update(
         &self,
         update: &SignedUpdate,
-        dispatch_kind: TxDispatchKind,
+        _dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self.home.update(update).await
     }
@@ -194,7 +194,7 @@ impl CommonTxHandling for CachingHome {
     async fn double_update(
         &self,
         double: &DoubleUpdate,
-        dispatch_kind: TxDispatchKind,
+        _dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self.home.double_update(double).await
     }
