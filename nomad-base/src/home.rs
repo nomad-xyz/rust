@@ -5,8 +5,8 @@ use ethers::core::types::{H256, U256};
 use nomad_core::{
     db::DbError, ChainCommunicationError, Common, CommonEvents, CommonTxHandling,
     CommonTxSubmission, DoubleUpdate, Home, HomeEvents, HomeTxHandling, HomeTxSubmission, Message,
-    NomadMethod, PersistedTransaction, RawCommittedMessage, SignedUpdate, State, TxDispatchKind,
-    TxForwarder, TxOutcome, Update,
+    NomadMethod, PersistedTransaction, RawCommittedMessage, SignedUpdate, State, TxContractStatus,
+    TxDispatchKind, TxEventStatus, TxForwarder, TxOutcome, Update,
 };
 use nomad_ethereum::EthereumHome;
 use nomad_test::mocks::MockHomeContract;
@@ -155,6 +155,16 @@ impl HomeEvents for CachingHome {
 }
 
 #[async_trait]
+impl TxEventStatus for CachingHome {
+    async fn event_status(
+        &self,
+        tx: &PersistedTransaction,
+    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
+        self.home.event_status(tx).await
+    }
+}
+
+#[async_trait]
 impl Common for CachingHome {
     fn name(&self) -> &str {
         self.home.name()
@@ -236,6 +246,16 @@ impl TxForwarder for CachingHome {
         tx: PersistedTransaction,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self.home.forward(tx).await
+    }
+}
+
+#[async_trait]
+impl TxContractStatus for CachingHome {
+    async fn contract_status(
+        &self,
+        tx: &PersistedTransaction,
+    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
+        self.home.contract_status(tx).await
     }
 }
 
@@ -459,6 +479,32 @@ impl TxForwarder for HomeVariants {
     ) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => home.forward(tx).await,
+            _ => unimplemented!(),
+        }
+    }
+}
+
+#[async_trait]
+impl TxEventStatus for HomeVariants {
+    async fn event_status(
+        &self,
+        tx: &PersistedTransaction,
+    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
+        match self {
+            HomeVariants::Ethereum(home) => home.event_status(tx).await,
+            _ => unimplemented!(),
+        }
+    }
+}
+
+#[async_trait]
+impl TxContractStatus for HomeVariants {
+    async fn contract_status(
+        &self,
+        tx: &PersistedTransaction,
+    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
+        match self {
+            HomeVariants::Ethereum(home) => home.contract_status(tx).await,
             _ => unimplemented!(),
         }
     }

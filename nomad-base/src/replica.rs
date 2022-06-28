@@ -5,7 +5,7 @@ use nomad_core::{
     accumulator::NomadProof, db::DbError, ChainCommunicationError, Common, CommonEvents,
     CommonTxHandling, CommonTxSubmission, DoubleUpdate, MessageStatus, NomadMessage,
     PersistedTransaction, Replica, ReplicaTxHandling, ReplicaTxSubmission, SignedUpdate, State,
-    TxDispatchKind, TxForwarder, TxOutcome,
+    TxContractStatus, TxDispatchKind, TxEventStatus, TxForwarder, TxOutcome,
 };
 
 use crate::NomadDB;
@@ -179,12 +179,32 @@ impl CommonEvents for CachingReplica {
 }
 
 #[async_trait]
+impl TxEventStatus for CachingReplica {
+    async fn event_status(
+        &self,
+        tx: &PersistedTransaction,
+    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
+        self.replica.event_status(tx).await
+    }
+}
+
+#[async_trait]
 impl TxForwarder for CachingReplica {
     async fn forward(
         &self,
         tx: PersistedTransaction,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self.replica.forward(tx).await
+    }
+}
+
+#[async_trait]
+impl TxContractStatus for CachingReplica {
+    async fn contract_status(
+        &self,
+        tx: &PersistedTransaction,
+    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
+        self.replica.contract_status(tx).await
     }
 }
 
@@ -400,6 +420,32 @@ impl TxForwarder for ReplicaVariants {
     ) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
             ReplicaVariants::Ethereum(home) => home.forward(tx).await,
+            _ => unimplemented!(),
+        }
+    }
+}
+
+#[async_trait]
+impl TxEventStatus for ReplicaVariants {
+    async fn event_status(
+        &self,
+        tx: &PersistedTransaction,
+    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
+        match self {
+            ReplicaVariants::Ethereum(home) => home.event_status(tx).await,
+            _ => unimplemented!(),
+        }
+    }
+}
+
+#[async_trait]
+impl TxContractStatus for ReplicaVariants {
+    async fn contract_status(
+        &self,
+        tx: &PersistedTransaction,
+    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
+        match self {
+            ReplicaVariants::Ethereum(home) => home.contract_status(tx).await,
             _ => unimplemented!(),
         }
     }
