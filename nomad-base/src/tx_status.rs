@@ -27,10 +27,25 @@ impl TxStatus {
         }
     }
 
+    /// Return the next tx with indeterminate status
+    fn next_transaction(&self) -> Option<PersistedTransaction> {
+        let mut iter = self.db.persisted_transaction_iterator();
+        iter.find(|tx| tx.confirm_event == NomadTxStatus::Dummy2)
+    }
+
     /// Run the polling loop to check transaction status
     pub async fn run(&self) -> Result<()> {
+        let indexer = self.indexer.clone();
+        let contract = self.contract.clone();
         loop {
-            // TODO:
+            if let Some(mut tx) = self.next_transaction() {
+
+                // TODO(matthew):
+                let _ = indexer.event_status(&tx).await;
+                let _ = contract.contract_status(&tx).await;
+
+                // self.db.update_persisted_transaction(&tx)?;
+            }
             tokio::time::sleep(Duration::from_millis(TX_STATUS_POLL_MS)).await;
         }
     }
