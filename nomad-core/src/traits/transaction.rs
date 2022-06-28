@@ -24,7 +24,7 @@ pub trait TxForwarder: Send + Sync + std::fmt::Debug {
 
 /// Interface for checking tx status via emitted events
 #[async_trait]
-pub trait TxEventStatus: std::fmt::Debug {
+pub trait TxEventStatus: Send + Sync + std::fmt::Debug {
     /// Get status of transaction via contract state
     async fn event_status(
         &self,
@@ -34,7 +34,7 @@ pub trait TxEventStatus: std::fmt::Debug {
 
 /// Interface for checking tx status via contract state
 #[async_trait]
-pub trait TxContractStatus: std::fmt::Debug {
+pub trait TxContractStatus: Send + Sync + std::fmt::Debug {
     /// Get status of transaction via contract state
     async fn contract_status(
         &self,
