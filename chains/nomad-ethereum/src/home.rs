@@ -155,19 +155,6 @@ where
     }
 }
 
-#[async_trait]
-impl<R> TxEventStatus for EthereumHomeIndexer<R>
-where
-    R: ethers::providers::Middleware + 'static,
-{
-    async fn event_status(
-        &self,
-        _tx: &PersistedTransaction,
-    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
-        unimplemented!()
-    }
-}
-
 /// A reference to a Home contract on some Ethereum chain
 #[derive(Debug)]
 pub struct EthereumHome<W, R>
