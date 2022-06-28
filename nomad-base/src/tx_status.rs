@@ -9,7 +9,7 @@ const TX_STATUS_POLL_MS: u64 = 100;
 #[derive(Debug, Clone)]
 pub struct TxStatus {
     db: NomadDB,
-    indexer: Arc<dyn TxEventStatus>,
+    events: Arc<dyn TxEventStatus>,
     contract: Arc<dyn TxContractStatus>,
 }
 
@@ -17,12 +17,12 @@ impl TxStatus {
     /// Create a new TxStatus with a DB, indexer and contract ref
     pub fn new(
         db: NomadDB,
-        indexer: Arc<dyn TxEventStatus>,
+        events: Arc<dyn TxEventStatus>,
         contract: Arc<dyn TxContractStatus>,
     ) -> Self {
         Self {
             db,
-            indexer,
+            events,
             contract,
         }
     }
@@ -35,13 +35,12 @@ impl TxStatus {
 
     /// Run the polling loop to check transaction status
     pub async fn run(&self) -> Result<()> {
-        let indexer = self.indexer.clone();
+        let events = self.events.clone();
         let contract = self.contract.clone();
         loop {
             if let Some(mut tx) = self.next_transaction() {
-
                 // TODO(matthew):
-                let _ = indexer.event_status(&tx).await;
+                let _ = events.event_status(&tx).await;
                 let _ = contract.contract_status(&tx).await;
 
                 // self.db.update_persisted_transaction(&tx)?;
