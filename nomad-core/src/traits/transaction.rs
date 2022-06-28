@@ -24,7 +24,7 @@ pub trait TxForwarder: Send + Sync + std::fmt::Debug {
 
 /// Interface for checking tx status via emitted events
 #[async_trait]
-pub trait TxEventStatus {
+pub trait TxEventStatus: std::fmt::Debug {
     /// Get status of transaction via contract state
     async fn status(&self, tx: &PersistedTransaction)
         -> Result<TxOutcome, ChainCommunicationError>;
@@ -32,7 +32,7 @@ pub trait TxEventStatus {
 
 /// Interface for checking tx status via contract state
 #[async_trait]
-pub trait TxContractStatus {
+pub trait TxContractStatus: std::fmt::Debug {
     /// Get status of transaction via contract state
     async fn status(&self, tx: &PersistedTransaction)
         -> Result<TxOutcome, ChainCommunicationError>;
