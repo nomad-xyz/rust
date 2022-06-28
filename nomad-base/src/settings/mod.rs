@@ -13,10 +13,10 @@
 use crate::{
     agent::AgentCore, CachingHome, CachingReplica, CommonIndexerVariants, CommonIndexers,
     ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes, NomadDB, Replicas,
-    TxManager, TxSender,
+    TxManager, TxSender, TxStatus,
 };
 use color_eyre::{eyre::bail, Result};
-use nomad_core::{db::DB, Common, ContractLocator, TxForwarder};
+use nomad_core::{db::DB, Common, ContractLocator, TxContractStatus, TxEventStatus, TxForwarder};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
 use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets, TxSubmitterConf};
 use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig, NomadGasConfig};
@@ -199,6 +199,38 @@ impl Settings {
         contracts
             .into_iter()
             .map(|(k, c)| (k.clone(), TxSender::new(NomadDB::new(k, db.clone()), c)))
+            .collect::<HashMap<_, _>>()
+    }
+
+    /// Make transaction status pollers
+    fn transaction_status_pollers(
+        &self,
+        home: Arc<CachingHome>,
+        replicas: HashMap<String, Arc<CachingReplica>>,
+        db: DB,
+    ) -> HashMap<String, TxStatus> {
+        let mut contracts = replicas
+            .into_iter()
+            .map(|(n, c)| {
+                (
+                    n,
+                    (
+                        c.clone() as Arc<dyn TxEventStatus>,
+                        c as Arc<dyn TxContractStatus>,
+                    ),
+                )
+            })
+            .collect::<HashMap<_, (_, _)>>();
+        contracts.insert(
+            self.home.name.clone(),
+            (
+                home.clone() as Arc<dyn TxEventStatus>,
+                home as Arc<dyn TxContractStatus>,
+            ),
+        );
+        contracts
+            .into_iter()
+            .map(|(k, (i, c))| (k.clone(), TxStatus::new(NomadDB::new(k, db.clone()), i, c)))
             .collect::<HashMap<_, _>>()
     }
 }
@@ -439,12 +471,15 @@ impl Settings {
             .await?;
 
         let tx_senders = self.transaction_senders(home.clone(), replicas.clone(), db.clone());
+        let tx_statuses =
+            self.transaction_status_pollers(home.clone(), replicas.clone(), db.clone());
 
         Ok(AgentCore {
             home,
             replicas,
             db,
             tx_senders,
+            tx_statuses,
             settings: self.clone(),
             metrics,
             indexer: self.index.clone(),
