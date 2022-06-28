@@ -34,8 +34,8 @@ pub struct AgentCore {
     pub replicas: HashMap<String, Arc<CachingReplica>>,
     /// A persistent KV Store (currently implemented as rocksdb)
     pub db: DB,
-    /// A map of tx pollers per network
-    pub tx_pollers: HashMap<String, TxSender>,
+    /// A map of tx senders per network
+    pub tx_senders: HashMap<String, TxSender>,
     /// Prometheus metrics
     pub metrics: Arc<CoreMetrics>,
     /// The height at which to start indexing the Home
@@ -97,9 +97,9 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
         self.as_ref().db.clone()
     }
 
-    /// Return a handle to the tx pollers
-    fn tx_pollers(&self) -> HashMap<String, TxSender> {
-        self.as_ref().tx_pollers.clone()
+    /// Return a handle to the tx senders
+    fn tx_senders(&self) -> HashMap<String, TxSender> {
+        self.as_ref().tx_senders.clone()
     }
 
     /// Return a reference to a home contract
@@ -215,8 +215,8 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
                 tasks.push(sync_task);
             }
 
-            let poller_task = self.run_tx_pollers();
-            tasks.push(poller_task);
+            let sender_task = self.run_tx_senders();
+            tasks.push(sender_task);
 
             let (res, _, remaining) = select_all(tasks).await;
 
@@ -286,15 +286,15 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
         Ok(())
     }
 
-    /// Run tx pollers
-    fn run_tx_pollers(&self) -> Instrumented<JoinHandle<Result<()>>> {
-        let span = info_span!("run_tx_pollers");
+    /// Run tx senders
+    fn run_tx_senders(&self) -> Instrumented<JoinHandle<Result<()>>> {
+        let span = info_span!("run_tx_senders");
 
         let handles = self
-            .tx_pollers()
+            .tx_senders()
             .into_iter()
-            .map(|(_, tx_poller)| {
-                tokio::spawn(async move { tx_poller.run().await }).in_current_span()
+            .map(|(_, tx_sender)| {
+                tokio::spawn(async move { tx_sender.run().await }).in_current_span()
             })
             .collect::<Vec<_>>();
 

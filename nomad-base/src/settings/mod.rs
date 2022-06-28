@@ -184,8 +184,8 @@ impl Settings {
         }
     }
 
-    /// Make transaction pollers
-    fn transaction_pollers(
+    /// Make transaction senders
+    fn transaction_senders(
         &self,
         home: Arc<CachingHome>,
         replicas: HashMap<String, Arc<CachingReplica>>,
@@ -438,13 +438,13 @@ impl Settings {
             .try_caching_replicas(name, db.clone(), sync_metrics.clone())
             .await?;
 
-        let tx_pollers = self.transaction_pollers(home.clone(), replicas.clone(), db.clone());
+        let tx_senders = self.transaction_senders(home.clone(), replicas.clone(), db.clone());
 
         Ok(AgentCore {
             home,
             replicas,
             db,
-            tx_pollers,
+            tx_senders,
             settings: self.clone(),
             metrics,
             indexer: self.index.clone(),
