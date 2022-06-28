@@ -6,7 +6,7 @@ use crate::{
         fmt::{log_level_to_level_filter, LogOutputLayer},
         TimeSpanLifetime,
     },
-    BaseError, CachingHome, CachingReplica, NomadDB, TxPoller,
+    BaseError, CachingHome, CachingReplica, NomadDB, TxSender,
 };
 use async_trait::async_trait;
 use color_eyre::{eyre::WrapErr, Result};
@@ -35,7 +35,7 @@ pub struct AgentCore {
     /// A persistent KV Store (currently implemented as rocksdb)
     pub db: DB,
     /// A map of tx pollers per network
-    pub tx_pollers: HashMap<String, TxPoller>,
+    pub tx_pollers: HashMap<String, TxSender>,
     /// Prometheus metrics
     pub metrics: Arc<CoreMetrics>,
     /// The height at which to start indexing the Home
@@ -98,7 +98,7 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
     }
 
     /// Return a handle to the tx pollers
-    fn tx_pollers(&self) -> HashMap<String, TxPoller> {
+    fn tx_pollers(&self) -> HashMap<String, TxSender> {
         self.as_ref().tx_pollers.clone()
     }
 

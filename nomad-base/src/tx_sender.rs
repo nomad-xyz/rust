@@ -7,12 +7,12 @@ const TX_STATUS_POLL_MS: u64 = 100;
 
 /// Transaction poller for forwarding PersistentTransaction to a concrete contract
 #[derive(Debug, Clone)]
-pub struct TxPoller {
+pub struct TxSender {
     db: NomadDB,
     contract: Arc<dyn TxForwarder>,
 }
 
-impl TxPoller {
+impl TxSender {
     /// Create a new TxPoller with a DB and contract ref
     pub fn new(db: NomadDB, contract: Arc<dyn TxForwarder>) -> Self {
         Self { db, contract }
@@ -40,7 +40,7 @@ impl TxPoller {
     }
 }
 
-impl std::fmt::Display for TxPoller {
+impl std::fmt::Display for TxSender {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self)
     }

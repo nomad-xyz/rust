@@ -13,7 +13,7 @@
 use crate::{
     agent::AgentCore, CachingHome, CachingReplica, CommonIndexerVariants, CommonIndexers,
     ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes, NomadDB, Replicas,
-    TxManager, TxPoller,
+    TxManager, TxSender,
 };
 use color_eyre::{eyre::bail, Result};
 use nomad_core::{db::DB, Common, ContractLocator, TxForwarder};
@@ -190,7 +190,7 @@ impl Settings {
         home: Arc<CachingHome>,
         replicas: HashMap<String, Arc<CachingReplica>>,
         db: DB,
-    ) -> HashMap<String, TxPoller> {
+    ) -> HashMap<String, TxSender> {
         let mut contracts = replicas
             .into_iter()
             .map(|(n, c)| (n, c as Arc<dyn TxForwarder>))
@@ -198,7 +198,7 @@ impl Settings {
         contracts.insert(self.home.name.clone(), home as Arc<dyn TxForwarder>);
         contracts
             .into_iter()
-            .map(|(k, c)| (k.clone(), TxPoller::new(NomadDB::new(k, db.clone()), c)))
+            .map(|(k, c)| (k.clone(), TxSender::new(NomadDB::new(k, db.clone()), c)))
             .collect::<HashMap<_, _>>()
     }
 }
