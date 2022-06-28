@@ -160,7 +160,7 @@ impl<R> TxEventStatus for EthereumHomeIndexer<R>
 where
     R: ethers::providers::Middleware + 'static,
 {
-    async fn status(
+    async fn event_status(
         &self,
         _tx: &PersistedTransaction,
     ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
@@ -453,12 +453,26 @@ where
 }
 
 #[async_trait]
+impl<W, R> TxEventStatus for EthereumHome<W, R>
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
+{
+    async fn event_status(
+        &self,
+        _tx: &PersistedTransaction,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
+        unimplemented!()
+    }
+}
+
+#[async_trait]
 impl<W, R> TxContractStatus for EthereumHome<W, R>
 where
     W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
-    async fn status(
+    async fn contract_status(
         &self,
         _tx: &PersistedTransaction,
     ) -> Result<TxOutcome, ChainCommunicationError> {
