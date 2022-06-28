@@ -16,7 +16,7 @@ use crate::{
     TxManager, TxPoller,
 };
 use color_eyre::{eyre::bail, Result};
-use nomad_core::{db::DB, Common, ContractLocator, TxSender};
+use nomad_core::{db::DB, Common, ContractLocator, TxForwarder};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
 use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets, TxSubmitterConf};
 use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig, NomadGasConfig};
@@ -193,9 +193,9 @@ impl Settings {
     ) -> HashMap<String, TxPoller> {
         let mut contracts = replicas
             .into_iter()
-            .map(|(n, c)| (n, c as Arc<dyn TxSender>))
+            .map(|(n, c)| (n, c as Arc<dyn TxForwarder>))
             .collect::<HashMap<_, _>>();
-        contracts.insert(self.home.name.clone(), home as Arc<dyn TxSender>);
+        contracts.insert(self.home.name.clone(), home as Arc<dyn TxForwarder>);
         contracts
             .into_iter()
             .map(|(k, c)| (k.clone(), TxPoller::new(NomadDB::new(k, db.clone()), c)))

@@ -1,6 +1,6 @@
 use crate::NomadDB;
 use color_eyre::Result;
-use nomad_core::{NomadTxStatus, PersistedTransaction, TxSender};
+use nomad_core::{NomadTxStatus, PersistedTransaction, TxForwarder};
 use std::{sync::Arc, time::Duration};
 
 const TX_STATUS_POLL_MS: u64 = 100;
@@ -9,12 +9,12 @@ const TX_STATUS_POLL_MS: u64 = 100;
 #[derive(Debug, Clone)]
 pub struct TxPoller {
     db: NomadDB,
-    contract: Arc<dyn TxSender>,
+    contract: Arc<dyn TxForwarder>,
 }
 
 impl TxPoller {
     /// Create a new TxPoller with a DB and contract ref
-    pub fn new(db: NomadDB, contract: Arc<dyn TxSender>) -> Self {
+    pub fn new(db: NomadDB, contract: Arc<dyn TxForwarder>) -> Self {
         Self { db, contract }
     }
 
@@ -29,7 +29,7 @@ impl TxPoller {
         let contract = self.contract.clone();
         loop {
             if let Some(mut tx) = self.next_transaction() {
-                tx.confirm_event = match contract.send(tx.clone()).await {
+                tx.confirm_event = match contract.forward(tx.clone()).await {
                     Ok(outcome) => outcome.into(),
                     Err(error) => error.into(),
                 };

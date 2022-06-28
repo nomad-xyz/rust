@@ -129,8 +129,11 @@ impl CommonTxSubmission for MockReplicaContract {
 }
 
 #[async_trait]
-impl TxSender for MockReplicaContract {
-    async fn send(&self, _tx: PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError> {
+impl TxForwarder for MockReplicaContract {
+    async fn forward(
+        &self,
+        _tx: PersistedTransaction,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
         unimplemented!()
     }
 }

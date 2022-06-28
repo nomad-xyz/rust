@@ -5,7 +5,7 @@ use nomad_core::{
     accumulator::NomadProof, db::DbError, ChainCommunicationError, Common, CommonEvents,
     CommonTxHandling, CommonTxSubmission, DoubleUpdate, MessageStatus, NomadMessage,
     PersistedTransaction, Replica, ReplicaTxHandling, ReplicaTxSubmission, SignedUpdate, State,
-    TxDispatchKind, TxOutcome, TxSender,
+    TxDispatchKind, TxForwarder, TxOutcome,
 };
 
 use crate::NomadDB;
@@ -179,9 +179,12 @@ impl CommonEvents for CachingReplica {
 }
 
 #[async_trait]
-impl TxSender for CachingReplica {
-    async fn send(&self, tx: PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError> {
-        self.replica.send(tx).await
+impl TxForwarder for CachingReplica {
+    async fn forward(
+        &self,
+        tx: PersistedTransaction,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
+        self.replica.forward(tx).await
     }
 }
 
@@ -390,10 +393,13 @@ impl CommonTxSubmission for ReplicaVariants {
 }
 
 #[async_trait]
-impl TxSender for ReplicaVariants {
-    async fn send(&self, tx: PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError> {
+impl TxForwarder for ReplicaVariants {
+    async fn forward(
+        &self,
+        tx: PersistedTransaction,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
-            ReplicaVariants::Ethereum(home) => home.send(tx).await,
+            ReplicaVariants::Ethereum(home) => home.forward(tx).await,
             _ => unimplemented!(),
         }
     }

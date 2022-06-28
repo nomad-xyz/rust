@@ -13,7 +13,7 @@ use nomad_core::{
     ChainCommunicationError, Common, CommonIndexer, CommonTxSubmission, ContractLocator,
     DoubleUpdate, Home, HomeIndexer, HomeTxSubmission, Message, NomadMethod, PersistedTransaction,
     RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State, TxContractStatus,
-    TxEventStatus, TxOutcome, TxSender, TxTranslator, Update, UpdateMeta,
+    TxEventStatus, TxForwarder, TxOutcome, TxTranslator, Update, UpdateMeta,
 };
 use nomad_xyz_configuration::HomeGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
@@ -436,12 +436,15 @@ where
 }
 
 #[async_trait]
-impl<W, R> TxSender for EthereumHome<W, R>
+impl<W, R> TxForwarder for EthereumHome<W, R>
 where
     W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
-    async fn send(&self, tx: PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn forward(
+        &self,
+        tx: PersistedTransaction,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
         let tx = self.convert(tx).await?;
         self.submitter
             .submit(self.domain, self.contract.address(), tx)
