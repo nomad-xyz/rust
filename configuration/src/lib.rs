@@ -356,11 +356,17 @@ impl NomadConfig {
         Ok(serde_yaml::to_string(&self)?)
     }
 
+    /// Attempt to fetch a config by URI from any site
+    #[cfg(not(target_arch = "wasm32"))]
+    pub async fn fetch(url: &str) -> eyre::Result<Self> {
+        Ok(reqwest::get(url).await?.json().await?)
+    }
+
     /// Attempt to fetch a config by env name from the static configuration site
     #[cfg(not(target_arch = "wasm32"))]
-    pub async fn fetch(env: &str) -> eyre::Result<Self> {
+    pub async fn fetch_env(env: &str) -> eyre::Result<Self> {
         let uri = format!("{}/{}.json", CONFIG_BASE_URI, env);
-        Ok(reqwest::get(uri).await?.json().await?)
+        Self::fetch_raw(&uri).await
     }
 }
 
