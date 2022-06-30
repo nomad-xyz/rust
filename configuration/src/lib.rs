@@ -366,7 +366,7 @@ impl NomadConfig {
     #[cfg(not(target_arch = "wasm32"))]
     pub async fn fetch_env(env: &str) -> eyre::Result<Self> {
         let uri = format!("{}/{}.json", CONFIG_BASE_URI, env);
-        Self::fetch_raw(&uri).await
+        Self::fetch(&uri).await
     }
 }
 
