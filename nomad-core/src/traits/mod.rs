@@ -163,8 +163,10 @@ mod test {
 
     #[tokio::test]
     async fn turning_transaction_receipt_into_tx_outcome() {
-        let mut receipt = TransactionReceipt::default();
-        receipt.status = Some(U64::from(0));
+        let receipt = TransactionReceipt {
+            status: Some(U64::from(0)),
+            ..Default::default()
+        };
         let tx_outcome: Result<TxOutcome, ChainCommunicationError> = receipt.try_into();
         assert!(
             tx_outcome.is_err(),
