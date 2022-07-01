@@ -292,7 +292,6 @@ mod test {
                 <Relayer as nomad_base::NomadAgent>::run(agent.build_channel("moonbeam"))
                     .await
                     .expect("Couldn't join relayer's run task");
-
             assert!(run_result.is_err(), "Must have returned error");
 
             let run_report_error_task = agent

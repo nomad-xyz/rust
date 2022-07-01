@@ -164,10 +164,10 @@ mod test {
                     TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Local(SignerConf::Aws {
                         id: "default_id".into(),
                     }));
-                for (_, config) in &secrets.tx_submitters {
+                for config in secrets.tx_submitters.values() {
                     assert_eq!(*config, default_config);
                 }
-                for (_, config) in &secrets.rpcs {
+                for config in secrets.rpcs.values() {
                     assert!(matches!(*config, ChainConf::Ethereum { .. }));
                 }
             },
@@ -189,10 +189,10 @@ mod test {
                     },
                     fee_token: "0x1234".to_owned(),
                 }));
-            for (_, config) in &secrets.tx_submitters {
+            for config in secrets.tx_submitters.values() {
                 assert_eq!(*config, default_config);
             }
-            for (_, config) in &secrets.rpcs {
+            for config in secrets.rpcs.values() {
                 assert!(matches!(*config, ChainConf::Ethereum { .. }));
             }
         });

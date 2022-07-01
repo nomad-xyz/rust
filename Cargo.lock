@@ -2651,10 +2651,12 @@ dependencies = [
  "nomad-test",
  "nomad-types",
  "once_cell",
+ "reqwest",
  "serde 1.0.137",
  "serde_json",
  "serde_yaml",
  "serial_test",
+ "tokio",
  "wasm-bindgen",
  "wee_alloc",
 ]
