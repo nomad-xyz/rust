@@ -1,3 +1,7 @@
+//! Fetches latest configs from `CONFIG_BASE_URI` and stores them in
+//! `configuration/configs`. To disable this feature pre-build or pre-test, set
+//! the environment variable `BUILD_DISABLED`.
+
 use std::{fs, io::Write, path::PathBuf};
 
 const DEFINITIONS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/data/definitions.ts"));
@@ -88,29 +92,33 @@ const _: &'static str = r#""###
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
-    println!(
-        "cargo:rerun-if-changed={}",
-        concat!(env!("CARGO_MANIFEST_DIR"), "/data/definitions.ts")
-    );
-    println!(
-        "cargo:rerun-if-changed={}",
-        concat!(env!("CARGO_MANIFEST_DIR"), "/data/types.rs")
-    );
-    println!(
-        "cargo:rerun-if-changed={}",
-        concat!(env!("CARGO_MANIFEST_DIR"), "/configs/production.json")
-    );
-    println!(
-        "cargo:rerun-if-changed={}",
-        concat!(env!("CARGO_MANIFEST_DIR"), "/configs/development.json")
-    );
-    println!(
-        "cargo:rerun-if-changed={}",
-        concat!(env!("CARGO_MANIFEST_DIR"), "/configs/staging.json")
-    );
+    if std::env::var("BUILD_DISABLED").is_ok() {
+        println!("Skipping build script");
+    } else {
+        println!(
+            "cargo:rerun-if-changed={}",
+            concat!(env!("CARGO_MANIFEST_DIR"), "/data/definitions.ts")
+        );
+        println!(
+            "cargo:rerun-if-changed={}",
+            concat!(env!("CARGO_MANIFEST_DIR"), "/data/types.rs")
+        );
+        println!(
+            "cargo:rerun-if-changed={}",
+            concat!(env!("CARGO_MANIFEST_DIR"), "/configs/production.json")
+        );
+        println!(
+            "cargo:rerun-if-changed={}",
+            concat!(env!("CARGO_MANIFEST_DIR"), "/configs/development.json")
+        );
+        println!(
+            "cargo:rerun-if-changed={}",
+            concat!(env!("CARGO_MANIFEST_DIR"), "/configs/staging.json")
+        );
 
-    gen_wasm_bindgen()?;
-    get_configs().await?;
+        gen_wasm_bindgen()?;
+        get_configs().await?;
+    }
 
     Ok(())
 }
