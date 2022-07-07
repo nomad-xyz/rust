@@ -109,7 +109,7 @@ macro_rules! boxed_indexer {
     };
 }
 
-/// Create base http retryigng provider
+/// Create base http retrying provider
 #[macro_export]
 macro_rules! http_provider {
     ($url:expr) => {{
