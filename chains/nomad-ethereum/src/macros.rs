@@ -113,6 +113,9 @@ macro_rules! boxed_indexer {
 #[macro_export]
 macro_rules! http_provider {
     ($url:expr) => {{
+
+        tracing::info!("{:?}", $url);
+
         let provider: crate::retrying::RetryingProvider<ethers::providers::Http> = $url.parse()?;
         Arc::new(ethers::providers::Provider::new(provider))
     }};
@@ -122,6 +125,9 @@ macro_rules! http_provider {
 #[macro_export]
 macro_rules! ws_provider {
     ($url:expr) => {{
+
+        tracing::info!("{:?}", $url);
+
         let ws = ethers::providers::Ws::connect($url).await?;
         Arc::new(ethers::providers::Provider::new(ws))
     }};
