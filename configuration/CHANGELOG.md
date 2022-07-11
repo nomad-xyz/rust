@@ -2,6 +2,7 @@
 
 ### Unreleased
 
+- refactor: remove protocol and bridge deploy-time gas value configuration
 - feature: pull config files from github pages instead of local versions
 - add environment variable overrides for agent configuration
 - add tests for agent environment variable overrides
@@ -17,7 +18,8 @@
 ### v0.1.0-rc.24
 
 - remove `FromEnv` trait and make env loading conf-struct-specific
-- add handling for default keys `TRANSACTIONSIGNERS_DEFAULT_{KEY,ID,REGION}` and `RPCS_DEFAULT_RPCSTYLE`
+- add handling for default keys `TRANSACTIONSIGNERS_DEFAULT_{KEY,ID,REGION}`
+  and `RPCS_DEFAULT_RPCSTYLE`
 - add tests for new default config keys
 - make aws key region non-functional (region should be read from env)
 - set goerli as the new hub for development / staging in the gui
@@ -33,7 +35,8 @@
 
 ### v0.1.0-rc.21
 
-- validation of configured secrets takes in list of remote networks given that we can now specify remote networks of interest
+- validation of configured secrets takes in list of remote networks given that
+  we can now specify remote networks of interest
 - adds 3rd network to test.json to test partial specification of remotes
 - add evmostestnet staging deploys
 
@@ -108,7 +111,8 @@
 ### v0.1.0-rc.6
 
 - refactor: move common types (e.g. NomadIdentifier) into rust/nomad-types
-- refactor: replcace BaseAgentConfig with agent-specific public config blocks instantiated with interval and enabled there by default
+- refactor: replcace BaseAgentConfig with agent-specific public config blocks
+  instantiated with interval and enabled there by default
 - fix: uint deser_nomad_number expanded beyond just u64
 
 ### v0.1.0-rc.5
