@@ -81,9 +81,6 @@ export interface Governance {
 
 export interface ContractConfig {
   optimisticSeconds: number | string;
-  processGas: number | string;
-  reserveGas: number | string;
-  maximumGas: number | string;
   governance: Governance;
   updater: NomadIdentifier;
   watchers: Array<NomadIdentifier>;
@@ -109,8 +106,6 @@ export interface CustomTokenSpecifier {
 export interface BridgeConfiguration {
   weth?: NomadIdentifier;
   customs?: Array<CustomTokenSpecifier>;
-  mintGas: number | string;
-  deployGas: number | string;
 }
 
 export interface Domain {
