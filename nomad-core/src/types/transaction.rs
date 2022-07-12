@@ -1,6 +1,6 @@
 use crate::{
-    accumulator::NomadProof, ChainCommunicationError, Decode, Encode, Message, NomadError,
-    NomadMessage, SignedFailureNotification, SignedUpdate, TxOutcome,
+    accumulator::NomadProof, ChainCommunicationError, Decode, DoubleUpdate, Encode, Message,
+    NomadError, NomadMessage, SignedFailureNotification, SignedUpdate, TxOutcome,
 };
 use nomad_types::NomadIdentifier;
 
@@ -13,36 +13,23 @@ pub enum TxDispatchKind {
     FireAndForget,
 }
 
-// TODO(matthew): Add in missing method
 /// Contract method called for transaction submission
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub enum NomadMethod {
+    /// Submit a signed update for inclusion
+    Update(SignedUpdate),
     /// Dispatch a message
     Dispatch(Message),
-    /// Submit an improper update for slashing
+    /// Submit an improper update for slashingq
     ImproperUpdate(SignedUpdate),
+    /// Submit a double update for slashing
+    DoubleUpdate(DoubleUpdate),
     /// Dispatch a transaction to prove inclusion of some leaf in the replica.
     Prove(NomadProof),
     /// Trigger processing of a message
     Process(NomadMessage),
     /// Prove a leaf in the replica and then process its message
     ProveAndProcess(NomadProof, NomadMessage),
-    /// onlyOwner function. Enrolls replica at given domain chain.
-    OwnerEnrollReplica(NomadIdentifier),
-    /// onlyOwner function. Unenrolls replica.
-    OwnerUnenrollReplica(NomadIdentifier),
-    /// onlyOwner function. Sets contract's home to provided home.
-    SetHome(NomadIdentifier),
-    /// onlyOwner function. Sets permission for watcher at given domain.
-    #[allow(missing_docs)]
-    SetWatcherPermission {
-        watcher: NomadIdentifier,
-        domain: u32,
-        access: bool,
-    },
-    /// Unenroll the replica at the given domain provided an updater address
-    /// and `SignedFailureNotification` from a watcher
-    UnenrollReplica(SignedFailureNotification),
 }
 
 /// Event representing the final state a transaction
