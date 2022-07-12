@@ -5,7 +5,7 @@ use crate::{replicas, rpc};
 
 use nomad_core::{
     accumulator::NomadProof, db::DB, ContractLocator, Decode, MessageStatus, NomadMessage, Replica,
-    ReplicaTxSubmission, Signers,
+    ReplicaTxSubmitTask, Signers,
 };
 
 use nomad_base::NomadDB;
@@ -72,20 +72,22 @@ pub struct ProveCommand {
 impl ProveCommand {
     pub async fn run(&self) -> Result<()> {
         let db = NomadDB::new(&self.home_name, DB::from_path(&self.db_path)?);
-        let (message, proof) = self.fetch_proof(db)?;
-        let replica = self.replica(message.origin, message.destination).await?;
+        let (message, _proof) = self.fetch_proof(db)?;
+        let _replica = self.replica(message.origin, message.destination).await?;
 
-        let status = replica.message_status(message.to_leaf()).await?;
-        let outcome = match status {
-            MessageStatus::None => replica.prove_and_process(&message, &proof).await?,
-            MessageStatus::Proven => replica.process(&message).await?,
-            _ => {
-                println!("Message already processed.");
-                return Ok(());
-            }
-        };
+        // TODO(matthew): Fix this
 
-        println!("{:?}", outcome);
+        // let status = replica.message_status(message.to_leaf()).await?;
+        // let outcome = match status {
+        //     MessageStatus::None => replica.prove_and_process(&message, &proof).await?,
+        //     MessageStatus::Proven => replica.process(&message).await?,
+        //     _ => {
+        //         println!("Message already processed.");
+        //         return Ok(());
+        //     }
+        // };
+        //
+        // println!("{:?}", outcome);
         Ok(())
     }
 
@@ -154,15 +156,19 @@ impl ProveCommand {
             .transpose()?
             .unwrap_or_else(|| replicas::address_by_domain_pair(origin, destination).unwrap());
 
-        Ok(EthereumReplica::new(
-            TxSubmitter::new(middleware.clone().into()),
-            middleware,
-            &ContractLocator {
-                name: "".into(),
-                domain: 0,
-                address: address.into(),
-            },
-            None,
-        ))
+        unimplemented!()
+
+        // TODO(matthew): Fix this
+
+        // Ok(EthereumReplica::new(
+        //     TxSubmitter::new(middleware.clone().into()),
+        //     middleware,
+        //     &ContractLocator {
+        //         name: "".into(),
+        //         domain: 0,
+        //         address: address.into(),
+        //     },
+        //     None,
+        // ))
     }
 }
