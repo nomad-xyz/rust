@@ -1,7 +1,5 @@
 use color_eyre::Result;
-use nomad_core::{
-    ChainCommunicationError, PersistedTransaction, TxOutcome,
-};
+use nomad_core::{ChainCommunicationError, PersistedTransaction, TxOutcome};
 use tokio::sync::mpsc::UnboundedSender;
 
 /// Transaction manager for handling PersistentTransaction
