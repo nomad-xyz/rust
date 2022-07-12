@@ -243,69 +243,6 @@ where
 }
 
 #[async_trait]
-impl<W, R> CommonTxSubmission for EthereumHome<W, R>
-where
-    W: ethers::providers::Middleware + 'static,
-    R: ethers::providers::Middleware + 'static,
-{
-    #[tracing::instrument(err, skip(self))]
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
-        self.contract
-            .client()
-            .get_transaction_receipt(txid)
-            .await
-            .map_err(|e| Box::new(e) as Box<dyn StdError + Send + Sync>)?
-            .map(|receipt| receipt.try_into())
-            .transpose()
-    }
-
-    #[tracing::instrument(err, skip(self, update), fields(update = %update))]
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
-        let mut tx = self.contract.update(
-            update.update.previous_root.to_fixed_bytes(),
-            update.update.new_root.to_fixed_bytes(),
-            update.signature.to_vec().into(),
-        );
-
-        if let Some(limits) = &self.gas {
-            let queue_length = self.queue_length().await?;
-            tx.tx.set_gas(
-                U256::from(limits.update.base)
-                    + (U256::from(limits.update.per_message) * queue_length),
-            );
-        }
-
-        self.submitter
-            .submit(self.domain, self.contract.address(), tx.tx)
-            .await
-    }
-
-    #[tracing::instrument(err, skip(self, double), fields(double = %double))]
-    async fn double_update(
-        &self,
-        double: &DoubleUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
-        let mut tx = self.contract.double_update(
-            double.0.update.previous_root.to_fixed_bytes(),
-            [
-                double.0.update.new_root.to_fixed_bytes(),
-                double.1.update.new_root.to_fixed_bytes(),
-            ],
-            double.0.signature.to_vec().into(),
-            double.1.signature.to_vec().into(),
-        );
-
-        if let Some(limits) = &self.gas {
-            tx.tx.set_gas(U256::from(limits.double_update));
-        }
-
-        self.submitter
-            .submit(self.domain, self.contract.address(), tx.tx)
-            .await
-    }
-}
-
-#[async_trait]
 impl<W, R> Home for EthereumHome<W, R>
 where
     W: ethers::providers::Middleware + 'static,
@@ -348,50 +285,6 @@ where
 }
 
 #[async_trait]
-impl<W, R> HomeTxSubmission for EthereumHome<W, R>
-where
-    W: ethers::providers::Middleware + 'static,
-    R: ethers::providers::Middleware + 'static,
-{
-    #[tracing::instrument(err, skip(self))]
-    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
-        let tx = self.contract.dispatch(
-            message.destination,
-            message.recipient.to_fixed_bytes(),
-            message.body.clone().into(),
-        );
-
-        self.submitter
-            .submit(self.domain, self.contract.address(), tx.tx)
-            .await
-    }
-
-    #[tracing::instrument(err, skip(self), fields(hex_signature = %format!("0x{}", hex::encode(update.signature.to_vec()))))]
-    async fn improper_update(
-        &self,
-        update: &SignedUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
-        let mut tx = self.contract.improper_update(
-            update.update.previous_root.to_fixed_bytes(),
-            update.update.new_root.to_fixed_bytes(),
-            update.signature.to_vec().into(),
-        );
-
-        if let Some(limits) = &self.gas {
-            let queue_length = self.queue_length().await?;
-            tx.tx.set_gas(
-                U256::from(limits.improper_update.base)
-                    + U256::from(limits.improper_update.per_message) * queue_length,
-            );
-        }
-
-        self.submitter
-            .submit(self.domain, self.contract.address(), tx.tx)
-            .await
-    }
-}
-
-#[async_trait]
 impl<W, R> TxTranslator for EthereumHome<W, R>
 where
     W: ethers::providers::Middleware + 'static,
@@ -404,15 +297,29 @@ where
         tx: PersistedTransaction,
     ) -> Result<Self::Transaction, ChainCommunicationError> {
         match tx.method {
-            // TODO(matthew):
-            NomadMethod::Dispatch(message) => Ok(self
-                .contract
-                .dispatch(
+            NomadMethod::Update(update) => {
+                let mut tx = self.contract.update(
+                    update.update.previous_root.to_fixed_bytes(),
+                    update.update.new_root.to_fixed_bytes(),
+                    update.signature.to_vec().into(),
+                );
+                if let Some(limits) = &self.gas {
+                    let queue_length = self.queue_length().await?;
+                    tx.tx.set_gas(
+                        U256::from(limits.update.base)
+                            + (U256::from(limits.update.per_message) * queue_length),
+                    );
+                }
+                Ok(tx.tx)
+            }
+            NomadMethod::Dispatch(message) => {
+                let tx = self.contract.dispatch(
                     message.destination,
                     message.recipient.to_fixed_bytes(),
                     message.body.clone().into(),
-                )
-                .tx),
+                );
+                Ok(tx.tx)
+            }
             NomadMethod::ImproperUpdate(update) => {
                 let mut tx = self.contract.improper_update(
                     update.update.previous_root.to_fixed_bytes(),
@@ -425,6 +332,21 @@ where
                         U256::from(limits.improper_update.base)
                             + U256::from(limits.improper_update.per_message) * queue_length,
                     );
+                }
+                Ok(tx.tx)
+            }
+            NomadMethod::DoubleUpdate(double) => {
+                let mut tx = self.contract.double_update(
+                    double.0.update.previous_root.to_fixed_bytes(),
+                    [
+                        double.0.update.new_root.to_fixed_bytes(),
+                        double.1.update.new_root.to_fixed_bytes(),
+                    ],
+                    double.0.signature.to_vec().into(),
+                    double.1.signature.to_vec().into(),
+                );
+                if let Some(limits) = &self.gas {
+                    tx.tx.set_gas(U256::from(limits.double_update));
                 }
                 Ok(tx.tx)
             }
