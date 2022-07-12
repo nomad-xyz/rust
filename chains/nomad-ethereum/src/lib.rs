@@ -12,6 +12,7 @@ use nomad_xyz_configuration::{
 };
 use num::Num;
 use std::sync::Arc;
+use tokio::sync::mpsc::UnboundedReceiver;
 
 #[macro_use]
 mod macros;
@@ -63,14 +64,16 @@ boxed_indexer!(make_replica_indexer, EthereumReplicaIndexer, CommonIndexer,);
 boxed_contract!(
     make_home,
     EthereumHome,
-    HomeTxSubmission,
-    gas: Option<HomeGasLimits>
+    HomeTxSubmitTask,
+    gas: Option<HomeGasLimits>,
+    tx_receiver: UnboundedReceiver<PersistedTransaction>
 );
 boxed_contract!(
     make_replica,
     EthereumReplica,
-    ReplicaTxSubmission,
-    gas: Option<ReplicaGasLimits>
+    ReplicaTxSubmitTask,
+    gas: Option<ReplicaGasLimits>,
+    tx_receiver: UnboundedReceiver<PersistedTransaction>
 );
 boxed_contract!(
     make_conn_manager,
