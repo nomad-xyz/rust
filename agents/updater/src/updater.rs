@@ -11,7 +11,7 @@ use tracing::{info, instrument::Instrumented, Instrument};
 use crate::{
     produce::UpdateProducer, settings::UpdaterSettings as Settings, submit::UpdateSubmitter,
 };
-use nomad_base::{AgentCore, CachingHome, NomadAgent, NomadDB};
+use nomad_base::{impl_as_ref_core, AgentCore, CachingHome, NomadAgent, NomadDB};
 use nomad_core::{Common, Signers};
 
 /// An updater agent
@@ -25,11 +25,7 @@ pub struct Updater {
     submitted_update_count: IntCounter,
 }
 
-impl AsRef<AgentCore> for Updater {
-    fn as_ref(&self) -> &AgentCore {
-        &self.core
-    }
-}
+impl_as_ref_core!(Updater);
 
 impl Updater {
     /// Instantiate a new updater

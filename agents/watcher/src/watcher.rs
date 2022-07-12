@@ -15,7 +15,8 @@ use tokio::{
 use tracing::{error, info, info_span, instrument::Instrumented, Instrument};
 
 use nomad_base::{
-    cancel_task, AgentCore, BaseError, CachingHome, ConnectionManagers, NomadAgent, NomadDB,
+    cancel_task, impl_as_ref_core, AgentCore, BaseError, CachingHome, ConnectionManagers,
+    NomadAgent, NomadDB,
 };
 use nomad_core::{
     ChainCommunicationError, Common, CommonEvents, CommonTxHandling, ConnectionManager,
@@ -299,11 +300,7 @@ pub struct Watcher {
     updates_inspected_for_double: IntGaugeVec,
 }
 
-impl AsRef<AgentCore> for Watcher {
-    fn as_ref(&self) -> &AgentCore {
-        &self.core
-    }
-}
+impl_as_ref_core!(Watcher);
 
 #[allow(clippy::unit_arg)]
 impl Watcher {
