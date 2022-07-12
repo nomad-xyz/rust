@@ -5,7 +5,7 @@ use crate::{
     traits::{ChainCommunicationError, Common, TxOutcome},
     utils::home_domain_hash,
     CommonTransactions, Decode, Encode, Message, NomadError, NomadMessage, SignedUpdate,
-    TxContractStatus, TxDispatchKind, TxEventStatus, TxSubmitTask, Update,
+    TxDispatchKind, TxSubmitTask, Update,
 };
 use async_trait::async_trait;
 use color_eyre::Result;
@@ -185,7 +185,6 @@ pub trait HomeEvents: Home + Send + Sync + std::fmt::Debug {
     /// thus the first inserted leaf has an index of 0.
     async fn leaf_by_tree_index(&self, tree_index: usize) -> Result<Option<H256>, DbError>;
 }
-
 
 /// Interface for chain-agnostic tx submission used by the home
 #[async_trait]
