@@ -129,6 +129,9 @@ pub trait Common: Sync + Send + std::fmt::Debug {
     /// contract is running on.
     fn name(&self) -> &str;
 
+    /// Get the status of a transaction.
+    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError>;
+
     /// Fetch the current updater value
     async fn updater(&self) -> Result<H256, ChainCommunicationError>;
 
@@ -162,13 +165,6 @@ pub trait CommonEvents: Common + Send + Sync + std::fmt::Debug {
 /// Interface for chain-agnostic tx submission used by both the home and replica
 #[async_trait]
 pub trait CommonTransactions: Common + Send + Sync + std::fmt::Debug {
-    /// Get the status of a transaction.
-    async fn status(
-        &self,
-        txid: H256,
-        dispatch_kind: TxDispatchKind,
-    ) -> Result<Option<TxOutcome>, ChainCommunicationError>;
-
     /// Submit a signed update for inclusion
     async fn update(
         &self,

@@ -170,6 +170,13 @@ impl Common for CachingHome {
         self.home.name()
     }
 
+    async fn status(
+        &self,
+        txid: H256
+    ) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+        self.home.status(txid).await
+    }
+
     async fn updater(&self) -> Result<H256, ChainCommunicationError> {
         self.home.updater().await
     }
@@ -403,6 +410,14 @@ impl Common for HomeVariants {
             HomeVariants::Ethereum(home) => home.name(),
             HomeVariants::Mock(mock_home) => mock_home.name(),
             HomeVariants::Other(home) => home.name(),
+        }
+    }
+
+    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+        match self {
+            HomeVariants::Ethereum(home) => home.status(txid).await,
+            HomeVariants::Mock(mock_home) => mock_home.status(txid).await,
+            HomeVariants::Other(home) => home.status(txid).await,
         }
     }
 

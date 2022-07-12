@@ -210,6 +210,17 @@ where
     }
 
     #[tracing::instrument(err, skip(self))]
+    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+        self.contract
+            .client()
+            .get_transaction_receipt(txid)
+            .await
+            .map_err(|e| Box::new(e) as Box<dyn StdError + Send + Sync>)?
+            .map(|receipt| receipt.try_into())
+            .transpose()
+    }
+
+    #[tracing::instrument(err, skip(self))]
     async fn updater(&self) -> Result<H256, ChainCommunicationError> {
         Ok(self.contract.updater().call().await?.into())
     }

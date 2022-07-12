@@ -97,6 +97,10 @@ impl Common for MockReplicaContract {
         self._name()
     }
 
+    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+        self._status(txid)
+    }
+
     async fn updater(&self) -> Result<H256, ChainCommunicationError> {
         self._updater()
     }

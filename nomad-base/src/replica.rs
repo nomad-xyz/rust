@@ -109,6 +109,13 @@ impl Common for CachingReplica {
         self.replica.name()
     }
 
+    async fn status(
+        &self,
+        txid: H256,
+    ) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+        self.replica.status(txid).await
+    }
+
     async fn updater(&self) -> Result<H256, ChainCommunicationError> {
         self.replica.updater().await
     }
@@ -343,6 +350,14 @@ impl Common for ReplicaVariants {
             ReplicaVariants::Ethereum(replica) => replica.name(),
             ReplicaVariants::Mock(mock_replica) => mock_replica.name(),
             ReplicaVariants::Other(replica) => replica.name(),
+        }
+    }
+
+    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+        match self {
+            ReplicaVariants::Ethereum(replica) => replica.status(txid).await,
+            ReplicaVariants::Mock(mock_replica) => mock_replica.status(txid).await,
+            ReplicaVariants::Other(replica) => replica.status(txid).await,
         }
     }
 
