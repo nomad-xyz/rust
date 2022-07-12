@@ -4,8 +4,8 @@ use crate::{
     db::DbError,
     traits::{ChainCommunicationError, Common, TxOutcome},
     utils::home_domain_hash,
-    CommonTxHandling, CommonTxSubmission, Decode, Encode, Message, NomadError, NomadMessage,
-    SignedUpdate, TxContractStatus, TxDispatchKind, TxEventStatus, Update,
+    CommonTransactions, Decode, Encode, Message, NomadError, NomadMessage, SignedUpdate,
+    TxContractStatus, TxDispatchKind, TxEventStatus, TxSubmitTask, Update,
 };
 use async_trait::async_trait;
 use color_eyre::Result;
@@ -186,11 +186,10 @@ pub trait HomeEvents: Home + Send + Sync + std::fmt::Debug {
     async fn leaf_by_tree_index(&self, tree_index: usize) -> Result<Option<H256>, DbError>;
 }
 
-// TODO(matthew): Naming
 
 /// Interface for chain-agnostic tx submission used by the home
 #[async_trait]
-pub trait HomeTxHandling: CommonTxHandling + Home + Send + Sync + std::fmt::Debug {
+pub trait HomeTransactions: CommonTransactions + Home + Send + Sync + std::fmt::Debug {
     /// Dispatch a message.
     async fn dispatch(
         &self,
@@ -208,13 +207,4 @@ pub trait HomeTxHandling: CommonTxHandling + Home + Send + Sync + std::fmt::Debu
 
 /// Interface for chain-specific tx submission used by the home
 #[async_trait]
-pub trait HomeTxSubmission: CommonTxSubmission + Home + Send + Sync + std::fmt::Debug {
-    /// Dispatch a message.
-    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError>;
-
-    /// Submit an improper update for slashing
-    async fn improper_update(
-        &self,
-        update: &SignedUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError>;
-}
+pub trait HomeTxSubmitTask: TxSubmitTask + Home + Send + Sync + std::fmt::Debug {}
