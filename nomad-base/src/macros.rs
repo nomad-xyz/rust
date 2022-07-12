@@ -20,6 +20,11 @@ macro_rules! impl_as_ref_core {
                 &self.core
             }
         }
+        impl AsMut<nomad_base::AgentCore> for $agent {
+            fn as_mut(&mut self) -> &mut nomad_base::AgentCore {
+                &mut self.core
+            }
+        }
     };
 }
 
