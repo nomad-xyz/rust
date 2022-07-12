@@ -159,11 +159,9 @@ pub trait CommonEvents: Common + Send + Sync + std::fmt::Debug {
     ) -> Result<Option<SignedUpdate>, DbError>;
 }
 
-// TODO(matthew): Naming
-
 /// Interface for chain-agnostic tx submission used by both the home and replica
 #[async_trait]
-pub trait CommonTxHandling: Common + Send + Sync + std::fmt::Debug {
+pub trait CommonTransactions: Common + Send + Sync + std::fmt::Debug {
     /// Get the status of a transaction.
     async fn status(
         &self,
@@ -183,24 +181,6 @@ pub trait CommonTxHandling: Common + Send + Sync + std::fmt::Debug {
         &self,
         double: &DoubleUpdate,
         dispatch_kind: TxDispatchKind,
-    ) -> Result<TxOutcome, ChainCommunicationError>;
-}
-
-// TODO(matthew): Replace this with TxTranslate or sth appropriate
-
-/// Interface for chain-specific tx submission used by both the home and replica
-#[async_trait]
-pub trait CommonTxSubmission: Common + Send + Sync + std::fmt::Debug {
-    /// Get the status of a transaction.
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError>;
-
-    /// Submit a signed update for inclusion
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError>;
-
-    /// Submit a double update for slashing
-    async fn double_update(
-        &self,
-        double: &DoubleUpdate,
     ) -> Result<TxOutcome, ChainCommunicationError>;
 }
 
