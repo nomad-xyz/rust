@@ -10,13 +10,14 @@ use ethers::{
 use ethers_core::types::transaction::eip2718::TypedTransaction;
 use futures_util::future::join_all;
 use nomad_core::{
-    ChainCommunicationError, Common, CommonIndexer, CommonTxSubmission, ContractLocator,
-    DoubleUpdate, Home, HomeIndexer, HomeTxSubmission, Message, NomadMethod, PersistedTransaction,
-    RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State, TxContractStatus,
-    TxEventStatus, TxOutcome, TxTranslator, Update, UpdateMeta,
+    ChainCommunicationError, Common, CommonIndexer, ContractLocator, Home, HomeIndexer,
+    HomeTxSubmitTask, NomadMethod, PersistedTransaction, RawCommittedMessage, SignedUpdate,
+    SignedUpdateWithMeta, State, TxContractStatus, TxEventStatus, TxOutcome, TxSubmitTask,
+    TxTranslator, Update, UpdateMeta,
 };
 use nomad_xyz_configuration::HomeGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
+use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
 use tracing::instrument;
 
 use crate::{bindings::home::Home as EthereumHomeInternal, TxSubmitter};
@@ -167,6 +168,7 @@ where
     domain: u32,
     name: String,
     gas: Option<HomeGasLimits>,
+    tx_receiver: Option<UnboundedReceiver<PersistedTransaction>>,
 }
 
 impl<W, R> EthereumHome<W, R>
@@ -185,6 +187,7 @@ where
             address,
         }: &ContractLocator,
         gas: Option<HomeGasLimits>,
+        tx_receiver: UnboundedReceiver<PersistedTransaction>,
     ) -> Self {
         Self {
             submitter,
@@ -195,7 +198,32 @@ where
             domain: *domain,
             name: name.to_owned(),
             gas,
+            tx_receiver: Some(tx_receiver),
         }
+    }
+}
+
+impl<W, R> HomeTxSubmitTask for EthereumHome<W, R>
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
+{
+}
+
+impl<W, R> TxSubmitTask for EthereumHome<W, R>
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
+{
+    fn submit_task(&mut self) -> Option<JoinHandle<()>> {
+        let mut tx_receiver = self.tx_receiver.take().unwrap();
+        Some(tokio::spawn(async move {
+            loop {
+                if let Ok(_tx) = tx_receiver.try_recv() {
+                    unimplemented!()
+                }
+            }
+        }))
     }
 }
 
