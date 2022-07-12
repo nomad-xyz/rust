@@ -163,16 +163,16 @@ where
 }
 
 impl<W, R> ReplicaTxSubmitTask for EthereumReplica<W, R>
-    where
-        W: ethers::providers::Middleware + 'static,
-        R: ethers::providers::Middleware + 'static,
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
 {
 }
 
 impl<W, R> TxSubmitTask for EthereumReplica<W, R>
-    where
-        W: ethers::providers::Middleware + 'static,
-        R: ethers::providers::Middleware + 'static,
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
 {
     fn submit_task(&mut self) -> Option<JoinHandle<()>> {
         let mut tx_receiver = self.tx_receiver.take().unwrap();
