@@ -100,18 +100,25 @@ impl Home for MockHomeContract {
 }
 
 #[async_trait]
-impl HomeTxSubmission for MockHomeContract {
-    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
+impl HomeTransactions for MockHomeContract {
+    async fn dispatch(
+        &self,
+        message: &Message,
+        _dispatch_kind: TxDispatchKind,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
         self._dispatch(message)
     }
 
     async fn improper_update(
         &self,
         update: &SignedUpdate,
+        _dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self._improper_update(update)
     }
 }
+
+impl TxSubmitTask for MockHomeContract {}
 
 #[async_trait]
 impl Common for MockHomeContract {
@@ -137,18 +144,19 @@ impl Common for MockHomeContract {
 }
 
 #[async_trait]
-impl CommonTxSubmission for MockHomeContract {
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
-        self._status(txid)
-    }
-
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+impl CommonTransactions for MockHomeContract {
+    async fn update(
+        &self,
+        update: &SignedUpdate,
+        _dispatch_kind: TxDispatchKind,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
         self._update(update)
     }
 
     async fn double_update(
         &self,
         double: &DoubleUpdate,
+        _dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self._double_update(double)
     }
