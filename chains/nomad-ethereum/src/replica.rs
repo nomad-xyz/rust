@@ -3,16 +3,17 @@
 
 use async_trait::async_trait;
 use color_eyre::Result;
-use ethers::core::types::{Signature, H256, U256};
+use ethers::core::types::{transaction::eip2718::TypedTransaction, Signature, H256, U256};
 use futures_util::future::join_all;
 use nomad_core::{
-    accumulator::NomadProof, ChainCommunicationError, Common, CommonIndexer, CommonTxSubmission,
-    ContractLocator, DoubleUpdate, Encode, MessageStatus, NomadMessage, PersistedTransaction,
-    Replica, ReplicaTxSubmission, SignedUpdate, SignedUpdateWithMeta, State, TxContractStatus,
-    TxEventStatus, TxOutcome, Update, UpdateMeta,
+    ChainCommunicationError, Common, CommonIndexer, ContractLocator, Encode, MessageStatus,
+    NomadMethod, PersistedTransaction, Replica, ReplicaTxSubmitTask, SignedUpdate,
+    SignedUpdateWithMeta, State, TxContractStatus, TxEventStatus, TxOutcome, TxSubmitTask,
+    TxTranslator, Update, UpdateMeta,
 };
 use nomad_xyz_configuration::ReplicaGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
+use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
 use tracing::instrument;
 
 use crate::{bindings::replica::Replica as EthereumReplicaInternal, TxSubmitter};
@@ -126,6 +127,7 @@ where
     domain: u32,
     name: String,
     gas: Option<ReplicaGasLimits>,
+    tx_receiver: Option<UnboundedReceiver<PersistedTransaction>>,
 }
 
 impl<W, R> EthereumReplica<W, R>
@@ -144,6 +146,7 @@ where
             address,
         }: &ContractLocator,
         gas: Option<ReplicaGasLimits>,
+        tx_receiver: UnboundedReceiver<PersistedTransaction>,
     ) -> Self {
         Self {
             submitter,
@@ -154,7 +157,32 @@ where
             domain: *domain,
             name: name.to_owned(),
             gas,
+            tx_receiver: Some(tx_receiver),
         }
+    }
+}
+
+impl<W, R> ReplicaTxSubmitTask for EthereumReplica<W, R>
+    where
+        W: ethers::providers::Middleware + 'static,
+        R: ethers::providers::Middleware + 'static,
+{
+}
+
+impl<W, R> TxSubmitTask for EthereumReplica<W, R>
+    where
+        W: ethers::providers::Middleware + 'static,
+        R: ethers::providers::Middleware + 'static,
+{
+    fn submit_task(&mut self) -> Option<JoinHandle<()>> {
+        let mut tx_receiver = self.tx_receiver.take().unwrap();
+        Some(tokio::spawn(async move {
+            loop {
+                if let Ok(_tx) = tx_receiver.try_recv() {
+                    unimplemented!()
+                }
+            }
+        }))
     }
 }
 
@@ -228,30 +256,6 @@ where
 
     async fn acceptable_root(&self, root: H256) -> Result<bool, ChainCommunicationError> {
         Ok(self.contract.acceptable_root(root.into()).call().await?)
-    }
-}
-
-impl<W, R> ReplicaTxSubmitTask for EthereumReplica<W, R>
-where
-    W: ethers::providers::Middleware + 'static,
-    R: ethers::providers::Middleware + 'static,
-{
-}
-
-impl<W, R> TxSubmitTask for EthereumReplica<W, R>
-where
-    W: ethers::providers::Middleware + 'static,
-    R: ethers::providers::Middleware + 'static,
-{
-    fn submit_task(&mut self) -> Option<JoinHandle<()>> {
-        let mut tx_receiver = self.tx_receiver.take().unwrap();
-        Some(tokio::spawn(async move {
-            loop {
-                if let Ok(_tx) = tx_receiver.try_recv() {
-                    unimplemented!()
-                }
-            }
-        }))
     }
 }
 
