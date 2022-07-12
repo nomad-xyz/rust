@@ -17,7 +17,7 @@ use nomad_base::{
 };
 use nomad_core::{
     accumulator::{MerkleProof, NomadProof},
-    CommittedMessage, Common, Home, HomeEvents, MessageStatus, ReplicaTxHandling, TxDispatchKind,
+    CommittedMessage, Common, Home, HomeEvents, MessageStatus, ReplicaTransactions, TxDispatchKind,
 };
 
 use crate::{prover_sync::ProverSync, push::Pusher, settings::ProcessorSettings as Settings};

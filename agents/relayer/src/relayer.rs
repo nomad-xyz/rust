@@ -5,7 +5,7 @@ use tokio::{sync::Mutex, task::JoinHandle, time::sleep};
 use tracing::{info, instrument::Instrumented, Instrument};
 
 use nomad_base::{decl_agent, decl_channel, AgentCore, CachingHome, CachingReplica, NomadAgent};
-use nomad_core::{Common, CommonEvents, CommonTxHandling, TxDispatchKind};
+use nomad_core::{Common, CommonEvents, CommonTransactions, TxDispatchKind};
 
 use crate::settings::RelayerSettings as Settings;
 

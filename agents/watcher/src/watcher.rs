@@ -19,7 +19,7 @@ use nomad_base::{
     NomadAgent, NomadDB,
 };
 use nomad_core::{
-    ChainCommunicationError, Common, CommonEvents, CommonTxHandling, ConnectionManager,
+    ChainCommunicationError, Common, CommonEvents, CommonTransactions, ConnectionManager,
     DoubleUpdate, FailureNotification, Home, SignedFailureNotification, SignedUpdate, Signers,
     TxDispatchKind, TxOutcome,
 };

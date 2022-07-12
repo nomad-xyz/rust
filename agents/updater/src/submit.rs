@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use nomad_base::{CachingHome, NomadDB};
-use nomad_core::{Common, CommonTxHandling, TxDispatchKind};
+use nomad_core::{Common, CommonTransactions, TxDispatchKind};
 use prometheus::IntCounter;
 use std::time::Duration;
 
