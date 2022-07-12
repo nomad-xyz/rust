@@ -73,12 +73,20 @@ impl Replica for MockReplicaContract {
 }
 
 #[async_trait]
-impl ReplicaTxSubmission for MockReplicaContract {
-    async fn prove(&self, proof: &NomadProof) -> Result<TxOutcome, ChainCommunicationError> {
+impl ReplicaTransactions for MockReplicaContract {
+    async fn prove(
+        &self,
+        proof: &NomadProof,
+        _dispatch_kind: TxDispatchKind,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
         self._prove(proof)
     }
 
-    async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn process(
+        &self,
+        message: &NomadMessage,
+        _dispatch_kind: TxDispatchKind,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
         self._process(message)
     }
 
@@ -86,6 +94,7 @@ impl ReplicaTxSubmission for MockReplicaContract {
         &self,
         message: &NomadMessage,
         proof: &NomadProof,
+        _dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self._prove_and_process(message, proof)
     }
@@ -115,18 +124,19 @@ impl Common for MockReplicaContract {
 }
 
 #[async_trait]
-impl CommonTxSubmission for MockReplicaContract {
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
-        self._status(txid)
-    }
-
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+impl CommonTransactions for MockReplicaContract {
+    async fn update(
+        &self,
+        update: &SignedUpdate,
+        _dispatch_kind: TxDispatchKind,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
         self._update(update)
     }
 
     async fn double_update(
         &self,
         double: &DoubleUpdate,
+        _dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         self._double_update(double)
     }
