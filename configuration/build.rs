@@ -92,31 +92,30 @@ const _: &'static str = r#""###
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
-    if std::env::var("BUILD_DISABLED").is_ok() {
-        println!("Skipping build script");
-    } else {
-        println!(
-            "cargo:rerun-if-changed={}",
-            concat!(env!("CARGO_MANIFEST_DIR"), "/data/definitions.ts")
-        );
-        println!(
-            "cargo:rerun-if-changed={}",
-            concat!(env!("CARGO_MANIFEST_DIR"), "/data/types.rs")
-        );
-        println!(
-            "cargo:rerun-if-changed={}",
-            concat!(env!("CARGO_MANIFEST_DIR"), "/configs/production.json")
-        );
-        println!(
-            "cargo:rerun-if-changed={}",
-            concat!(env!("CARGO_MANIFEST_DIR"), "/configs/development.json")
-        );
-        println!(
-            "cargo:rerun-if-changed={}",
-            concat!(env!("CARGO_MANIFEST_DIR"), "/configs/staging.json")
-        );
+    println!(
+        "cargo:rerun-if-changed={}",
+        concat!(env!("CARGO_MANIFEST_DIR"), "/data/definitions.ts")
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        concat!(env!("CARGO_MANIFEST_DIR"), "/data/types.rs")
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        concat!(env!("CARGO_MANIFEST_DIR"), "/configs/production.json")
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        concat!(env!("CARGO_MANIFEST_DIR"), "/configs/development.json")
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        concat!(env!("CARGO_MANIFEST_DIR"), "/configs/staging.json")
+    );
+    gen_wasm_bindgen()?;
 
-        gen_wasm_bindgen()?;
+    // don't re-fetch configs if programmer disables build
+    if std::env::var("BUILD_DISABLED").is_err() {
         get_configs().await?;
     }
 
