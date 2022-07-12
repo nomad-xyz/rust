@@ -170,10 +170,7 @@ impl Common for CachingHome {
         self.home.name()
     }
 
-    async fn status(
-        &self,
-        txid: H256
-    ) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
         self.home.status(txid).await
     }
 

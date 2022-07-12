@@ -109,10 +109,7 @@ impl Common for CachingReplica {
         self.replica.name()
     }
 
-    async fn status(
-        &self,
-        txid: H256,
-    ) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
         self.replica.status(txid).await
     }
 
