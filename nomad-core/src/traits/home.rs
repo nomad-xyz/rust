@@ -208,9 +208,7 @@ pub trait HomeTxHandling: CommonTxHandling + Home + Send + Sync + std::fmt::Debu
 
 /// Interface for chain-specific tx submission used by the home
 #[async_trait]
-pub trait HomeTxSubmission:
-    CommonTxSubmission + TxEventStatus + TxContractStatus + Home + Send + Sync + std::fmt::Debug
-{
+pub trait HomeTxSubmission: CommonTxSubmission + Home + Send + Sync + std::fmt::Debug {
     /// Dispatch a message.
     async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError>;
 
