@@ -6,7 +6,7 @@ use crate::{
     accumulator::NomadProof,
     traits::{ChainCommunicationError, Common, TxOutcome},
     CommonTxHandling, CommonTxSubmission, NomadMessage, TxContractStatus, TxDispatchKind,
-    TxEventStatus, TxForwarder,
+    TxEventStatus,
 };
 
 /// The status of a message in the replica
@@ -69,14 +69,7 @@ pub trait ReplicaTxHandling: CommonTxHandling + Replica + Send + Sync + std::fmt
 /// Interface for chain-specific tx submission used by the replica
 #[async_trait]
 pub trait ReplicaTxSubmission:
-    CommonTxSubmission
-    + TxForwarder
-    + TxEventStatus
-    + TxContractStatus
-    + Replica
-    + Send
-    + Sync
-    + std::fmt::Debug
+    CommonTxSubmission + TxEventStatus + TxContractStatus + Replica + Send + Sync + std::fmt::Debug
 {
     /// Dispatch a transaction to prove inclusion of some leaf in the replica.
     async fn prove(&self, proof: &NomadProof) -> Result<TxOutcome, ChainCommunicationError>;

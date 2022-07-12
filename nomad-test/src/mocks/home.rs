@@ -151,16 +151,6 @@ impl CommonTxSubmission for MockHomeContract {
 }
 
 #[async_trait]
-impl TxForwarder for MockHomeContract {
-    async fn forward(
-        &self,
-        _tx: PersistedTransaction,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
-        unimplemented!()
-    }
-}
-
-#[async_trait]
 impl TxEventStatus for MockHomeContract {
     async fn event_status(
         &self,

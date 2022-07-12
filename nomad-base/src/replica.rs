@@ -5,7 +5,7 @@ use nomad_core::{
     accumulator::NomadProof, db::DbError, ChainCommunicationError, Common, CommonEvents,
     CommonTxHandling, CommonTxSubmission, DoubleUpdate, MessageStatus, NomadMessage,
     PersistedTransaction, Replica, ReplicaTxHandling, ReplicaTxSubmission, SignedUpdate, State,
-    TxContractStatus, TxDispatchKind, TxEventStatus, TxForwarder, TxOutcome,
+    TxContractStatus, TxDispatchKind, TxEventStatus, TxOutcome,
 };
 
 use crate::NomadDB;
@@ -185,16 +185,6 @@ impl TxEventStatus for CachingReplica {
         tx: &PersistedTransaction,
     ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
         self.replica.event_status(tx).await
-    }
-}
-
-#[async_trait]
-impl TxForwarder for CachingReplica {
-    async fn forward(
-        &self,
-        tx: PersistedTransaction,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
-        self.replica.forward(tx).await
     }
 }
 
@@ -408,19 +398,6 @@ impl CommonTxSubmission for ReplicaVariants {
             ReplicaVariants::Ethereum(replica) => replica.double_update(double).await,
             ReplicaVariants::Mock(mock_replica) => mock_replica.double_update(double).await,
             ReplicaVariants::Other(replica) => replica.double_update(double).await,
-        }
-    }
-}
-
-#[async_trait]
-impl TxForwarder for ReplicaVariants {
-    async fn forward(
-        &self,
-        tx: PersistedTransaction,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
-        match self {
-            ReplicaVariants::Ethereum(home) => home.forward(tx).await,
-            _ => unimplemented!(),
         }
     }
 }

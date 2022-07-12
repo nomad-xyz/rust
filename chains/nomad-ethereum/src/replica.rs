@@ -9,7 +9,7 @@ use nomad_core::{
     accumulator::NomadProof, ChainCommunicationError, Common, CommonIndexer, CommonTxSubmission,
     ContractLocator, DoubleUpdate, Encode, MessageStatus, NomadMessage, PersistedTransaction,
     Replica, ReplicaTxSubmission, SignedUpdate, SignedUpdateWithMeta, State, TxContractStatus,
-    TxEventStatus, TxForwarder, TxOutcome, Update, UpdateMeta,
+    TxEventStatus, TxOutcome, Update, UpdateMeta,
 };
 use nomad_xyz_configuration::ReplicaGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
@@ -343,20 +343,6 @@ where
         self.submitter
             .submit(self.domain, self.contract.address(), tx.tx)
             .await
-    }
-}
-
-#[async_trait]
-impl<W, R> TxForwarder for EthereumReplica<W, R>
-where
-    W: ethers::providers::Middleware + 'static,
-    R: ethers::providers::Middleware + 'static,
-{
-    async fn forward(
-        &self,
-        _tx: PersistedTransaction,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
-        unimplemented!()
     }
 }
 

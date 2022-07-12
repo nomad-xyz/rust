@@ -1,6 +1,6 @@
 use crate::NomadDB;
 use color_eyre::Result;
-use nomad_core::{NomadTxStatus, PersistedTransaction, TxForwarder};
+use nomad_core::{NomadTxStatus, PersistedTransaction};
 use std::{sync::Arc, time::Duration};
 
 const TX_STATUS_POLL_MS: u64 = 100;
