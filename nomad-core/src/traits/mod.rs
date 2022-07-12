@@ -35,7 +35,7 @@ pub enum State {
 }
 
 /// Returned by `check_double_update` if double update exists
-#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct DoubleUpdate(pub SignedUpdate, pub SignedUpdate);
 
 impl Display for DoubleUpdate {
