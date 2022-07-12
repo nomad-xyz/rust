@@ -1,3 +1,7 @@
+//! Fetches latest configs from `CONFIG_BASE_URI` and stores them in
+//! `configuration/configs`. To disable this feature pre-build or pre-test, set
+//! the environment variable `BUILD_DISABLED`.
+
 use std::{fs, io::Write, path::PathBuf};
 
 const DEFINITIONS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/data/definitions.ts"));
@@ -108,9 +112,12 @@ async fn main() -> eyre::Result<()> {
         "cargo:rerun-if-changed={}",
         concat!(env!("CARGO_MANIFEST_DIR"), "/configs/staging.json")
     );
-
     gen_wasm_bindgen()?;
-    get_configs().await?;
+
+    // don't re-fetch configs if programmer disables build
+    if std::env::var("BUILD_DISABLED").is_err() {
+        get_configs().await?;
+    }
 
     Ok(())
 }
