@@ -1,12 +1,12 @@
-use crate::{ContractSync, HomeIndexers, NomadDB, TxManager};
+use crate::{ContractSync, HomeIndexers, NomadDB, TxSenderHandle};
 use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use ethers::core::types::{H256, U256};
 use nomad_core::{
-    db::DbError, ChainCommunicationError, Common, CommonEvents, CommonTxHandling,
-    CommonTxSubmission, DoubleUpdate, Home, HomeEvents, HomeTxHandling, HomeTxSubmission, Message,
-    NomadMethod, PersistedTransaction, RawCommittedMessage, SignedUpdate, State, TxContractStatus,
-    TxDispatchKind, TxEventStatus, TxOutcome, Update,
+    db::DbError, ChainCommunicationError, Common, CommonEvents, CommonTransactions, DoubleUpdate,
+    Home, HomeEvents, HomeTransactions, HomeTxSubmitTask, Message, PersistedTransaction,
+    RawCommittedMessage, SignedUpdate, State, TxContractStatus, TxDispatchKind, TxEventStatus,
+    TxOutcome, Update,
 };
 use nomad_ethereum::EthereumHome;
 use nomad_test::mocks::MockHomeContract;
@@ -21,7 +21,7 @@ pub struct CachingHome {
     home: Homes,
     contract_sync: ContractSync<HomeIndexers>,
     db: NomadDB,
-    tx_manager: TxManager,
+    tx_sender: TxSenderHandle,
 }
 
 impl std::fmt::Display for CachingHome {
@@ -36,13 +36,13 @@ impl CachingHome {
         home: Homes,
         contract_sync: ContractSync<HomeIndexers>,
         db: NomadDB,
-        tx_manager: TxManager,
+        tx_sender: TxSenderHandle,
     ) -> Self {
         Self {
             home,
             contract_sync,
             db,
-            tx_manager,
+            tx_sender,
         }
     }
 
@@ -92,26 +92,21 @@ impl Home for CachingHome {
 }
 
 #[async_trait]
-impl HomeTxHandling for CachingHome {
+impl HomeTransactions for CachingHome {
     async fn dispatch(
         &self,
-        message: &Message,
-        dispatch_kind: TxDispatchKind,
+        _message: &Message,
+        _dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        self.tx_manager
-            .submit_transaction(
-                NomadMethod::Dispatch(message.to_owned()).into(),
-                dispatch_kind,
-            )
-            .await
+        unimplemented!()
     }
 
     async fn improper_update(
         &self,
-        update: &SignedUpdate,
+        _update: &SignedUpdate,
         _dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        self.home.improper_update(update).await
+        unimplemented!()
     }
 }
 
@@ -188,29 +183,21 @@ impl Common for CachingHome {
 }
 
 #[async_trait]
-impl CommonTxHandling for CachingHome {
-    async fn status(
-        &self,
-        txid: H256,
-        _dispatch_kind: TxDispatchKind,
-    ) -> Result<Option<TxOutcome>, ChainCommunicationError> {
-        self.home.status(txid).await
-    }
-
+impl CommonTransactions for CachingHome {
     async fn update(
         &self,
-        update: &SignedUpdate,
+        _update: &SignedUpdate,
         _dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        self.home.update(update).await
+        unimplemented!()
     }
 
     async fn double_update(
         &self,
-        double: &DoubleUpdate,
+        _double: &DoubleUpdate,
         _dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        self.home.double_update(double).await
+        unimplemented!()
     }
 }
 
@@ -281,11 +268,11 @@ impl std::ops::DerefMut for Homes {
 #[derive(Debug)]
 pub enum HomeVariants {
     /// Ethereum home contract
-    Ethereum(Box<dyn HomeTxSubmission>),
+    Ethereum(Box<dyn HomeTxSubmitTask>),
     /// Mock home contract
     Mock(Box<MockHomeContract>),
     /// Other home variant
-    Other(Box<dyn HomeTxSubmission>),
+    Other(Box<dyn HomeTxSubmitTask>),
 }
 
 impl HomeVariants {
@@ -317,8 +304,8 @@ impl From<MockHomeContract> for Homes {
     }
 }
 
-impl From<Box<dyn HomeTxSubmission>> for Homes {
-    fn from(home: Box<dyn HomeTxSubmission>) -> Self {
+impl From<Box<dyn HomeTxSubmitTask>> for Homes {
+    fn from(home: Box<dyn HomeTxSubmitTask>) -> Self {
         HomeVariants::Other(home).into()
     }
 }
@@ -378,29 +365,6 @@ impl Home for HomeVariants {
 }
 
 #[async_trait]
-impl HomeTxSubmission for HomeVariants {
-    #[instrument(level = "trace", err)]
-    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
-        match self {
-            HomeVariants::Ethereum(home) => home.dispatch(message).await,
-            HomeVariants::Mock(mock_home) => mock_home.dispatch(message).await,
-            HomeVariants::Other(home) => home.dispatch(message).await,
-        }
-    }
-
-    async fn improper_update(
-        &self,
-        update: &SignedUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
-        match self {
-            HomeVariants::Ethereum(home) => home.improper_update(update).await,
-            HomeVariants::Mock(mock_home) => mock_home.improper_update(update).await,
-            HomeVariants::Other(home) => home.improper_update(update).await,
-        }
-    }
-}
-
-#[async_trait]
 impl Common for HomeVariants {
     fn name(&self) -> &str {
         match self {
@@ -444,45 +408,12 @@ impl Common for HomeVariants {
 }
 
 #[async_trait]
-impl CommonTxSubmission for HomeVariants {
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
-        match self {
-            HomeVariants::Ethereum(home) => home.status(txid).await,
-            HomeVariants::Mock(mock_home) => mock_home.status(txid).await,
-            HomeVariants::Other(home) => home.status(txid).await,
-        }
-    }
-
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
-        match self {
-            HomeVariants::Ethereum(home) => home.update(update).await,
-            HomeVariants::Mock(mock_home) => mock_home.update(update).await,
-            HomeVariants::Other(home) => home.update(update).await,
-        }
-    }
-
-    async fn double_update(
-        &self,
-        double: &DoubleUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
-        match self {
-            HomeVariants::Ethereum(home) => home.double_update(double).await,
-            HomeVariants::Mock(mock_home) => mock_home.double_update(double).await,
-            HomeVariants::Other(home) => home.double_update(double).await,
-        }
-    }
-}
-
-#[async_trait]
 impl TxEventStatus for HomeVariants {
     async fn event_status(
         &self,
-        tx: &PersistedTransaction,
+        _tx: &PersistedTransaction,
     ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
-        match self {
-            HomeVariants::Ethereum(home) => home.event_status(tx).await,
-            _ => unimplemented!(),
-        }
+        unimplemented!()
     }
 }
 
@@ -490,11 +421,8 @@ impl TxEventStatus for HomeVariants {
 impl TxContractStatus for HomeVariants {
     async fn contract_status(
         &self,
-        tx: &PersistedTransaction,
+        _tx: &PersistedTransaction,
     ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
-        match self {
-            HomeVariants::Ethereum(home) => home.contract_status(tx).await,
-            _ => unimplemented!(),
-        }
+        unimplemented!()
     }
 }
