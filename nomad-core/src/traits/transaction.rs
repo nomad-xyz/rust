@@ -36,7 +36,9 @@ pub trait TxContractStatus: Send + Sync + std::fmt::Debug {
 }
 
 /// Interface for creating transaction submission tasks in contracts
-pub trait TxSubmitTask {
+pub trait TxSubmitTask: Send + Sync + std::fmt::Debug {
     /// Create and return transaction submission task
-    fn submit_task(&mut self) -> JoinHandle<()>;
+    fn submit_task(&mut self) -> Option<JoinHandle<()>> {
+        None
+    }
 }
