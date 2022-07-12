@@ -202,65 +202,6 @@ where
 }
 
 #[async_trait]
-impl<W, R> CommonTxSubmission for EthereumReplica<W, R>
-where
-    W: ethers::providers::Middleware + 'static,
-    R: ethers::providers::Middleware + 'static,
-{
-    #[tracing::instrument(err)]
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
-        self.contract
-            .client()
-            .get_transaction_receipt(txid)
-            .await
-            .map_err(|e| Box::new(e) as Box<dyn StdError + Send + Sync>)?
-            .map(|receipt| receipt.try_into())
-            .transpose()
-    }
-
-    #[tracing::instrument(err)]
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
-        let mut tx = self.contract.update(
-            update.update.previous_root.to_fixed_bytes(),
-            update.update.new_root.to_fixed_bytes(),
-            update.signature.to_vec().into(),
-        );
-
-        if let Some(limits) = &self.gas {
-            tx.tx.set_gas(U256::from(limits.update));
-        }
-
-        self.submitter
-            .submit(self.domain, self.contract.address(), tx.tx)
-            .await
-    }
-
-    #[tracing::instrument(err)]
-    async fn double_update(
-        &self,
-        double: &DoubleUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
-        let mut tx = self.contract.double_update(
-            double.0.update.previous_root.to_fixed_bytes(),
-            [
-                double.0.update.new_root.to_fixed_bytes(),
-                double.1.update.new_root.to_fixed_bytes(),
-            ],
-            double.0.signature.to_vec().into(),
-            double.1.signature.to_vec().into(),
-        );
-
-        if let Some(limits) = &self.gas {
-            tx.tx.set_gas(U256::from(limits.double_update));
-        }
-
-        self.submitter
-            .submit(self.domain, self.contract.address(), tx.tx)
-            .await
-    }
-}
-
-#[async_trait]
 impl<W, R> Replica for EthereumReplica<W, R>
 where
     W: ethers::providers::Middleware + 'static,
@@ -290,70 +231,108 @@ where
     }
 }
 
-#[async_trait]
-impl<W, R> ReplicaTxSubmission for EthereumReplica<W, R>
+impl<W, R> ReplicaTxSubmitTask for EthereumReplica<W, R>
 where
     W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
-    #[tracing::instrument(err)]
-    async fn prove(&self, proof: &NomadProof) -> Result<TxOutcome, ChainCommunicationError> {
-        let mut sol_proof: [[u8; 32]; 32] = Default::default();
-        sol_proof
-            .iter_mut()
-            .enumerate()
-            .for_each(|(i, elem)| *elem = proof.path[i].to_fixed_bytes());
+}
 
-        let mut tx = self
-            .contract
-            .prove(proof.leaf.into(), sol_proof, proof.index.into());
-
-        if let Some(limits) = &self.gas {
-            tx.tx.set_gas(U256::from(limits.prove));
-        }
-
-        self.submitter
-            .submit(self.domain, self.contract.address(), tx.tx)
-            .await
+impl<W, R> TxSubmitTask for EthereumReplica<W, R>
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
+{
+    fn submit_task(&mut self) -> Option<JoinHandle<()>> {
+        let mut tx_receiver = self.tx_receiver.take().unwrap();
+        Some(tokio::spawn(async move {
+            loop {
+                if let Ok(_tx) = tx_receiver.try_recv() {
+                    unimplemented!()
+                }
+            }
+        }))
     }
+}
 
-    #[tracing::instrument(err)]
-    async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError> {
-        let mut tx = self.contract.process(message.to_vec().into());
+#[async_trait]
+impl<W, R> TxTranslator for EthereumReplica<W, R>
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
+{
+    type Transaction = TypedTransaction;
 
-        if let Some(limits) = &self.gas {
-            tx.tx.set_gas(U256::from(limits.process));
-        }
-
-        self.submitter
-            .submit(self.domain, self.contract.address(), tx.tx)
-            .await
-    }
-
-    #[tracing::instrument(err)]
-    async fn prove_and_process(
+    async fn convert(
         &self,
-        message: &NomadMessage,
-        proof: &NomadProof,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
-        let mut sol_proof: [[u8; 32]; 32] = Default::default();
-        sol_proof
-            .iter_mut()
-            .enumerate()
-            .for_each(|(i, elem)| *elem = proof.path[i].to_fixed_bytes());
+        tx: PersistedTransaction,
+    ) -> Result<Self::Transaction, ChainCommunicationError> {
+        match tx.method {
+            NomadMethod::Update(update) => {
+                let mut tx = self.contract.update(
+                    update.update.previous_root.to_fixed_bytes(),
+                    update.update.new_root.to_fixed_bytes(),
+                    update.signature.to_vec().into(),
+                );
+                if let Some(limits) = &self.gas {
+                    tx.tx.set_gas(U256::from(limits.update));
+                }
+                Ok(tx.tx)
+            }
+            NomadMethod::DoubleUpdate(double) => {
+                let mut tx = self.contract.double_update(
+                    double.0.update.previous_root.to_fixed_bytes(),
+                    [
+                        double.0.update.new_root.to_fixed_bytes(),
+                        double.1.update.new_root.to_fixed_bytes(),
+                    ],
+                    double.0.signature.to_vec().into(),
+                    double.1.signature.to_vec().into(),
+                );
+                if let Some(limits) = &self.gas {
+                    tx.tx.set_gas(U256::from(limits.double_update));
+                }
+                Ok(tx.tx)
+            }
+            NomadMethod::Prove(proof) => {
+                let mut sol_proof: [[u8; 32]; 32] = Default::default();
+                sol_proof
+                    .iter_mut()
+                    .enumerate()
+                    .for_each(|(i, elem)| *elem = proof.path[i].to_fixed_bytes());
+                let mut tx = self
+                    .contract
+                    .prove(proof.leaf.into(), sol_proof, proof.index.into());
+                if let Some(limits) = &self.gas {
+                    tx.tx.set_gas(U256::from(limits.prove));
+                }
+                Ok(tx.tx)
+            }
+            NomadMethod::Process(message) => {
+                let mut tx = self.contract.process(message.to_vec().into());
+                if let Some(limits) = &self.gas {
+                    tx.tx.set_gas(U256::from(limits.process));
+                }
+                Ok(tx.tx)
+            }
+            NomadMethod::ProveAndProcess(proof, message) => {
+                let mut sol_proof: [[u8; 32]; 32] = Default::default();
+                sol_proof
+                    .iter_mut()
+                    .enumerate()
+                    .for_each(|(i, elem)| *elem = proof.path[i].to_fixed_bytes());
 
-        let mut tx = self
-            .contract
-            .prove_and_process(message.to_vec().into(), sol_proof, proof.index.into())
-            .gas(1_900_000);
-
-        if let Some(limits) = &self.gas {
-            tx.tx.set_gas(U256::from(limits.prove_and_process));
+                let mut tx = self
+                    .contract
+                    .prove_and_process(message.to_vec().into(), sol_proof, proof.index.into())
+                    .gas(1_900_000);
+                if let Some(limits) = &self.gas {
+                    tx.tx.set_gas(U256::from(limits.prove_and_process));
+                }
+                Ok(tx.tx)
+            }
+            _ => unimplemented!(),
         }
-
-        self.submitter
-            .submit(self.domain, self.contract.address(), tx.tx)
-            .await
     }
 }
 
