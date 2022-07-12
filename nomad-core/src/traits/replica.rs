@@ -5,8 +5,7 @@ use ethers::core::types::H256;
 use crate::{
     accumulator::NomadProof,
     traits::{ChainCommunicationError, Common, TxOutcome},
-    CommonTxHandling, CommonTxSubmission, NomadMessage, TxContractStatus, TxDispatchKind,
-    TxEventStatus,
+    CommonTransactions, NomadMessage, TxDispatchKind, TxSubmitTask,
 };
 
 /// The status of a message in the replica
@@ -38,7 +37,9 @@ pub trait Replica: Common + Send + Sync + std::fmt::Debug {
 
 /// Interface for chain-agnostic tx submission used by the replica
 #[async_trait]
-pub trait ReplicaTxHandling: CommonTxHandling + Replica + Send + Sync + std::fmt::Debug {
+pub trait ReplicaTransactions:
+    CommonTransactions + Replica + Send + Sync + std::fmt::Debug
+{
     /// Dispatch a transaction to prove inclusion of some leaf in the replica.
     async fn prove(
         &self,
@@ -68,23 +69,4 @@ pub trait ReplicaTxHandling: CommonTxHandling + Replica + Send + Sync + std::fmt
 
 /// Interface for chain-specific tx submission used by the replica
 #[async_trait]
-pub trait ReplicaTxSubmission:
-    CommonTxSubmission + TxEventStatus + TxContractStatus + Replica + Send + Sync + std::fmt::Debug
-{
-    /// Dispatch a transaction to prove inclusion of some leaf in the replica.
-    async fn prove(&self, proof: &NomadProof) -> Result<TxOutcome, ChainCommunicationError>;
-
-    /// Trigger processing of a message
-    async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError>;
-
-    /// Prove a leaf in the replica and then process its message
-    async fn prove_and_process(
-        &self,
-        message: &NomadMessage,
-        proof: &NomadProof,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
-        self.prove(proof).await?;
-
-        Ok(self.process(message).await?)
-    }
-}
+pub trait ReplicaTxSubmitTask: TxSubmitTask + Replica + Send + Sync + std::fmt::Debug {}
