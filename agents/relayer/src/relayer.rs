@@ -232,6 +232,7 @@ mod test {
             let home_sync = ContractSync::new(
                 AGENT_NAME.to_owned(),
                 "home_1".to_owned(),
+                "replica_1".to_owned(),
                 home_db.clone(),
                 home_indexer.clone(),
                 IndexSettings::default(),
@@ -273,6 +274,7 @@ mod test {
             let replica_db = NomadDB::new("replica_1", db.clone());
             let replica_sync = ContractSync::new(
                 AGENT_NAME.to_owned(),
+                "home_1".to_owned(),
                 "replica_1".to_owned(),
                 replica_db.clone(),
                 replica_indexer.clone(),

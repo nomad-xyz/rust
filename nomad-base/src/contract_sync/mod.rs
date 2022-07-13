@@ -28,7 +28,8 @@ const MESSAGES_LABEL: &str = "messages";
 #[derive(Debug, Clone)]
 pub struct ContractSync<I> {
     agent_name: String,
-    contract_name: String,
+    home: String,
+    remote: String,
     db: NomadDB,
     indexer: Arc<I>,
     index_settings: IndexSettings,
@@ -51,7 +52,8 @@ impl<I> ContractSync<I> {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         agent_name: String,
-        contract_name: String,
+        home: String,
+        remote: String,
         db: NomadDB,
         indexer: Arc<I>,
         index_settings: IndexSettings,
@@ -61,7 +63,8 @@ impl<I> ContractSync<I> {
     ) -> Self {
         Self {
             agent_name,
-            contract_name,
+            home,
+            remote,
             db,
             indexer,
             index_settings,
@@ -93,18 +96,20 @@ where
         let indexer = self.indexer.clone();
         let indexed_height = self.metrics.indexed_height.with_label_values(&[
             UPDATES_LABEL,
-            &self.contract_name,
+            &self.home,
+            &self.remote,
             &self.agent_name,
         ]);
         let store_update_latency = self
             .metrics
             .store_event_latency
             .clone()
-            .with_label_values(&[UPDATES_LABEL, &self.contract_name, &self.agent_name]);
+            .with_label_values(&[UPDATES_LABEL, &self.home, &self.remote, &self.agent_name]);
 
         let stored_updates = self.metrics.stored_events.with_label_values(&[
             UPDATES_LABEL,
-            &self.contract_name,
+            &self.home,
+            &self.remote,
             &self.agent_name,
         ]);
 
@@ -247,13 +252,15 @@ where
         let indexer = self.indexer.clone();
         let indexed_height = self.metrics.indexed_height.with_label_values(&[
             MESSAGES_LABEL,
-            &self.contract_name,
+            &self.home,
+            &self.remote,
             &self.agent_name,
         ]);
 
         let stored_messages = self.metrics.stored_events.with_label_values(&[
             MESSAGES_LABEL,
-            &self.contract_name,
+            &self.home,
+            &self.remote,
             &self.agent_name,
         ]);
 
@@ -535,6 +542,7 @@ mod test {
             let contract_sync = ContractSync::new(
                 "agent".to_owned(),
                 "home_1".to_owned(),
+                "replica_1".to_owned(),
                 nomad_db.clone(),
                 indexer.clone(),
                 index_settings,

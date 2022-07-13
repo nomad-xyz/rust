@@ -249,6 +249,7 @@ impl Settings {
         Ok(ContractSync::new(
             agent_name.to_owned(),
             home_name.to_owned(),
+            home_name.to_owned(),
             nomad_db,
             indexer,
             index_settings,
@@ -303,6 +304,7 @@ impl Settings {
 
         Ok(ContractSync::new(
             agent_name.to_owned(),
+            self.home.name.clone(),
             replica_name.to_owned(),
             nomad_db,
             indexer,
