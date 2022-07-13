@@ -29,7 +29,7 @@ const MESSAGES_LABEL: &str = "messages";
 pub struct ContractSync<I> {
     agent_name: String,
     home: String,
-    remote: String,
+    replica: String,
     db: NomadDB,
     indexer: Arc<I>,
     index_settings: IndexSettings,
@@ -53,7 +53,7 @@ impl<I> ContractSync<I> {
     pub fn new(
         agent_name: String,
         home: String,
-        remote: String,
+        replica: String,
         db: NomadDB,
         indexer: Arc<I>,
         index_settings: IndexSettings,
@@ -64,7 +64,7 @@ impl<I> ContractSync<I> {
         Self {
             agent_name,
             home,
-            remote,
+            replica,
             db,
             indexer,
             index_settings,
@@ -97,19 +97,19 @@ where
         let indexed_height = self.metrics.indexed_height.with_label_values(&[
             UPDATES_LABEL,
             &self.home,
-            &self.remote,
+            &self.replica,
             &self.agent_name,
         ]);
         let store_update_latency = self
             .metrics
             .store_event_latency
             .clone()
-            .with_label_values(&[UPDATES_LABEL, &self.home, &self.remote, &self.agent_name]);
+            .with_label_values(&[UPDATES_LABEL, &self.home, &self.replica, &self.agent_name]);
 
         let stored_updates = self.metrics.stored_events.with_label_values(&[
             UPDATES_LABEL,
             &self.home,
-            &self.remote,
+            &self.replica,
             &self.agent_name,
         ]);
 
@@ -253,14 +253,14 @@ where
         let indexed_height = self.metrics.indexed_height.with_label_values(&[
             MESSAGES_LABEL,
             &self.home,
-            &self.remote,
+            &self.replica,
             &self.agent_name,
         ]);
 
         let stored_messages = self.metrics.stored_events.with_label_values(&[
             MESSAGES_LABEL,
             &self.home,
-            &self.remote,
+            &self.replica,
             &self.agent_name,
         ]);
 

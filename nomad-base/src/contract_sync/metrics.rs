@@ -21,14 +21,14 @@ impl ContractSyncMetrics {
             .new_int_gauge_vec(
                 "contract_sync_block_height",
                 "Height of a recently observed block",
-                &["data_type", "home", "remote", "agent"],
+                &["data_type", "home", "replica", "agent"],
             )
             .expect("failed to register block_height metric");
         let store_event_latency = metrics
             .new_histogram(
                 "contract_sync_store_event_latency",
                 "Latency between event emit and event store in db.",
-                &["data_type", "home", "remote", "agent"],
+                &["data_type", "home", "replica", "agent"],
                 &[
                     0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0, 120.0, 140.0,
                     160.0, 180.0, 200.0, 250.0, 300.0, 350.0, 400.0, 450.0, 500.0, 1000.0, 2000.0,
@@ -40,7 +40,7 @@ impl ContractSyncMetrics {
             .new_int_gauge_vec(
                 "contract_sync_stored_events",
                 "Number of events stored into db",
-                &["data_type", "home", "remote", "agent"],
+                &["data_type", "home", "replica", "agent"],
             )
             .expect("failed to register stored_events metric");
 
