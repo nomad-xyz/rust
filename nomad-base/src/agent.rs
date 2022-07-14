@@ -11,7 +11,7 @@ use crate::{
 use async_trait::async_trait;
 use color_eyre::{eyre::WrapErr, Result};
 use futures_util::future::select_all;
-use nomad_core::{db::DB, Common};
+use nomad_core::{db::DB, Common, PersistedTransaction};
 use tracing::instrument::Instrumented;
 use tracing::{error, info_span, warn, Instrument};
 use tracing_subscriber::prelude::*;
@@ -26,7 +26,7 @@ use tokio::{task::JoinHandle, time::sleep};
 const MAX_EXPONENTIAL: u32 = 7; // 2^7 = 128 second timeout
 
 /// Properties shared across all agents
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct AgentCore {
     /// A boxed Home
     pub home: Arc<CachingHome>,
@@ -34,10 +34,10 @@ pub struct AgentCore {
     pub replicas: HashMap<String, Arc<CachingReplica>>,
     /// A persistent KV Store (currently implemented as rocksdb)
     pub db: DB,
-    /// A map of tx senders per network
-    pub tx_senders: HashMap<String, TxSender>,
-    /// A map of tx status pollers per network
-    pub tx_statuses: HashMap<String, TxStatus>,
+    /// A map of tx sender tasks per network
+    pub tx_send_tasks: HashMap<String, Option<JoinHandle<Result<()>>>>,
+    /// A map of tx submit tasks per network
+    pub tx_submit_tasks: HashMap<String, Option<JoinHandle<Result<()>>>>,
     /// Prometheus metrics
     pub metrics: Arc<CoreMetrics>,
     /// The height at which to start indexing the Home
@@ -62,7 +62,9 @@ pub struct ChannelBase {
 /// and:
 ///     a reference to a home.
 #[async_trait]
-pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
+pub trait NomadAgent:
+    Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> + AsMut<AgentCore>
+{
     /// The agent's name
     const AGENT_NAME: &'static str;
 
@@ -99,14 +101,14 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
         self.as_ref().db.clone()
     }
 
-    /// Return a handle to the tx senders
-    fn tx_senders(&self) -> HashMap<String, TxSender> {
-        self.as_ref().tx_senders.clone()
+    /// Take tx_send_tasks for running
+    fn take_tx_send_tasks(&mut self) -> HashMap<String, Option<JoinHandle<Result<()>>>> {
+        self.as_mut().tx_send_tasks.drain().collect()
     }
 
-    /// Return a handle to the tx status pollers
-    fn tx_statuses(&self) -> HashMap<String, TxStatus> {
-        self.as_ref().tx_statuses.clone()
+    /// Take tx_submit_tasks for running
+    fn take_tx_submit_tasks(&mut self) -> HashMap<String, Option<JoinHandle<Result<()>>>> {
+        self.as_mut().tx_submit_tasks.drain().collect()
     }
 
     /// Return a reference to a home contract
@@ -201,7 +203,7 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
 
     /// Run several agents
     #[allow(clippy::unit_arg, unused_must_use)]
-    fn run_all(self) -> Instrumented<JoinHandle<Result<()>>>
+    fn run_all(mut self) -> Instrumented<JoinHandle<Result<()>>>
     where
         Self: Sized + 'static,
     {
@@ -222,11 +224,9 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
                 tasks.push(sync_task);
             }
 
-            let sender_task = self.run_tx_senders();
-            tasks.push(sender_task);
-
-            let status_task = self.run_tx_status_pollers();
-            tasks.push(status_task);
+            // Run transaction tasks
+            tasks.push(self.run_tx_send_tasks());
+            tasks.push(self.run_tx_submit_tasks());
 
             let (res, _, remaining) = select_all(tasks).await;
 
@@ -296,16 +296,15 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
         Ok(())
     }
 
-    /// Run tx senders
-    fn run_tx_senders(&self) -> Instrumented<JoinHandle<Result<()>>> {
-        let span = info_span!("run_tx_senders");
+    /// Run tx send tasks
+    fn run_tx_send_tasks(&mut self) -> Instrumented<JoinHandle<Result<()>>> {
+        let span = info_span!("run_tx_send_tasks");
 
         let handles = self
-            .tx_senders()
-            .into_iter()
-            .map(|(_, tx_sender)| {
-                tokio::spawn(async move { tx_sender.run().await }).in_current_span()
-            })
+            .take_tx_send_tasks()
+            .into_values()
+            .flatten()
+            .map(|h| h.in_current_span())
             .collect::<Vec<_>>();
 
         tokio::spawn(async move {
@@ -318,16 +317,15 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
         .instrument(span)
     }
 
-    /// Run tx status pollers
-    fn run_tx_status_pollers(&self) -> Instrumented<JoinHandle<Result<()>>> {
-        let span = info_span!("run_tx_status_pollers");
+    /// Run tx submit tasks
+    fn run_tx_submit_tasks(&mut self) -> Instrumented<JoinHandle<Result<()>>> {
+        let span = info_span!("run_tx_submit_tasks");
 
         let handles = self
-            .tx_statuses()
-            .into_iter()
-            .map(|(_, tx_status)| {
-                tokio::spawn(async move { tx_status.run().await }).in_current_span()
-            })
+            .take_tx_submit_tasks()
+            .into_values()
+            .flatten()
+            .map(|h| h.in_current_span())
             .collect::<Vec<_>>();
 
         tokio::spawn(async move {
