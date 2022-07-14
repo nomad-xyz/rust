@@ -420,11 +420,6 @@ impl NomadDB {
         self.store_keyed_encodable(PERSISTED_TRANSACTION, &tx.counter, tx)
     }
 
-    /// Delete PersistedTransaction
-    pub fn delete_persisted_transaction_by_counter(&self, counter: u64) -> Result<(), DbError> {
-        self.delete_keyed_value(PERSISTED_TRANSACTION, &counter)
-    }
-
     /// Iterate over all PersistedTransaction
     pub fn persisted_transaction_iterator(&self) -> PrefixIterator<PersistedTransaction> {
         self.prefix_iterator(PERSISTED_TRANSACTION)
@@ -591,40 +586,6 @@ mod test {
                 .unwrap();
 
             assert_eq!(tx.confirm_event, NomadTxStatus::Dummy2);
-        })
-        .await;
-    }
-
-    #[tokio::test]
-    async fn db_stores_and_deletes_transactions() {
-        run_test_db(|db| async move {
-            let home_name = "home_1".to_owned();
-            let db = NomadDB::new(home_name, db);
-
-            let tx = PersistedTransaction {
-                method: NomadMethod::Dispatch(Message {
-                    destination: 0,
-                    recipient: Default::default(),
-                    body: vec![],
-                }),
-                counter: 999,
-                confirm_event: NomadTxStatus::Dummy,
-            };
-
-            db.store_persisted_transaction(tx.clone()).unwrap();
-            db.store_persisted_transaction(tx.clone()).unwrap();
-            db.store_persisted_transaction(tx).unwrap();
-            let iter = db.persisted_transaction_iterator();
-            assert_eq!(iter.count(), 3);
-
-            db.delete_persisted_transaction_by_counter(2).unwrap();
-            let iter = db.persisted_transaction_iterator();
-            assert_eq!(iter.count(), 2);
-
-            db.delete_persisted_transaction_by_counter(1).unwrap();
-            db.delete_persisted_transaction_by_counter(3).unwrap();
-            let iter = db.persisted_transaction_iterator();
-            assert_eq!(iter.count(), 0);
         })
         .await;
     }

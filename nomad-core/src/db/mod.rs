@@ -72,11 +72,6 @@ impl DB {
         Ok(self.0.get(key)?)
     }
 
-    /// Delete a value from the DB
-    fn _delete(&self, key: impl AsRef<[u8]>) -> Result<()> {
-        Ok(self.0.delete(key)?)
-    }
-
     /// Prefix a key and store in the DB
     fn prefix_store(
         &self,
@@ -102,14 +97,6 @@ impl DB {
         self._retrieve(buf)
     }
 
-    /// Prefix delete a value
-    fn prefix_delete(&self, prefix: impl AsRef<[u8]>, key: impl AsRef<[u8]>) -> Result<()> {
-        let mut buf = vec![];
-        buf.extend(prefix.as_ref());
-        buf.extend(key.as_ref());
-        self._delete(buf)
-    }
-
     /// Store any encodeable
     pub fn store_encodable<V: Encode>(
         &self,
@@ -132,11 +119,6 @@ impl DB {
             .transpose()?)
     }
 
-    /// Delete value
-    pub fn delete_value(&self, prefix: impl AsRef<[u8]>, key: impl AsRef<[u8]>) -> Result<()> {
-        Ok(self.prefix_delete(prefix, key)?)
-    }
-
     /// Store any encodeable
     pub fn store_keyed_encodable<K: Encode, V: Encode>(
         &self,
@@ -154,11 +136,6 @@ impl DB {
         key: &K,
     ) -> Result<Option<V>> {
         self.retrieve_decodable(prefix, key.to_vec())
-    }
-
-    /// Delete any value by key
-    pub fn delete_keyed_value<K: Encode>(&self, prefix: impl AsRef<[u8]>, key: &K) -> Result<()> {
-        self.delete_value(prefix, key.to_vec())
     }
 
     /// Get prefix db iterator for `prefix`
