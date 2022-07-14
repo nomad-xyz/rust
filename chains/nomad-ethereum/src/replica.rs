@@ -8,8 +8,7 @@ use futures_util::future::join_all;
 use nomad_core::{
     ChainCommunicationError, Common, CommonIndexer, ContractLocator, Encode, MessageStatus,
     NomadMethod, PersistedTransaction, Replica, ReplicaTxSubmitTask, SignedUpdate,
-    SignedUpdateWithMeta, State, TxContractStatus, TxEventStatus, TxOutcome, TxSubmitTask,
-    TxTranslator, Update, UpdateMeta,
+    SignedUpdateWithMeta, State, TxOutcome, TxSubmitTask, TxTranslator, Update, UpdateMeta,
 };
 use nomad_xyz_configuration::ReplicaGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
@@ -337,33 +336,5 @@ where
             }
             _ => unimplemented!(),
         }
-    }
-}
-
-#[async_trait]
-impl<W, R> TxEventStatus for EthereumReplica<W, R>
-where
-    W: ethers::providers::Middleware + 'static,
-    R: ethers::providers::Middleware + 'static,
-{
-    async fn event_status(
-        &self,
-        _tx: &PersistedTransaction,
-    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
-        unimplemented!()
-    }
-}
-
-#[async_trait]
-impl<W, R> TxContractStatus for EthereumReplica<W, R>
-where
-    W: ethers::providers::Middleware + 'static,
-    R: ethers::providers::Middleware + 'static,
-{
-    async fn contract_status(
-        &self,
-        _tx: &PersistedTransaction,
-    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
-        unimplemented!()
     }
 }

@@ -5,8 +5,7 @@ use ethers::core::types::{H256, U256};
 use nomad_core::{
     db::DbError, ChainCommunicationError, Common, CommonEvents, CommonTransactions, DoubleUpdate,
     Home, HomeEvents, HomeTransactions, HomeTxSubmitTask, Message, PersistedTransaction,
-    RawCommittedMessage, SignedUpdate, State, TxContractStatus, TxDispatchKind, TxEventStatus,
-    TxOutcome, Update,
+    RawCommittedMessage, SignedUpdate, State, TxDispatchKind, TxOutcome, Update,
 };
 use nomad_ethereum::EthereumHome;
 use nomad_test::mocks::MockHomeContract;
@@ -150,16 +149,6 @@ impl HomeEvents for CachingHome {
 }
 
 #[async_trait]
-impl TxEventStatus for CachingHome {
-    async fn event_status(
-        &self,
-        tx: &PersistedTransaction,
-    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
-        self.home.event_status(tx).await
-    }
-}
-
-#[async_trait]
 impl Common for CachingHome {
     fn name(&self) -> &str {
         self.home.name()
@@ -227,16 +216,6 @@ impl CommonEvents for CachingHome {
             }
             sleep(Duration::from_millis(500)).await;
         }
-    }
-}
-
-#[async_trait]
-impl TxContractStatus for CachingHome {
-    async fn contract_status(
-        &self,
-        tx: &PersistedTransaction,
-    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
-        self.home.contract_status(tx).await
     }
 }
 
@@ -404,25 +383,5 @@ impl Common for HomeVariants {
             HomeVariants::Mock(mock_home) => mock_home.committed_root().await,
             HomeVariants::Other(home) => home.committed_root().await,
         }
-    }
-}
-
-#[async_trait]
-impl TxEventStatus for HomeVariants {
-    async fn event_status(
-        &self,
-        _tx: &PersistedTransaction,
-    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
-        unimplemented!()
-    }
-}
-
-#[async_trait]
-impl TxContractStatus for HomeVariants {
-    async fn contract_status(
-        &self,
-        _tx: &PersistedTransaction,
-    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
-        unimplemented!()
     }
 }

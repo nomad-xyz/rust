@@ -161,23 +161,3 @@ impl CommonTransactions for MockHomeContract {
         self._double_update(double)
     }
 }
-
-#[async_trait]
-impl TxEventStatus for MockHomeContract {
-    async fn event_status(
-        &self,
-        _tx: &PersistedTransaction,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
-        unimplemented!()
-    }
-}
-
-#[async_trait]
-impl TxContractStatus for MockHomeContract {
-    async fn contract_status(
-        &self,
-        _tx: &PersistedTransaction,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
-        unimplemented!()
-    }
-}

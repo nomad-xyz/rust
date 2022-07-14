@@ -17,10 +17,7 @@ use crate::{
 };
 use color_eyre::{eyre::bail, Result};
 use ethers::types::BlockId::Hash;
-use nomad_core::{
-    db::DB, Common, ContractLocator, PersistedTransaction, TxContractStatus, TxEventStatus,
-    TxSubmitTask,
-};
+use nomad_core::{db::DB, Common, ContractLocator, PersistedTransaction, TxSubmitTask};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
 use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets, TxSubmitterConf};
 use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig, NomadGasConfig};

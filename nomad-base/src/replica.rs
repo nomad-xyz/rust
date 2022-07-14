@@ -4,8 +4,7 @@ use ethers::core::types::H256;
 use nomad_core::{
     accumulator::NomadProof, db::DbError, ChainCommunicationError, Common, CommonEvents,
     CommonTransactions, DoubleUpdate, MessageStatus, NomadMessage, PersistedTransaction, Replica,
-    ReplicaTransactions, ReplicaTxSubmitTask, SignedUpdate, State, TxContractStatus,
-    TxDispatchKind, TxEventStatus, TxOutcome,
+    ReplicaTransactions, ReplicaTxSubmitTask, SignedUpdate, State, TxDispatchKind, TxOutcome,
 };
 
 use crate::{NomadDB, TxSenderHandle};
@@ -177,26 +176,6 @@ impl CommonEvents for CachingReplica {
     }
 }
 
-#[async_trait]
-impl TxEventStatus for CachingReplica {
-    async fn event_status(
-        &self,
-        tx: &PersistedTransaction,
-    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
-        self.replica.event_status(tx).await
-    }
-}
-
-#[async_trait]
-impl TxContractStatus for CachingReplica {
-    async fn contract_status(
-        &self,
-        tx: &PersistedTransaction,
-    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
-        self.replica.contract_status(tx).await
-    }
-}
-
 #[derive(Debug, Clone)]
 /// Arc wrapper for ReplicaVariants enum
 pub struct Replicas(Arc<ReplicaVariants>);
@@ -342,25 +321,5 @@ impl Common for ReplicaVariants {
             ReplicaVariants::Mock(mock_replica) => mock_replica.committed_root().await,
             ReplicaVariants::Other(replica) => replica.committed_root().await,
         }
-    }
-}
-
-#[async_trait]
-impl TxEventStatus for ReplicaVariants {
-    async fn event_status(
-        &self,
-        _tx: &PersistedTransaction,
-    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
-        unimplemented!()
-    }
-}
-
-#[async_trait]
-impl TxContractStatus for ReplicaVariants {
-    async fn contract_status(
-        &self,
-        _tx: &PersistedTransaction,
-    ) -> std::result::Result<TxOutcome, ChainCommunicationError> {
-        unimplemented!()
     }
 }
