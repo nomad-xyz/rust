@@ -337,12 +337,21 @@ impl NomadAgent for Processor {
     where
         Self: Sized,
     {
+        // we filter this so that the agent doesn't think it should subsidize
+        // remotes it is unaware of
+        let subsidized_remotes = settings
+            .agent
+            .subsidized_remotes
+            .iter()
+            .filter(|r| settings.base.replicas.contains_key(*r))
+            .cloned()
+            .collect();
         Ok(Self::new(
             settings.agent.interval,
             settings.as_ref().try_into_core(AGENT_NAME).await?,
             settings.agent.allowed,
             settings.agent.denied,
-            settings.agent.subsidized_remotes,
+            subsidized_remotes,
             settings.agent.s3,
         ))
     }
