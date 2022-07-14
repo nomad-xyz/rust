@@ -413,18 +413,15 @@ impl NomadAgent for Processor {
             let mut tasks = vec![home_sync_task, prover_sync_task, home_fail_watch_task];
 
             if !self.subsidized_remotes.is_empty() {
-                let specified_remotes: HashSet<String> =
-                    self.replicas().keys().map(String::to_owned).collect();
-
                 // Get intersection of specified remotes (replicas in settings)
                 // and subsidized remotes
                 let specified_subsidized: Vec<&str> = self
                     .subsidized_remotes
-                    .intersection(&specified_remotes)
-                    .collect::<Vec<_>>()
                     .iter()
-                    .map(|x| x.as_str())
+                    .filter(|r| self.replicas().contains_key(*r))
+                    .map(AsRef::as_ref)
                     .collect();
+
                 if !specified_subsidized.is_empty() {
                     tasks.push(self.run_many(&specified_subsidized));
                 }
