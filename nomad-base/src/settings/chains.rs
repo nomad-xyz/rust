@@ -1,5 +1,5 @@
 use color_eyre::Result;
-use nomad_core::ContractLocator;
+use nomad_core::{ContractLocator, PersistedTransaction};
 use nomad_ethereum::{make_conn_manager, make_home, make_replica};
 use nomad_types::NomadIdentifier;
 use nomad_xyz_configuration::{
