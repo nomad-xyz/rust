@@ -13,16 +13,24 @@
 use crate::{
     agent::AgentCore, CachingHome, CachingReplica, CommonIndexerVariants, CommonIndexers,
     ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes, NomadDB, Replicas,
-    TxManager, TxSender, TxStatus,
+    TxSender, TxSenderHandle, TxStatus,
 };
 use color_eyre::{eyre::bail, Result};
-use nomad_core::{db::DB, Common, ContractLocator, TxContractStatus, TxEventStatus, TxForwarder};
+use ethers::types::BlockId::Hash;
+use nomad_core::{
+    db::DB, Common, ContractLocator, PersistedTransaction, TxContractStatus, TxEventStatus,
+    TxSubmitTask,
+};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
 use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets, TxSubmitterConf};
 use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig, NomadGasConfig};
 use serde::Deserialize;
 use std::collections::HashSet;
 use std::{collections::HashMap, sync::Arc};
+use tokio::{
+    sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
+    task::JoinHandle,
+};
 
 /// Chain configuration
 pub mod chains;
@@ -489,24 +497,78 @@ impl Settings {
         let sync_metrics = ContractSyncMetrics::new(metrics.clone());
 
         let db = DB::from_path(&self.db)?;
-        let home = Arc::new(
-            self.try_caching_home(name, db.clone(), sync_metrics.clone())
-                .await?,
-        );
-        let replicas = self
-            .try_caching_replicas(name, db.clone(), sync_metrics.clone())
+
+        let mut names = self.replicas.clone().into_keys().collect::<Vec<_>>();
+        names.push(self.home.name.clone());
+
+        let mut senders = names
+            .clone()
+            .into_iter()
+            .map(|name| {
+                (
+                    name.clone(),
+                    TxSender::new(NomadDB::new(name.clone(), db.clone())),
+                )
+            })
+            .collect::<HashMap<_, _>>();
+
+        let mut sender_handles = senders
+            .iter()
+            .map(|(n, s)| (n.clone(), TxSenderHandle::new(s.in_sender())))
+            .collect::<HashMap<_, _>>();
+
+        let tx_sender = sender_handles.remove(&self.home.name).unwrap();
+        let tx_receiver = senders
+            .get_mut(&self.home.name)
+            .unwrap()
+            .take_out_receiver()
+            .unwrap();
+
+        let (home, home_submit_task) = self
+            .try_caching_home(
+                name,
+                db.clone(),
+                tx_sender,
+                tx_receiver,
+                sync_metrics.clone(),
+            )
+            .await?;
+        let home = Arc::new(home);
+        let mut replicas = self
+            .try_caching_replicas(
+                name,
+                db.clone(),
+                sender_handles,
+                senders
+                    .iter_mut()
+                    .map(|(n, mut s)| (n.clone(), s.take_out_receiver().unwrap()))
+                    .collect::<HashMap<_, _>>(),
+                sync_metrics.clone(),
+            )
             .await?;
 
-        let tx_senders = self.transaction_senders(home.clone(), replicas.clone(), db.clone());
-        let tx_statuses =
-            self.transaction_status_pollers(home.clone(), replicas.clone(), db.clone());
+        let tx_send_tasks = senders
+            .into_iter()
+            .map(|(n, mut s)| (n.clone(), s.send_task()))
+            .collect::<HashMap<_, _>>();
+
+        let mut tx_submit_tasks = replicas
+            .iter_mut()
+            .map(|(n, (r, t))| (n.clone(), t.take()))
+            .collect::<HashMap<_, _>>();
+        tx_submit_tasks.insert(home.name().to_owned(), home_submit_task);
+
+        let replicas = replicas
+            .into_iter()
+            .map(|(n, (r, t))| (n.clone(), r))
+            .collect::<HashMap<_, _>>();
 
         Ok(AgentCore {
             home,
             replicas,
             db,
-            tx_senders,
-            tx_statuses,
+            tx_send_tasks,
+            tx_submit_tasks,
             settings: self.clone(),
             metrics,
             indexer: self.index.clone(),
