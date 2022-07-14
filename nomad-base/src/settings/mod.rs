@@ -184,6 +184,38 @@ impl Settings {
             attestation_signer: self.attestation_signer.clone(),
         }
     }
+
+    /// All contract names
+    fn contract_names(&self) -> Vec<String> {
+        let mut names = self.replicas.clone().into_keys().collect::<Vec<_>>();
+        names.push(self.home.name.clone());
+        names
+    }
+
+    /// Build transaction senders
+    fn transaction_senders(&self, db: DB) -> HashMap<String, TxSender> {
+        self.contract_names()
+            .clone()
+            .into_iter()
+            .map(|name| {
+                (
+                    name.clone(),
+                    TxSender::new(NomadDB::new(name.clone(), db.clone())),
+                )
+            })
+            .collect::<HashMap<_, _>>()
+    }
+
+    /// Build transaction sender handles
+    fn transaction_sender_handles(
+        &self,
+        senders: &HashMap<String, TxSender>,
+    ) -> HashMap<String, TxSenderHandle> {
+        senders
+            .iter()
+            .map(|(n, s)| (n.clone(), TxSenderHandle::new(s.in_sender())))
+            .collect::<HashMap<_, _>>()
+    }
 }
 
 impl Settings {
@@ -441,66 +473,57 @@ impl Settings {
 
         let db = DB::from_path(&self.db)?;
 
-        let mut names = self.replicas.clone().into_keys().collect::<Vec<_>>();
-        names.push(self.home.name.clone());
+        // Get TxSender and TxSenderHandle
+        let mut senders = self.transaction_senders(db.clone());
+        let mut sender_handles = self.transaction_sender_handles(&senders);
 
-        let mut senders = names
-            .clone()
-            .into_iter()
-            .map(|name| {
-                (
-                    name.clone(),
-                    TxSender::new(NomadDB::new(name.clone(), db.clone())),
-                )
-            })
+        // Build TxSender tasks
+        let tx_send_tasks = senders
+            .iter_mut()
+            .map(|(n, mut s)| (n.clone(), s.send_task()))
             .collect::<HashMap<_, _>>();
 
-        let mut sender_handles = senders
-            .iter()
-            .map(|(n, s)| (n.clone(), TxSenderHandle::new(s.in_sender())))
-            .collect::<HashMap<_, _>>();
-
-        let tx_sender = sender_handles.remove(&self.home.name).unwrap();
-        let tx_receiver = senders
+        // Build CachingHome with TxSenderHandle and TxSender's UnboundedReceiver
+        let tx_home_sender = sender_handles.remove(&self.home.name).unwrap();
+        let tx_home_receiver = senders
             .get_mut(&self.home.name)
             .unwrap()
             .take_out_receiver()
             .unwrap();
-
         let (home, home_submit_task) = self
             .try_caching_home(
                 name,
                 db.clone(),
-                tx_sender,
-                tx_receiver,
+                tx_home_sender,
+                tx_home_receiver,
                 sync_metrics.clone(),
             )
             .await?;
         let home = Arc::new(home);
+
+        /// Build CachingReplica
+        let tx_receivers = senders
+            .iter_mut()
+            .map(|(n, s)| (n.clone(), s.take_out_receiver().unwrap()))
+            .collect::<HashMap<_, _>>();
         let mut replicas = self
             .try_caching_replicas(
                 name,
                 db.clone(),
                 sender_handles,
-                senders
-                    .iter_mut()
-                    .map(|(n, s)| (n.clone(), s.take_out_receiver().unwrap()))
-                    .collect::<HashMap<_, _>>(),
+                tx_receivers,
                 sync_metrics.clone(),
             )
             .await?;
 
-        let tx_send_tasks = senders
-            .into_iter()
-            .map(|(n, mut s)| (n.clone(), s.send_task()))
-            .collect::<HashMap<_, _>>();
-
+        // Extract submit tasks
         let mut tx_submit_tasks = replicas
             .iter_mut()
             .map(|(n, (_, t))| (n.clone(), t.take()))
             .collect::<HashMap<_, _>>();
         tx_submit_tasks.insert(home.name().to_owned(), home_submit_task);
 
+        // Extract replicas
         let replicas = replicas
             .into_iter()
             .map(|(n, (r, _))| (n.clone(), r))
