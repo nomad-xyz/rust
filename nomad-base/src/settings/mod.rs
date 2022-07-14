@@ -191,56 +191,6 @@ impl Settings {
             attestation_signer: self.attestation_signer.clone(),
         }
     }
-
-    /// Make transaction senders
-    fn transaction_senders(
-        &self,
-        home: Arc<CachingHome>,
-        replicas: HashMap<String, Arc<CachingReplica>>,
-        db: DB,
-    ) -> HashMap<String, TxSender> {
-        let mut contracts = replicas
-            .into_iter()
-            .map(|(n, c)| (n, c as Arc<dyn TxForwarder>))
-            .collect::<HashMap<_, _>>();
-        contracts.insert(self.home.name.clone(), home as Arc<dyn TxForwarder>);
-        contracts
-            .into_iter()
-            .map(|(k, c)| (k.clone(), TxSender::new(NomadDB::new(k, db.clone()), c)))
-            .collect::<HashMap<_, _>>()
-    }
-
-    /// Make transaction status pollers
-    fn transaction_status_pollers(
-        &self,
-        home: Arc<CachingHome>,
-        replicas: HashMap<String, Arc<CachingReplica>>,
-        db: DB,
-    ) -> HashMap<String, TxStatus> {
-        let mut contracts = replicas
-            .into_iter()
-            .map(|(n, c)| {
-                (
-                    n,
-                    (
-                        c.clone() as Arc<dyn TxEventStatus>,
-                        c as Arc<dyn TxContractStatus>,
-                    ),
-                )
-            })
-            .collect::<HashMap<_, (_, _)>>();
-        contracts.insert(
-            self.home.name.clone(),
-            (
-                home.clone() as Arc<dyn TxEventStatus>,
-                home as Arc<dyn TxContractStatus>,
-            ),
-        );
-        contracts
-            .into_iter()
-            .map(|(k, (i, c))| (k.clone(), TxStatus::new(NomadDB::new(k, db.clone()), i, c)))
-            .collect::<HashMap<_, _>>()
-    }
 }
 
 impl Settings {
