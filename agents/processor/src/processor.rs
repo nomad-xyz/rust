@@ -425,8 +425,9 @@ impl NomadAgent for Processor {
                     .iter()
                     .map(|x| x.as_str())
                     .collect();
-
-                tasks.push(self.run_many(&specified_subsidized));
+                if !specified_subsidized.is_empty() {
+                    tasks.push(self.run_many(&specified_subsidized));
+                }
             }
 
             // if we have a bucket, add a task to push to it
