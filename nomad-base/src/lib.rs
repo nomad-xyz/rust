@@ -54,9 +54,6 @@ pub use indexer::*;
 mod submitter;
 pub use submitter::*;
 
-mod tx_manager;
-pub use tx_manager::*;
-
 mod tx_sender;
 pub use tx_sender::*;
 
