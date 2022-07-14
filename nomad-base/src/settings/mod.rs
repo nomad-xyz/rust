@@ -271,13 +271,16 @@ impl Settings {
     }
 
     /// Try to get a Homes object
-    pub async fn try_home(&self) -> Result<Homes> {
+    pub async fn try_home(
+        &self,
+        tx_receiver: UnboundedReceiver<PersistedTransaction>,
+    ) -> Result<(Homes, Option<JoinHandle<Result<()>>>)> {
         let opt_home_timelag = self.home_timelag();
         let name = &self.home.name;
         let submitter_conf = self.get_submitter_conf(name);
         let gas = self.gas.get(name).map(|c| c.core.home);
         self.home
-            .try_into_home(submitter_conf, opt_home_timelag, gas)
+            .try_into_home(submitter_conf, opt_home_timelag, gas, tx_receiver)
             .await
     }
 
@@ -314,24 +317,34 @@ impl Settings {
         &self,
         agent_name: &str,
         db: DB,
+        tx_sender: TxSenderHandle,
+        tx_receiver: UnboundedReceiver<PersistedTransaction>,
         metrics: ContractSyncMetrics,
-    ) -> Result<CachingHome> {
-        let home = self.try_home().await?;
+    ) -> Result<(CachingHome, Option<JoinHandle<Result<()>>>)> {
+        let (home, submit_task) = self.try_home(tx_receiver).await?;
         let contract_sync = self
             .try_home_contract_sync(agent_name, db.clone(), metrics)
             .await?;
         let nomad_db = NomadDB::new(home.name(), db);
-        let tx_manager = TxManager::new(nomad_db.clone());
 
-        Ok(CachingHome::new(home, contract_sync, nomad_db, tx_manager))
+        Ok((
+            CachingHome::new(home, contract_sync, nomad_db, tx_sender),
+            submit_task,
+        ))
     }
 
     /// Try to get a Replicas object
-    pub async fn try_replica(&self, replica_name: &str) -> Result<Replicas> {
+    pub async fn try_replica(
+        &self,
+        replica_name: &str,
+        tx_receiver: UnboundedReceiver<PersistedTransaction>,
+    ) -> Result<(Replicas, Option<JoinHandle<Result<()>>>)> {
         let replica_setup = self.replicas.get(replica_name).expect("!replica");
         let submitter_conf = self.get_submitter_conf(replica_name);
         let gas = self.gas.get(replica_name).map(|c| c.core.replica);
-        replica_setup.try_into_replica(submitter_conf, gas).await
+        replica_setup
+            .try_into_replica(submitter_conf, gas, tx_receiver)
+            .await
     }
 
     /// Try to get a replica ContractSync
@@ -371,15 +384,20 @@ impl Settings {
         replica_name: &str,
         agent_name: &str,
         db: DB,
+        tx_sender: TxSenderHandle,
+        tx_receiver: UnboundedReceiver<PersistedTransaction>,
         metrics: ContractSyncMetrics,
-    ) -> Result<CachingReplica> {
-        let replica = self.try_replica(replica_name).await?;
+    ) -> Result<(CachingReplica, Option<JoinHandle<Result<()>>>)> {
+        let (replica, submit_task) = self.try_replica(replica_name, tx_receiver).await?;
         let contract_sync = self
             .try_replica_contract_sync(replica_name, agent_name, db.clone(), metrics)
             .await?;
         let nomad_db = NomadDB::new(replica.name(), db);
 
-        Ok(CachingReplica::new(replica, contract_sync, nomad_db))
+        Ok((
+            CachingReplica::new(replica, contract_sync, nomad_db, tx_sender),
+            submit_task,
+        ))
     }
 
     /// Try to get all replicas from this settings object
@@ -387,8 +405,10 @@ impl Settings {
         &self,
         agent_name: &str,
         db: DB,
+        mut tx_senders: HashMap<String, TxSenderHandle>,
+        mut tx_receivers: HashMap<String, UnboundedReceiver<PersistedTransaction>>,
         metrics: ContractSyncMetrics,
-    ) -> Result<HashMap<String, Arc<CachingReplica>>> {
+    ) -> Result<HashMap<String, (Arc<CachingReplica>, Option<JoinHandle<Result<()>>>)>> {
         let mut result = HashMap::default();
         for (k, v) in self.replicas.iter().filter(|(_, v)| v.disabled.is_none()) {
             if k != &v.name {
@@ -399,10 +419,17 @@ impl Settings {
                 );
             }
 
-            let caching_replica = self
-                .try_caching_replica(k, agent_name, db.clone(), metrics.clone())
+            let (caching_replica, submit_task) = self
+                .try_caching_replica(
+                    k,
+                    agent_name,
+                    db.clone(),
+                    tx_senders.remove(k).unwrap(),
+                    tx_receivers.remove(k).unwrap(),
+                    metrics.clone(),
+                )
                 .await?;
-            result.insert(v.name.clone(), Arc::new(caching_replica));
+            result.insert(v.name.clone(), (Arc::new(caching_replica), submit_task));
         }
         Ok(result)
     }

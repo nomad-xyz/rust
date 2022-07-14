@@ -7,6 +7,7 @@ use nomad_xyz_configuration::{
     NomadConfig, ReplicaGasLimits, TxSubmitterConf,
 };
 use serde::Deserialize;
+use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
 
 use crate::{
     home::Homes, replica::Replicas, xapp::ConnectionManagers, HomeVariants, ReplicaVariants,
@@ -135,26 +136,26 @@ impl ChainSetup {
         submitter_conf: Option<TxSubmitterConf>,
         timelag: Option<u8>,
         gas: Option<HomeGasLimits>,
-    ) -> Result<Homes> {
+        tx_receiver: UnboundedReceiver<PersistedTransaction>,
+    ) -> Result<(Homes, Option<JoinHandle<Result<()>>>)> {
         match &self.chain {
             ChainConf::Ethereum(conf) => {
                 let submitter_conf = submitter_conf.map(std::convert::Into::into);
-
-                Ok(HomeVariants::Ethereum(
-                    make_home(
-                        conf.clone(),
-                        &ContractLocator {
-                            name: self.name.clone(),
-                            domain: self.domain,
-                            address: self.address,
-                        },
-                        submitter_conf,
-                        timelag,
-                        gas,
-                    )
-                    .await?,
+                let mut home = make_home(
+                    conf.clone(),
+                    &ContractLocator {
+                        name: self.name.clone(),
+                        domain: self.domain,
+                        address: self.address,
+                    },
+                    submitter_conf,
+                    timelag,
+                    gas,
+                    tx_receiver,
                 )
-                .into())
+                .await?;
+                let submit_task = home.submit_task();
+                Ok((HomeVariants::Ethereum(home).into(), submit_task))
             }
         }
     }
@@ -164,26 +165,26 @@ impl ChainSetup {
         &self,
         submitter_conf: Option<TxSubmitterConf>,
         gas: Option<ReplicaGasLimits>,
-    ) -> Result<Replicas> {
+        tx_receiver: UnboundedReceiver<PersistedTransaction>,
+    ) -> Result<(Replicas, Option<JoinHandle<Result<()>>>)> {
         match &self.chain {
             ChainConf::Ethereum(conf) => {
                 let submitter_conf = submitter_conf.map(std::convert::Into::into);
-
-                Ok(ReplicaVariants::Ethereum(
-                    make_replica(
-                        conf.clone(),
-                        &ContractLocator {
-                            name: self.name.clone(),
-                            domain: self.domain,
-                            address: self.address,
-                        },
-                        submitter_conf,
-                        None, // never need timelag for replica
-                        gas,
-                    )
-                    .await?,
+                let mut replica = make_replica(
+                    conf.clone(),
+                    &ContractLocator {
+                        name: self.name.clone(),
+                        domain: self.domain,
+                        address: self.address,
+                    },
+                    submitter_conf,
+                    None, // never need timelag for replica
+                    gas,
+                    tx_receiver,
                 )
-                .into())
+                .await?;
+                let submit_task = replica.submit_task();
+                Ok((ReplicaVariants::Ethereum(replica).into(), submit_task))
             }
         }
     }
