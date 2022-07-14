@@ -167,6 +167,12 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
     #[allow(clippy::unit_arg)]
     fn run_many(&self, replicas: &[&str]) -> Instrumented<JoinHandle<Result<()>>> {
         let span = info_span!("run_many");
+
+        // easy check that the slice is non-empty
+        replicas
+            .first()
+            .expect("Attempted to run without any replicas");
+
         let handles: Vec<_> = replicas
             .iter()
             .map(|replica| self.run_report_error(replica.to_string()))
@@ -195,6 +201,11 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
         tokio::spawn(async move {
             // this is the unused must use
             let names: Vec<&str> = self.replicas().keys().map(|k| k.as_str()).collect();
+
+            // quick check that at least 1 replica is configured
+            names
+                .first()
+                .expect("Attempted to run without any replicas");
 
             let run_task = self.run_many(&names);
             let mut tasks = vec![run_task];

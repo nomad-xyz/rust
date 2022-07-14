@@ -337,12 +337,21 @@ impl NomadAgent for Processor {
     where
         Self: Sized,
     {
+        // we filter this so that the agent doesn't think it should subsidize
+        // remotes it is unaware of
+        let subsidized_remotes = settings
+            .agent
+            .subsidized_remotes
+            .iter()
+            .filter(|r| settings.base.replicas.contains_key(*r))
+            .cloned()
+            .collect();
         Ok(Self::new(
             settings.agent.interval,
             settings.as_ref().try_into_core(AGENT_NAME).await?,
             settings.agent.allowed,
             settings.agent.denied,
-            settings.agent.subsidized_remotes,
+            subsidized_remotes,
             settings.agent.s3,
         ))
     }
@@ -404,20 +413,18 @@ impl NomadAgent for Processor {
             let mut tasks = vec![home_sync_task, prover_sync_task, home_fail_watch_task];
 
             if !self.subsidized_remotes.is_empty() {
-                let specified_remotes: HashSet<String> =
-                    self.replicas().keys().map(String::to_owned).collect();
-
                 // Get intersection of specified remotes (replicas in settings)
                 // and subsidized remotes
                 let specified_subsidized: Vec<&str> = self
                     .subsidized_remotes
-                    .intersection(&specified_remotes)
-                    .collect::<Vec<_>>()
                     .iter()
-                    .map(|x| x.as_str())
+                    .filter(|r| self.replicas().contains_key(*r))
+                    .map(AsRef::as_ref)
                     .collect();
 
-                tasks.push(self.run_many(&specified_subsidized));
+                if !specified_subsidized.is_empty() {
+                    tasks.push(self.run_many(&specified_subsidized));
+                }
             }
 
             // if we have a bucket, add a task to push to it
