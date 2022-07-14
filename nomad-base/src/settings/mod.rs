@@ -480,7 +480,7 @@ impl Settings {
         // Build TxSender tasks
         let tx_send_tasks = senders
             .iter_mut()
-            .map(|(n, mut s)| (n.clone(), s.send_task()))
+            .map(|(n, s)| (n.clone(), s.send_task()))
             .collect::<HashMap<_, _>>();
 
         // Build CachingHome with TxSenderHandle and TxSender's UnboundedReceiver
@@ -501,7 +501,7 @@ impl Settings {
             .await?;
         let home = Arc::new(home);
 
-        /// Build CachingReplica
+        // Build CachingReplica
         let tx_receivers = senders
             .iter_mut()
             .map(|(n, s)| (n.clone(), s.take_out_receiver().unwrap()))
