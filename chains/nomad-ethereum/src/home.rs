@@ -215,6 +215,7 @@ where
     R: ethers::providers::Middleware + 'static,
 {
     fn submit_task(&mut self) -> Option<JoinHandle<Result<()>>> {
+        let _submitter = &self.submitter;
         let mut tx_receiver = self.tx_receiver.take().unwrap();
         Some(tokio::spawn(async move {
             loop {
@@ -343,7 +344,7 @@ where
                 let tx = self.contract.dispatch(
                     message.destination,
                     message.recipient.to_fixed_bytes(),
-                    message.body.clone().into(),
+                    message.body.into(),
                 );
                 Ok(tx.tx)
             }

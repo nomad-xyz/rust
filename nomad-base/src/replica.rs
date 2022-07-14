@@ -93,6 +93,7 @@ impl ReplicaTransactions for CachingReplica {
         _proof: &NomadProof,
         _dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
+        let _tx_sender = &self.tx_sender;
         unimplemented!()
     }
 

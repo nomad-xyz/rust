@@ -16,6 +16,7 @@ impl TxSenderHandle {
 
     /// Send a PersistedTransaction ...
     pub fn send(&self, _tx: PersistedTransaction) -> Result<TxOutcome, ChainCommunicationError> {
+        let _sender = &self.sender;
         unimplemented!()
     }
 

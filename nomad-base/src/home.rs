@@ -97,6 +97,7 @@ impl HomeTransactions for CachingHome {
         _message: &Message,
         _dispatch_kind: TxDispatchKind,
     ) -> Result<TxOutcome, ChainCommunicationError> {
+        let _tx_sender = &self.tx_sender;
         unimplemented!()
     }
 

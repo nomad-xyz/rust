@@ -397,10 +397,7 @@ impl NomadDB {
     ) -> Result<u64, DbError> {
         debug!("storing transaction in DB {:?}", tx);
 
-        let counter = 1 + match self.retrieve_persisted_transaction_counter()? {
-            Some(counter) => counter,
-            None => 0,
-        };
+        let counter = 1 + self.retrieve_persisted_transaction_counter()?.unwrap_or(0);
         tx.counter = counter;
         self.store_keyed_encodable(PERSISTED_TRANSACTION, &counter, &tx)?;
         self.store_persisted_transaction_counter(counter)?;

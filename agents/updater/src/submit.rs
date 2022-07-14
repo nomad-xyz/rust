@@ -65,7 +65,7 @@ impl UpdateSubmitter {
                     // Continue from local state
                     committed_root = signed.update.new_root;
 
-                    let txid = tx.txid().unwrap_or(H256::zero()); // TODO(matthew):
+                    let txid = tx.txid().unwrap_or_else(H256::zero); // TODO(matthew):
 
                     // Sleep for finality x blocktime seconds to wait for
                     // timelag reader to catch up

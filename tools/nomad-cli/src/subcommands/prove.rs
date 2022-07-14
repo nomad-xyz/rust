@@ -4,12 +4,13 @@ use structopt::StructOpt;
 use crate::{replicas, rpc};
 
 use nomad_core::{
-    accumulator::NomadProof, db::DB, ContractLocator, Decode, MessageStatus, NomadMessage, Replica,
-    ReplicaTxSubmitTask, Signers,
+    accumulator::NomadProof, db::DB, Decode, NomadMessage,
+    Signers,
+    /* ContractLocator, MessageStatus, Replica, ReplicaTxSubmitTask, */
 };
 
 use nomad_base::NomadDB;
-use nomad_ethereum::{EthereumReplica, TxSubmitter};
+use nomad_ethereum::EthereumReplica; // TxSubmitter
 
 use ethers::{
     prelude::{Http, Middleware, Provider, SignerMiddleware, H160},
@@ -76,6 +77,7 @@ impl ProveCommand {
         let _replica = self.replica(message.origin, message.destination).await?;
 
         // TODO(matthew): Fix this
+        unimplemented!()
 
         // let status = replica.message_status(message.to_leaf()).await?;
         // let outcome = match status {
@@ -88,7 +90,7 @@ impl ProveCommand {
         // };
         //
         // println!("{:?}", outcome);
-        Ok(())
+        // Ok(())
     }
 
     // mostly copied from nomad-base settings
@@ -145,20 +147,19 @@ impl ProveCommand {
 
         let chain_id = provider.get_chainid().await?;
         let signer = self.signer().await?.with_chain_id(chain_id.low_u64());
-        let middleware = Arc::new(SignerMiddleware::new(provider, signer));
+        let _middleware = Arc::new(SignerMiddleware::new(provider, signer));
 
         // bit ugly. Tries passed-in address first, then defaults to lookup by
         // domain
-        let address = self
+        let _address = self
             .address
             .as_ref()
             .map(|addr| addr.parse::<H160>())
             .transpose()?
             .unwrap_or_else(|| replicas::address_by_domain_pair(origin, destination).unwrap());
 
-        unimplemented!()
-
         // TODO(matthew): Fix this
+        unimplemented!();
 
         // Ok(EthereumReplica::new(
         //     TxSubmitter::new(middleware.clone().into()),

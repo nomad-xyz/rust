@@ -44,6 +44,8 @@ impl TxSender {
     /// Spawn run loop task
     pub fn send_task(&mut self) -> Option<JoinHandle<Result<()>>> {
         let mut in_receiver = self.in_receiver.take().unwrap();
+        let _out_sender = &self.out_sender;
+        let _db = &self.db;
         Some(tokio::spawn(async move {
             loop {
                 if let Ok(_tx) = in_receiver.try_recv() {

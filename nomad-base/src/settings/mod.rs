@@ -195,14 +195,8 @@ impl Settings {
     /// Build transaction senders
     fn transaction_senders(&self, db: DB) -> HashMap<String, TxSender> {
         self.contract_names()
-            .clone()
             .into_iter()
-            .map(|name| {
-                (
-                    name.clone(),
-                    TxSender::new(NomadDB::new(name.clone(), db.clone())),
-                )
-            })
+            .map(|name| (name.clone(), TxSender::new(NomadDB::new(name, db.clone()))))
             .collect::<HashMap<_, _>>()
     }
 
@@ -526,7 +520,7 @@ impl Settings {
         // Extract replicas
         let replicas = replicas
             .into_iter()
-            .map(|(n, (r, _))| (n.clone(), r))
+            .map(|(n, (r, _))| (n, r))
             .collect::<HashMap<_, _>>();
 
         Ok(AgentCore {
