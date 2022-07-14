@@ -1,4 +1,4 @@
-use crate::{ChainCommunicationError, PersistedTransaction, TxOutcome};
+use crate::{ChainCommunicationError, PersistedTransaction};
 use async_trait::async_trait;
 use color_eyre::Result;
 use tokio::task::JoinHandle;

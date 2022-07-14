@@ -6,12 +6,12 @@ use crate::{
         fmt::{log_level_to_level_filter, LogOutputLayer},
         TimeSpanLifetime,
     },
-    BaseError, CachingHome, CachingReplica, NomadDB, TxSender,
+    BaseError, CachingHome, CachingReplica, NomadDB,
 };
 use async_trait::async_trait;
 use color_eyre::{eyre::WrapErr, Result};
 use futures_util::future::select_all;
-use nomad_core::{db::DB, Common, PersistedTransaction};
+use nomad_core::{db::DB, Common};
 use tracing::instrument::Instrumented;
 use tracing::{error, info_span, warn, Instrument};
 use tracing_subscriber::prelude::*;

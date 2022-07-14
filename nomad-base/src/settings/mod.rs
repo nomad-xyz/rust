@@ -16,18 +16,14 @@ use crate::{
     TxSender, TxSenderHandle,
 };
 use color_eyre::{eyre::bail, Result};
-use ethers::types::BlockId::Hash;
-use nomad_core::{db::DB, Common, ContractLocator, PersistedTransaction, TxSubmitTask};
+use nomad_core::{db::DB, Common, ContractLocator, PersistedTransaction};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
 use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets, TxSubmitterConf};
 use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig, NomadGasConfig};
 use serde::Deserialize;
 use std::collections::HashSet;
 use std::{collections::HashMap, sync::Arc};
-use tokio::{
-    sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
-    task::JoinHandle,
-};
+use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
 
 /// Chain configuration
 pub mod chains;
@@ -488,7 +484,7 @@ impl Settings {
                 sender_handles,
                 senders
                     .iter_mut()
-                    .map(|(n, mut s)| (n.clone(), s.take_out_receiver().unwrap()))
+                    .map(|(n, s)| (n.clone(), s.take_out_receiver().unwrap()))
                     .collect::<HashMap<_, _>>(),
                 sync_metrics.clone(),
             )
@@ -501,13 +497,13 @@ impl Settings {
 
         let mut tx_submit_tasks = replicas
             .iter_mut()
-            .map(|(n, (r, t))| (n.clone(), t.take()))
+            .map(|(n, (_, t))| (n.clone(), t.take()))
             .collect::<HashMap<_, _>>();
         tx_submit_tasks.insert(home.name().to_owned(), home_submit_task);
 
         let replicas = replicas
             .into_iter()
-            .map(|(n, (r, t))| (n.clone(), r))
+            .map(|(n, (r, _))| (n.clone(), r))
             .collect::<HashMap<_, _>>();
 
         Ok(AgentCore {

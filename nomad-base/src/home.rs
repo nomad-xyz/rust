@@ -4,8 +4,8 @@ use color_eyre::eyre::Result;
 use ethers::core::types::{H256, U256};
 use nomad_core::{
     db::DbError, ChainCommunicationError, Common, CommonEvents, CommonTransactions, DoubleUpdate,
-    Home, HomeEvents, HomeTransactions, HomeTxSubmitTask, Message, PersistedTransaction,
-    RawCommittedMessage, SignedUpdate, State, TxDispatchKind, TxOutcome, Update,
+    Home, HomeEvents, HomeTransactions, HomeTxSubmitTask, Message, RawCommittedMessage,
+    SignedUpdate, State, TxDispatchKind, TxOutcome, Update,
 };
 use nomad_ethereum::EthereumHome;
 use nomad_test::mocks::MockHomeContract;

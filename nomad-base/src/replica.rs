@@ -3,8 +3,8 @@ use color_eyre::eyre::Result;
 use ethers::core::types::H256;
 use nomad_core::{
     accumulator::NomadProof, db::DbError, ChainCommunicationError, Common, CommonEvents,
-    CommonTransactions, DoubleUpdate, MessageStatus, NomadMessage, PersistedTransaction, Replica,
-    ReplicaTransactions, ReplicaTxSubmitTask, SignedUpdate, State, TxDispatchKind, TxOutcome,
+    CommonTransactions, DoubleUpdate, MessageStatus, NomadMessage, Replica, ReplicaTransactions,
+    ReplicaTxSubmitTask, SignedUpdate, State, TxDispatchKind, TxOutcome,
 };
 
 use crate::{NomadDB, TxSenderHandle};
