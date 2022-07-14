@@ -59,6 +59,3 @@ pub use tx_sender::*;
 
 mod tx_sender_handle;
 pub use tx_sender_handle::*;
-
-mod tx_status;
-pub use tx_status::*;

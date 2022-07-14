@@ -13,7 +13,7 @@
 use crate::{
     agent::AgentCore, CachingHome, CachingReplica, CommonIndexerVariants, CommonIndexers,
     ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes, NomadDB, Replicas,
-    TxSender, TxSenderHandle, TxStatus,
+    TxSender, TxSenderHandle,
 };
 use color_eyre::{eyre::bail, Result};
 use ethers::types::BlockId::Hash;

@@ -6,7 +6,7 @@ use crate::{
         fmt::{log_level_to_level_filter, LogOutputLayer},
         TimeSpanLifetime,
     },
-    BaseError, CachingHome, CachingReplica, NomadDB, TxSender, TxStatus,
+    BaseError, CachingHome, CachingReplica, NomadDB, TxSender,
 };
 use async_trait::async_trait;
 use color_eyre::{eyre::WrapErr, Result};
