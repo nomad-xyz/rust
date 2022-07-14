@@ -25,6 +25,13 @@ async fn main() -> Result<()> {
 
     agent.start_tracing(agent.metrics().span_duration())?;
 
+    let settings = &agent.as_ref().settings;
+
+    tracing::info!(
+        settings = ?settings,
+        "agent settings"
+    );
+
     let _ = agent.metrics().run_http_server();
 
     agent.run_all().await??;
