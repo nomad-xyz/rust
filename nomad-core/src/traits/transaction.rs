@@ -1,5 +1,6 @@
 use crate::{ChainCommunicationError, PersistedTransaction, TxOutcome};
 use async_trait::async_trait;
+use color_eyre::Result;
 use tokio::task::JoinHandle;
 
 /// Interface for chain-agnostic to chain-specifc transaction translators
@@ -38,7 +39,7 @@ pub trait TxContractStatus: Send + Sync + std::fmt::Debug {
 /// Interface for creating transaction submission tasks in contracts
 pub trait TxSubmitTask: Send + Sync + std::fmt::Debug {
     /// Create and return transaction submission task
-    fn submit_task(&mut self) -> Option<JoinHandle<()>> {
+    fn submit_task(&mut self) -> Option<JoinHandle<Result<()>>> {
         None
     }
 }

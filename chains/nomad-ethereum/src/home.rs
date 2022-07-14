@@ -215,7 +215,7 @@ where
     W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
-    fn submit_task(&mut self) -> Option<JoinHandle<()>> {
+    fn submit_task(&mut self) -> Option<JoinHandle<Result<()>>> {
         let mut tx_receiver = self.tx_receiver.take().unwrap();
         Some(tokio::spawn(async move {
             loop {
