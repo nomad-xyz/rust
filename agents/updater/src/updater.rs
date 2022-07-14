@@ -194,7 +194,6 @@ impl NomadAgent for Updater {
         Self: Sized + 'static,
     {
         tokio::spawn(async move {
-
             println!("FIND ME IN THE LOGS");
 
             self.assert_home_not_failed().await??;
