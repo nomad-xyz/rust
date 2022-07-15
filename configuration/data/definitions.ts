@@ -25,8 +25,8 @@ export interface BaseAgentConfig {
 
 export interface AgentConfig {
   rpcStyle: string;
-  timelag: number | string;
   db: string;
+  metrics: number;
   logging: LogConfig;
   updater: BaseAgentConfig;
   relayer: BaseAgentConfig;
