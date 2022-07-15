@@ -3,7 +3,8 @@
 ### Unreleased
 
 - feature: add more explicit Processor Config TS declaration
-- refactor: make Processor config keys optional, and prevent trivial ser.
+- refactor: make Processor config keys optional, and prevent serialization of
+  trivial types (e.g. `undefined`)
 - fix: update TS AgentConfig to match rust
 - refactor: remove protocol and bridge deploy-time gas value configuration
 - feature: pull config files from github pages instead of local versions
