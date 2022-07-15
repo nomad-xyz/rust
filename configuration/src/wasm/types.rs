@@ -32,7 +32,7 @@ export interface BaseAgentConfig {
 export type ProcessorConfig = BaseAgentConfig & {
   allowed?: string[];
   denied?: string[];
-  subsidizedRemotes: string[];
+  subsidizedRemotes?: string[];
   s3?: S3Config;
 };
 
@@ -43,7 +43,7 @@ export interface AgentConfig {
   logging: LogConfig;
   updater: BaseAgentConfig;
   relayer: BaseAgentConfig;
-  processor: BaseAgentConfig;
+  processor: ProcessorConfig;
   watcher: BaseAgentConfig;
   kathy: BaseAgentConfig;
 }
