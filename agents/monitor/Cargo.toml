@@ -1,0 +1,15 @@
+[package]
+name = "monitor"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1.0.1", features = ["rt", "macros"] }
+prometheus = "0.13.1"
+tracing = "0.1.35"
+
+ethers = { git = "https://github.com/gakonst/ethers-rs", branch = "master", default-features = false, features = ['legacy'] }
+
+nomad-core = { path = "../../nomad-core", default-features = false }
