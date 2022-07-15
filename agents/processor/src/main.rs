@@ -14,6 +14,7 @@ mod push;
 mod settings;
 
 use color_eyre::Result;
+use tracing::info_span;
 
 use crate::{processor::Processor, settings::ProcessorSettings as Settings};
 use nomad_base::NomadAgent;
@@ -26,12 +27,17 @@ async fn main() -> Result<()> {
 
     let agent = {
         // sets the subscriber for this scope only
-        let _ = tracing_subscriber::FmtSubscriber::builder()
+        let _sub = tracing_subscriber::FmtSubscriber::builder()
             .json()
             .with_level(true)
             .set_default();
-        let settings = Settings::new()?;
-        Processor::from_settings(settings).await?
+        {
+            let span = info_span!("ProcessorBootup");
+            let _span = span.enter();
+
+            let settings = Settings::new()?;
+            Processor::from_settings(settings).await?
+        }
     };
 
     // TODO: top-level root span customizations?

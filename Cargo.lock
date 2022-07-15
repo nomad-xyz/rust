@@ -2657,6 +2657,7 @@ dependencies = [
  "serde_yaml",
  "serial_test",
  "tokio",
+ "tracing",
  "wasm-bindgen",
  "wee_alloc",
 ]

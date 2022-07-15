@@ -74,6 +74,7 @@ macro_rules! decl_settings {
             impl [<$name Settings>] {
                 pub fn new() -> color_eyre::Result<Self>{
                     // Get agent and home names
+                    tracing::info!("Building settings from env");
                     let agent = std::stringify!($name).to_lowercase();
                     let home = std::env::var("AGENT_HOME_NAME").expect("missing AGENT_HOME_NAME");
 
