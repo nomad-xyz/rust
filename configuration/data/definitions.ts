@@ -23,6 +23,13 @@ export interface BaseAgentConfig {
   interval: number | string;
 }
 
+export type ProcessorConfig = BaseAgentConfig & {
+  allowed?: string[];
+  denied?: string[];
+  subsidizedRemotes?: string[];
+  s3?: S3Config;
+};
+
 export interface AgentConfig {
   rpcStyle: string;
   db: string;
@@ -30,7 +37,7 @@ export interface AgentConfig {
   logging: LogConfig;
   updater: BaseAgentConfig;
   relayer: BaseAgentConfig;
-  processor: BaseAgentConfig;
+  processor: ProcessorConfig;
   watcher: BaseAgentConfig;
   kathy: BaseAgentConfig;
 }

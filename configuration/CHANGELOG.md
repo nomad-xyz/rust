@@ -2,6 +2,9 @@
 
 ### Unreleased
 
+- feature: add more explicit Processor Config TS declaration
+- refactor: make Processor config keys optional, and prevent trivial ser.
+- fix: update TS AgentConfig to match rust
 - refactor: remove protocol and bridge deploy-time gas value configuration
 - feature: pull config files from github pages instead of local versions
 - add environment variable overrides for agent configuration
