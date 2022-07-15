@@ -241,9 +241,8 @@ impl CoreMetrics {
         use warp::Filter;
 
         // Default to port 9090
-        let port = self
-            .listen_port
-            .or_else(|| u16_from_env("METRICS_PORT"))
+        let port = u16_from_env("METRICS_PORT")
+            .or(self.listen_port)
             .unwrap_or(9090);
         tracing::info!(
             port,
