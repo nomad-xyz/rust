@@ -28,7 +28,7 @@ fn deser(name: &str, json: &str) -> NomadConfig {
 }
 
 /// Get a built-in config object
-pub fn get_builtin(name: &str) -> Option<&NomadConfig> {
+pub fn get_builtin(name: &str) -> Option<&'static NomadConfig> {
     let builtins = BUILTINS.get_or_init(|| {
         let mut map: HashMap<_, _> = Default::default();
 

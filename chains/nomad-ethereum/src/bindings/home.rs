@@ -18,7 +18,7 @@ pub mod home_mod {
     use std::sync::Arc;
     pub static HOME_ABI: ethers::contract::Lazy<ethers::core::abi::Abi> =
         ethers::contract::Lazy::new(|| {
-            serde_json :: from_str ("[\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"_localDomain\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"constructor\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"messageHash\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"uint256\",\n        \"name\": \"leafIndex\",\n        \"type\": \"uint256\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"uint64\",\n        \"name\": \"destinationAndNonce\",\n        \"type\": \"uint64\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes32\",\n        \"name\": \"committedRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes\",\n        \"name\": \"message\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"Dispatch\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes32\",\n        \"name\": \"oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes32[2]\",\n        \"name\": \"newRoot\",\n        \"type\": \"bytes32[2]\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes\",\n        \"name\": \"signature\",\n        \"type\": \"bytes\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes\",\n        \"name\": \"signature2\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"DoubleUpdate\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes32\",\n        \"name\": \"oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes32\",\n        \"name\": \"newRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes\",\n        \"name\": \"signature\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"ImproperUpdate\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": false,\n        \"internalType\": \"address\",\n        \"name\": \"oldUpdater\",\n        \"type\": \"address\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"address\",\n        \"name\": \"newUpdater\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"NewUpdater\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": false,\n        \"internalType\": \"address\",\n        \"name\": \"updaterManager\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"NewUpdaterManager\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"address\",\n        \"name\": \"previousOwner\",\n        \"type\": \"address\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"address\",\n        \"name\": \"newOwner\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"OwnershipTransferred\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"uint32\",\n        \"name\": \"homeDomain\",\n        \"type\": \"uint32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"newRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes\",\n        \"name\": \"signature\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"Update\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"address\",\n        \"name\": \"updater\",\n        \"type\": \"address\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"address\",\n        \"name\": \"reporter\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"UpdaterSlashed\",\n    \"type\": \"event\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"MAX_MESSAGE_BODY_BYTES\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"VERSION\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint8\",\n        \"name\": \"\",\n        \"type\": \"uint8\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"committedRoot\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"count\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"_destinationDomain\",\n        \"type\": \"uint32\"\n      },\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_recipientAddress\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_messageBody\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"dispatch\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes32[2]\",\n        \"name\": \"_newRoot\",\n        \"type\": \"bytes32[2]\"\n      },\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_signature\",\n        \"type\": \"bytes\"\n      },\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_signature2\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"doubleUpdate\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"homeDomainHash\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_newRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_signature\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"improperUpdate\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bool\",\n        \"name\": \"\",\n        \"type\": \"bool\"\n      }\n    ],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"contract IUpdaterManager\",\n        \"name\": \"_updaterManager\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"initialize\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"localDomain\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"name\": \"nonces\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"owner\",\n    \"outputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"\",\n        \"type\": \"address\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_item\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"name\": \"queueContains\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bool\",\n        \"name\": \"\",\n        \"type\": \"bool\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"queueEnd\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"queueLength\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"renounceOwnership\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"root\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"_updater\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"setUpdater\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"_updaterManager\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"setUpdaterManager\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"state\",\n    \"outputs\": [\n      {\n        \"internalType\": \"enum NomadBase.States\",\n        \"name\": \"\",\n        \"type\": \"uint8\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"suggestUpdate\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_committedRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_new\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"newOwner\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"transferOwnership\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"tree\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"count\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_committedRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_newRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_signature\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"update\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"updater\",\n    \"outputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"\",\n        \"type\": \"address\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"updaterManager\",\n    \"outputs\": [\n      {\n        \"internalType\": \"contract IUpdaterManager\",\n        \"name\": \"\",\n        \"type\": \"address\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  }\n]\n") . expect ("invalid abi")
+            ethers :: core :: utils :: __serde_json :: from_str ("[\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"_localDomain\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"constructor\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"messageHash\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"uint256\",\n        \"name\": \"leafIndex\",\n        \"type\": \"uint256\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"uint64\",\n        \"name\": \"destinationAndNonce\",\n        \"type\": \"uint64\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes32\",\n        \"name\": \"committedRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes\",\n        \"name\": \"message\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"Dispatch\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes32\",\n        \"name\": \"oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes32[2]\",\n        \"name\": \"newRoot\",\n        \"type\": \"bytes32[2]\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes\",\n        \"name\": \"signature\",\n        \"type\": \"bytes\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes\",\n        \"name\": \"signature2\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"DoubleUpdate\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes32\",\n        \"name\": \"oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes32\",\n        \"name\": \"newRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes\",\n        \"name\": \"signature\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"ImproperUpdate\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": false,\n        \"internalType\": \"address\",\n        \"name\": \"oldUpdater\",\n        \"type\": \"address\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"address\",\n        \"name\": \"newUpdater\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"NewUpdater\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": false,\n        \"internalType\": \"address\",\n        \"name\": \"updaterManager\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"NewUpdaterManager\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"address\",\n        \"name\": \"previousOwner\",\n        \"type\": \"address\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"address\",\n        \"name\": \"newOwner\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"OwnershipTransferred\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"uint32\",\n        \"name\": \"homeDomain\",\n        \"type\": \"uint32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"newRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes\",\n        \"name\": \"signature\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"Update\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"address\",\n        \"name\": \"updater\",\n        \"type\": \"address\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"address\",\n        \"name\": \"reporter\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"UpdaterSlashed\",\n    \"type\": \"event\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"MAX_MESSAGE_BODY_BYTES\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"VERSION\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint8\",\n        \"name\": \"\",\n        \"type\": \"uint8\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"committedRoot\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"count\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"_destinationDomain\",\n        \"type\": \"uint32\"\n      },\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_recipientAddress\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_messageBody\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"dispatch\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes32[2]\",\n        \"name\": \"_newRoot\",\n        \"type\": \"bytes32[2]\"\n      },\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_signature\",\n        \"type\": \"bytes\"\n      },\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_signature2\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"doubleUpdate\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"homeDomainHash\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_newRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_signature\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"improperUpdate\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bool\",\n        \"name\": \"\",\n        \"type\": \"bool\"\n      }\n    ],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"contract IUpdaterManager\",\n        \"name\": \"_updaterManager\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"initialize\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"localDomain\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"name\": \"nonces\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"owner\",\n    \"outputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"\",\n        \"type\": \"address\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_item\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"name\": \"queueContains\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bool\",\n        \"name\": \"\",\n        \"type\": \"bool\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"queueEnd\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"queueLength\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"renounceOwnership\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"root\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"_updater\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"setUpdater\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"_updaterManager\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"setUpdaterManager\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"state\",\n    \"outputs\": [\n      {\n        \"internalType\": \"enum NomadBase.States\",\n        \"name\": \"\",\n        \"type\": \"uint8\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"suggestUpdate\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_committedRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_new\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"newOwner\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"transferOwnership\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"tree\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"count\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_committedRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_newRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_signature\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"update\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"updater\",\n    \"outputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"\",\n        \"type\": \"address\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"updaterManager\",\n    \"outputs\": [\n      {\n        \"internalType\": \"contract IUpdaterManager\",\n        \"name\": \"\",\n        \"type\": \"address\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  }\n]\n") . expect ("invalid abi")
         });
     pub struct Home<M>(ethers::contract::Contract<M>);
     impl<M> Clone for Home<M> {
@@ -510,7 +510,7 @@ pub mod home_mod {
             }
         }
     }
-    #[doc = "Container type for all input parameters for the `MAX_MESSAGE_BODY_BYTES`function with signature `MAX_MESSAGE_BODY_BYTES()` and selector `[82, 42, 224, 2]`"]
+    #[doc = "Container type for all input parameters for the `MAX_MESSAGE_BODY_BYTES` function with signature `MAX_MESSAGE_BODY_BYTES()` and selector `[82, 42, 224, 2]`"]
     #[derive(
         Clone,
         Debug,
@@ -522,7 +522,7 @@ pub mod home_mod {
     )]
     #[ethcall(name = "MAX_MESSAGE_BODY_BYTES", abi = "MAX_MESSAGE_BODY_BYTES()")]
     pub struct MaxMessageBodyBytesCall;
-    #[doc = "Container type for all input parameters for the `VERSION`function with signature `VERSION()` and selector `[255, 161, 173, 116]`"]
+    #[doc = "Container type for all input parameters for the `VERSION` function with signature `VERSION()` and selector `[255, 161, 173, 116]`"]
     #[derive(
         Clone,
         Debug,
@@ -534,7 +534,7 @@ pub mod home_mod {
     )]
     #[ethcall(name = "VERSION", abi = "VERSION()")]
     pub struct VersionCall;
-    #[doc = "Container type for all input parameters for the `committedRoot`function with signature `committedRoot()` and selector `[103, 166, 119, 29]`"]
+    #[doc = "Container type for all input parameters for the `committedRoot` function with signature `committedRoot()` and selector `[103, 166, 119, 29]`"]
     #[derive(
         Clone,
         Debug,
@@ -546,7 +546,7 @@ pub mod home_mod {
     )]
     #[ethcall(name = "committedRoot", abi = "committedRoot()")]
     pub struct CommittedRootCall;
-    #[doc = "Container type for all input parameters for the `count`function with signature `count()` and selector `[6, 102, 26, 189]`"]
+    #[doc = "Container type for all input parameters for the `count` function with signature `count()` and selector `[6, 102, 26, 189]`"]
     #[derive(
         Clone,
         Debug,
@@ -558,7 +558,7 @@ pub mod home_mod {
     )]
     #[ethcall(name = "count", abi = "count()")]
     pub struct CountCall;
-    #[doc = "Container type for all input parameters for the `dispatch`function with signature `dispatch(uint32,bytes32,bytes)` and selector `[250, 49, 222, 1]`"]
+    #[doc = "Container type for all input parameters for the `dispatch` function with signature `dispatch(uint32,bytes32,bytes)` and selector `[250, 49, 222, 1]`"]
     #[derive(
         Clone,
         Debug,
@@ -574,7 +574,7 @@ pub mod home_mod {
         pub recipient_address: [u8; 32],
         pub message_body: ethers::core::types::Bytes,
     }
-    #[doc = "Container type for all input parameters for the `doubleUpdate`function with signature `doubleUpdate(bytes32,bytes32[2],bytes,bytes)` and selector `[25, 217, 210, 26]`"]
+    #[doc = "Container type for all input parameters for the `doubleUpdate` function with signature `doubleUpdate(bytes32,bytes32[2],bytes,bytes)` and selector `[25, 217, 210, 26]`"]
     #[derive(
         Clone,
         Debug,
@@ -594,7 +594,7 @@ pub mod home_mod {
         pub signature: ethers::core::types::Bytes,
         pub signature_2: ethers::core::types::Bytes,
     }
-    #[doc = "Container type for all input parameters for the `homeDomainHash`function with signature `homeDomainHash()` and selector `[69, 99, 11, 26]`"]
+    #[doc = "Container type for all input parameters for the `homeDomainHash` function with signature `homeDomainHash()` and selector `[69, 99, 11, 26]`"]
     #[derive(
         Clone,
         Debug,
@@ -606,7 +606,7 @@ pub mod home_mod {
     )]
     #[ethcall(name = "homeDomainHash", abi = "homeDomainHash()")]
     pub struct HomeDomainHashCall;
-    #[doc = "Container type for all input parameters for the `improperUpdate`function with signature `improperUpdate(bytes32,bytes32,bytes)` and selector `[142, 78, 48, 224]`"]
+    #[doc = "Container type for all input parameters for the `improperUpdate` function with signature `improperUpdate(bytes32,bytes32,bytes)` and selector `[142, 78, 48, 224]`"]
     #[derive(
         Clone,
         Debug,
@@ -622,7 +622,7 @@ pub mod home_mod {
         pub new_root: [u8; 32],
         pub signature: ethers::core::types::Bytes,
     }
-    #[doc = "Container type for all input parameters for the `initialize`function with signature `initialize(address)` and selector `[196, 214, 109, 232]`"]
+    #[doc = "Container type for all input parameters for the `initialize` function with signature `initialize(address)` and selector `[196, 214, 109, 232]`"]
     #[derive(
         Clone,
         Debug,
@@ -636,7 +636,7 @@ pub mod home_mod {
     pub struct InitializeCall {
         pub updater_manager: ethers::core::types::Address,
     }
-    #[doc = "Container type for all input parameters for the `localDomain`function with signature `localDomain()` and selector `[141, 54, 56, 244]`"]
+    #[doc = "Container type for all input parameters for the `localDomain` function with signature `localDomain()` and selector `[141, 54, 56, 244]`"]
     #[derive(
         Clone,
         Debug,
@@ -648,7 +648,7 @@ pub mod home_mod {
     )]
     #[ethcall(name = "localDomain", abi = "localDomain()")]
     pub struct LocalDomainCall;
-    #[doc = "Container type for all input parameters for the `nonces`function with signature `nonces(uint32)` and selector `[185, 90, 32, 1]`"]
+    #[doc = "Container type for all input parameters for the `nonces` function with signature `nonces(uint32)` and selector `[185, 90, 32, 1]`"]
     #[derive(
         Clone,
         Debug,
@@ -660,7 +660,7 @@ pub mod home_mod {
     )]
     #[ethcall(name = "nonces", abi = "nonces(uint32)")]
     pub struct NoncesCall(pub u32);
-    #[doc = "Container type for all input parameters for the `owner`function with signature `owner()` and selector `[141, 165, 203, 91]`"]
+    #[doc = "Container type for all input parameters for the `owner` function with signature `owner()` and selector `[141, 165, 203, 91]`"]
     #[derive(
         Clone,
         Debug,
@@ -672,7 +672,7 @@ pub mod home_mod {
     )]
     #[ethcall(name = "owner", abi = "owner()")]
     pub struct OwnerCall;
-    #[doc = "Container type for all input parameters for the `queueContains`function with signature `queueContains(bytes32)` and selector `[43, 239, 40, 146]`"]
+    #[doc = "Container type for all input parameters for the `queueContains` function with signature `queueContains(bytes32)` and selector `[43, 239, 40, 146]`"]
     #[derive(
         Clone,
         Debug,
@@ -686,7 +686,7 @@ pub mod home_mod {
     pub struct QueueContainsCall {
         pub item: [u8; 32],
     }
-    #[doc = "Container type for all input parameters for the `queueEnd`function with signature `queueEnd()` and selector `[246, 209, 97, 2]`"]
+    #[doc = "Container type for all input parameters for the `queueEnd` function with signature `queueEnd()` and selector `[246, 209, 97, 2]`"]
     #[derive(
         Clone,
         Debug,
@@ -698,7 +698,7 @@ pub mod home_mod {
     )]
     #[ethcall(name = "queueEnd", abi = "queueEnd()")]
     pub struct QueueEndCall;
-    #[doc = "Container type for all input parameters for the `queueLength`function with signature `queueLength()` and selector `[171, 145, 199, 176]`"]
+    #[doc = "Container type for all input parameters for the `queueLength` function with signature `queueLength()` and selector `[171, 145, 199, 176]`"]
     #[derive(
         Clone,
         Debug,
@@ -710,7 +710,7 @@ pub mod home_mod {
     )]
     #[ethcall(name = "queueLength", abi = "queueLength()")]
     pub struct QueueLengthCall;
-    #[doc = "Container type for all input parameters for the `renounceOwnership`function with signature `renounceOwnership()` and selector `[113, 80, 24, 166]`"]
+    #[doc = "Container type for all input parameters for the `renounceOwnership` function with signature `renounceOwnership()` and selector `[113, 80, 24, 166]`"]
     #[derive(
         Clone,
         Debug,
@@ -722,7 +722,7 @@ pub mod home_mod {
     )]
     #[ethcall(name = "renounceOwnership", abi = "renounceOwnership()")]
     pub struct RenounceOwnershipCall;
-    #[doc = "Container type for all input parameters for the `root`function with signature `root()` and selector `[235, 240, 199, 23]`"]
+    #[doc = "Container type for all input parameters for the `root` function with signature `root()` and selector `[235, 240, 199, 23]`"]
     #[derive(
         Clone,
         Debug,
@@ -734,7 +734,7 @@ pub mod home_mod {
     )]
     #[ethcall(name = "root", abi = "root()")]
     pub struct RootCall;
-    #[doc = "Container type for all input parameters for the `setUpdater`function with signature `setUpdater(address)` and selector `[157, 84, 244, 25]`"]
+    #[doc = "Container type for all input parameters for the `setUpdater` function with signature `setUpdater(address)` and selector `[157, 84, 244, 25]`"]
     #[derive(
         Clone,
         Debug,
@@ -748,7 +748,7 @@ pub mod home_mod {
     pub struct SetUpdaterCall {
         pub updater: ethers::core::types::Address,
     }
-    #[doc = "Container type for all input parameters for the `setUpdaterManager`function with signature `setUpdaterManager(address)` and selector `[151, 118, 18, 14]`"]
+    #[doc = "Container type for all input parameters for the `setUpdaterManager` function with signature `setUpdaterManager(address)` and selector `[151, 118, 18, 14]`"]
     #[derive(
         Clone,
         Debug,
@@ -762,7 +762,7 @@ pub mod home_mod {
     pub struct SetUpdaterManagerCall {
         pub updater_manager: ethers::core::types::Address,
     }
-    #[doc = "Container type for all input parameters for the `state`function with signature `state()` and selector `[193, 157, 147, 251]`"]
+    #[doc = "Container type for all input parameters for the `state` function with signature `state()` and selector `[193, 157, 147, 251]`"]
     #[derive(
         Clone,
         Debug,
@@ -774,7 +774,7 @@ pub mod home_mod {
     )]
     #[ethcall(name = "state", abi = "state()")]
     pub struct StateCall;
-    #[doc = "Container type for all input parameters for the `suggestUpdate`function with signature `suggestUpdate()` and selector `[54, 225, 4, 222]`"]
+    #[doc = "Container type for all input parameters for the `suggestUpdate` function with signature `suggestUpdate()` and selector `[54, 225, 4, 222]`"]
     #[derive(
         Clone,
         Debug,
@@ -786,7 +786,7 @@ pub mod home_mod {
     )]
     #[ethcall(name = "suggestUpdate", abi = "suggestUpdate()")]
     pub struct SuggestUpdateCall;
-    #[doc = "Container type for all input parameters for the `transferOwnership`function with signature `transferOwnership(address)` and selector `[242, 253, 227, 139]`"]
+    #[doc = "Container type for all input parameters for the `transferOwnership` function with signature `transferOwnership(address)` and selector `[242, 253, 227, 139]`"]
     #[derive(
         Clone,
         Debug,
@@ -800,7 +800,7 @@ pub mod home_mod {
     pub struct TransferOwnershipCall {
         pub new_owner: ethers::core::types::Address,
     }
-    #[doc = "Container type for all input parameters for the `tree`function with signature `tree()` and selector `[253, 84, 178, 40]`"]
+    #[doc = "Container type for all input parameters for the `tree` function with signature `tree()` and selector `[253, 84, 178, 40]`"]
     #[derive(
         Clone,
         Debug,
@@ -812,7 +812,7 @@ pub mod home_mod {
     )]
     #[ethcall(name = "tree", abi = "tree()")]
     pub struct TreeCall;
-    #[doc = "Container type for all input parameters for the `update`function with signature `update(bytes32,bytes32,bytes)` and selector `[179, 28, 1, 251]`"]
+    #[doc = "Container type for all input parameters for the `update` function with signature `update(bytes32,bytes32,bytes)` and selector `[179, 28, 1, 251]`"]
     #[derive(
         Clone,
         Debug,
@@ -828,7 +828,7 @@ pub mod home_mod {
         pub new_root: [u8; 32],
         pub signature: ethers::core::types::Bytes,
     }
-    #[doc = "Container type for all input parameters for the `updater`function with signature `updater()` and selector `[223, 3, 76, 208]`"]
+    #[doc = "Container type for all input parameters for the `updater` function with signature `updater()` and selector `[223, 3, 76, 208]`"]
     #[derive(
         Clone,
         Debug,
@@ -840,7 +840,7 @@ pub mod home_mod {
     )]
     #[ethcall(name = "updater", abi = "updater()")]
     pub struct UpdaterCall;
-    #[doc = "Container type for all input parameters for the `updaterManager`function with signature `updaterManager()` and selector `[157, 246, 200, 225]`"]
+    #[doc = "Container type for all input parameters for the `updaterManager` function with signature `updaterManager()` and selector `[157, 246, 200, 225]`"]
     #[derive(
         Clone,
         Debug,
@@ -1201,4 +1201,207 @@ pub mod home_mod {
             HomeCalls::UpdaterManager(var)
         }
     }
+    #[doc = "Container type for all return fields from the `MAX_MESSAGE_BODY_BYTES` function with signature `MAX_MESSAGE_BODY_BYTES()` and selector `[82, 42, 224, 2]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct MaxMessageBodyBytesReturn(pub ethers::core::types::U256);
+    #[doc = "Container type for all return fields from the `VERSION` function with signature `VERSION()` and selector `[255, 161, 173, 116]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct VersionReturn(pub u8);
+    #[doc = "Container type for all return fields from the `committedRoot` function with signature `committedRoot()` and selector `[103, 166, 119, 29]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct CommittedRootReturn(pub [u8; 32]);
+    #[doc = "Container type for all return fields from the `count` function with signature `count()` and selector `[6, 102, 26, 189]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct CountReturn(pub ethers::core::types::U256);
+    #[doc = "Container type for all return fields from the `homeDomainHash` function with signature `homeDomainHash()` and selector `[69, 99, 11, 26]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct HomeDomainHashReturn(pub [u8; 32]);
+    #[doc = "Container type for all return fields from the `improperUpdate` function with signature `improperUpdate(bytes32,bytes32,bytes)` and selector `[142, 78, 48, 224]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct ImproperUpdateReturn(pub bool);
+    #[doc = "Container type for all return fields from the `localDomain` function with signature `localDomain()` and selector `[141, 54, 56, 244]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct LocalDomainReturn(pub u32);
+    #[doc = "Container type for all return fields from the `nonces` function with signature `nonces(uint32)` and selector `[185, 90, 32, 1]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct NoncesReturn(pub u32);
+    #[doc = "Container type for all return fields from the `owner` function with signature `owner()` and selector `[141, 165, 203, 91]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct OwnerReturn(pub ethers::core::types::Address);
+    #[doc = "Container type for all return fields from the `queueContains` function with signature `queueContains(bytes32)` and selector `[43, 239, 40, 146]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct QueueContainsReturn(pub bool);
+    #[doc = "Container type for all return fields from the `queueEnd` function with signature `queueEnd()` and selector `[246, 209, 97, 2]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct QueueEndReturn(pub [u8; 32]);
+    #[doc = "Container type for all return fields from the `queueLength` function with signature `queueLength()` and selector `[171, 145, 199, 176]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct QueueLengthReturn(pub ethers::core::types::U256);
+    #[doc = "Container type for all return fields from the `root` function with signature `root()` and selector `[235, 240, 199, 23]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct RootReturn(pub [u8; 32]);
+    #[doc = "Container type for all return fields from the `state` function with signature `state()` and selector `[193, 157, 147, 251]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct StateReturn(pub u8);
+    #[doc = "Container type for all return fields from the `suggestUpdate` function with signature `suggestUpdate()` and selector `[54, 225, 4, 222]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct SuggestUpdateReturn {
+        pub committed_root: [u8; 32],
+        pub new: [u8; 32],
+    }
+    #[doc = "Container type for all return fields from the `tree` function with signature `tree()` and selector `[253, 84, 178, 40]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct TreeReturn {
+        pub count: ethers::core::types::U256,
+    }
+    #[doc = "Container type for all return fields from the `updater` function with signature `updater()` and selector `[223, 3, 76, 208]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct UpdaterReturn(pub ethers::core::types::Address);
+    #[doc = "Container type for all return fields from the `updaterManager` function with signature `updaterManager()` and selector `[157, 246, 200, 225]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct UpdaterManagerReturn(pub ethers::core::types::Address);
 }

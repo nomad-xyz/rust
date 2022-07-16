@@ -134,8 +134,7 @@ where
                 let status = gelato
                     .get_task_status(task_id)
                     .await
-                    .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?
-                    .expect("!task status");
+                    .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?;
 
                 if !ACCEPTABLE_STATES.contains(&status.task_state) {
                     return Err(ChainCommunicationError::TxSubmissionError(
