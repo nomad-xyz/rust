@@ -16,3 +16,4 @@ nomad-core = { path = "../../nomad-core", default-features = false }
 nomad-xyz-configuration = { version = "0.1.0-rc.25", path = "../../configuration" }
 tracing-subscriber = "0.2.15"
 eyre = "0.6.8"
+nomad-ethereum = { version = "0.1.0", path = "../../chains/nomad-ethereum" }
