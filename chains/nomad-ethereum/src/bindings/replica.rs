@@ -18,7 +18,7 @@ pub mod replica_mod {
     use std::sync::Arc;
     pub static REPLICA_ABI: ethers::contract::Lazy<ethers::core::abi::Abi> =
         ethers::contract::Lazy::new(|| {
-            serde_json :: from_str ("[\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"_localDomain\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"constructor\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": false,\n        \"internalType\": \"address\",\n        \"name\": \"oldUpdater\",\n        \"type\": \"address\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"address\",\n        \"name\": \"newUpdater\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"NewUpdater\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"address\",\n        \"name\": \"previousOwner\",\n        \"type\": \"address\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"address\",\n        \"name\": \"newOwner\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"OwnershipTransferred\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"messageHash\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bool\",\n        \"name\": \"success\",\n        \"type\": \"bool\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes\",\n        \"name\": \"returnData\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"Process\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"root\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"uint256\",\n        \"name\": \"previousConfirmAt\",\n        \"type\": \"uint256\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"uint256\",\n        \"name\": \"newConfirmAt\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"SetConfirmation\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": false,\n        \"internalType\": \"uint256\",\n        \"name\": \"timeout\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"SetOptimisticTimeout\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"uint32\",\n        \"name\": \"homeDomain\",\n        \"type\": \"uint32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"newRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes\",\n        \"name\": \"signature\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"Update\",\n    \"type\": \"event\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"LEGACY_STATUS_NONE\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"LEGACY_STATUS_PROCESSED\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"LEGACY_STATUS_PROVEN\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"VERSION\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint8\",\n        \"name\": \"\",\n        \"type\": \"uint8\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_root\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"name\": \"acceptableRoot\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bool\",\n        \"name\": \"\",\n        \"type\": \"bool\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"committedRoot\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"name\": \"confirmAt\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"homeDomainHash\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"_remoteDomain\",\n        \"type\": \"uint32\"\n      },\n      {\n        \"internalType\": \"address\",\n        \"name\": \"_updater\",\n        \"type\": \"address\"\n      },\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_committedRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_optimisticSeconds\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"initialize\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"localDomain\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"name\": \"messages\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"optimisticSeconds\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"owner\",\n    \"outputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"\",\n        \"type\": \"address\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_message\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"process\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bool\",\n        \"name\": \"_success\",\n        \"type\": \"bool\"\n      }\n    ],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_leaf\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes32[32]\",\n        \"name\": \"_proof\",\n        \"type\": \"bytes32[32]\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_index\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"prove\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bool\",\n        \"name\": \"\",\n        \"type\": \"bool\"\n      }\n    ],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_message\",\n        \"type\": \"bytes\"\n      },\n      {\n        \"internalType\": \"bytes32[32]\",\n        \"name\": \"_proof\",\n        \"type\": \"bytes32[32]\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_index\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"proveAndProcess\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"remoteDomain\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"renounceOwnership\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_root\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_confirmAt\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"setConfirmation\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_optimisticSeconds\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"setOptimisticTimeout\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"_updater\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"setUpdater\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"state\",\n    \"outputs\": [\n      {\n        \"internalType\": \"enum NomadBase.States\",\n        \"name\": \"\",\n        \"type\": \"uint8\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"newOwner\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"transferOwnership\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_newRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_signature\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"update\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"updater\",\n    \"outputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"\",\n        \"type\": \"address\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  }\n]\n") . expect ("invalid abi")
+            ethers :: core :: utils :: __serde_json :: from_str ("[\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"_localDomain\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"constructor\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": false,\n        \"internalType\": \"address\",\n        \"name\": \"oldUpdater\",\n        \"type\": \"address\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"address\",\n        \"name\": \"newUpdater\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"NewUpdater\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"address\",\n        \"name\": \"previousOwner\",\n        \"type\": \"address\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"address\",\n        \"name\": \"newOwner\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"OwnershipTransferred\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"messageHash\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bool\",\n        \"name\": \"success\",\n        \"type\": \"bool\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes\",\n        \"name\": \"returnData\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"Process\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"root\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"uint256\",\n        \"name\": \"previousConfirmAt\",\n        \"type\": \"uint256\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"uint256\",\n        \"name\": \"newConfirmAt\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"SetConfirmation\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": false,\n        \"internalType\": \"uint256\",\n        \"name\": \"timeout\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"SetOptimisticTimeout\",\n    \"type\": \"event\"\n  },\n  {\n    \"anonymous\": false,\n    \"inputs\": [\n      {\n        \"indexed\": true,\n        \"internalType\": \"uint32\",\n        \"name\": \"homeDomain\",\n        \"type\": \"uint32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": true,\n        \"internalType\": \"bytes32\",\n        \"name\": \"newRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"indexed\": false,\n        \"internalType\": \"bytes\",\n        \"name\": \"signature\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"Update\",\n    \"type\": \"event\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"LEGACY_STATUS_NONE\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"LEGACY_STATUS_PROCESSED\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"LEGACY_STATUS_PROVEN\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"VERSION\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint8\",\n        \"name\": \"\",\n        \"type\": \"uint8\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_root\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"name\": \"acceptableRoot\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bool\",\n        \"name\": \"\",\n        \"type\": \"bool\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"committedRoot\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"name\": \"confirmAt\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"homeDomainHash\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"_remoteDomain\",\n        \"type\": \"uint32\"\n      },\n      {\n        \"internalType\": \"address\",\n        \"name\": \"_updater\",\n        \"type\": \"address\"\n      },\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_committedRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_optimisticSeconds\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"initialize\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"localDomain\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"name\": \"messages\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"\",\n        \"type\": \"bytes32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"optimisticSeconds\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"owner\",\n    \"outputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"\",\n        \"type\": \"address\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_message\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"process\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bool\",\n        \"name\": \"_success\",\n        \"type\": \"bool\"\n      }\n    ],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_leaf\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes32[32]\",\n        \"name\": \"_proof\",\n        \"type\": \"bytes32[32]\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_index\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"prove\",\n    \"outputs\": [\n      {\n        \"internalType\": \"bool\",\n        \"name\": \"\",\n        \"type\": \"bool\"\n      }\n    ],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_message\",\n        \"type\": \"bytes\"\n      },\n      {\n        \"internalType\": \"bytes32[32]\",\n        \"name\": \"_proof\",\n        \"type\": \"bytes32[32]\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_index\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"proveAndProcess\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"remoteDomain\",\n    \"outputs\": [\n      {\n        \"internalType\": \"uint32\",\n        \"name\": \"\",\n        \"type\": \"uint32\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"renounceOwnership\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_root\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_confirmAt\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"setConfirmation\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"uint256\",\n        \"name\": \"_optimisticSeconds\",\n        \"type\": \"uint256\"\n      }\n    ],\n    \"name\": \"setOptimisticTimeout\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"_updater\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"setUpdater\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"state\",\n    \"outputs\": [\n      {\n        \"internalType\": \"enum NomadBase.States\",\n        \"name\": \"\",\n        \"type\": \"uint8\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"newOwner\",\n        \"type\": \"address\"\n      }\n    ],\n    \"name\": \"transferOwnership\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_oldRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes32\",\n        \"name\": \"_newRoot\",\n        \"type\": \"bytes32\"\n      },\n      {\n        \"internalType\": \"bytes\",\n        \"name\": \"_signature\",\n        \"type\": \"bytes\"\n      }\n    ],\n    \"name\": \"update\",\n    \"outputs\": [],\n    \"stateMutability\": \"nonpayable\",\n    \"type\": \"function\"\n  },\n  {\n    \"inputs\": [],\n    \"name\": \"updater\",\n    \"outputs\": [\n      {\n        \"internalType\": \"address\",\n        \"name\": \"\",\n        \"type\": \"address\"\n      }\n    ],\n    \"stateMutability\": \"view\",\n    \"type\": \"function\"\n  }\n]\n") . expect ("invalid abi")
         });
     pub struct Replica<M>(ethers::contract::Contract<M>);
     impl<M> Clone for Replica<M> {
@@ -447,7 +447,7 @@ pub mod replica_mod {
             }
         }
     }
-    #[doc = "Container type for all input parameters for the `LEGACY_STATUS_NONE`function with signature `LEGACY_STATUS_NONE()` and selector `[24, 129, 11, 137]`"]
+    #[doc = "Container type for all input parameters for the `LEGACY_STATUS_NONE` function with signature `LEGACY_STATUS_NONE()` and selector `[24, 129, 11, 137]`"]
     #[derive(
         Clone,
         Debug,
@@ -459,7 +459,7 @@ pub mod replica_mod {
     )]
     #[ethcall(name = "LEGACY_STATUS_NONE", abi = "LEGACY_STATUS_NONE()")]
     pub struct LegacyStatusNoneCall;
-    #[doc = "Container type for all input parameters for the `LEGACY_STATUS_PROCESSED`function with signature `LEGACY_STATUS_PROCESSED()` and selector `[177, 227, 251, 140]`"]
+    #[doc = "Container type for all input parameters for the `LEGACY_STATUS_PROCESSED` function with signature `LEGACY_STATUS_PROCESSED()` and selector `[177, 227, 251, 140]`"]
     #[derive(
         Clone,
         Debug,
@@ -471,7 +471,7 @@ pub mod replica_mod {
     )]
     #[ethcall(name = "LEGACY_STATUS_PROCESSED", abi = "LEGACY_STATUS_PROCESSED()")]
     pub struct LegacyStatusProcessedCall;
-    #[doc = "Container type for all input parameters for the `LEGACY_STATUS_PROVEN`function with signature `LEGACY_STATUS_PROVEN()` and selector `[46, 123, 179, 44]`"]
+    #[doc = "Container type for all input parameters for the `LEGACY_STATUS_PROVEN` function with signature `LEGACY_STATUS_PROVEN()` and selector `[46, 123, 179, 44]`"]
     #[derive(
         Clone,
         Debug,
@@ -483,7 +483,7 @@ pub mod replica_mod {
     )]
     #[ethcall(name = "LEGACY_STATUS_PROVEN", abi = "LEGACY_STATUS_PROVEN()")]
     pub struct LegacyStatusProvenCall;
-    #[doc = "Container type for all input parameters for the `VERSION`function with signature `VERSION()` and selector `[255, 161, 173, 116]`"]
+    #[doc = "Container type for all input parameters for the `VERSION` function with signature `VERSION()` and selector `[255, 161, 173, 116]`"]
     #[derive(
         Clone,
         Debug,
@@ -495,7 +495,7 @@ pub mod replica_mod {
     )]
     #[ethcall(name = "VERSION", abi = "VERSION()")]
     pub struct VersionCall;
-    #[doc = "Container type for all input parameters for the `acceptableRoot`function with signature `acceptableRoot(bytes32)` and selector `[163, 248, 29, 104]`"]
+    #[doc = "Container type for all input parameters for the `acceptableRoot` function with signature `acceptableRoot(bytes32)` and selector `[163, 248, 29, 104]`"]
     #[derive(
         Clone,
         Debug,
@@ -509,7 +509,7 @@ pub mod replica_mod {
     pub struct AcceptableRootCall {
         pub root: [u8; 32],
     }
-    #[doc = "Container type for all input parameters for the `committedRoot`function with signature `committedRoot()` and selector `[103, 166, 119, 29]`"]
+    #[doc = "Container type for all input parameters for the `committedRoot` function with signature `committedRoot()` and selector `[103, 166, 119, 29]`"]
     #[derive(
         Clone,
         Debug,
@@ -521,7 +521,7 @@ pub mod replica_mod {
     )]
     #[ethcall(name = "committedRoot", abi = "committedRoot()")]
     pub struct CommittedRootCall;
-    #[doc = "Container type for all input parameters for the `confirmAt`function with signature `confirmAt(bytes32)` and selector `[113, 191, 183, 184]`"]
+    #[doc = "Container type for all input parameters for the `confirmAt` function with signature `confirmAt(bytes32)` and selector `[113, 191, 183, 184]`"]
     #[derive(
         Clone,
         Debug,
@@ -533,7 +533,7 @@ pub mod replica_mod {
     )]
     #[ethcall(name = "confirmAt", abi = "confirmAt(bytes32)")]
     pub struct ConfirmAtCall(pub [u8; 32]);
-    #[doc = "Container type for all input parameters for the `homeDomainHash`function with signature `homeDomainHash()` and selector `[69, 99, 11, 26]`"]
+    #[doc = "Container type for all input parameters for the `homeDomainHash` function with signature `homeDomainHash()` and selector `[69, 99, 11, 26]`"]
     #[derive(
         Clone,
         Debug,
@@ -545,7 +545,7 @@ pub mod replica_mod {
     )]
     #[ethcall(name = "homeDomainHash", abi = "homeDomainHash()")]
     pub struct HomeDomainHashCall;
-    #[doc = "Container type for all input parameters for the `initialize`function with signature `initialize(uint32,address,bytes32,uint256)` and selector `[231, 231, 167, 183]`"]
+    #[doc = "Container type for all input parameters for the `initialize` function with signature `initialize(uint32,address,bytes32,uint256)` and selector `[231, 231, 167, 183]`"]
     #[derive(
         Clone,
         Debug,
@@ -565,7 +565,7 @@ pub mod replica_mod {
         pub committed_root: [u8; 32],
         pub optimistic_seconds: ethers::core::types::U256,
     }
-    #[doc = "Container type for all input parameters for the `localDomain`function with signature `localDomain()` and selector `[141, 54, 56, 244]`"]
+    #[doc = "Container type for all input parameters for the `localDomain` function with signature `localDomain()` and selector `[141, 54, 56, 244]`"]
     #[derive(
         Clone,
         Debug,
@@ -577,7 +577,7 @@ pub mod replica_mod {
     )]
     #[ethcall(name = "localDomain", abi = "localDomain()")]
     pub struct LocalDomainCall;
-    #[doc = "Container type for all input parameters for the `messages`function with signature `messages(bytes32)` and selector `[43, 189, 89, 202]`"]
+    #[doc = "Container type for all input parameters for the `messages` function with signature `messages(bytes32)` and selector `[43, 189, 89, 202]`"]
     #[derive(
         Clone,
         Debug,
@@ -589,7 +589,7 @@ pub mod replica_mod {
     )]
     #[ethcall(name = "messages", abi = "messages(bytes32)")]
     pub struct MessagesCall(pub [u8; 32]);
-    #[doc = "Container type for all input parameters for the `optimisticSeconds`function with signature `optimisticSeconds()` and selector `[57, 153, 38, 104]`"]
+    #[doc = "Container type for all input parameters for the `optimisticSeconds` function with signature `optimisticSeconds()` and selector `[57, 153, 38, 104]`"]
     #[derive(
         Clone,
         Debug,
@@ -601,7 +601,7 @@ pub mod replica_mod {
     )]
     #[ethcall(name = "optimisticSeconds", abi = "optimisticSeconds()")]
     pub struct OptimisticSecondsCall;
-    #[doc = "Container type for all input parameters for the `owner`function with signature `owner()` and selector `[141, 165, 203, 91]`"]
+    #[doc = "Container type for all input parameters for the `owner` function with signature `owner()` and selector `[141, 165, 203, 91]`"]
     #[derive(
         Clone,
         Debug,
@@ -613,7 +613,7 @@ pub mod replica_mod {
     )]
     #[ethcall(name = "owner", abi = "owner()")]
     pub struct OwnerCall;
-    #[doc = "Container type for all input parameters for the `process`function with signature `process(bytes)` and selector `[146, 139, 196, 178]`"]
+    #[doc = "Container type for all input parameters for the `process` function with signature `process(bytes)` and selector `[146, 139, 196, 178]`"]
     #[derive(
         Clone,
         Debug,
@@ -627,7 +627,7 @@ pub mod replica_mod {
     pub struct ProcessCall {
         pub message: ethers::core::types::Bytes,
     }
-    #[doc = "Container type for all input parameters for the `prove`function with signature `prove(bytes32,bytes32[32],uint256)` and selector `[55, 29, 48, 113]`"]
+    #[doc = "Container type for all input parameters for the `prove` function with signature `prove(bytes32,bytes32[32],uint256)` and selector `[55, 29, 48, 113]`"]
     #[derive(
         Clone,
         Debug,
@@ -643,7 +643,7 @@ pub mod replica_mod {
         pub proof: [[u8; 32]; 32usize],
         pub index: ethers::core::types::U256,
     }
-    #[doc = "Container type for all input parameters for the `proveAndProcess`function with signature `proveAndProcess(bytes,bytes32[32],uint256)` and selector `[97, 136, 175, 14]`"]
+    #[doc = "Container type for all input parameters for the `proveAndProcess` function with signature `proveAndProcess(bytes,bytes32[32],uint256)` and selector `[97, 136, 175, 14]`"]
     #[derive(
         Clone,
         Debug,
@@ -662,7 +662,7 @@ pub mod replica_mod {
         pub proof: [[u8; 32]; 32usize],
         pub index: ethers::core::types::U256,
     }
-    #[doc = "Container type for all input parameters for the `remoteDomain`function with signature `remoteDomain()` and selector `[150, 22, 129, 220]`"]
+    #[doc = "Container type for all input parameters for the `remoteDomain` function with signature `remoteDomain()` and selector `[150, 22, 129, 220]`"]
     #[derive(
         Clone,
         Debug,
@@ -674,7 +674,7 @@ pub mod replica_mod {
     )]
     #[ethcall(name = "remoteDomain", abi = "remoteDomain()")]
     pub struct RemoteDomainCall;
-    #[doc = "Container type for all input parameters for the `renounceOwnership`function with signature `renounceOwnership()` and selector `[113, 80, 24, 166]`"]
+    #[doc = "Container type for all input parameters for the `renounceOwnership` function with signature `renounceOwnership()` and selector `[113, 80, 24, 166]`"]
     #[derive(
         Clone,
         Debug,
@@ -686,7 +686,7 @@ pub mod replica_mod {
     )]
     #[ethcall(name = "renounceOwnership", abi = "renounceOwnership()")]
     pub struct RenounceOwnershipCall;
-    #[doc = "Container type for all input parameters for the `setConfirmation`function with signature `setConfirmation(bytes32,uint256)` and selector `[8, 139, 94, 211]`"]
+    #[doc = "Container type for all input parameters for the `setConfirmation` function with signature `setConfirmation(bytes32,uint256)` and selector `[8, 139, 94, 211]`"]
     #[derive(
         Clone,
         Debug,
@@ -701,7 +701,7 @@ pub mod replica_mod {
         pub root: [u8; 32],
         pub confirm_at: ethers::core::types::U256,
     }
-    #[doc = "Container type for all input parameters for the `setOptimisticTimeout`function with signature `setOptimisticTimeout(uint256)` and selector `[136, 91, 94, 45]`"]
+    #[doc = "Container type for all input parameters for the `setOptimisticTimeout` function with signature `setOptimisticTimeout(uint256)` and selector `[136, 91, 94, 45]`"]
     #[derive(
         Clone,
         Debug,
@@ -715,7 +715,7 @@ pub mod replica_mod {
     pub struct SetOptimisticTimeoutCall {
         pub optimistic_seconds: ethers::core::types::U256,
     }
-    #[doc = "Container type for all input parameters for the `setUpdater`function with signature `setUpdater(address)` and selector `[157, 84, 244, 25]`"]
+    #[doc = "Container type for all input parameters for the `setUpdater` function with signature `setUpdater(address)` and selector `[157, 84, 244, 25]`"]
     #[derive(
         Clone,
         Debug,
@@ -729,7 +729,7 @@ pub mod replica_mod {
     pub struct SetUpdaterCall {
         pub updater: ethers::core::types::Address,
     }
-    #[doc = "Container type for all input parameters for the `state`function with signature `state()` and selector `[193, 157, 147, 251]`"]
+    #[doc = "Container type for all input parameters for the `state` function with signature `state()` and selector `[193, 157, 147, 251]`"]
     #[derive(
         Clone,
         Debug,
@@ -741,7 +741,7 @@ pub mod replica_mod {
     )]
     #[ethcall(name = "state", abi = "state()")]
     pub struct StateCall;
-    #[doc = "Container type for all input parameters for the `transferOwnership`function with signature `transferOwnership(address)` and selector `[242, 253, 227, 139]`"]
+    #[doc = "Container type for all input parameters for the `transferOwnership` function with signature `transferOwnership(address)` and selector `[242, 253, 227, 139]`"]
     #[derive(
         Clone,
         Debug,
@@ -755,7 +755,7 @@ pub mod replica_mod {
     pub struct TransferOwnershipCall {
         pub new_owner: ethers::core::types::Address,
     }
-    #[doc = "Container type for all input parameters for the `update`function with signature `update(bytes32,bytes32,bytes)` and selector `[179, 28, 1, 251]`"]
+    #[doc = "Container type for all input parameters for the `update` function with signature `update(bytes32,bytes32,bytes)` and selector `[179, 28, 1, 251]`"]
     #[derive(
         Clone,
         Debug,
@@ -771,7 +771,7 @@ pub mod replica_mod {
         pub new_root: [u8; 32],
         pub signature: ethers::core::types::Bytes,
     }
-    #[doc = "Container type for all input parameters for the `updater`function with signature `updater()` and selector `[223, 3, 76, 208]`"]
+    #[doc = "Container type for all input parameters for the `updater` function with signature `updater()` and selector `[223, 3, 76, 208]`"]
     #[derive(
         Clone,
         Debug,
@@ -1124,4 +1124,193 @@ pub mod replica_mod {
             ReplicaCalls::Updater(var)
         }
     }
+    #[doc = "Container type for all return fields from the `LEGACY_STATUS_NONE` function with signature `LEGACY_STATUS_NONE()` and selector `[24, 129, 11, 137]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct LegacyStatusNoneReturn(pub [u8; 32]);
+    #[doc = "Container type for all return fields from the `LEGACY_STATUS_PROCESSED` function with signature `LEGACY_STATUS_PROCESSED()` and selector `[177, 227, 251, 140]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct LegacyStatusProcessedReturn(pub [u8; 32]);
+    #[doc = "Container type for all return fields from the `LEGACY_STATUS_PROVEN` function with signature `LEGACY_STATUS_PROVEN()` and selector `[46, 123, 179, 44]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct LegacyStatusProvenReturn(pub [u8; 32]);
+    #[doc = "Container type for all return fields from the `VERSION` function with signature `VERSION()` and selector `[255, 161, 173, 116]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct VersionReturn(pub u8);
+    #[doc = "Container type for all return fields from the `acceptableRoot` function with signature `acceptableRoot(bytes32)` and selector `[163, 248, 29, 104]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct AcceptableRootReturn(pub bool);
+    #[doc = "Container type for all return fields from the `committedRoot` function with signature `committedRoot()` and selector `[103, 166, 119, 29]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct CommittedRootReturn(pub [u8; 32]);
+    #[doc = "Container type for all return fields from the `confirmAt` function with signature `confirmAt(bytes32)` and selector `[113, 191, 183, 184]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct ConfirmAtReturn(pub ethers::core::types::U256);
+    #[doc = "Container type for all return fields from the `homeDomainHash` function with signature `homeDomainHash()` and selector `[69, 99, 11, 26]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct HomeDomainHashReturn(pub [u8; 32]);
+    #[doc = "Container type for all return fields from the `localDomain` function with signature `localDomain()` and selector `[141, 54, 56, 244]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct LocalDomainReturn(pub u32);
+    #[doc = "Container type for all return fields from the `messages` function with signature `messages(bytes32)` and selector `[43, 189, 89, 202]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct MessagesReturn(pub [u8; 32]);
+    #[doc = "Container type for all return fields from the `optimisticSeconds` function with signature `optimisticSeconds()` and selector `[57, 153, 38, 104]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct OptimisticSecondsReturn(pub ethers::core::types::U256);
+    #[doc = "Container type for all return fields from the `owner` function with signature `owner()` and selector `[141, 165, 203, 91]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct OwnerReturn(pub ethers::core::types::Address);
+    #[doc = "Container type for all return fields from the `process` function with signature `process(bytes)` and selector `[146, 139, 196, 178]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct ProcessReturn {
+        pub success: bool,
+    }
+    #[doc = "Container type for all return fields from the `prove` function with signature `prove(bytes32,bytes32[32],uint256)` and selector `[55, 29, 48, 113]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct ProveReturn(pub bool);
+    #[doc = "Container type for all return fields from the `remoteDomain` function with signature `remoteDomain()` and selector `[150, 22, 129, 220]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct RemoteDomainReturn(pub u32);
+    #[doc = "Container type for all return fields from the `state` function with signature `state()` and selector `[193, 157, 147, 251]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct StateReturn(pub u8);
+    #[doc = "Container type for all return fields from the `updater` function with signature `updater()` and selector `[223, 3, 76, 208]`"]
+    #[derive(
+        Clone,
+        Debug,
+        Default,
+        Eq,
+        PartialEq,
+        ethers :: contract :: EthAbiType,
+        ethers :: contract :: EthAbiCodec,
+    )]
+    pub struct UpdaterReturn(pub ethers::core::types::Address);
 }
