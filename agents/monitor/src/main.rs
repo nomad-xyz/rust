@@ -1,3 +1,4 @@
+use init::Monitor;
 use tracing::info_span;
 
 mod between;
@@ -5,17 +6,18 @@ mod between;
 mod init;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> eyre::Result<()> {
     init::init_tracing();
 
     {
         let span = info_span!("MonitorBootup");
         let _span = span.enter();
-        let config = init::config();
-        let providers = init::init_providers(&config);
+
+        let _monitor = init::monitor()?;
 
         tracing::info!("setup complete!")
     }
+    Ok(())
 }
 
 /// Simple event trait
