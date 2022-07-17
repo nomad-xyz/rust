@@ -1,23 +1,24 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use ethers::{
     contract::builders::Event,
     middleware::TimeLag,
-    prelude::{ContractError, Http, Provider as EthersProvider, StreamExt},
+    prelude::{Http, Provider as EthersProvider, StreamExt},
 };
 
 use nomad_ethereum::bindings::{
     home::{DispatchFilter, Home, UpdateFilter as HomeUpdateFilter},
     replica::{ProcessFilter, Replica, UpdateFilter as ReplicaUpdateFilter},
 };
-use nomad_xyz_configuration::{contracts::CoreContracts, get_builtin, NomadConfig};
-use prometheus::{Histogram, HistogramOpts, HistogramVec, IntCounter, IntCounterVec};
-use tokio::{
-    sync::mpsc::{self, UnboundedReceiver},
-    task::JoinHandle,
-};
+use nomad_xyz_configuration::{contracts::CoreContracts, NomadConfig};
+use prometheus::{Histogram, IntCounter};
+use tokio::sync::mpsc;
+use tracing::{info_span, Instrument};
 
-use crate::{between::BetweenEvents, init::provider_for, ArcProvider, NomadEvent, Provider};
+use crate::{
+    annotate::Annotated, between::BetweenEvents, init::provider_for, ArcProvider, ProcessStep,
+    Provider, StepHandle,
+};
 
 macro_rules! unwrap_event_stream_item {
     ($event:ident, $net:ident, $name:literal) => {{
@@ -103,12 +104,14 @@ impl Domain {
             .collect()
     }
 
-    pub(crate) fn dispatch_stream(&self) -> mpsc::UnboundedReceiver<DispatchFilter> {
+    pub(crate) fn dispatch_stream(&self) -> StepHandle<DispatchFilter> {
         let home = self.home.clone();
         let (tx, rx) = mpsc::unbounded_channel();
         let name = self.name.clone();
 
-        tokio::spawn(async move {
+        let span = info_span!("dispatch stream convert loop", name = name.as_str());
+
+        let handle = tokio::spawn(async move {
             let filter = home.dispatch_filter();
             let mut stream = filter
                 .stream()
@@ -119,35 +122,31 @@ impl Domain {
                 let event = unwrap_event_stream_item!(event, name, "dispatch");
                 tx.send(event).unwrap();
             }
-        });
+        })
+        .instrument(span);
 
-        rx
+        todo!("use new stream_with_meta")
+        // StepHandle { handle, rx }
     }
 
     pub(crate) fn count<T>(
         &self,
-        incoming: mpsc::UnboundedReceiver<T>,
+        incoming: mpsc::UnboundedReceiver<Annotated<T>>,
         count: IntCounter,
         wallclock_latency: Histogram,
         timestamp_latency: Histogram,
-    ) -> UnboundedReceiver<T>
+    ) -> StepHandle<T>
     where
-        T: NomadEvent + 'static,
+        T: 'static + Send + Sync,
     {
-        let (tx, rx) = mpsc::unbounded_channel();
-
-        let between = BetweenEvents::new(
+        BetweenEvents::new(
             incoming,
-            tx,
             count,
             wallclock_latency,
             timestamp_latency,
             self.name.clone(),
-        );
-
-        between.spawn();
-
-        rx
+        )
+        .spawn()
     }
 
     // fn update_stream(&self) -> mpsc::UnboundedReceiver<HomeUpdateFilter> {
