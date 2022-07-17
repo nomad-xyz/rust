@@ -1,15 +1,22 @@
 use std::{collections::HashMap, sync::Arc};
 
 use ethers::{
+    contract::builders::Event,
     middleware::TimeLag,
-    prelude::{Http, Provider as EthersProvider},
+    prelude::{ContractError, Http, Provider as EthersProvider, StreamExt},
 };
 
-use nomad_ethereum::bindings::{home::Home, replica::Replica};
+use nomad_ethereum::bindings::{
+    home::UpdateFilter as HomeUpdateFilter, replica::UpdateFilter as ReplicaUpdateFilter,
+};
 use nomad_xyz_configuration::{contracts::CoreContracts, get_builtin, NomadConfig};
+use prometheus::{HistogramOpts, HistogramVec, IntCounterVec};
+use tokio::{
+    sync::mpsc::{self},
+    task::JoinHandle,
+};
 
-pub(crate) type Provider = TimeLag<EthersProvider<Http>>;
-pub(crate) type ArcProvider = Arc<Provider>;
+use crate::{between::BetweenEvents, domain::Domain, metrics::Metrics, ArcProvider};
 
 pub(crate) fn config_from_file() -> Option<NomadConfig> {
     std::env::var("CONFIG_PATH")
@@ -74,71 +81,24 @@ pub(crate) fn monitor() -> eyre::Result<Monitor> {
     Monitor::from_config(config()?)
 }
 
-pub(crate) struct Network {
-    name: String,
-    provider: ArcProvider,
-    home: Home<Provider>,
-    replicas: HashMap<String, Replica<Provider>>,
-}
-
-impl Network {
-    fn from_config(config: &NomadConfig, network: &str) -> eyre::Result<Self> {
-        let name = network.to_owned();
-        let provider = provider_for(config, network)?;
-
-        let CoreContracts::Evm(core) = config.core().get(network).expect("invalid config");
-
-        let home = Home::new(core.home.proxy.as_ethereum_address()?, provider.clone());
-
-        let replicas = core
-            .replicas
-            .iter()
-            .map(|(k, v)| {
-                let replica = Replica::new(
-                    v.proxy.as_ethereum_address().expect("invalid addr"),
-                    provider.clone(),
-                );
-                (k.clone(), replica)
-            })
-            .collect();
-
-        Ok(Network {
-            name,
-            provider,
-            home,
-            replicas,
-        })
-    }
-
-    pub(crate) fn name(&self) -> &str {
-        self.name.as_ref()
-    }
-
-    pub(crate) fn provider(&self) -> &TimeLag<EthersProvider<Http>> {
-        self.provider.as_ref()
-    }
-
-    pub(crate) fn home(&self) -> &Home<Provider> {
-        &self.home
-    }
-
-    pub(crate) fn replicas(&self) -> &HashMap<String, Replica<Provider>> {
-        &self.replicas
-    }
-}
-
+#[derive(Debug)]
 pub(crate) struct Monitor {
     config: NomadConfig,
-    networks: HashMap<String, Network>,
+    networks: HashMap<String, Domain>,
+    metrics: Arc<Metrics>,
 }
 
 impl Monitor {
     pub(crate) fn from_config(config: NomadConfig) -> eyre::Result<Self> {
         let mut networks = HashMap::new();
         for network in config.networks.iter() {
-            networks.insert(network.to_owned(), Network::from_config(&config, network)?);
+            networks.insert(network.to_owned(), Domain::from_config(&config, network)?);
         }
-
-        Ok(Monitor { config, networks })
+        let metrics = Metrics::new()?.into();
+        Ok(Monitor {
+            config,
+            networks,
+            metrics,
+        })
     }
 }

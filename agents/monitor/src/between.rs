@@ -6,8 +6,8 @@ use crate::NomadEvent;
 
 // Track time between events of the same kind
 pub struct BetweenEvents<T> {
-    pub(crate) incoming: tokio::sync::mpsc::Receiver<T>,
-    pub(crate) outgoing: tokio::sync::mpsc::Sender<T>,
+    pub(crate) incoming: tokio::sync::mpsc::UnboundedReceiver<T>,
+    pub(crate) outgoing: tokio::sync::mpsc::UnboundedSender<T>,
     pub(crate) count: prometheus::IntCounter,
     pub(crate) wallclock_latency: prometheus::Histogram,
     pub(crate) timestamp_latency: prometheus::Histogram,
@@ -20,8 +20,8 @@ where
     T: NomadEvent + 'static,
 {
     pub fn new(
-        incoming: tokio::sync::mpsc::Receiver<T>,
-        outgoing: tokio::sync::mpsc::Sender<T>,
+        incoming: tokio::sync::mpsc::UnboundedReceiver<T>,
+        outgoing: tokio::sync::mpsc::UnboundedSender<T>,
         count: prometheus::IntCounter,
         wallclock_latency: prometheus::Histogram,
         timestamp_latency: prometheus::Histogram,
@@ -63,7 +63,7 @@ where
                 wallclock_latency.observe_duration();
 
                 // send the next event out
-                if self.outgoing.send(incoming).await.is_err() {
+                if self.outgoing.send(incoming).is_err() {
                     break;
                 }
 
