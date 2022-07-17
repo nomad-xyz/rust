@@ -1,22 +1,15 @@
-use tracing::info_span;
+use annotate::Annotated;
+use std::sync::Arc;
+use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
+use tracing::{info_span, instrument::Instrumented};
 
+use ethers::prelude::{ContractError, Http, Provider as EthersProvider};
+
+pub(crate) mod annotate;
 pub(crate) mod between;
 pub(crate) mod domain;
 pub(crate) mod init;
 pub(crate) mod metrics;
-
-use std::sync::Arc;
-
-use ethers::prelude::{ContractError, Http, Provider as EthersProvider, StreamExt};
-
-use nomad_ethereum::bindings::{
-    home::UpdateFilter as HomeUpdateFilter, replica::UpdateFilter as ReplicaUpdateFilter,
-};
-use prometheus::{HistogramOpts, HistogramVec, IntCounterVec};
-use tokio::{
-    sync::mpsc::{self},
-    task::JoinHandle,
-};
 
 pub(crate) type Provider = ethers::prelude::TimeLag<EthersProvider<Http>>;
 pub(crate) type ArcProvider = Arc<Provider>;
@@ -29,21 +22,18 @@ async fn main() -> eyre::Result<()> {
         let span = info_span!("MonitorBootup");
         let _span = span.enter();
 
-        let _monitor = init::monitor()?;
-
-        tracing::info!("setup complete!")
+        let monitor = init::monitor()?;
+        tracing::info!("setup complete!");
+        let _http = monitor.run_http_server();
     }
     Ok(())
 }
 
-/// Simple event trait
-pub trait NomadEvent: Send + Sync {
-    /// Get the timestamp
-    fn timestamp(&self) -> u32;
+pub(crate) struct StepHandle<T> {
+    handle: Instrumented<JoinHandle<()>>,
+    rx: UnboundedReceiver<Annotated<T>>,
+}
 
-    /// block number
-    fn block_number(&self) -> u64;
-
-    /// tx hash
-    fn tx_hash(&self) -> ethers::types::H256;
+pub(crate) trait ProcessStep<T> {
+    fn spawn(self) -> StepHandle<T>;
 }

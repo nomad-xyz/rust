@@ -1,22 +1,14 @@
 use std::{collections::HashMap, sync::Arc};
 
 use ethers::{
-    contract::builders::Event,
     middleware::TimeLag,
-    prelude::{ContractError, Http, Provider as EthersProvider, StreamExt},
+    prelude::{Http, Provider as EthersProvider},
 };
 
-use nomad_ethereum::bindings::{
-    home::UpdateFilter as HomeUpdateFilter, replica::UpdateFilter as ReplicaUpdateFilter,
-};
-use nomad_xyz_configuration::{contracts::CoreContracts, get_builtin, NomadConfig};
-use prometheus::{HistogramOpts, HistogramVec, IntCounterVec};
-use tokio::{
-    sync::mpsc::{self},
-    task::JoinHandle,
-};
+use nomad_xyz_configuration::{get_builtin, NomadConfig};
+use tokio::task::JoinHandle;
 
-use crate::{between::BetweenEvents, domain::Domain, metrics::Metrics, ArcProvider};
+use crate::{domain::Domain, metrics::Metrics, ArcProvider};
 
 pub(crate) fn config_from_file() -> Option<NomadConfig> {
     std::env::var("CONFIG_PATH")
@@ -100,5 +92,9 @@ impl Monitor {
             networks,
             metrics,
         })
+    }
+
+    pub(crate) fn run_http_server(&self) -> JoinHandle<()> {
+        self.metrics.clone().run_http_server()
     }
 }

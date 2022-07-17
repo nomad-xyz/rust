@@ -1,47 +1,51 @@
-use tracing::{info_span, instrument::Instrumented, Instrument};
+use tracing::{info_span, Instrument};
 
-use tokio::task::JoinHandle;
+use tokio::sync::mpsc;
 
-use crate::NomadEvent;
+use crate::{annotate::Annotated, ProcessStep, StepHandle};
 
 // Track time between events of the same kind
-pub struct BetweenEvents<T> {
-    pub(crate) incoming: tokio::sync::mpsc::UnboundedReceiver<T>,
-    pub(crate) outgoing: tokio::sync::mpsc::UnboundedSender<T>,
+pub(crate) struct BetweenEvents<T> {
+    pub(crate) incoming: mpsc::UnboundedReceiver<Annotated<T>>,
     pub(crate) count: prometheus::IntCounter,
     pub(crate) wallclock_latency: prometheus::Histogram,
-    pub(crate) timestamp_latency: prometheus::Histogram,
+    pub(crate) block_latency: prometheus::Histogram,
     pub(crate) network: String,
 }
 
 /// Track latency between blockchain events
 impl<T> BetweenEvents<T>
 where
-    T: NomadEvent + 'static,
+    T: 'static,
 {
-    pub fn new(
-        incoming: tokio::sync::mpsc::UnboundedReceiver<T>,
-        outgoing: tokio::sync::mpsc::UnboundedSender<T>,
+    pub(crate) fn new(
+        incoming: mpsc::UnboundedReceiver<Annotated<T>>,
         count: prometheus::IntCounter,
         wallclock_latency: prometheus::Histogram,
-        timestamp_latency: prometheus::Histogram,
+        block_latency: prometheus::Histogram,
         network: String,
     ) -> Self {
         Self {
             incoming,
-            outgoing,
             count,
             wallclock_latency,
-            timestamp_latency,
+            block_latency,
             network,
         }
     }
+}
 
-    pub fn spawn(mut self) -> Instrumented<JoinHandle<()>> {
+impl<T> ProcessStep<T> for BetweenEvents<T>
+where
+    T: 'static + Send + Sync,
+{
+    fn spawn(mut self) -> StepHandle<T> {
         let span = info_span!("LatencyMetricsTask", network = self.network.as_str());
 
-        tokio::spawn(async move {
-            let mut last_timestamp = 0;
+        let (outgoing, rx) = mpsc::unbounded_channel();
+
+        let handle = tokio::spawn(async move {
+            let mut last_block_number = 0;
             let mut wallclock_latency = self.wallclock_latency.start_timer();
 
             loop {
@@ -53,17 +57,20 @@ where
                 let incoming = incoming.unwrap();
 
                 // calculate the blockchain-reported latency in seconds
-                let timestamp = incoming.timestamp();
-                let event_latency = timestamp.saturating_sub(last_timestamp);
-                last_timestamp = timestamp;
+                let block_number = incoming.meta.block_number.as_u64();
+                let event_latency = block_number.saturating_sub(last_block_number);
+                last_block_number = block_number;
+
+                if event_latency != last_block_number {
+                    self.block_latency.observe(event_latency as f64);
+                }
 
                 // update our metrics
                 self.count.inc();
-                self.timestamp_latency.observe(event_latency as f64);
                 wallclock_latency.observe_duration();
 
                 // send the next event out
-                if self.outgoing.send(incoming).is_err() {
+                if outgoing.send(incoming).is_err() {
                     break;
                 }
 
@@ -71,6 +78,8 @@ where
                 wallclock_latency = self.wallclock_latency.start_timer();
             }
         })
-        .instrument(span)
+        .instrument(span);
+
+        StepHandle { handle, rx }
     }
 }
