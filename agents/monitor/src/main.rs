@@ -1,14 +1,30 @@
-use init::Monitor;
 use tracing::info_span;
 
-mod between;
+pub(crate) mod between;
+pub(crate) mod domain;
+pub(crate) mod init;
+pub(crate) mod metrics;
 
-mod init;
+use std::sync::Arc;
+
+use ethers::prelude::{ContractError, Http, Provider as EthersProvider, StreamExt};
+
+use nomad_ethereum::bindings::{
+    home::UpdateFilter as HomeUpdateFilter, replica::UpdateFilter as ReplicaUpdateFilter,
+};
+use prometheus::{HistogramOpts, HistogramVec, IntCounterVec};
+use tokio::{
+    sync::mpsc::{self},
+    task::JoinHandle,
+};
+
+pub(crate) type Provider = ethers::prelude::TimeLag<EthersProvider<Http>>;
+pub(crate) type ArcProvider = Arc<Provider>;
+pub(crate) type ProviderError = ContractError<Provider>;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
     init::init_tracing();
-
     {
         let span = info_span!("MonitorBootup");
         let _span = span.enter();
