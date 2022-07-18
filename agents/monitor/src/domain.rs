@@ -16,8 +16,10 @@ use tokio::sync::mpsc;
 use tracing::{info_span, Instrument};
 
 use crate::{
-    annotate::Annotated, between::BetweenEvents, init::provider_for, ArcProvider, ProcessStep,
-    Provider, StepHandle,
+    annotate::WithMeta,
+    between::{BetweenEvents, BetweenHandle, BetweenMetrics},
+    init::provider_for,
+    ArcProvider, ProcessStep, Provider, StepHandle,
 };
 
 macro_rules! unwrap_event_stream_item {
@@ -104,66 +106,53 @@ impl Domain {
             .collect()
     }
 
-    pub(crate) fn dispatch_stream(&self) -> StepHandle<DispatchFilter> {
-        let home = self.home.clone();
-        let (tx, rx) = mpsc::unbounded_channel();
-        let name = self.name.clone();
+    pub(crate) fn dispatch_stream(&self) -> BetweenHandle<WithMeta<DispatchFilter>> {
+        todo!()
+        //     let home = self.home.clone();
+        //     let (tx, rx) = mpsc::unbounded_channel();
+        //     let name = self.name.clone();
 
-        let span = info_span!("dispatch stream convert loop", name = name.as_str());
+        //     let span = info_span!("dispatch stream convert loop", name = name.as_str());
 
-        let handle = tokio::spawn(async move {
-            let filter = home.dispatch_filter();
-            let mut stream = filter
-                .stream()
-                .await
-                .expect("unable to get dispatch stream");
-            loop {
-                let event = stream.next().await;
-                let event = unwrap_event_stream_item!(event, name, "dispatch");
-                tx.send(event).unwrap();
-            }
-        })
-        .instrument(span);
+        //     let handle = tokio::spawn(async move {
+        //         let filter = home.dispatch_filter();
+        //         let stream = filter.stream_with_meta().await;
 
-        todo!("use new stream_with_meta")
-        // StepHandle { handle, rx }
+        //         let mut stream = match stream {
+        //             Ok(stream) => stream,
+        //             Err(e) => {
+        //                 tracing::error!(
+        //                     network = name.as_str(),
+        //                     home = format!("{:?}", home.address()),
+        //                     event = "dispatch",
+        //                     error = %e,
+        //                     "unable to get dispatch stream",
+        //                 );
+        //                 panic!("unable to get dispatch stream");
+        //             }
+        //         };
+
+        //         loop {
+        //             let event = stream.next().await;
+        //             let (log, meta) = unwrap_event_stream_item!(event, name, "dispatch");
+        //             tx.send(WithMeta { log, meta }).unwrap();
+        //         }
+        //         self
+        //     })
+        //     .instrument(span);
+
+        //     StepHandle { handle, rx }
     }
 
     pub(crate) fn count<T>(
         &self,
-        incoming: mpsc::UnboundedReceiver<Annotated<T>>,
-        count: IntCounter,
-        wallclock_latency: Histogram,
-        timestamp_latency: Histogram,
-    ) -> StepHandle<T>
+        incoming: mpsc::UnboundedReceiver<WithMeta<T>>,
+        metrics: BetweenMetrics,
+    ) -> BetweenHandle<WithMeta<T>>
     where
         T: 'static + Send + Sync,
     {
-        BetweenEvents::new(
-            incoming,
-            count,
-            wallclock_latency,
-            timestamp_latency,
-            self.name.clone(),
-        )
-        .spawn()
+        let network = self.name.clone();
+        BetweenEvents::<WithMeta<T>>::new(incoming, metrics, network).spawn()
     }
-
-    // fn update_stream(&self) -> mpsc::UnboundedReceiver<HomeUpdateFilter> {
-    //     let home = self.home.clone();
-    //     let (tx, rx) = mpsc::unbounded_channel();
-    //     let name = self.name.clone();
-
-    //     tokio::spawn(async move {
-    //         let filter = home.update_filter();
-    //         let mut stream = filter.stream().await.expect("unable to get update stream");
-    //         loop {
-    //             let event = stream.next().await;
-    //             let event = unwrap_event_stream_item!(event, name, "update");
-    //             tx.send(event).unwrap();
-    //         }
-    //     });
-
-    //     rx
-    // }
 }
