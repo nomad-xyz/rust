@@ -2,8 +2,8 @@ use color_eyre::Result;
 use ethers::core::types::H256;
 use nomad_core::db::{DbError, TypedDB, DB};
 use nomad_core::{
-    accumulator::NomadProof, utils, CommittedMessage, Decode, NomadMessage, PersistedTransaction,
-    RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, UpdateMeta,
+    accumulator::NomadProof, utils, CommittedMessage, Decode, NomadMessage, NomadTxStatus,
+    PersistedTransaction, RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, UpdateMeta,
 };
 use tokio::time::sleep;
 use tracing::{debug, info};
@@ -418,8 +418,20 @@ impl NomadDB {
     }
 
     /// Iterate over all PersistedTransaction
-    pub fn persisted_transaction_iterator(&self) -> PrefixIterator<PersistedTransaction> {
+    fn persisted_transaction_iterator(&self) -> PrefixIterator<PersistedTransaction> {
         self.prefix_iterator(PERSISTED_TRANSACTION)
+    }
+
+    /// Fetch PersistedTransaction by statuses, up to max items
+    pub fn persisted_transactions(
+        &self,
+        statuses: Vec<NomadTxStatus>,
+        max: usize,
+    ) -> Vec<PersistedTransaction> {
+        self.persisted_transaction_iterator()
+            .filter(|tx| statuses.contains(&tx.status))
+            .take(max)
+            .collect::<Vec<_>>()
     }
 }
 
