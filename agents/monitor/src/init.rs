@@ -14,7 +14,7 @@ use crate::{
     between::{BetweenEvents, BetweenHandle},
     domain::Domain,
     metrics::Metrics,
-    ArcProvider, StepHandle,
+    ArcProvider, ProcessStep, StepHandle,
 };
 
 pub(crate) fn config_from_file() -> Option<NomadConfig> {
@@ -105,7 +105,9 @@ impl Monitor {
         self.metrics.clone().run_http_server()
     }
 
-    pub(crate) fn run_between_dispatch(&self) -> HashMap<&str, BetweenHandle<DispatchFilter>> {
+    pub(crate) fn run_between_dispatch(
+        &self,
+    ) -> HashMap<&str, BetweenHandle<WithMeta<DispatchFilter>>> {
         self.networks
             .iter()
             .map(|(chain, domain)| {
@@ -118,15 +120,12 @@ impl Monitor {
                     event,
                     "starting dispatch counter",
                 );
-                todo!()
+                let metrics = self.metrics.between_metrics(chain, event, &emitter, None);
 
-                // let stream = domain.dispatch_stream();
+                let producer = domain.dispatch_producer();
+                let between = domain.count(producer.rx, metrics, event);
 
-                // let metrics = self.metrics.between_metrics(chain, event, &emitter, None);
-
-                // let task = domain.count(stream.rx, metrics);
-
-                // (chain.as_str(), task)
+                (chain.as_str(), between)
             })
             .collect()
     }

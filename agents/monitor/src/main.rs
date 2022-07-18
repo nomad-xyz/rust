@@ -31,7 +31,7 @@ async fn main() -> eyre::Result<()> {
         let dispatch_trackers = monitor.run_between_dispatch();
 
         // should cause it to run until crashes occur
-        dispatch_trackers.into_iter().next().unwrap().1.await;
+        dispatch_trackers.into_iter().next().unwrap().1.handle.await;
     }
     Ok(())
 }
