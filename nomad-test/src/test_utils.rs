@@ -70,7 +70,7 @@ where
 
 pub fn clear_env_vars() {
     let env_vars = env::vars();
-    for (key, _) in env_vars.into_iter() {
+    for (key, _) in env_vars {
         env::remove_var(key);
     }
 }
