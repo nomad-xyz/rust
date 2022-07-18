@@ -17,7 +17,7 @@ use tracing::{info_span, Instrument};
 
 use crate::{
     annotate::WithMeta,
-    between::{BetweenEvents, BetweenHandle, BetweenMetrics},
+    between::{BetweenEvents, BetweenHandle, BetweenMetrics, BetweenTask},
     init::provider_for,
     producer::{DispatchProducer, DispatchProducerHandle},
     ArcProvider, ProcessStep, Provider, StepHandle,
@@ -99,53 +99,20 @@ impl Domain {
         StepHandle { handle, rx }
     }
 
-    pub(crate) fn dispatch_stream(&self) -> BetweenHandle<WithMeta<DispatchFilter>> {
-        todo!()
-        //     let home = self.home.clone();
-        //     let (tx, rx) = mpsc::unbounded_channel();
-        //     let name = self.name.clone();
-
-        //     let span = info_span!("dispatch stream convert loop", name = name.as_str());
-
-        //     let handle = tokio::spawn(async move {
-        //         let filter = home.dispatch_filter();
-        //         let stream = filter.stream_with_meta().await;
-
-        //         let mut stream = match stream {
-        //             Ok(stream) => stream,
-        //             Err(e) => {
-        //                 tracing::error!(
-        //                     network = name.as_str(),
-        //                     home = format!("{:?}", home.address()),
-        //                     event = "dispatch",
-        //                     error = %e,
-        //                     "unable to get dispatch stream",
-        //                 );
-        //                 panic!("unable to get dispatch stream");
-        //             }
-        //         };
-
-        //         loop {
-        //             let event = stream.next().await;
-        //             let (log, meta) = unwrap_event_stream_item!(event, name, "dispatch");
-        //             tx.send(WithMeta { log, meta }).unwrap();
-        //         }
-        //         self
-        //     })
-        //     .instrument(span);
-
-        //     StepHandle { handle, rx }
-    }
-
     pub(crate) fn count<T>(
         &self,
         incoming: mpsc::UnboundedReceiver<WithMeta<T>>,
         metrics: BetweenMetrics,
+        event: impl AsRef<str>,
     ) -> BetweenHandle<WithMeta<T>>
     where
         T: 'static + Send + Sync + std::fmt::Debug,
     {
         let network = self.network.clone();
-        BetweenEvents::<WithMeta<T>>::new(incoming, metrics, network).spawn()
+        let (tx, rx) = mpsc::unbounded_channel();
+        let handle =
+            BetweenEvents::<WithMeta<T>>::new(incoming, metrics, network, event, tx).spawn();
+
+        StepHandle { handle, rx }
     }
 }

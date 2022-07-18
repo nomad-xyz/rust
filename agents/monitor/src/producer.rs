@@ -28,10 +28,11 @@ impl DispatchProducer {
     }
 }
 
-pub(crate) type DispatchProducerHandle = Restartable<DispatchProducer>;
+pub(crate) type DispatchProducerTask = Restartable<DispatchProducer>;
+pub(crate) type DispatchProducerHandle = StepHandle<DispatchProducer, DispatchFilter>;
 
 impl ProcessStep<WithMeta<DispatchFilter>> for DispatchProducer {
-    fn spawn(self) -> DispatchProducerHandle {
+    fn spawn(self) -> DispatchProducerTask {
         let span = info_span!(
             "DispatchProducer",
             home = format!("{:?}", self.home.address()),
@@ -52,8 +53,7 @@ impl ProcessStep<WithMeta<DispatchFilter>> for DispatchProducer {
                         .from_block(from)
                         .to_block(to)
                         .query_with_meta()
-                        .await
-                        .map_err(|e| eyre::eyre!(e));
+                        .await;
 
                     task_bail_if!(res.is_err(), self, res.unwrap_err());
 
