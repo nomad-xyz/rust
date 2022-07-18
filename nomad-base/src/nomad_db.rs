@@ -379,14 +379,14 @@ impl NomadDB {
     // TODO(matthew): Figure out how we're actually storing / retrieving these
 
     /// Store PersistedTransaction counter
-    pub fn store_persisted_transaction_counter(&self, counter: u64) -> Result<(), DbError> {
+    fn store_persisted_transaction_counter(&self, counter: u64) -> Result<(), DbError> {
         debug!("storing transaction counter in DB {:?}", counter);
 
         self.store_encodable("", PERSISTED_TRANSACTION_COUNTER, &counter)
     }
 
     /// Retrieve PersistedTransaction counter
-    pub fn retrieve_persisted_transaction_counter(&self) -> Result<Option<u64>, DbError> {
+    fn retrieve_persisted_transaction_counter(&self) -> Result<Option<u64>, DbError> {
         self.retrieve_decodable("", PERSISTED_TRANSACTION_COUNTER)
     }
 
