@@ -1,9 +1,12 @@
 use crate::NomadDB;
 use color_eyre::Result;
-use nomad_core::{NomadTxStatus, PersistedTransaction};
-use std::time::Duration;
+use nomad_core::{ChainCommunicationError, NomadTxStatus, PersistedTransaction, TxOutcome};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 use tokio::{
-    sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
+    sync::{
+        mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
+        oneshot, Mutex,
+    },
     task::JoinHandle,
     time::sleep,
 };
@@ -16,10 +19,20 @@ const SEND_TASK_LOOP_SLEEP_MS: u64 = 100;
 #[derive(Debug)]
 pub struct TxSender {
     db: NomadDB,
-    in_sender: UnboundedSender<PersistedTransaction>,
-    in_receiver: Option<UnboundedReceiver<PersistedTransaction>>,
+    in_sender: UnboundedSender<(
+        PersistedTransaction,
+        oneshot::Sender<Result<TxOutcome, ChainCommunicationError>>,
+    )>,
+    in_receiver: Option<
+        UnboundedReceiver<(
+            PersistedTransaction,
+            oneshot::Sender<Result<TxOutcome, ChainCommunicationError>>,
+        )>,
+    >,
     out_sender: UnboundedSender<PersistedTransaction>,
     out_receiver: Option<UnboundedReceiver<PersistedTransaction>>,
+    outcome_senders:
+        Arc<Mutex<HashMap<u64, oneshot::Sender<Result<TxOutcome, ChainCommunicationError>>>>>,
 }
 
 impl TxSender {
@@ -33,6 +46,7 @@ impl TxSender {
             in_receiver: Some(in_receiver),
             out_sender,
             out_receiver: Some(out_receiver),
+            outcome_senders: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -42,7 +56,12 @@ impl TxSender {
     }
 
     /// Clone in_sender for external use
-    pub fn in_sender(&self) -> UnboundedSender<PersistedTransaction> {
+    pub fn in_sender(
+        &self,
+    ) -> UnboundedSender<(
+        PersistedTransaction,
+        oneshot::Sender<Result<TxOutcome, ChainCommunicationError>>,
+    )> {
         self.in_sender.clone()
     }
 
@@ -51,12 +70,14 @@ impl TxSender {
         let mut in_receiver = self.in_receiver.take().unwrap();
         let out_sender = self.out_sender.clone();
         let db = self.db.clone();
+        let outcome_senders = self.outcome_senders.clone();
         Some(tokio::spawn(async move {
             loop {
                 // Accept and store new txs
-                if let Ok(tx) = in_receiver.try_recv() {
+                if let Ok((tx, outcome_sender)) = in_receiver.try_recv() {
                     assert_eq!(tx.status, NomadTxStatus::NotSent);
-                    db.store_persisted_transaction(tx)?;
+                    let counter = db.store_persisted_transaction(tx)?;
+                    outcome_senders.lock().await.insert(counter, outcome_sender);
                 }
                 for mut tx in db.persisted_transactions(
                     vec![NomadTxStatus::NotSent, NomadTxStatus::Successful],
@@ -71,6 +92,14 @@ impl TxSender {
                         }
                         // Finalize successful txs
                         NomadTxStatus::Successful => {
+                            let outcome_sender = outcome_senders
+                                .lock()
+                                .await
+                                .remove(&tx.counter)
+                                .expect("!outcome_sender (should never happen)");
+                            outcome_sender
+                                .send(Ok(TxOutcome::Dummy))
+                                .expect("!oneshot receiver (should never happen)");
                             tx.status = NomadTxStatus::Finalized;
                             db.update_persisted_transaction(&tx)?;
                         }
