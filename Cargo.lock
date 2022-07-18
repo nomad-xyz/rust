@@ -1911,7 +1911,7 @@ dependencies = [
  "nomad-test",
  "nomad-types",
  "nomad-xyz-configuration",
- "prometheus",
+ "prometheus 0.12.0",
  "rand",
  "serde 1.0.140",
  "serde_json",
@@ -2053,6 +2053,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b823e83b2affd8f40a9ee8c29dbc56404c1e34cd2710921f2801e2cf29527afa"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "matchers"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f099785f7595cc4b4553a174ce30dd7589ef93391ff414dbb67f62392b9e0ce1"
+dependencies = [
+ "regex-automata",
 ]
 
 [[package]]
@@ -2267,6 +2276,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "monitor"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "ethers",
+ "eyre",
+ "nomad-core",
+ "nomad-ethereum",
+ "nomad-xyz-configuration",
+ "prometheus 0.13.1",
+ "tokio",
+ "tracing",
+ "tracing-subscriber 0.2.25",
+ "warp",
+]
+
+[[package]]
 name = "multipart"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2340,7 +2366,7 @@ dependencies = [
  "nomad-xyz-configuration",
  "once_cell",
  "opentelemetry",
- "prometheus",
+ "prometheus 0.12.0",
  "rand",
  "rocksdb",
  "rusoto_core",
@@ -2392,7 +2418,7 @@ dependencies = [
  "nomad-xyz-configuration",
  "num",
  "once_cell",
- "prometheus",
+ "prometheus 0.12.0",
  "rocksdb",
  "rusoto_core",
  "rusoto_credential",
@@ -2427,7 +2453,7 @@ dependencies = [
  "nomad-xyz-configuration",
  "num",
  "once_cell",
- "prometheus",
+ "prometheus 0.12.0",
  "reqwest",
  "rocksdb",
  "serde 1.0.140",
@@ -2454,7 +2480,7 @@ dependencies = [
  "nomad-core",
  "nomad-ethereum",
  "nomad-xyz-configuration",
- "prometheus",
+ "prometheus 0.12.0",
  "rand",
  "rocksdb",
  "serde 1.0.140",
@@ -2472,7 +2498,7 @@ dependencies = [
  "color-eyre",
  "ethers",
  "hex",
- "prometheus",
+ "prometheus 0.12.0",
  "serde 1.0.140",
  "serde_json",
  "thiserror",
@@ -3021,7 +3047,7 @@ dependencies = [
  "nomad-test",
  "nomad-types",
  "nomad-xyz-configuration",
- "prometheus",
+ "prometheus 0.12.0",
  "rocksdb",
  "rusoto_core",
  "rusoto_s3",
@@ -3046,6 +3072,21 @@ dependencies = [
  "lazy_static",
  "memchr",
  "parking_lot 0.11.2",
+ "protobuf",
+ "thiserror",
+]
+
+[[package]]
+name = "prometheus"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cface98dfa6d645ea4c789839f176e4b072265d085bfcc48eaa8d137f58d3c39"
+dependencies = [
+ "cfg-if 1.0.0",
+ "fnv",
+ "lazy_static",
+ "memchr",
+ "parking_lot 0.12.1",
  "protobuf",
  "thiserror",
 ]
@@ -3170,6 +3211,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "regex-automata"
+version = "0.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c230d73fb8d8c1b9c0b3135c5142a8acee3a0558fb8db5cf1cb65f8d7862132"
+dependencies = [
+ "regex-syntax",
+]
+
+[[package]]
 name = "regex-syntax"
 version = "0.6.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3191,7 +3241,7 @@ dependencies = [
  "nomad-core",
  "nomad-test",
  "nomad-xyz-configuration",
- "prometheus",
+ "prometheus 0.12.0",
  "serde 1.0.140",
  "serde_json",
  "serial_test",
@@ -4351,9 +4401,20 @@ version = "0.2.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e0d2eaa99c3c2e41547cfa109e910a68ea03823cccad4a0525dcbc9b01e8c71"
 dependencies = [
+ "ansi_term",
+ "chrono",
+ "lazy_static",
+ "matchers",
+ "regex",
+ "serde 1.0.140",
+ "serde_json",
  "sharded-slab",
+ "smallvec",
  "thread_local",
+ "tracing",
  "tracing-core",
+ "tracing-log",
+ "tracing-serde",
 ]
 
 [[package]]
@@ -4519,7 +4580,7 @@ dependencies = [
  "nomad-ethereum",
  "nomad-test",
  "nomad-xyz-configuration",
- "prometheus",
+ "prometheus 0.12.0",
  "rocksdb",
  "serde 1.0.140",
  "serde_json",
@@ -4747,7 +4808,7 @@ dependencies = [
  "nomad-ethereum",
  "nomad-test",
  "nomad-xyz-configuration",
- "prometheus",
+ "prometheus 0.12.0",
  "rocksdb",
  "serde 1.0.140",
  "serde_json",

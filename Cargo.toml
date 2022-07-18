@@ -15,6 +15,7 @@ members = [
     "agents/relayer",
     "agents/watcher",
     "agents/processor",
+    "agents/monitor",
     "tools/kms-cli",
     "tools/nomad-cli",
     "tools/balance-exporter",
