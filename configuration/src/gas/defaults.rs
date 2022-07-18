@@ -7,7 +7,7 @@ pub const EVM_DEFAULT: NomadGasConfig = NomadGasConfig {
     core: CoreGasConfig {
         home: HomeGasLimits {
             update: HomeUpdateGasLimit {
-                per_message: 2_000,
+                per_message: 10_000,
                 base: 100_000,
             },
             improper_update: HomeUpdateGasLimit {
