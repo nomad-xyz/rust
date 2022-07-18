@@ -19,6 +19,7 @@ use crate::{
     annotate::WithMeta,
     between::{BetweenEvents, BetweenHandle, BetweenMetrics},
     init::provider_for,
+    producer::{DispatchProducer, DispatchProducerHandle},
     ArcProvider, ProcessStep, Provider, StepHandle,
 };
 
@@ -37,7 +38,7 @@ macro_rules! unwrap_event_stream_item {
 
 #[derive(Debug)]
 pub(crate) struct Domain {
-    pub(crate) name: String,
+    pub(crate) network: String,
     pub(crate) provider: ArcProvider,
     pub(crate) home: Home<Provider>,
     pub(crate) replicas: HashMap<String, Replica<Provider>>,
@@ -65,7 +66,7 @@ impl Domain {
             .collect();
 
         Ok(Domain {
-            name,
+            network: name,
             provider,
             home,
             replicas,
@@ -73,7 +74,7 @@ impl Domain {
     }
 
     pub(crate) fn name(&self) -> &str {
-        self.name.as_ref()
+        self.network.as_ref()
     }
 
     pub(crate) fn provider(&self) -> &TimeLag<EthersProvider<Http>> {
@@ -88,22 +89,14 @@ impl Domain {
         &self.replicas
     }
 
-    pub(crate) fn update_filter(&self) -> Event<Provider, HomeUpdateFilter> {
-        self.home.update_filter()
-    }
+    pub(crate) fn dispatch_producer(
+        &self,
+    ) -> StepHandle<DispatchProducer, WithMeta<DispatchFilter>> {
+        let (tx, rx) = mpsc::unbounded_channel();
 
-    pub(crate) fn relay_filters(&self) -> HashMap<&str, Event<Provider, ReplicaUpdateFilter>> {
-        self.replicas
-            .iter()
-            .map(|(k, v)| (k.as_str(), v.update_filter()))
-            .collect()
-    }
+        let handle = DispatchProducer::new(self.home.clone(), self.network.clone(), tx).spawn();
 
-    pub(crate) fn process_filters(&self) -> HashMap<&str, Event<Provider, ProcessFilter>> {
-        self.replicas
-            .iter()
-            .map(|(k, v)| (k.as_str(), v.process_filter()))
-            .collect()
+        StepHandle { handle, rx }
     }
 
     pub(crate) fn dispatch_stream(&self) -> BetweenHandle<WithMeta<DispatchFilter>> {
@@ -150,9 +143,9 @@ impl Domain {
         metrics: BetweenMetrics,
     ) -> BetweenHandle<WithMeta<T>>
     where
-        T: 'static + Send + Sync,
+        T: 'static + Send + Sync + std::fmt::Debug,
     {
-        let network = self.name.clone();
+        let network = self.network.clone();
         BetweenEvents::<WithMeta<T>>::new(incoming, metrics, network).spawn()
     }
 }
