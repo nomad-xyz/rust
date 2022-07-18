@@ -36,10 +36,12 @@ pub enum NomadMethod {
 pub enum NomadTxStatus {
     /// NotSent
     NotSent,
-    /// Dummy
-    Dummy, // TODO(matthew):
-    /// Also Dummy
-    Dummy2,
+    /// Pending
+    Pending,
+    /// Successful
+    Successful,
+    /// Final
+    Finalized,
 }
 
 // TODO(matthew): Move me
@@ -47,8 +49,7 @@ pub enum NomadTxStatus {
 impl From<ChainCommunicationError> for NomadTxStatus {
     fn from(error: ChainCommunicationError) -> Self {
         match error {
-            ChainCommunicationError::NomadError(_) => NomadTxStatus::Dummy,
-            _ => unimplemented!(), // TODO:
+            _ => unimplemented!(), // TODO(matthew):
         }
     }
 }
@@ -58,8 +59,7 @@ impl From<ChainCommunicationError> for NomadTxStatus {
 impl From<TxOutcome> for NomadTxStatus {
     fn from(outcome: TxOutcome) -> Self {
         match outcome {
-            TxOutcome::Dummy => NomadTxStatus::Dummy,
-            _ => unimplemented!(), // TODO:
+            _ => unimplemented!(), // TODO(matthew):
         }
     }
 }
