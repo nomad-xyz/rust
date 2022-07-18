@@ -9,6 +9,7 @@ pub(crate) mod annotate;
 pub(crate) mod between;
 pub(crate) mod domain;
 pub(crate) mod init;
+pub(crate) mod macros;
 pub(crate) mod metrics;
 pub(crate) mod producer;
 
@@ -35,20 +36,23 @@ async fn main() -> eyre::Result<()> {
     Ok(())
 }
 
+pub type Restartable<Task> = Instrumented<JoinHandle<(Task, eyre::Report)>>;
+
 pub(crate) struct StepHandle<Task, Produces> {
-    handle: Instrumented<JoinHandle<Task>>,
+    handle: Restartable<Task>,
     rx: UnboundedReceiver<Produces>,
 }
 
-pub(crate) trait ProcessStep<T> {
-    fn spawn(self) -> Instrumented<JoinHandle<Self>>
+pub(crate) trait ProcessStep<T>
+where
+    T: 'static + Send + Sync + std::fmt::Debug,
+{
+    fn spawn(self) -> Restartable<Self>
     where
-        T: 'static + Send + Sync,
         Self: 'static + Send + Sync + Sized;
 
     fn forever(self) -> JoinHandle<()>
     where
-        T: 'static + Send + Sync,
         Self: 'static + Send + Sync + Sized,
     {
         tokio::spawn(async move {
@@ -57,13 +61,15 @@ pub(crate) trait ProcessStep<T> {
                 let result = handle.await;
 
                 let again = match result {
-                    Ok(handle) => handle,
+                    Ok((handle, report)) => {
+                        tracing::warn!(error = %report, "Restarting task");
+                        handle
+                    }
                     Err(e) => {
                         tracing::error!(err = %e, "JoinError in forever");
                         panic!("JoinError in forever");
                     }
                 };
-                tracing::warn!("restarting task");
                 handle = again.spawn()
             }
         })
@@ -72,15 +78,18 @@ pub(crate) trait ProcessStep<T> {
 
 /// A process step that just drains its input and drops everything
 /// Its [`StepHandle`] will never produce values.
-pub(crate) struct Terminal<T> {
+pub(crate) struct Terminal<T>
+where
+    T: std::fmt::Debug,
+{
     rx: UnboundedReceiver<WithMeta<T>>,
 }
 
-pub(crate) type TerminalHandle<T> = Instrumented<JoinHandle<Terminal<T>>>;
+pub(crate) type TerminalHandle<T> = Restartable<Terminal<T>>;
 
 impl<T> ProcessStep<T> for Terminal<T>
 where
-    T: 'static + Send + Sync,
+    T: 'static + Send + Sync + std::fmt::Debug,
 {
     fn spawn(mut self) -> TerminalHandle<T> {
         let span = debug_span!("Terminal Handler");
@@ -88,10 +97,9 @@ where
             loop {
                 if self.rx.recv().await.is_none() {
                     tracing::info!("Upstream broke, shutting down");
-                    break;
+                    return (self, eyre::eyre!(""));
                 }
             }
-            self
         })
         .instrument(span)
     }

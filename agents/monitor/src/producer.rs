@@ -1,4 +1,4 @@
-use crate::{annotate::WithMeta, ProcessStep, StepHandle};
+use crate::{annotate::WithMeta, task_bail_if, ProcessStep, Restartable, StepHandle};
 
 use ethers::prelude::Middleware;
 use nomad_ethereum::bindings::{
@@ -9,16 +9,26 @@ use tokio::{
     sync::mpsc::{UnboundedReceiver, UnboundedSender},
     task::JoinHandle,
 };
-use tracing::{info_span, instrument::Instrumented, Instrument};
+use tracing::{info_span, Instrument};
 
 #[derive(Debug)]
-pub struct DispatchProducer {
+pub(crate) struct DispatchProducer {
     home: Home<crate::Provider>,
     network: String,
     tx: UnboundedSender<WithMeta<DispatchFilter>>,
 }
 
-pub(crate) type DispatchProducerHandle = Instrumented<JoinHandle<DispatchProducer>>;
+impl DispatchProducer {
+    pub(crate) fn new(
+        home: Home<crate::Provider>,
+        network: String,
+        tx: UnboundedSender<WithMeta<DispatchFilter>>,
+    ) -> Self {
+        Self { home, network, tx }
+    }
+}
+
+pub(crate) type DispatchProducerHandle = Restartable<DispatchProducer>;
 
 impl ProcessStep<WithMeta<DispatchFilter>> for DispatchProducer {
     fn spawn(self) -> DispatchProducerHandle {
@@ -32,10 +42,32 @@ impl ProcessStep<WithMeta<DispatchFilter>> for DispatchProducer {
         tokio::spawn(async move {
             let provider = self.home.client();
             let height = provider.get_block_number().await.unwrap();
+            let mut from = height - 10;
+            let mut to = height - 5;
             loop {
-                todo!()
+                if from < to {
+                    let res = self
+                        .home
+                        .dispatch_filter()
+                        .from_block(from)
+                        .to_block(to)
+                        .query_with_meta()
+                        .await
+                        .map_err(|e| eyre::eyre!(e));
+
+                    task_bail_if!(res.is_err(), self, res.unwrap_err());
+
+                    for event in res.unwrap().into_iter() {
+                        let res = self.tx.send(event.into());
+                        task_bail_if!(res.is_err(), self, res.unwrap_err());
+                    }
+                }
+                let tip = provider.get_block_number().await.unwrap() - 5;
+                from = to;
+                to = std::cmp::min(to, tip);
+
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
             }
-            self
         })
         .instrument(span)
     }
