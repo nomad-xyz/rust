@@ -5,6 +5,7 @@ use std::time::Duration;
 use tokio::{
     sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
     task::JoinHandle,
+    time::sleep,
 };
 
 const MAX_TRANSACTIONS_PER_DB_CALL: usize = 10;
@@ -53,7 +54,7 @@ impl TxSender {
         Some(tokio::spawn(async move {
             loop {
                 // Accept and store new txs
-                if let Ok(mut tx) = in_receiver.try_recv() {
+                if let Ok(tx) = in_receiver.try_recv() {
                     assert_eq!(tx.status, NomadTxStatus::NotSent);
                     db.store_persisted_transaction(tx)?;
                 }
@@ -76,7 +77,7 @@ impl TxSender {
                         _ => unreachable!(),
                     }
                 }
-                tokio::time::sleep(Duration::from_millis(SEND_TASK_LOOP_SLEEP_MS)).await;
+                sleep(Duration::from_millis(SEND_TASK_LOOP_SLEEP_MS)).await;
             }
         }))
     }

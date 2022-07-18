@@ -47,20 +47,16 @@ pub enum NomadTxStatus {
 // TODO(matthew): Move me
 /// Convert between ChainCommunicationError and NomadTxStatus
 impl From<ChainCommunicationError> for NomadTxStatus {
-    fn from(error: ChainCommunicationError) -> Self {
-        match error {
-            _ => unimplemented!(), // TODO(matthew):
-        }
+    fn from(_error: ChainCommunicationError) -> Self {
+        unimplemented!() // TODO(matthew):
     }
 }
 
 // TODO(matthew): Move me
 /// Convert between TxOutcome and NomadTxStatus
 impl From<TxOutcome> for NomadTxStatus {
-    fn from(outcome: TxOutcome) -> Self {
-        match outcome {
-            _ => unimplemented!(), // TODO(matthew):
-        }
+    fn from(_outcome: TxOutcome) -> Self {
+        unimplemented!() // TODO(matthew):
     }
 }
 
