@@ -1,10 +1,14 @@
 use crate::NomadDB;
 use color_eyre::Result;
-use nomad_core::PersistedTransaction;
+use nomad_core::{NomadTxStatus, PersistedTransaction};
+use std::time::Duration;
 use tokio::{
     sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
     task::JoinHandle,
 };
+
+const MAX_TRANSACTIONS_PER_DB_CALL: usize = 10;
+const SEND_TASK_LOOP_SLEEP_MS: u64 = 100;
 
 /// TxSender that receives outgoing transactions, polls for status and forwards to
 /// concrete contract impl to translate and submit transactions
@@ -44,13 +48,35 @@ impl TxSender {
     /// Spawn run loop task
     pub fn send_task(&mut self) -> Option<JoinHandle<Result<()>>> {
         let mut in_receiver = self.in_receiver.take().unwrap();
-        let _out_sender = &self.out_sender;
-        let _db = &self.db;
+        let out_sender = self.out_sender.clone();
+        let db = self.db.clone();
         Some(tokio::spawn(async move {
             loop {
-                if let Ok(_tx) = in_receiver.try_recv() {
-                    unimplemented!()
+                // Accept and store new txs
+                if let Ok(mut tx) = in_receiver.try_recv() {
+                    assert_eq!(tx.status, NomadTxStatus::NotSent);
+                    db.store_persisted_transaction(tx)?;
                 }
+                for mut tx in db.persisted_transactions(
+                    vec![NomadTxStatus::NotSent, NomadTxStatus::Successful],
+                    MAX_TRANSACTIONS_PER_DB_CALL,
+                ) {
+                    match tx.status {
+                        // Send out new txs, mark pending
+                        NomadTxStatus::NotSent => {
+                            out_sender.send(tx.clone())?;
+                            tx.status = NomadTxStatus::Pending;
+                            db.update_persisted_transaction(&tx)?;
+                        }
+                        // Finalize successful txs
+                        NomadTxStatus::Successful => {
+                            tx.status = NomadTxStatus::Finalized;
+                            db.update_persisted_transaction(&tx)?;
+                        }
+                        _ => unreachable!(),
+                    }
+                }
+                tokio::time::sleep(Duration::from_millis(SEND_TASK_LOOP_SLEEP_MS)).await;
             }
         }))
     }
