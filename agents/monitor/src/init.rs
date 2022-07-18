@@ -5,10 +5,17 @@ use ethers::{
     prelude::{Http, Provider as EthersProvider},
 };
 
+use nomad_ethereum::bindings::home::DispatchFilter;
 use nomad_xyz_configuration::{get_builtin, NomadConfig};
 use tokio::task::JoinHandle;
 
-use crate::{domain::Domain, metrics::Metrics, ArcProvider};
+use crate::{
+    annotate::WithMeta,
+    between::{BetweenEvents, BetweenHandle},
+    domain::Domain,
+    metrics::Metrics,
+    ArcProvider, StepHandle,
+};
 
 pub(crate) fn config_from_file() -> Option<NomadConfig> {
     std::env::var("CONFIG_PATH")
@@ -96,5 +103,31 @@ impl Monitor {
 
     pub(crate) fn run_http_server(&self) -> JoinHandle<()> {
         self.metrics.clone().run_http_server()
+    }
+
+    pub(crate) fn run_between_dispatch(&self) -> HashMap<&str, BetweenHandle<DispatchFilter>> {
+        self.networks
+            .iter()
+            .map(|(chain, domain)| {
+                let emitter = format!("{:?}", domain.home().address());
+                let event = "dispatch";
+
+                tracing::info!(
+                    network = chain.as_str(),
+                    home = emitter,
+                    event,
+                    "starting dispatch counter",
+                );
+                todo!()
+
+                // let stream = domain.dispatch_stream();
+
+                // let metrics = self.metrics.between_metrics(chain, event, &emitter, None);
+
+                // let task = domain.count(stream.rx, metrics);
+
+                // (chain.as_str(), task)
+            })
+            .collect()
     }
 }

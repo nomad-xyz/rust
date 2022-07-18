@@ -1,15 +1,20 @@
-use tracing::{info_span, Instrument};
+use nomad_ethereum::bindings::home::DispatchFilter;
+use tracing::{info_span, instrument::Instrumented, Instrument};
 
-use tokio::sync::mpsc;
+use tokio::{sync::mpsc, task::JoinHandle};
 
-use crate::{annotate::Annotated, ProcessStep, StepHandle};
+use crate::{annotate::WithMeta, ProcessStep, StepHandle};
 
-// Track time between events of the same kind
-pub(crate) struct BetweenEvents<T> {
-    pub(crate) incoming: mpsc::UnboundedReceiver<Annotated<T>>,
+pub(crate) struct BetweenMetrics {
     pub(crate) count: prometheus::IntCounter,
     pub(crate) wallclock_latency: prometheus::Histogram,
     pub(crate) block_latency: prometheus::Histogram,
+}
+
+// Track time between events of the same kind
+pub(crate) struct BetweenEvents<T> {
+    pub(crate) incoming: mpsc::UnboundedReceiver<T>,
+    pub(crate) metrics: BetweenMetrics,
     pub(crate) network: String,
 }
 
@@ -19,34 +24,32 @@ where
     T: 'static,
 {
     pub(crate) fn new(
-        incoming: mpsc::UnboundedReceiver<Annotated<T>>,
-        count: prometheus::IntCounter,
-        wallclock_latency: prometheus::Histogram,
-        block_latency: prometheus::Histogram,
+        incoming: mpsc::UnboundedReceiver<T>,
+        metrics: BetweenMetrics,
         network: String,
     ) -> Self {
         Self {
             incoming,
-            count,
-            wallclock_latency,
-            block_latency,
+            metrics,
             network,
         }
     }
 }
 
-impl<T> ProcessStep<T> for BetweenEvents<T>
+pub(crate) type BetweenHandle<T> = Instrumented<JoinHandle<BetweenEvents<T>>>;
+
+impl<T> ProcessStep<WithMeta<T>> for BetweenEvents<WithMeta<T>>
 where
     T: 'static + Send + Sync,
 {
-    fn spawn(mut self) -> StepHandle<T> {
+    fn spawn(mut self) -> BetweenHandle<WithMeta<T>> {
         let span = info_span!("LatencyMetricsTask", network = self.network.as_str());
 
         let (outgoing, rx) = mpsc::unbounded_channel();
 
-        let handle = tokio::spawn(async move {
+        tokio::spawn(async move {
             let mut last_block_number = 0;
-            let mut wallclock_latency = self.wallclock_latency.start_timer();
+            let mut wallclock_latency = self.metrics.wallclock_latency.start_timer();
 
             loop {
                 // get the next event from the channel
@@ -62,11 +65,11 @@ where
                 last_block_number = block_number;
 
                 if event_latency != last_block_number {
-                    self.block_latency.observe(event_latency as f64);
+                    self.metrics.block_latency.observe(event_latency as f64);
                 }
 
                 // update our metrics
-                self.count.inc();
+                self.metrics.count.inc();
                 wallclock_latency.observe_duration();
 
                 // send the next event out
@@ -75,11 +78,10 @@ where
                 }
 
                 // restart the timer
-                wallclock_latency = self.wallclock_latency.start_timer();
+                wallclock_latency = self.metrics.wallclock_latency.start_timer();
             }
+            self
         })
-        .instrument(span);
-
-        StepHandle { handle, rx }
+        .instrument(span)
     }
 }

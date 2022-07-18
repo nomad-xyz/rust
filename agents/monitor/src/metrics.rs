@@ -1,8 +1,10 @@
 use std::sync::Arc;
 
-use prometheus::{Encoder, HistogramOpts, HistogramVec, IntCounterVec};
+use prometheus::{Encoder, Histogram, HistogramOpts, HistogramVec, IntCounter, IntCounterVec};
 use tokio::task::JoinHandle;
 use warp::Filter;
+
+use crate::between::BetweenMetrics;
 
 #[derive(Debug)]
 pub(crate) struct Metrics {
@@ -105,5 +107,67 @@ impl Metrics {
             .run(([0, 0, 0, 0], port))
             .await;
         })
+    }
+
+    pub(crate) fn event_counter(
+        &self,
+        chain: &str,
+        event: &str,
+        emitter: &str,
+        replica_of: Option<&str>,
+    ) -> IntCounter {
+        self.counts.with_label_values(&[
+            chain.as_ref(),
+            event.as_ref(),
+            emitter.as_ref(),
+            replica_of.unwrap_or("n/a"),
+        ])
+    }
+
+    pub(crate) fn wallclock_latency(
+        &self,
+        chain: &str,
+        event: &str,
+        emitter: &str,
+        replica_of: Option<&str>,
+    ) -> Histogram {
+        // &["chain", "event", "emitter", "replica_of"],
+
+        self.wallclock_times.with_label_values(&[
+            chain.as_ref(),
+            event.as_ref(),
+            emitter.as_ref(),
+            replica_of.unwrap_or("n/a"),
+        ])
+    }
+
+    pub(crate) fn block_latency(
+        &self,
+        chain: &str,
+        event: &str,
+        emitter: &str,
+        replica_of: Option<&str>,
+    ) -> Histogram {
+        //            &["chain", "event", "emitter", "replica_of"],
+        self.event_blocks.with_label_values(&[
+            chain.as_ref(),
+            event.as_ref(),
+            emitter.as_ref(),
+            replica_of.unwrap_or("n/a"),
+        ])
+    }
+
+    pub(crate) fn between_metrics(
+        &self,
+        chain: &str,
+        event: &str,
+        emitter: &str,
+        replica_of: Option<&str>,
+    ) -> BetweenMetrics {
+        BetweenMetrics {
+            count: self.event_counter(chain, event, emitter, replica_of),
+            wallclock_latency: self.wallclock_latency(chain, event, emitter, replica_of),
+            block_latency: self.block_latency(chain, event, emitter, replica_of),
+        }
     }
 }
