@@ -11,6 +11,9 @@ use tokio::{
     time::sleep,
 };
 
+/// Tokio oneshot channel for returning tx results to sender handle
+pub type TxResultChannel = oneshot::Sender<Result<TxOutcome, ChainCommunicationError>>;
+
 const MAX_TRANSACTIONS_PER_DB_CALL: usize = 10;
 const SEND_TASK_LOOP_SLEEP_MS: u64 = 100;
 
@@ -19,20 +22,11 @@ const SEND_TASK_LOOP_SLEEP_MS: u64 = 100;
 #[derive(Debug)]
 pub struct TxSender {
     db: NomadDB,
-    in_sender: UnboundedSender<(
-        PersistedTransaction,
-        oneshot::Sender<Result<TxOutcome, ChainCommunicationError>>,
-    )>,
-    in_receiver: Option<
-        UnboundedReceiver<(
-            PersistedTransaction,
-            oneshot::Sender<Result<TxOutcome, ChainCommunicationError>>,
-        )>,
-    >,
+    in_sender: UnboundedSender<(PersistedTransaction, TxResultChannel)>,
+    in_receiver: Option<UnboundedReceiver<(PersistedTransaction, TxResultChannel)>>,
     out_sender: UnboundedSender<PersistedTransaction>,
     out_receiver: Option<UnboundedReceiver<PersistedTransaction>>,
-    outcome_senders:
-        Arc<Mutex<HashMap<u64, oneshot::Sender<Result<TxOutcome, ChainCommunicationError>>>>>,
+    outcome_senders: Arc<Mutex<HashMap<u64, TxResultChannel>>>,
 }
 
 impl TxSender {
@@ -56,12 +50,7 @@ impl TxSender {
     }
 
     /// Clone in_sender for external use
-    pub fn in_sender(
-        &self,
-    ) -> UnboundedSender<(
-        PersistedTransaction,
-        oneshot::Sender<Result<TxOutcome, ChainCommunicationError>>,
-    )> {
+    pub fn in_sender(&self) -> UnboundedSender<(PersistedTransaction, TxResultChannel)> {
         self.in_sender.clone()
     }
 

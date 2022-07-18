@@ -1,24 +1,17 @@
+use crate::TxResultChannel;
 use color_eyre::Result;
 use nomad_core::{ChainCommunicationError, PersistedTransaction, TxOutcome};
-use tokio::sync::{mpsc::UnboundedSender, oneshot};
+use tokio::sync::{mpsc::UnboundedSender};
 
 /// Transaction manager for handling PersistentTransaction
 #[derive(Debug, Clone)]
 pub struct TxSenderHandle {
-    sender: UnboundedSender<(
-        PersistedTransaction,
-        oneshot::Sender<Result<TxOutcome, ChainCommunicationError>>,
-    )>,
+    sender: UnboundedSender<(PersistedTransaction, TxResultChannel)>,
 }
 
 impl TxSenderHandle {
     /// Create a new TxSenderHandle with a sender
-    pub fn new(
-        sender: UnboundedSender<(
-            PersistedTransaction,
-            oneshot::Sender<Result<TxOutcome, ChainCommunicationError>>,
-        )>,
-    ) -> Self {
+    pub fn new(sender: UnboundedSender<(PersistedTransaction, TxResultChannel)>) -> Self {
         Self { sender }
     }
 
