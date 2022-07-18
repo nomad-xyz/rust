@@ -34,6 +34,8 @@ pub enum NomadMethod {
 /// Event representing the final state a transaction
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub enum NomadTxStatus {
+    /// NotSent
+    NotSent,
     /// Dummy
     Dummy, // TODO(matthew):
     /// Also Dummy
@@ -69,8 +71,8 @@ pub struct PersistedTransaction {
     pub method: NomadMethod,
     /// Nonce for ordering
     pub counter: u64,
-    /// TODO(matthew):
-    pub confirm_event: NomadTxStatus,
+    /// Transaction status
+    pub status: NomadTxStatus,
 }
 
 impl PersistedTransaction {
@@ -79,7 +81,7 @@ impl PersistedTransaction {
         PersistedTransaction {
             method,
             counter: 0,
-            confirm_event: NomadTxStatus::Dummy,
+            status: NomadTxStatus::NotSent,
         }
     }
 }
@@ -89,7 +91,7 @@ impl From<NomadMethod> for PersistedTransaction {
         PersistedTransaction {
             method,
             counter: 0,
-            confirm_event: NomadTxStatus::Dummy,
+            status: NomadTxStatus::NotSent,
         }
     }
 }
@@ -131,7 +133,7 @@ impl std::fmt::Display for PersistedTransaction {
         write!(
             f,
             "PersistedTransaction {:?} {:?}",
-            self.method, self.confirm_event,
+            self.method, self.status,
         )
     }
 }
