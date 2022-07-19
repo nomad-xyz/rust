@@ -163,7 +163,7 @@ impl Domain {
 
                 let metrics = metrics.between_metrics(network, event, &emitter, Some(replica_of));
 
-                let between = self.count(producer.rx, metrics, "relay");
+                let between = self.count(producer.rx, metrics, event);
 
                 (replica_of, between)
             })
@@ -192,7 +192,7 @@ impl Domain {
 
                 let metrics = metrics.between_metrics(network, event, &emitter, Some(replica_of));
 
-                let between = self.count(producer.rx, metrics, "relay");
+                let between = self.count(producer.rx, metrics, event);
 
                 (replica_of, between)
             })
