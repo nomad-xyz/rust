@@ -5,16 +5,16 @@ use ethers::{
     prelude::{Http, Provider as EthersProvider},
 };
 
-use nomad_ethereum::bindings::home::DispatchFilter;
+use nomad_ethereum::bindings::{
+    home::{DispatchFilter, UpdateFilter},
+    replica::{ProcessFilter, UpdateFilter as RelayFilter},
+};
 use nomad_xyz_configuration::{get_builtin, NomadConfig};
 use tokio::task::JoinHandle;
+use tracing_subscriber::EnvFilter;
 
 use crate::{
-    annotate::WithMeta,
-    between::{BetweenEvents, BetweenHandle},
-    domain::Domain,
-    metrics::Metrics,
-    ArcProvider, ProcessStep, StepHandle,
+    annotate::WithMeta, between::BetweenHandle, domain::Domain, metrics::Metrics, ArcProvider,
 };
 
 pub(crate) fn config_from_file() -> Option<NomadConfig> {
@@ -39,6 +39,7 @@ pub(crate) fn config() -> eyre::Result<NomadConfig> {
 pub(crate) fn init_tracing() {
     tracing_subscriber::FmtSubscriber::builder()
         .json()
+        .with_env_filter(EnvFilter::from_default_env())
         .with_level(true)
         .init();
 }
@@ -56,6 +57,7 @@ pub(crate) fn provider_for(config: &NomadConfig, network: &str) -> eyre::Result<
             .get(network)
             .and_then(|set| set.iter().next().cloned())
     });
+
     eyre::ensure!(
         url.is_some(),
         "Missing Url. Please specify by config or env var."
@@ -77,28 +79,23 @@ pub(crate) fn provider_for(config: &NomadConfig, network: &str) -> eyre::Result<
 }
 
 pub(crate) fn monitor() -> eyre::Result<Monitor> {
-    Monitor::from_config(config()?)
+    Monitor::from_config(&config()?)
 }
 
 #[derive(Debug)]
 pub(crate) struct Monitor {
-    config: NomadConfig,
     networks: HashMap<String, Domain>,
     metrics: Arc<Metrics>,
 }
 
 impl Monitor {
-    pub(crate) fn from_config(config: NomadConfig) -> eyre::Result<Self> {
+    pub(crate) fn from_config(config: &NomadConfig) -> eyre::Result<Self> {
         let mut networks = HashMap::new();
         for network in config.networks.iter() {
-            networks.insert(network.to_owned(), Domain::from_config(&config, network)?);
+            networks.insert(network.to_owned(), Domain::from_config(config, network)?);
         }
         let metrics = Metrics::new()?.into();
-        Ok(Monitor {
-            config,
-            networks,
-            metrics,
-        })
+        Ok(Monitor { networks, metrics })
     }
 
     pub(crate) fn run_http_server(&self) -> JoinHandle<()> {
@@ -114,18 +111,54 @@ impl Monitor {
                 let emitter = format!("{:?}", domain.home().address());
                 let event = "dispatch";
 
-                tracing::info!(
-                    network = chain.as_str(),
-                    home = emitter,
-                    event,
-                    "starting dispatch counter",
-                );
                 let metrics = self.metrics.between_metrics(chain, event, &emitter, None);
 
                 let producer = domain.dispatch_producer();
                 let between = domain.count(producer.rx, metrics, event);
 
                 (chain.as_str(), between)
+            })
+            .collect()
+    }
+
+    pub(crate) fn run_between_update(
+        &self,
+    ) -> HashMap<&str, BetweenHandle<WithMeta<UpdateFilter>>> {
+        self.networks
+            .iter()
+            .map(|(chain, domain)| {
+                let emitter = format!("{:?}", domain.home().address());
+                let event = "update";
+
+                let metrics = self.metrics.between_metrics(chain, event, &emitter, None);
+
+                let producer = domain.update_producer();
+                let between = domain.count(producer.rx, metrics, event);
+
+                (chain.as_str(), between)
+            })
+            .collect()
+    }
+
+    pub(crate) fn run_between_relay(
+        &self,
+    ) -> HashMap<&str, HashMap<&str, BetweenHandle<WithMeta<RelayFilter>>>> {
+        self.networks
+            .iter()
+            .map(|(network, domain)| (network.as_str(), domain.count_relays(self.metrics.clone())))
+            .collect()
+    }
+
+    pub(crate) fn run_between_process(
+        &self,
+    ) -> HashMap<&str, HashMap<&str, BetweenHandle<WithMeta<ProcessFilter>>>> {
+        self.networks
+            .iter()
+            .map(|(network, domain)| {
+                (
+                    network.as_str(),
+                    domain.count_processes(self.metrics.clone()),
+                )
             })
             .collect()
     }

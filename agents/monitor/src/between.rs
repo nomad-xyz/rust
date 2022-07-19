@@ -59,6 +59,7 @@ where
 {
     fn spawn(mut self) -> BetweenTask<WithMeta<T>> {
         let span = info_span!(
+            target: "monitor::between",
             "LatencyMetricsTask",
             network = self.network.as_str(),
             event = self.event.as_str()
@@ -75,6 +76,7 @@ where
 
                 let incoming = incoming.unwrap();
                 tracing::debug!(
+                    target: "monitor::between",
                     block_number = %incoming.meta.block_number,
                     event = self.event.as_str(),
                     "received incoming event"
