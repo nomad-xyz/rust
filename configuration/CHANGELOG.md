@@ -2,6 +2,7 @@
 
 ### Unreleased
 
+- add environment variable override for remote config uri
 - feature: pull config files from github pages instead of local versions
 - add environment variable overrides for agent configuration
 - add tests for agent environment variable overrides
