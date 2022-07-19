@@ -22,6 +22,7 @@ use tracing_subscriber::prelude::*;
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     color_eyre::install()?;
+
     // sets the subscriber for this scope only
     let _bootup_guard = tracing_subscriber::FmtSubscriber::builder()
         .json()
@@ -31,7 +32,7 @@ async fn main() -> Result<()> {
     let span = info_span!("UpdaterBootup");
     let _span = span.enter();
 
-    let settings = Settings::new()?;
+    let settings = Settings::new().await?;
     let agent = Updater::from_settings(settings).await?;
 
     drop(_span);

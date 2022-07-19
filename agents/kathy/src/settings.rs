@@ -50,7 +50,8 @@ mod test {
                 }
             );
             assert_eq!(settings.agent.interval, 999);
-        });
+        })
+        .await
     }
 
     async fn test_build_from_env_file(path: &str) {
@@ -58,7 +59,7 @@ mod test {
             let run_env = dotenv::var("RUN_ENV").unwrap();
             let agent_home = dotenv::var("AGENT_HOME_NAME").unwrap();
 
-            let settings = KathySettings::new().unwrap();
+            let settings = KathySettings::new().await.unwrap();
 
             let config = nomad_xyz_configuration::get_builtin(&run_env).unwrap();
 
@@ -108,7 +109,7 @@ mod test {
             std::env::set_var("CONFIG_PATH", "../../fixtures/external_config.json");
             let agent_home = dotenv::var("AGENT_HOME_NAME").unwrap();
 
-            let settings = KathySettings::new().unwrap();
+            let settings = KathySettings::new().await.unwrap();
 
             let config = nomad_xyz_configuration::NomadConfig::from_file(
                 "../../fixtures/external_config.json",

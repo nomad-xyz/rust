@@ -19,7 +19,7 @@ mod test {
             let run_env = dotenv::var("RUN_ENV").unwrap();
             let agent_home = dotenv::var("AGENT_HOME_NAME").unwrap();
 
-            let settings = WatcherSettings::new().unwrap();
+            let settings = WatcherSettings::new().await.unwrap();
 
             let config = nomad_xyz_configuration::get_builtin(&run_env).unwrap();
 

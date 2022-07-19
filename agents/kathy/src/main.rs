@@ -18,6 +18,7 @@ use tracing_subscriber::prelude::*;
 async fn main() -> Result<()> {
     color_eyre::install()?;
 
+    // sets the subscriber for this scope only
     let _bootup_guard = tracing_subscriber::FmtSubscriber::builder()
         .json()
         .with_level(true)
@@ -26,7 +27,7 @@ async fn main() -> Result<()> {
     let span = info_span!("KathyBootup");
     let _span = span.enter();
 
-    let settings = Settings::new()?;
+    let settings = Settings::new().await?;
     let agent = Kathy::from_settings(settings).await?;
 
     drop(_span);
@@ -36,5 +37,6 @@ async fn main() -> Result<()> {
 
     let _ = agent.metrics().run_http_server();
 
-    agent.run_all().await?
+    agent.run_all().await??;
+    Ok(())
 }

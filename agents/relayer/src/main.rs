@@ -21,6 +21,7 @@ use tracing_subscriber::prelude::*;
 async fn main() -> Result<()> {
     color_eyre::install()?;
 
+    // sets the subscriber for this scope only
     let _bootup_guard = tracing_subscriber::FmtSubscriber::builder()
         .json()
         .with_level(true)
@@ -29,7 +30,7 @@ async fn main() -> Result<()> {
     let span = info_span!("RelayerBootup");
     let _span = span.enter();
 
-    let settings = Settings::new()?;
+    let settings = Settings::new().await?;
     let agent = Relayer::from_settings(settings).await?;
 
     drop(_span);
