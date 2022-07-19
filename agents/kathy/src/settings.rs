@@ -23,8 +23,8 @@ mod test {
         test_utils::run_test_with_env_http(
             "../../fixtures/env.external",
             config_json,
-            |uri| async move {
-                std::env::set_var("CONFIG_URI", uri);
+            |url| async move {
+                std::env::set_var("CONFIG_URL", url);
 
                 let agent_home = dotenv::var("AGENT_HOME_NAME").unwrap();
 

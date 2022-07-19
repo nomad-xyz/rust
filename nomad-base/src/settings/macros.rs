@@ -79,9 +79,9 @@ macro_rules! decl_settings {
                     let home = std::env::var("AGENT_HOME_NAME").expect("missing AGENT_HOME_NAME");
 
                     // Get config
-                    let config_uri = std::env::var("CONFIG_URI").ok();
-                    let config: nomad_xyz_configuration::NomadConfig = match config_uri {
-                        Some(uri) => nomad_xyz_configuration::NomadConfig::fetch(&uri).await.expect("!config uri"),
+                    let config_url = std::env::var("CONFIG_URL").ok();
+                    let config: nomad_xyz_configuration::NomadConfig = match config_url {
+                        Some(url) => nomad_xyz_configuration::NomadConfig::fetch(&url).await.expect("!config url"),
                         None => {
                             let config_path = std::env::var("CONFIG_PATH").ok();
                             match config_path {
