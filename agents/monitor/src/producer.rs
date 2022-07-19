@@ -69,7 +69,7 @@ impl ProcessStep<WithMeta<DispatchFilter>> for DispatchProducer {
 
                     let tip = tip_res.unwrap() - 5;
                     from = to;
-                    to = std::cmp::min(to, tip);
+                    to = std::cmp::max(to, tip);
 
                     tokio::time::sleep(std::time::Duration::from_secs(5)).await;
                 }
@@ -140,7 +140,7 @@ impl ProcessStep<WithMeta<UpdateFilter>> for UpdateProducer {
 
                     let tip = tip_res.unwrap() - 5;
                     from = to;
-                    to = std::cmp::min(to, tip);
+                    to = std::cmp::max(to, tip);
 
                     tokio::time::sleep(std::time::Duration::from_secs(5)).await;
                 }
