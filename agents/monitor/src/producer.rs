@@ -1,4 +1,4 @@
-use crate::{annotate::WithMeta, task_bail_if, ProcessStep, Restartable, StepHandle};
+use crate::{annotate::WithMeta, bail_task_if, ProcessStep, Restartable, StepHandle};
 
 use ethers::prelude::Middleware;
 use nomad_ethereum::bindings::{
@@ -41,36 +41,41 @@ impl ProcessStep<WithMeta<DispatchFilter>> for DispatchProducer {
             event = "dispatch",
         );
 
-        tokio::spawn(async move {
-            let provider = self.home.client();
-            let height = provider.get_block_number().await.unwrap();
-            let mut from = height - 10;
-            let mut to = height - 5;
-            loop {
-                if from < to {
-                    let res = self
-                        .home
-                        .dispatch_filter()
-                        .from_block(from)
-                        .to_block(to)
-                        .query_with_meta()
-                        .await;
+        tokio::spawn(
+            async move {
+                let provider = self.home.client();
+                let height = provider.get_block_number().await.unwrap();
+                let mut from = height - 10;
+                let mut to = height - 5;
+                loop {
+                    if from < to {
+                        let res = self
+                            .home
+                            .dispatch_filter()
+                            .from_block(from)
+                            .to_block(to)
+                            .query_with_meta()
+                            .await;
 
-                    task_bail_if!(res.is_err(), self, res.unwrap_err());
+                        bail_task_if!(res.is_err(), self, res.unwrap_err());
 
-                    for event in res.unwrap().into_iter() {
-                        let res = self.tx.send(event.into());
-                        task_bail_if!(res.is_err(), self, res.unwrap_err());
+                        for event in res.unwrap().into_iter() {
+                            let res = self.tx.send(event.into());
+                            bail_task_if!(res.is_err(), self, res.unwrap_err());
+                        }
                     }
-                }
-                let tip = provider.get_block_number().await.unwrap() - 5;
-                from = to;
-                to = std::cmp::min(to, tip);
+                    let tip_res = provider.get_block_number().await;
+                    bail_task_if!(tip_res.is_err(), self, tip_res.unwrap_err());
 
-                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                    let tip = tip_res.unwrap() - 5;
+                    from = to;
+                    to = std::cmp::min(to, tip);
+
+                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                }
             }
-        })
-        .instrument(span)
+            .instrument(span),
+        )
     }
 }
 
@@ -107,36 +112,41 @@ impl ProcessStep<WithMeta<UpdateFilter>> for UpdateProducer {
             event = "update",
         );
 
-        tokio::spawn(async move {
-            let provider = self.home.client();
-            let height = provider.get_block_number().await.unwrap();
-            let mut from = height - 10;
-            let mut to = height - 5;
-            loop {
-                if from < to {
-                    let res = self
-                        .home
-                        .update_filter()
-                        .from_block(from)
-                        .to_block(to)
-                        .query_with_meta()
-                        .await;
+        tokio::spawn(
+            async move {
+                let provider = self.home.client();
+                let height = provider.get_block_number().await.unwrap();
+                let mut from = height - 10;
+                let mut to = height - 5;
+                loop {
+                    if from < to {
+                        let res = self
+                            .home
+                            .update_filter()
+                            .from_block(from)
+                            .to_block(to)
+                            .query_with_meta()
+                            .await;
 
-                    task_bail_if!(res.is_err(), self, res.unwrap_err());
+                        bail_task_if!(res.is_err(), self, res.unwrap_err());
 
-                    for event in res.unwrap().into_iter() {
-                        let res = self.tx.send(event.into());
-                        task_bail_if!(res.is_err(), self, res.unwrap_err());
+                        for event in res.unwrap().into_iter() {
+                            let res = self.tx.send(event.into());
+                            bail_task_if!(res.is_err(), self, res.unwrap_err());
+                        }
                     }
-                }
-                let tip = provider.get_block_number().await.unwrap() - 5;
-                from = to;
-                to = std::cmp::min(to, tip);
+                    let tip_res = provider.get_block_number().await;
+                    bail_task_if!(tip_res.is_err(), self, tip_res.unwrap_err());
 
-                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                    let tip = tip_res.unwrap() - 5;
+                    from = to;
+                    to = std::cmp::min(to, tip);
+
+                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                }
             }
-        })
-        .instrument(span)
+            .instrument(span),
+        )
     }
 }
 
@@ -177,37 +187,41 @@ impl ProcessStep<WithMeta<RelayFilter>> for RelayProducer {
             replica_of = self.replica_of.as_str()
         );
 
-        tokio::spawn(async move {
-            let provider = self.replica.client();
-            let height = provider.get_block_number().await.unwrap();
-            let mut from = height - 10;
-            let mut to = height - 5;
-            loop {
-                tracing::trace!(from = from.as_u64(), to = to.as_u64(), "produce_loop");
-                if from < to {
-                    let res = self
-                        .replica
-                        .update_filter()
-                        .from_block(from)
-                        .to_block(to)
-                        .query_with_meta()
-                        .await;
+        tokio::spawn(
+            async move {
+                let provider = self.replica.client();
+                let height = provider.get_block_number().await.unwrap();
+                let mut from = height - 10;
+                let mut to = height - 5;
+                loop {
+                    tracing::trace!(from = from.as_u64(), to = to.as_u64(), "produce_loop");
+                    if from < to {
+                        let res = self
+                            .replica
+                            .update_filter()
+                            .from_block(from)
+                            .to_block(to)
+                            .query_with_meta()
+                            .await;
 
-                    task_bail_if!(res.is_err(), self, res.unwrap_err());
+                        bail_task_if!(res.is_err(), self, res.unwrap_err());
 
-                    for event in res.unwrap().into_iter() {
-                        let res = self.tx.send(event.into());
-                        task_bail_if!(res.is_err(), self, res.unwrap_err());
+                        for event in res.unwrap().into_iter() {
+                            let res = self.tx.send(event.into());
+                            bail_task_if!(res.is_err(), self, res.unwrap_err());
+                        }
                     }
-                }
-                let tip = provider.get_block_number().await.unwrap() - 5;
-                from = to;
-                to = std::cmp::max(to, tip);
+                    let tip_res = provider.get_block_number().await;
+                    bail_task_if!(tip_res.is_err(), self, tip_res.unwrap_err());
+                    let tip = tip_res.unwrap() - 5;
+                    from = to;
+                    to = std::cmp::max(to, tip);
 
-                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                }
             }
-        })
-        .instrument(span)
+            .instrument(span),
+        )
     }
 }
 
@@ -248,35 +262,40 @@ impl ProcessStep<WithMeta<ProcessFilter>> for ProcessProducer {
             replica_of = self.replica_of.as_str(),
         );
 
-        tokio::spawn(async move {
-            let provider = self.replica.client();
-            let height = provider.get_block_number().await.unwrap();
-            let mut from = height - 10;
-            let mut to = height - 5;
-            loop {
-                if from < to {
-                    let res = self
-                        .replica
-                        .process_filter()
-                        .from_block(from)
-                        .to_block(to)
-                        .query_with_meta()
-                        .await;
+        tokio::spawn(
+            async move {
+                let provider = self.replica.client();
+                let height = provider.get_block_number().await.unwrap();
+                let mut from = height - 10;
+                let mut to = height - 5;
+                loop {
+                    if from < to {
+                        let res = self
+                            .replica
+                            .process_filter()
+                            .from_block(from)
+                            .to_block(to)
+                            .query_with_meta()
+                            .await;
 
-                    task_bail_if!(res.is_err(), self, res.unwrap_err());
+                        bail_task_if!(res.is_err(), self, res.unwrap_err());
 
-                    for event in res.unwrap().into_iter() {
-                        let res = self.tx.send(event.into());
-                        task_bail_if!(res.is_err(), self, res.unwrap_err());
+                        for event in res.unwrap().into_iter() {
+                            let res = self.tx.send(event.into());
+                            bail_task_if!(res.is_err(), self, res.unwrap_err());
+                        }
                     }
-                }
-                let tip = provider.get_block_number().await.unwrap() - 5;
-                from = to;
-                to = std::cmp::max(to, tip);
+                    let tip_res = provider.get_block_number().await;
+                    bail_task_if!(tip_res.is_err(), self, tip_res.unwrap_err());
 
-                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                    let tip = tip_res.unwrap() - 5;
+                    from = to;
+                    to = std::cmp::max(to, tip);
+
+                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                }
             }
-        })
-        .instrument(span)
+            .instrument(span),
+        )
     }
 }

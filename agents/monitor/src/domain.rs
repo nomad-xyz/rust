@@ -154,7 +154,7 @@ impl Domain {
                 );
                 let network = &self.network;
                 let event = "relay";
-                tracing::info!(
+                tracing::debug!(
                     network = self.name(),
                     replica = emitter,
                     event,
@@ -183,7 +183,7 @@ impl Domain {
                 );
                 let network = &self.network;
                 let event = "process";
-                tracing::info!(
+                tracing::debug!(
                     network = self.name(),
                     replica = emitter,
                     event,
