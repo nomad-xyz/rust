@@ -1,12 +1,13 @@
 use annotate::WithMeta;
 use std::{panic, sync::Arc};
 use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
-use tracing::{debug_span, info_span, instrument::Instrumented, Instrument};
+use tracing::{debug_span, info_span, Instrument};
 
 use ethers::prelude::{Http, Provider as EthersProvider};
 
 pub(crate) mod annotate;
 pub(crate) mod between;
+pub(crate) mod dispatch_wait;
 pub(crate) mod domain;
 pub(crate) mod init;
 pub(crate) mod macros;
@@ -33,13 +34,15 @@ async fn main() -> eyre::Result<()> {
         let _relay_counters = monitor.run_between_relay();
         let _process_counters = monitor.run_between_process();
 
+        tracing::info!("counters started");
+
         // should cause it to run until crashes occur
         let _ = dispatch_trackers.into_iter().next().unwrap().1.handle.await;
     }
     Ok(())
 }
 
-pub type Restartable<Task> = Instrumented<JoinHandle<(Task, eyre::Report)>>;
+pub type Restartable<Task> = JoinHandle<(Task, eyre::Report)>;
 
 pub(crate) struct StepHandle<Task, Produces> {
     handle: Restartable<Task>,
@@ -96,14 +99,16 @@ where
 {
     fn spawn(mut self) -> TerminalHandle<T> {
         let span = debug_span!("Terminal Handler");
-        tokio::spawn(async move {
-            loop {
-                if self.rx.recv().await.is_none() {
-                    tracing::info!("Upstream broke, shutting down");
-                    return (self, eyre::eyre!(""));
+        tokio::spawn(
+            async move {
+                loop {
+                    if self.rx.recv().await.is_none() {
+                        tracing::info!("Upstream broke, shutting down");
+                        return (self, eyre::eyre!(""));
+                    }
                 }
             }
-        })
-        .instrument(span)
+            .instrument(span),
+        )
     }
 }

@@ -63,7 +63,7 @@ pub(crate) fn provider_for(config: &NomadConfig, network: &str) -> eyre::Result<
         "Missing Url. Please specify by config or env var."
     );
 
-    let url = url.unwrap();
+    let url = url.expect("checked on previous line");
     let provider = EthersProvider::<Http>::try_from(&url)?;
 
     let timelag = config
@@ -102,6 +102,7 @@ impl Monitor {
         self.metrics.clone().run_http_server()
     }
 
+    #[tracing::instrument(skip_all, level = "debug")]
     pub(crate) fn run_between_dispatch(
         &self,
     ) -> HashMap<&str, BetweenHandle<WithMeta<DispatchFilter>>> {
@@ -121,6 +122,7 @@ impl Monitor {
             .collect()
     }
 
+    #[tracing::instrument(skip_all, level = "debug")]
     pub(crate) fn run_between_update(
         &self,
     ) -> HashMap<&str, BetweenHandle<WithMeta<UpdateFilter>>> {
@@ -140,6 +142,7 @@ impl Monitor {
             .collect()
     }
 
+    #[tracing::instrument(skip_all, level = "debug")]
     pub(crate) fn run_between_relay(
         &self,
     ) -> HashMap<&str, HashMap<&str, BetweenHandle<WithMeta<RelayFilter>>>> {
@@ -149,6 +152,7 @@ impl Monitor {
             .collect()
     }
 
+    #[tracing::instrument(skip_all, level = "debug")]
     pub(crate) fn run_between_process(
         &self,
     ) -> HashMap<&str, HashMap<&str, BetweenHandle<WithMeta<ProcessFilter>>>> {

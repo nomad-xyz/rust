@@ -2,7 +2,7 @@ use tracing::{info_span, Instrument};
 
 use tokio::sync::mpsc;
 
-use crate::{annotate::WithMeta, task_bail_if, ProcessStep, Restartable, StepHandle};
+use crate::{annotate::WithMeta, bail_task_if, ProcessStep, Restartable, StepHandle};
 
 pub(crate) struct BetweenMetrics {
     pub(crate) count: prometheus::IntCounter,
@@ -65,47 +65,50 @@ where
             event = self.event.as_str()
         );
 
-        tokio::spawn(async move {
-            let mut last_block_number = 0;
-            let mut wallclock_latency = self.metrics.wallclock_latency.start_timer();
+        tokio::spawn(
+            async move {
+                let mut last_block_number = 0;
+                let mut wallclock_latency = self.metrics.wallclock_latency.start_timer();
 
-            loop {
-                // get the next event from the channel
-                let incoming = self.incoming.recv().await;
-                task_bail_if!(incoming.is_none(), self, "inbound channel broke");
+                loop {
+                    // get the next event from the channel
+                    let incoming = self.incoming.recv().await;
 
-                let incoming = incoming.unwrap();
-                tracing::debug!(
-                    target: "monitor::between",
-                    block_number = %incoming.meta.block_number,
-                    event = self.event.as_str(),
-                    "received incoming event"
-                );
+                    bail_task_if!(incoming.is_none(), self, "inbound channel broke");
+                    let incoming = incoming.expect("checked on previous line");
 
-                // calculate the blockchain-reported latency in seconds
-                let block_number = incoming.meta.block_number.as_u64();
-                let event_latency = block_number.saturating_sub(last_block_number);
-                last_block_number = block_number;
+                    tracing::debug!(
+                        target: "monitor::between",
+                        block_number = %incoming.meta.block_number,
+                        event = self.event.as_str(),
+                        "received incoming event"
+                    );
 
-                if event_latency != last_block_number {
-                    self.metrics.block_latency.observe(event_latency as f64);
+                    // calculate the blockchain-reported latency in seconds
+                    let block_number = incoming.meta.block_number.as_u64();
+                    let event_latency = block_number.saturating_sub(last_block_number);
+                    last_block_number = block_number;
+
+                    if event_latency != last_block_number {
+                        self.metrics.block_latency.observe(event_latency as f64);
+                    }
+
+                    // update our metrics
+                    self.metrics.count.inc();
+                    wallclock_latency.observe_duration();
+
+                    // send the next event out
+                    bail_task_if!(
+                        self.outgoing.send(incoming).is_err(),
+                        self,
+                        "outbound channel broke"
+                    );
+
+                    // restart the timer
+                    wallclock_latency = self.metrics.wallclock_latency.start_timer();
                 }
-
-                // update our metrics
-                self.metrics.count.inc();
-                wallclock_latency.observe_duration();
-
-                // send the next event out
-                task_bail_if!(
-                    self.outgoing.send(incoming).is_err(),
-                    self,
-                    "outbound channel broke"
-                );
-
-                // restart the timer
-                wallclock_latency = self.metrics.wallclock_latency.start_timer();
             }
-        })
-        .instrument(span)
+            .instrument(span),
+        )
     }
 }
