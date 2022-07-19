@@ -3,7 +3,7 @@ use std::{panic, sync::Arc};
 use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
 use tracing::{debug_span, info_span, instrument::Instrumented, Instrument};
 
-use ethers::prelude::{ContractError, Http, Provider as EthersProvider};
+use ethers::prelude::{Http, Provider as EthersProvider};
 
 pub(crate) mod annotate;
 pub(crate) mod between;
@@ -15,7 +15,7 @@ pub(crate) mod producer;
 
 pub(crate) type Provider = ethers::prelude::TimeLag<EthersProvider<Http>>;
 pub(crate) type ArcProvider = Arc<Provider>;
-pub(crate) type ProviderError = ContractError<Provider>;
+// pub(crate) type ProviderError = ContractError<Provider>;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -29,9 +29,12 @@ async fn main() -> eyre::Result<()> {
         let _http = monitor.run_http_server();
 
         let dispatch_trackers = monitor.run_between_dispatch();
+        let _update_counters = monitor.run_between_update();
+        let _relay_counters = monitor.run_between_relay();
+        let _process_counters = monitor.run_between_process();
 
         // should cause it to run until crashes occur
-        dispatch_trackers.into_iter().next().unwrap().1.handle.await;
+        let _ = dispatch_trackers.into_iter().next().unwrap().1.handle.await;
     }
     Ok(())
 }
