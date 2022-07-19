@@ -69,6 +69,28 @@ where
     assert!(result.is_ok())
 }
 
+/// Run test with a mock http server response and env
+pub async fn run_test_with_env_http<T, Fut>(path: impl AsRef<Path>, body: impl AsRef<[u8]>, test: T)
+where
+    T: FnOnce(String) -> Fut + panic::UnwindSafe,
+    Fut: Future<Output = ()>,
+{
+    let result = {
+        dotenv::from_filename(path).unwrap();
+        let url = mockito::server_url();
+        let _m = mockito::mock("GET", "/")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(body)
+            .create();
+        let func = panic::AssertUnwindSafe(async { test(url).await });
+        func.catch_unwind().await
+    };
+
+    clear_env_vars();
+    assert!(result.is_ok())
+}
+
 pub fn clear_env_vars() {
     let env_vars = env::vars();
     for (key, _) in env_vars {
