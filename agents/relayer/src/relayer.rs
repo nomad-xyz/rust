@@ -174,7 +174,7 @@ impl NomadAgent for Relayer {
 
             ensure!(
                 home_updater == replica_updater,
-                "Home and replica updaters do not match. Home: {}. Replica: {}.",
+                "Home and replica updaters do not match. Home: {:x}. Replica: {:x}.",
                 home_updater,
                 replica_updater
             );
