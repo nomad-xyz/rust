@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "3.1.6", features = ["derive"] }
-color-eyre = "0.5.11"
+color-eyre = "0.6.0"
 ethers = { git = "https://github.com/gakonst/ethers-rs", branch = "master" }
 ethers-signers = { git = "https://github.com/gakonst/ethers-rs", branch = "master", features = ["aws"] }
 hex = "0.4.3"

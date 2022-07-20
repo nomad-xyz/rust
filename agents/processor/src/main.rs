@@ -14,18 +14,32 @@ mod push;
 mod settings;
 
 use color_eyre::Result;
+use tracing::info_span;
 
 use crate::{processor::Processor, settings::ProcessorSettings as Settings};
 use nomad_base::NomadAgent;
 
+use tracing_subscriber::prelude::*;
+
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     color_eyre::install()?;
-    let settings = Settings::new()?;
 
-    // TODO: top-level root span customizations?
+    let _bootup_guard = tracing_subscriber::FmtSubscriber::builder()
+        .json()
+        .with_level(true)
+        .set_default();
+
+    let span = info_span!("ProcessorBootup");
+    let _span = span.enter();
+
+    let settings = Settings::new()?;
     let agent = Processor::from_settings(settings).await?;
-    agent.start_tracing(agent.metrics().span_duration())?;
+
+    drop(_span);
+    drop(span);
+
+    let _tracing_guard = agent.start_tracing(agent.metrics().span_duration());
 
     let _ = agent.metrics().run_http_server();
 

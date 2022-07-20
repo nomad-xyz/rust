@@ -46,11 +46,18 @@ where
     pub fn new(
         provider: Arc<R>,
         ContractLocator {
-            name: _,
-            domain: _,
+            name,
+            domain,
             address,
         }: &ContractLocator,
     ) -> Self {
+        tracing::info!(
+            address = ?address.as_ethereum_address(),
+            name = name,
+            domain = domain,
+            "Connecting Home Indexer"
+        );
+
         Self {
             contract: Arc::new(EthereumHomeInternal::new(
                 address.as_ethereum_address().expect("!eth address"),
@@ -184,6 +191,12 @@ where
         }: &ContractLocator,
         gas: Option<HomeGasLimits>,
     ) -> Self {
+        tracing::info!(
+            address = ?address.as_ethereum_address(),
+            name = name,
+            domain = domain,
+            "Connecting Home"
+        );
         Self {
             submitter,
             contract: Arc::new(EthereumHomeInternal::new(

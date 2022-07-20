@@ -956,11 +956,11 @@ mod test {
                 home,
             };
 
-            let _first_update_ret = handler
+            handler
                 .check_double_update(&first_update)
                 .expect("Update should have been valid");
 
-            let _second_update_ret = handler
+            handler
                 .check_double_update(&second_update)
                 .expect("Update should have been valid");
 

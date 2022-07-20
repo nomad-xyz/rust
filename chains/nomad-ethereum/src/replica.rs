@@ -30,15 +30,21 @@ impl<R> EthereumReplicaIndexer<R>
 where
     R: ethers::providers::Middleware + 'static,
 {
-    /// Create new EthereumHomeIndexer
+    /// Create new EthereumReplicaIndexer
     pub fn new(
         provider: Arc<R>,
         ContractLocator {
-            name: _,
-            domain: _,
+            name,
+            domain,
             address,
         }: &ContractLocator,
     ) -> Self {
+        tracing::info!(
+            address = ?address.as_ethereum_address(),
+            name = name,
+            domain = domain,
+            "Connecting Replica Indexer"
+        );
         Self {
             contract: Arc::new(EthereumReplicaInternal::new(
                 address.as_ethereum_address().expect("!eth address"),
@@ -144,6 +150,12 @@ where
         }: &ContractLocator,
         gas: Option<ReplicaGasLimits>,
     ) -> Self {
+        tracing::info!(
+            address = ?address.as_ethereum_address(),
+            name = name,
+            domain = domain,
+            "Connecting Replica"
+        );
         Self {
             submitter,
             contract: Arc::new(EthereumReplicaInternal::new(

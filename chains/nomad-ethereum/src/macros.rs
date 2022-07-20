@@ -78,9 +78,9 @@ macro_rules! boxed_indexer {
     (@timelag $provider:expr, $abi:ident, $timelag:ident, $($tail:tt)*) => {{
         if let Some(lag) = $timelag {
             let provider: Arc<_> = ethers::middleware::TimeLag::new($provider, lag).into();
-            Box::new(crate::$abi::new(provider, $($tail)*))
+            Box::new($crate::$abi::new(provider, $($tail)*))
         } else {
-            Box::new(crate::$abi::new($provider, $($tail)*))
+            Box::new($crate::$abi::new($provider, $($tail)*))
         }
     }};
     (@ws $url:expr, $($tail:tt)*) => {{
@@ -89,7 +89,7 @@ macro_rules! boxed_indexer {
         boxed_indexer!(@timelag provider, $($tail)*)
     }};
     (@http $url:expr, $($tail:tt)*) => {{
-        let provider: crate::retrying::RetryingProvider<ethers::providers::Http> = $url.parse()?;
+        let provider: $crate::retrying::RetryingProvider<ethers::providers::Http> = $url.parse()?;
         let provider = Arc::new(ethers::providers::Provider::new(provider));
         boxed_indexer!(@timelag provider, $($tail)*)
     }};
@@ -113,7 +113,7 @@ macro_rules! boxed_indexer {
 #[macro_export]
 macro_rules! http_provider {
     ($url:expr) => {{
-        let provider: crate::retrying::RetryingProvider<ethers::providers::Http> = $url.parse()?;
+        let provider: $crate::retrying::RetryingProvider<ethers::providers::Http> = $url.parse()?;
         Arc::new(ethers::providers::Provider::new(provider))
     }};
 }
@@ -142,7 +142,7 @@ macro_rules! wrap_with_signer {
 
         // Kludge. Increase the gas by multiplication of every estimated gas by
         // 2, except the gas for chain id 1 (Ethereum Mainnet)
-        let provider = crate::gas::GasAdjusterMiddleware::with_default_policy(
+        let provider = $crate::gas::GasAdjusterMiddleware::with_default_policy(
             provider,
             provider_chain_id.as_u64(),
         );
@@ -186,9 +186,9 @@ macro_rules! boxed_contract {
     (@timelag $base_provider:expr, $submitter:expr, $abi:ident, $timelag:ident, $($tail:tt)*) => {{
         if let Some(lag) = $timelag {
             let read_provider: Arc<_> = ethers::middleware::TimeLag::new($base_provider, lag).into();
-            Box::new(crate::$abi::new($submitter, read_provider, $($tail)*))
+            Box::new($crate::$abi::new($submitter, read_provider, $($tail)*))
         } else {
-            Box::new(crate::$abi::new($submitter, $base_provider, $($tail)*))
+            Box::new($crate::$abi::new($submitter, $base_provider, $($tail)*))
         }
     }};
     (@submitter $base_provider:expr, $submitter_conf:ident, $($tail:tt)*) => {{
