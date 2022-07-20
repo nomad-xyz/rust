@@ -1,15 +1,12 @@
 use std::{collections::HashMap, sync::Arc};
 
-use nomad_ethereum::bindings::{
-    home::{DispatchFilter, Home, UpdateFilter},
-    replica::{ProcessFilter, Replica, UpdateFilter as RelayFilter},
-};
+use nomad_ethereum::bindings::{home::Home, replica::Replica};
 use nomad_xyz_configuration::{contracts::CoreContracts, NomadConfig};
-use tokio::sync::mpsc;
+use tokio::sync::mpsc::unbounded_channel;
 
 use crate::{
     annotate::WithMeta,
-    between::{BetweenEvents, BetweenHandle, BetweenMetrics},
+    between::{BetweenDispatch, BetweenEvents, BetweenHandle, BetweenMetrics, BetweenUpdate},
     dispatch_wait::{DispatchWait, DispatchWaitHandle, DispatchWaitOutput},
     init::provider_for,
     metrics::Metrics,
@@ -17,7 +14,8 @@ use crate::{
         DispatchProducer, DispatchProducerHandle, ProcessProducer, ProcessProducerHandle,
         RelayProducer, RelayProducerHandle, UpdateProducer, UpdateProducerHandle,
     },
-    ProcessStep, Provider, StepHandle,
+    DispatchFaucet, Faucet, NetworkMap, ProcessFaucet, ProcessStep, Provider, RelayFaucet,
+    StepHandle, UpdateFaucet,
 };
 
 #[derive(Debug)]
@@ -72,7 +70,7 @@ impl Domain {
     }
 
     pub(crate) fn dispatch_producer(&self) -> DispatchProducerHandle {
-        let (tx, rx) = mpsc::unbounded_channel();
+        let (tx, rx) = unbounded_channel();
 
         let handle = DispatchProducer::new(self.home.clone(), self.network.clone(), tx).spawn();
 
@@ -80,7 +78,7 @@ impl Domain {
     }
 
     pub(crate) fn update_producer(&self) -> UpdateProducerHandle {
-        let (tx, rx) = mpsc::unbounded_channel();
+        let (tx, rx) = unbounded_channel();
 
         let handle = UpdateProducer::new(self.home.clone(), self.network.clone(), tx).spawn();
 
@@ -92,7 +90,7 @@ impl Domain {
         replica: &Replica<Provider>,
         replica_of: &str,
     ) -> RelayProducerHandle {
-        let (tx, rx) = mpsc::unbounded_channel();
+        let (tx, rx) = unbounded_channel();
 
         let handle = RelayProducer::new(replica.clone(), &self.network, replica_of, tx).spawn();
         StepHandle { handle, rx }
@@ -113,7 +111,7 @@ impl Domain {
         replica: &Replica<Provider>,
         replica_of: &str,
     ) -> ProcessProducerHandle {
-        let (tx, rx) = mpsc::unbounded_channel();
+        let (tx, rx) = unbounded_channel();
 
         let handle = ProcessProducer::new(replica.clone(), &self.network, replica_of, tx).spawn();
         StepHandle { handle, rx }
@@ -131,7 +129,7 @@ impl Domain {
 
     pub(crate) fn count<T>(
         &self,
-        incoming: mpsc::UnboundedReceiver<WithMeta<T>>,
+        incoming: Faucet<T>,
         metrics: BetweenMetrics,
         event: impl AsRef<str>,
     ) -> BetweenHandle<WithMeta<T>>
@@ -139,7 +137,7 @@ impl Domain {
         T: 'static + Send + Sync + std::fmt::Debug,
     {
         let network = self.network.clone();
-        let (tx, rx) = mpsc::unbounded_channel();
+        let (tx, rx) = unbounded_channel();
         let emitter = self.home_address();
 
         tracing::debug!(
@@ -157,90 +155,83 @@ impl Domain {
 
     pub(crate) fn count_dispatches(
         &self,
-        incoming: mpsc::UnboundedReceiver<WithMeta<DispatchFilter>>,
+        incoming: DispatchFaucet,
         metrics: BetweenMetrics,
         event: impl AsRef<str>,
-    ) -> BetweenHandle<WithMeta<DispatchFilter>> {
+    ) -> BetweenDispatch {
         self.count(incoming, metrics, event)
     }
 
     pub(crate) fn count_updates(
         &self,
-        incoming: mpsc::UnboundedReceiver<WithMeta<UpdateFilter>>,
+        incoming: UpdateFaucet,
         metrics: BetweenMetrics,
         event: impl AsRef<str>,
-    ) -> BetweenHandle<WithMeta<UpdateFilter>> {
+    ) -> BetweenUpdate {
         self.count(incoming, metrics, event)
     }
 
-    pub(crate) fn count_relays(
-        &self,
-        mut incomings: HashMap<&str, mpsc::UnboundedReceiver<WithMeta<RelayFilter>>>,
+    pub(crate) fn count_relays<'a>(
+        &'a self,
+        incomings: &mut NetworkMap<'a, RelayFaucet>,
         metrics: Arc<Metrics>,
-    ) -> HashMap<&str, BetweenHandle<WithMeta<RelayFilter>>> {
-        self.replicas
-            .iter()
-            .map(|(replica_of, replica)| {
-                let emitter = format!("{:?}", replica.address());
-                let network = self.name();
-                let event = "relay";
-                tracing::debug!(
-                    network = network,
-                    replica = emitter,
-                    event,
-                    "starting counter",
-                );
-                let incoming = incomings
-                    .remove(replica_of.as_str())
-                    .expect("Missing channel");
-                let metrics = metrics.between_metrics(network, event, &emitter, Some(replica_of));
+    ) {
+        self.replicas.iter().for_each(|(replica_of, replica)| {
+            let emitter = format!("{:?}", replica.address());
+            let network = self.name();
+            let event = "relay";
+            tracing::debug!(
+                network = network,
+                replica = emitter,
+                event,
+                "starting counter",
+            );
+            let incoming = incomings
+                .remove(replica_of.as_str())
+                .expect("Missing channel");
+            let metrics = metrics.between_metrics(network, event, &emitter, Some(replica_of));
 
-                let between = self.count(incoming, metrics, event);
-
-                (replica_of.as_str(), between)
-            })
-            .collect()
+            let between = self.count(incoming, metrics, event);
+            incomings.insert(replica_of, between.rx);
+        });
     }
 
-    pub(crate) fn count_processes(
-        &self,
-        mut incomings: HashMap<&str, mpsc::UnboundedReceiver<WithMeta<ProcessFilter>>>,
+    pub(crate) fn count_processes<'a>(
+        &'a self,
+        incomings: &mut NetworkMap<'a, ProcessFaucet>,
         metrics: Arc<Metrics>,
-    ) -> HashMap<&str, BetweenHandle<WithMeta<ProcessFilter>>> {
-        self.replicas
-            .iter()
-            .map(|(replica_of, replica)| {
-                let emitter = format!("{:?}", replica.address());
-                let network = self.name();
-                let event = "process";
-                tracing::debug!(
-                    network = network,
-                    replica = emitter,
-                    event,
-                    "starting counter",
-                );
-                let incoming = incomings
-                    .remove(replica_of.as_str())
-                    .expect("Missing channel");
-                let metrics = metrics.between_metrics(network, event, &emitter, Some(replica_of));
+    ) {
+        self.replicas.iter().for_each(|(replica_of, replica)| {
+            let emitter = format!("{:?}", replica.address());
+            let network = self.name();
+            let event = "process";
+            tracing::debug!(
+                network = network,
+                replica = emitter,
+                event,
+                "starting counter",
+            );
+            let incoming = incomings
+                .remove(replica_of.as_str())
+                .expect("Missing channel");
 
-                let between = self.count(incoming, metrics, event);
+            let metrics = metrics.between_metrics(network, event, &emitter, Some(replica_of));
+            let between = self.count(incoming, metrics, event);
 
-                (replica_of.as_str(), between)
-            })
-            .collect()
+            incomings.insert(replica_of, between.rx);
+        });
     }
 
     pub(crate) fn dispatch_to_update(
         &self,
-        incoming_dispatch: mpsc::UnboundedReceiver<WithMeta<DispatchFilter>>,
-        incoming_update: mpsc::UnboundedReceiver<WithMeta<UpdateFilter>>,
+        incoming_dispatch: DispatchFaucet,
+        incoming_update: UpdateFaucet,
         metrics: Arc<Metrics>,
     ) -> DispatchWaitHandle {
         let metrics = metrics.dispatch_wait_metrics(&self.network, &self.home_address());
 
-        let (outgoing_update, updates) = mpsc::unbounded_channel();
-        let (outgoing_dispatch, dispatches) = mpsc::unbounded_channel();
+        let (outgoing_update, updates) = unbounded_channel();
+        let (outgoing_dispatch, dispatches) = unbounded_channel();
 
         let handle = DispatchWait::new(
             incoming_dispatch,

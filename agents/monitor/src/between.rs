@@ -1,3 +1,7 @@
+use nomad_ethereum::bindings::{
+    home::{DispatchFilter, UpdateFilter},
+    replica::{ProcessFilter, UpdateFilter as RelayFilter},
+};
 use tracing::{info_span, Instrument};
 
 use tokio::sync::mpsc::{self, UnboundedReceiver};
@@ -65,6 +69,10 @@ where
 
 pub(crate) type BetweenHandle<T> = StepHandle<BetweenEvents<T>>;
 pub(crate) type BetweenTask<T> = Restartable<BetweenEvents<T>>;
+pub(crate) type BetweenDispatch = BetweenHandle<WithMeta<DispatchFilter>>;
+pub(crate) type BetweenUpdate = BetweenHandle<WithMeta<UpdateFilter>>;
+pub(crate) type BetweenRelay = BetweenHandle<WithMeta<RelayFilter>>;
+pub(crate) type BetweenProcess = BetweenHandle<WithMeta<ProcessFilter>>;
 
 impl<T> ProcessStep for BetweenEvents<WithMeta<T>>
 where
