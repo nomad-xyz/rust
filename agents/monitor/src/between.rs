@@ -1,6 +1,6 @@
 use tracing::{info_span, Instrument};
 
-use tokio::sync::mpsc;
+use tokio::sync::mpsc::{self, UnboundedReceiver};
 
 use crate::{annotate::WithMeta, bail_task_if, ProcessStep, Restartable, StepHandle};
 
@@ -16,7 +16,18 @@ pub(crate) struct BetweenEvents<T> {
     pub(crate) metrics: BetweenMetrics,
     pub(crate) network: String,
     pub(crate) event: String,
+    pub(crate) emitter: String,
     pub(crate) outgoing: mpsc::UnboundedSender<T>,
+}
+
+impl<T> std::fmt::Display for BetweenEvents<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "BetweenEvents - network {}'s {} @ {}",
+            self.network, self.event, self.emitter
+        )
+    }
 }
 
 impl<T> std::fmt::Debug for BetweenEvents<T> {
@@ -38,6 +49,7 @@ where
         metrics: BetweenMetrics,
         network: impl AsRef<str>,
         event: impl AsRef<str>,
+        emitter: impl AsRef<str>,
         outgoing: mpsc::UnboundedSender<T>,
     ) -> Self {
         Self {
@@ -45,18 +57,21 @@ where
             metrics,
             network: network.as_ref().to_owned(),
             event: event.as_ref().to_owned(),
+            emitter: emitter.as_ref().to_owned(),
             outgoing,
         }
     }
 }
 
-pub(crate) type BetweenHandle<T> = StepHandle<BetweenEvents<T>, T>;
+pub(crate) type BetweenHandle<T> = StepHandle<BetweenEvents<T>>;
 pub(crate) type BetweenTask<T> = Restartable<BetweenEvents<T>>;
 
-impl<T> ProcessStep<WithMeta<T>> for BetweenEvents<WithMeta<T>>
+impl<T> ProcessStep for BetweenEvents<WithMeta<T>>
 where
     T: 'static + Send + Sync + std::fmt::Debug,
 {
+    type Output = UnboundedReceiver<WithMeta<T>>;
+
     fn spawn(mut self) -> BetweenTask<WithMeta<T>> {
         let span = info_span!(
             target: "monitor::between",

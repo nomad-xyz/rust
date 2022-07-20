@@ -10,11 +10,19 @@ use nomad_ethereum::bindings::{
     replica::{ProcessFilter, UpdateFilter as RelayFilter},
 };
 use nomad_xyz_configuration::{get_builtin, NomadConfig};
-use tokio::task::JoinHandle;
+use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
 use tracing_subscriber::EnvFilter;
 
 use crate::{
-    annotate::WithMeta, between::BetweenHandle, domain::Domain, metrics::Metrics, ArcProvider,
+    annotate::WithMeta,
+    between::BetweenHandle,
+    dispatch_wait::DispatchWaitHandle,
+    domain::Domain,
+    metrics::Metrics,
+    producer::{
+        DispatchProducerHandle, ProcessProducerHandle, RelayProducerHandle, UpdateProducerHandle,
+    },
+    ArcProvider, HomeReplicaMap,
 };
 
 pub(crate) fn config_from_file() -> Option<NomadConfig> {
@@ -38,7 +46,7 @@ pub(crate) fn config() -> eyre::Result<NomadConfig> {
 
 pub(crate) fn init_tracing() {
     tracing_subscriber::FmtSubscriber::builder()
-        .json()
+        .pretty()
         .with_env_filter(EnvFilter::from_default_env())
         .with_level(true)
         .init();
@@ -102,20 +110,50 @@ impl Monitor {
         self.metrics.clone().run_http_server()
     }
 
+    pub(crate) fn run_dispatch_producers(&self) -> HashMap<&str, DispatchProducerHandle> {
+        self.networks
+            .iter()
+            .map(|(network, domain)| (network.as_str(), domain.dispatch_producer()))
+            .collect()
+    }
+
+    pub(crate) fn run_update_producers(&self) -> HashMap<&str, UpdateProducerHandle> {
+        self.networks
+            .iter()
+            .map(|(network, domain)| (network.as_str(), domain.update_producer()))
+            .collect()
+    }
+
+    pub(crate) fn run_relay_producers(&self) -> HomeReplicaMap<RelayProducerHandle> {
+        self.networks
+            .iter()
+            .map(|(network, domain)| (network.as_str(), domain.relay_producers()))
+            .collect()
+    }
+
+    pub(crate) fn run_process_producers(&self) -> HomeReplicaMap<ProcessProducerHandle> {
+        self.networks
+            .iter()
+            .map(|(network, domain)| (network.as_str(), domain.process_producers()))
+            .collect()
+    }
+
     #[tracing::instrument(skip_all, level = "debug")]
     pub(crate) fn run_between_dispatch(
         &self,
+        mut incomings: HashMap<&str, UnboundedReceiver<WithMeta<DispatchFilter>>>,
     ) -> HashMap<&str, BetweenHandle<WithMeta<DispatchFilter>>> {
         self.networks
             .iter()
             .map(|(chain, domain)| {
-                let emitter = format!("{:?}", domain.home().address());
+                let emitter = domain.home_address();
                 let event = "dispatch";
 
                 let metrics = self.metrics.between_metrics(chain, event, &emitter, None);
 
-                let producer = domain.dispatch_producer();
-                let between = domain.count(producer.rx, metrics, event);
+                let producer = incomings.remove(chain.as_str()).expect("missing producer");
+
+                let between = domain.count_dispatches(producer, metrics, event);
 
                 (chain.as_str(), between)
             })
@@ -125,6 +163,7 @@ impl Monitor {
     #[tracing::instrument(skip_all, level = "debug")]
     pub(crate) fn run_between_update(
         &self,
+        mut incomings: HashMap<&str, UnboundedReceiver<WithMeta<UpdateFilter>>>,
     ) -> HashMap<&str, BetweenHandle<WithMeta<UpdateFilter>>> {
         self.networks
             .iter()
@@ -134,8 +173,9 @@ impl Monitor {
 
                 let metrics = self.metrics.between_metrics(chain, event, &emitter, None);
 
-                let producer = domain.update_producer();
-                let between = domain.count(producer.rx, metrics, event);
+                let producer = incomings.remove(chain.as_str()).expect("missing producer");
+
+                let between = domain.count_updates(producer, metrics, event);
 
                 (chain.as_str(), between)
             })
@@ -145,24 +185,68 @@ impl Monitor {
     #[tracing::instrument(skip_all, level = "debug")]
     pub(crate) fn run_between_relay(
         &self,
-    ) -> HashMap<&str, HashMap<&str, BetweenHandle<WithMeta<RelayFilter>>>> {
+        mut incomings: HomeReplicaMap<UnboundedReceiver<WithMeta<RelayFilter>>>,
+    ) -> HomeReplicaMap<BetweenHandle<WithMeta<RelayFilter>>> {
         self.networks
             .iter()
-            .map(|(network, domain)| (network.as_str(), domain.count_relays(self.metrics.clone())))
+            .map(|(network, domain)| {
+                let incomings = incomings
+                    .remove(network.as_str())
+                    .expect("missing producer")
+                    .into_iter()
+                    .map(|(k, v)| (k, v))
+                    .collect();
+                (
+                    network.as_str(),
+                    domain.count_relays(incomings, self.metrics.clone()),
+                )
+            })
             .collect()
     }
 
     #[tracing::instrument(skip_all, level = "debug")]
     pub(crate) fn run_between_process(
         &self,
-    ) -> HashMap<&str, HashMap<&str, BetweenHandle<WithMeta<ProcessFilter>>>> {
+        mut incomings: HomeReplicaMap<UnboundedReceiver<WithMeta<ProcessFilter>>>,
+    ) -> HomeReplicaMap<BetweenHandle<WithMeta<ProcessFilter>>> {
         self.networks
             .iter()
             .map(|(network, domain)| {
+                let incomings = incomings
+                    .remove(network.as_str())
+                    .expect("missing producer")
+                    .into_iter()
+                    .collect();
                 (
                     network.as_str(),
-                    domain.count_processes(self.metrics.clone()),
+                    domain.count_processes(incomings, self.metrics.clone()),
                 )
+            })
+            .collect()
+    }
+
+    #[tracing::instrument(skip_all, level = "debug")]
+    pub(crate) fn run_dispatch_to_update(
+        &self,
+        mut incoming_dispatches: HashMap<&str, UnboundedReceiver<WithMeta<DispatchFilter>>>,
+        mut incoming_updates: HashMap<&str, UnboundedReceiver<WithMeta<UpdateFilter>>>,
+    ) -> HashMap<&str, DispatchWaitHandle> {
+        self.networks
+            .iter()
+            .map(|(network, domain)| {
+                let incoming_dispatch = incoming_dispatches
+                    .remove(network.as_str())
+                    .expect("missing incoming dispatch");
+                let incoming_update = incoming_updates
+                    .remove(network.as_str())
+                    .expect("missing incoming update");
+
+                let d_to_r = domain.dispatch_to_update(
+                    incoming_dispatch,
+                    incoming_update,
+                    self.metrics.clone(),
+                );
+                (network.as_str(), d_to_r)
             })
             .collect()
     }

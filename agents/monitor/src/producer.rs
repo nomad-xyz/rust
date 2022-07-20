@@ -5,7 +5,7 @@ use nomad_ethereum::bindings::{
     home::{DispatchFilter, Home, UpdateFilter},
     replica::{ProcessFilter, Replica, UpdateFilter as RelayFilter},
 };
-use tokio::sync::mpsc::UnboundedSender;
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tracing::{info_span, Instrument};
 
 #[derive(Debug)]
@@ -15,7 +15,22 @@ pub(crate) struct DispatchProducer {
     tx: UnboundedSender<WithMeta<DispatchFilter>>,
 }
 
+impl std::fmt::Display for DispatchProducer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "DispatchProducer - {}'s home @ {}",
+            self.network,
+            self.home_address()
+        )
+    }
+}
+
 impl DispatchProducer {
+    pub(crate) fn home_address(&self) -> String {
+        format!("{:?}", self.home.address())
+    }
+
     pub(crate) fn new(
         home: Home<crate::Provider>,
         network: impl AsRef<str>,
@@ -30,9 +45,11 @@ impl DispatchProducer {
 }
 
 pub(crate) type DispatchProducerTask = Restartable<DispatchProducer>;
-pub(crate) type DispatchProducerHandle = StepHandle<DispatchProducer, WithMeta<DispatchFilter>>;
+pub(crate) type DispatchProducerHandle = StepHandle<DispatchProducer>;
 
-impl ProcessStep<WithMeta<DispatchFilter>> for DispatchProducer {
+impl ProcessStep for DispatchProducer {
+    type Output = UnboundedReceiver<WithMeta<DispatchFilter>>;
+
     fn spawn(self) -> DispatchProducerTask {
         let span = info_span!(
             "DispatchProducer",
@@ -86,7 +103,22 @@ pub(crate) struct UpdateProducer {
     tx: UnboundedSender<WithMeta<UpdateFilter>>,
 }
 
+impl std::fmt::Display for UpdateProducer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "UpdateProducer - {}'s home @ {}",
+            self.network,
+            self.home_address()
+        )
+    }
+}
+
 impl UpdateProducer {
+    pub(crate) fn home_address(&self) -> String {
+        format!("{:?}", self.home.address())
+    }
+
     pub(crate) fn new(
         home: Home<crate::Provider>,
         network: impl AsRef<str>,
@@ -101,9 +133,10 @@ impl UpdateProducer {
 }
 
 pub(crate) type UpdateProducerTask = Restartable<UpdateProducer>;
-pub(crate) type UpdateProducerHandle = StepHandle<UpdateProducer, WithMeta<UpdateFilter>>;
+pub(crate) type UpdateProducerHandle = StepHandle<UpdateProducer>;
 
-impl ProcessStep<WithMeta<UpdateFilter>> for UpdateProducer {
+impl ProcessStep for UpdateProducer {
+    type Output = UnboundedReceiver<WithMeta<UpdateFilter>>;
     fn spawn(self) -> UpdateProducerTask {
         let span = info_span!(
             "UpdateProducer",
@@ -158,7 +191,23 @@ pub(crate) struct RelayProducer {
     tx: UnboundedSender<WithMeta<RelayFilter>>,
 }
 
+impl std::fmt::Display for RelayProducer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "RelayProducer - {}'s replica of {} @ {}",
+            self.network,
+            self.replica_of,
+            self.replica_address()
+        )
+    }
+}
+
 impl RelayProducer {
+    pub(crate) fn replica_address(&self) -> String {
+        format!("{:?}", self.replica.address())
+    }
+
     pub(crate) fn new(
         replica: Replica<crate::Provider>,
         network: impl AsRef<str>,
@@ -175,9 +224,10 @@ impl RelayProducer {
 }
 
 pub(crate) type RelayProducerTask = Restartable<RelayProducer>;
-pub(crate) type RelayProducerHandle = StepHandle<RelayProducer, WithMeta<RelayFilter>>;
+pub(crate) type RelayProducerHandle = StepHandle<RelayProducer>;
 
-impl ProcessStep<WithMeta<RelayFilter>> for RelayProducer {
+impl ProcessStep for RelayProducer {
+    type Output = UnboundedReceiver<WithMeta<RelayFilter>>;
     fn spawn(self) -> RelayProducerTask {
         let span = info_span!(
             "RelayProducer",
@@ -233,6 +283,18 @@ pub(crate) struct ProcessProducer {
     tx: UnboundedSender<WithMeta<ProcessFilter>>,
 }
 
+impl std::fmt::Display for ProcessProducer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "ProcessProducer for {}'s replica of {} @ {}",
+            self.network,
+            self.replica_of,
+            self.replica_address()
+        )
+    }
+}
+
 impl ProcessProducer {
     pub(crate) fn new(
         replica: Replica<crate::Provider>,
@@ -247,12 +309,17 @@ impl ProcessProducer {
             tx,
         }
     }
+
+    pub(crate) fn replica_address(&self) -> String {
+        format!("{:?}", self.replica.address())
+    }
 }
 
 pub(crate) type ProcessProducerTask = Restartable<ProcessProducer>;
-pub(crate) type ProcessProducerHandle = StepHandle<ProcessProducer, WithMeta<ProcessFilter>>;
+pub(crate) type ProcessProducerHandle = StepHandle<ProcessProducer>;
 
-impl ProcessStep<WithMeta<ProcessFilter>> for ProcessProducer {
+impl ProcessStep for ProcessProducer {
+    type Output = UnboundedReceiver<WithMeta<ProcessFilter>>;
     fn spawn(self) -> ProcessProducerTask {
         let span = info_span!(
             "ProcessProducer",
