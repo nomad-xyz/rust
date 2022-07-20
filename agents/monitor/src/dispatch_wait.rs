@@ -1,13 +1,12 @@
 use ethers::prelude::U64;
-use nomad_ethereum::bindings::home::{DispatchFilter, UpdateFilter};
 use prometheus::{Histogram, HistogramTimer};
-use tokio::{
-    select,
-    sync::mpsc::{UnboundedReceiver, UnboundedSender},
-};
+use tokio::select;
 use tracing::{info_span, Instrument};
 
-use crate::{annotate::WithMeta, bail_task_if, ProcessStep, Restartable, StepHandle};
+use crate::{
+    bail_task_if, DispatchFaucet, DispatchSink, ProcessStep, Restartable, StepHandle, UpdateFaucet,
+    UpdateSink,
+};
 
 #[derive(Debug)]
 pub(crate) struct DispatchWaitMetrics {
@@ -17,8 +16,8 @@ pub(crate) struct DispatchWaitMetrics {
 
 #[derive(Debug)]
 pub(crate) struct DispatchWait {
-    incoming_dispatch: UnboundedReceiver<WithMeta<DispatchFilter>>,
-    incoming_update: UnboundedReceiver<WithMeta<UpdateFilter>>,
+    incoming_dispatch: DispatchFaucet,
+    incoming_update: UpdateFaucet,
 
     network: String,
     emitter: String,
@@ -28,8 +27,8 @@ pub(crate) struct DispatchWait {
     timers: Vec<HistogramTimer>,
     blocks: Vec<U64>,
 
-    outgoing_update: UnboundedSender<WithMeta<UpdateFilter>>,
-    outgoing_dispatch: UnboundedSender<WithMeta<DispatchFilter>>,
+    outgoing_update: UpdateSink,
+    outgoing_dispatch: DispatchSink,
 }
 
 impl std::fmt::Display for DispatchWait {
@@ -44,13 +43,13 @@ impl std::fmt::Display for DispatchWait {
 
 impl DispatchWait {
     pub(crate) fn new(
-        incoming_dispatch: UnboundedReceiver<WithMeta<DispatchFilter>>,
-        incoming_update: UnboundedReceiver<WithMeta<UpdateFilter>>,
+        incoming_dispatch: DispatchFaucet,
+        incoming_update: UpdateFaucet,
         network: String,
         emitter: String,
         metrics: DispatchWaitMetrics,
-        outgoing_update: UnboundedSender<WithMeta<UpdateFilter>>,
-        outgoing_dispatch: UnboundedSender<WithMeta<DispatchFilter>>,
+        outgoing_update: UpdateSink,
+        outgoing_dispatch: DispatchSink,
     ) -> Self {
         Self {
             incoming_dispatch,
@@ -87,8 +86,8 @@ pub(crate) type DispatchWaitHandle = StepHandle<DispatchWait>;
 
 #[derive(Debug)]
 pub struct DispatchWaitOutput {
-    pub(crate) dispatches: UnboundedReceiver<WithMeta<DispatchFilter>>,
-    pub(crate) updates: UnboundedReceiver<WithMeta<UpdateFilter>>,
+    pub(crate) dispatches: DispatchFaucet,
+    pub(crate) updates: UpdateFaucet,
 }
 
 impl ProcessStep for DispatchWait {

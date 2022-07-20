@@ -1,10 +1,12 @@
 use std::{collections::HashMap, fmt::Display, pin::Pin};
 
-use futures_util::future::{select_all, Select};
+use futures_util::future::select_all;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tracing::{info_span, Instrument};
 
-use crate::bail_task_if;
+use crate::{
+    bail_task_if, dispatch_wait::DispatchWaitOutput, DispatchFaucet, NetworkMap, UpdateFaucet,
+};
 
 use super::{HomeReplicaMap, ProcessStep, Restartable, StepHandle};
 
@@ -117,4 +119,17 @@ where
             .instrument(span),
         )
     }
+}
+
+pub(crate) fn split_dispatch_wait_output(
+    mut map: HashMap<&str, DispatchWaitOutput>,
+) -> (NetworkMap<DispatchFaucet>, NetworkMap<UpdateFaucet>) {
+    let mut dispatches = HashMap::new();
+    let mut updates = HashMap::new();
+
+    map.drain().for_each(|(k, v)| {
+        dispatches.insert(k, v.dispatches);
+        updates.insert(k, v.updates);
+    });
+    (dispatches, updates)
 }

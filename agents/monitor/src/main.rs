@@ -1,5 +1,13 @@
+use annotate::WithMeta;
+use nomad_ethereum::bindings::{
+    home::{DispatchFilter, UpdateFilter},
+    replica::{ProcessFilter, UpdateFilter as RelayFilter},
+};
 use std::{collections::HashMap, panic, sync::Arc};
-use tokio::task::JoinHandle;
+use tokio::{
+    sync::mpsc::{UnboundedReceiver, UnboundedSender},
+    task::JoinHandle,
+};
 use tracing::info_span;
 
 use ethers::prelude::{Http, Provider as EthersProvider};
@@ -20,7 +28,27 @@ pub(crate) type Provider = ethers::prelude::TimeLag<EthersProvider<Http>>;
 pub(crate) type ArcProvider = Arc<Provider>;
 // pub(crate) type ProviderError = ContractError<Provider>;
 
+pub(crate) type Faucet<T> = UnboundedReceiver<WithMeta<T>>;
+pub(crate) type Sink<T> = UnboundedSender<WithMeta<T>>;
+
+pub(crate) type DispatchFaucet = Faucet<DispatchFilter>;
+pub(crate) type UpdateFaucet = Faucet<UpdateFilter>;
+pub(crate) type RelayFaucet = Faucet<RelayFilter>;
+pub(crate) type ProcessFaucet = Faucet<ProcessFilter>;
+pub(crate) type DispatchSink = Sink<DispatchFilter>;
+pub(crate) type UpdateSink = Sink<UpdateFilter>;
+pub(crate) type RelaySink = Sink<RelayFilter>;
+pub(crate) type ProcessSink = Sink<ProcessFilter>;
+
+pub(crate) type NetworkMap<'a, T> = HashMap<&'a str, T>;
 pub(crate) type HomeReplicaMap<'a, T> = HashMap<&'a str, HashMap<&'a str, T>>;
+
+pub(crate) struct Faucets<'a> {
+    pub(crate) dispatches: NetworkMap<'a, DispatchFaucet>,
+    pub(crate) updates: NetworkMap<'a, UpdateFaucet>,
+    pub(crate) relays: HomeReplicaMap<'a, RelayFaucet>,
+    pub(crate) processes: HomeReplicaMap<'a, ProcessFaucet>,
+}
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -33,34 +61,12 @@ async fn main() -> eyre::Result<()> {
         tracing::info!("setup complete!");
         let _http = monitor.run_http_server();
 
-        let dispatch_producer = monitor.run_dispatch_producers();
-        let update_producer = monitor.run_update_producers();
-        let relay_producers = monitor.run_relay_producers();
-        let process_producers = monitor.run_process_producers();
+        let mut faucets = monitor.producers();
 
-        let (dispatch_handles, dispatch_producer) = utils::split(dispatch_producer);
-        let (update_handles, update_producer) = utils::split(update_producer);
-        let (relay_handles, relay_producers) = utils::nested_split(relay_producers);
-        let (process_handles, process_producers) = utils::nested_split(process_producers);
-
-        let dispatch_counters = monitor.run_between_dispatch(dispatch_producer);
-        let update_counters = monitor.run_between_update(update_producer);
-        let relay_counters = monitor.run_between_relay(relay_producers);
-        let process_counters = monitor.run_between_process(process_producers);
-
-        let (dispatch_count_handles, dispatch_producer) = utils::split(dispatch_counters);
-        let (update_count_handles, update_producer) = utils::split(update_counters);
-        let (relay_count_handles, relay_producer) = utils::nested_split(relay_counters);
-        let (process_count_handles, process_producer) = utils::nested_split(process_counters);
-
-        let d_to_u = monitor.run_dispatch_to_update(dispatch_producer, update_producer);
-
-        let (d_to_u_handles, d_and_u_producers) = utils::split(d_to_u);
+        monitor.run_betweens(&mut faucets);
+        monitor.run_dispatch_to_update(&mut faucets);
 
         tracing::info!("counters started");
-
-        // should cause it to run until crashes occur
-        let _ = update_handles.into_iter().next().unwrap().await;
     }
     Ok(())
 }

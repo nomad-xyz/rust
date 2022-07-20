@@ -1,14 +1,14 @@
 use ethers::prelude::H256;
-use futures_util::future::select_all;
-use prometheus::{Histogram, HistogramTimer};
-use std::{collections::HashMap, fmt::Display, time::Instant};
-use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
+use prometheus::Histogram;
+use std::{collections::HashMap, time::Instant};
+use tokio::sync::mpsc::unbounded_channel;
 use tracing::{info_span, Instrument};
 
-use nomad_ethereum::bindings::{home::UpdateFilter, replica::UpdateFilter as RelayFilter};
+use nomad_ethereum::bindings::replica::UpdateFilter as RelayFilter;
 
 use crate::{
-    annotate::WithMeta, bail_task_if, utils::SelectChannels, ProcessStep, Restartable, StepHandle,
+    annotate::WithMeta, bail_task_if, utils::SelectChannels, ProcessStep, RelayFaucet, RelaySink,
+    Restartable, StepHandle, UpdateFaucet, UpdateSink,
 };
 
 #[derive(Debug)]
@@ -18,7 +18,7 @@ pub(crate) struct UpdateWaitMetrics {
 
 #[derive(Debug)]
 pub(crate) struct UpdateWait {
-    incoming_update: UnboundedReceiver<WithMeta<UpdateFilter>>,
+    incoming_update: UpdateFaucet,
     incoming_relays: <SelectChannels<WithMeta<RelayFilter>> as ProcessStep>::Output,
 
     network: String,
@@ -27,18 +27,18 @@ pub(crate) struct UpdateWait {
     updates: HashMap<H256, Instant>,
     relays: HashMap<H256, HashMap<String, Instant>>,
 
-    outgoing_update: UnboundedSender<WithMeta<UpdateFilter>>,
-    outgoing_relays: HashMap<String, UnboundedSender<WithMeta<RelayFilter>>>,
+    outgoing_update: UpdateSink,
+    outgoing_relays: HashMap<String, RelaySink>,
 }
 
 impl UpdateWait {
     pub(crate) fn new(
-        incoming_update: UnboundedReceiver<WithMeta<UpdateFilter>>,
-        incoming_relays: HashMap<String, UnboundedReceiver<WithMeta<RelayFilter>>>,
+        incoming_update: UpdateFaucet,
+        incoming_relays: HashMap<String, RelayFaucet>,
         network: String,
         metrics: UpdateWaitMetrics,
-        outgoing_update: UnboundedSender<WithMeta<UpdateFilter>>,
-        outgoing_relays: HashMap<String, UnboundedSender<WithMeta<RelayFilter>>>,
+        outgoing_update: UpdateSink,
+        outgoing_relays: HashMap<String, RelaySink>,
     ) -> Self {
         let (tx, rx) = unbounded_channel();
 
@@ -68,8 +68,8 @@ pub(crate) type UpdateWaitHandle = StepHandle<UpdateWait>;
 
 #[derive(Debug)]
 pub struct UpdateWaitOutput {
-    pub(crate) updates: UnboundedReceiver<WithMeta<UpdateFilter>>,
-    pub(crate) relays: HashMap<String, UnboundedReceiver<WithMeta<RelayFilter>>>,
+    pub(crate) updates: UpdateFaucet,
+    pub(crate) relays: HashMap<String, RelayFaucet>,
 }
 
 impl UpdateWait {
