@@ -58,7 +58,7 @@ macro_rules! decl_settings {
         affix::paste! {
             #[derive(Debug, serde::Deserialize)]
             #[serde(rename_all = "camelCase")]
-            #[doc = "Settings for `" $name]
+            #[doc = "Settings for `" $name "`"]
             pub struct [<$name Settings>] {
                 #[serde(flatten)]
                 pub(crate) base: nomad_base::Settings,
