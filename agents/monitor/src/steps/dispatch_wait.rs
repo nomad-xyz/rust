@@ -4,8 +4,7 @@ use tokio::select;
 use tracing::{info_span, Instrument};
 
 use crate::{
-    bail_task_if, DispatchFaucet, DispatchSink, ProcessStep, Restartable, StepHandle, UpdateFaucet,
-    UpdateSink,
+    bail_task_if, DispatchFaucet, DispatchSink, ProcessStep, Restartable, UpdateFaucet, UpdateSink,
 };
 
 #[derive(Debug)]
@@ -82,13 +81,6 @@ impl DispatchWait {
 }
 
 pub(crate) type DispatchWaitTask = Restartable<DispatchWait>;
-pub(crate) type DispatchWaitHandle = StepHandle<DispatchWait, DispatchWaitOutput>;
-
-#[derive(Debug)]
-pub struct DispatchWaitOutput {
-    pub(crate) dispatches: DispatchFaucet,
-    pub(crate) updates: UpdateFaucet,
-}
 
 impl ProcessStep for DispatchWait {
     fn spawn(mut self) -> DispatchWaitTask

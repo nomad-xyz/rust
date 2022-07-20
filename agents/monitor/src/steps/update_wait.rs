@@ -8,7 +8,7 @@ use nomad_ethereum::bindings::replica::UpdateFilter as RelayFilter;
 
 use crate::{
     annotate::WithMeta, bail_task_if, utils::SelectChannels, ProcessStep, RelayFaucet, RelaySink,
-    Restartable, UpdateFaucet, UpdateSink,
+    UpdateFaucet, UpdateSink,
 };
 
 #[derive(Debug)]
@@ -62,8 +62,6 @@ impl std::fmt::Display for UpdateWait {
         write!(f, "UpdateToRelay - {}", self.network)
     }
 }
-
-pub(crate) type UpdateWaitTask = Restartable<UpdateWait>;
 
 impl UpdateWait {
     fn handle_relay(&mut self, net: &str, root: H256) {
