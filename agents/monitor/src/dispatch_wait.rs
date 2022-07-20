@@ -1,5 +1,6 @@
+use ethers::prelude::U64;
 use nomad_ethereum::bindings::home::{DispatchFilter, UpdateFilter};
-use prometheus::Histogram;
+use prometheus::{Histogram, HistogramTimer};
 use tokio::{
     select,
     sync::mpsc::{UnboundedReceiver, UnboundedSender},
@@ -18,9 +19,15 @@ pub(crate) struct DispatchWaitMetrics {
 pub(crate) struct DispatchWait {
     incoming_dispatch: UnboundedReceiver<WithMeta<DispatchFilter>>,
     incoming_update: UnboundedReceiver<WithMeta<UpdateFilter>>,
+
     network: String,
     emitter: String,
+
     metrics: DispatchWaitMetrics,
+
+    timers: Vec<HistogramTimer>,
+    blocks: Vec<U64>,
+
     outgoing_update: UnboundedSender<WithMeta<UpdateFilter>>,
     outgoing_dispatch: UnboundedSender<WithMeta<DispatchFilter>>,
 }
@@ -51,9 +58,27 @@ impl DispatchWait {
             network,
             emitter,
             metrics,
+            timers: vec![],
+            blocks: vec![],
             outgoing_update,
             outgoing_dispatch,
         }
+    }
+
+    fn handle_dispatch(&mut self, block_number: U64) {
+        self.timers.push(self.metrics.timer.start_timer());
+        self.blocks.push(block_number);
+    }
+
+    fn handle_update(&mut self, block_number: U64) {
+        // drain the entire vec
+        self.timers
+            .drain(0..)
+            .for_each(|timer| timer.observe_duration());
+        self.blocks.drain(0..).for_each(|dispatch_height| {
+            let diff = block_number.saturating_sub(dispatch_height);
+            self.metrics.blocks.observe(diff.as_u64() as f64);
+        });
     }
 }
 
@@ -78,9 +103,6 @@ impl ProcessStep for DispatchWait {
             network = self.network.as_str(),
             emitter = self.emitter.as_str(),
         );
-
-        let mut timers = vec![];
-        let mut blocks = vec![];
 
         tokio::spawn(
             async move {
@@ -113,8 +135,7 @@ impl ProcessStep for DispatchWait {
                                 self,
                                 "outbound dispatch broke"
                             );
-                            timers.push(self.metrics.timer.start_timer());
-                            blocks.push(block_number);
+                            self.handle_dispatch(block_number);
                         }
                         update_opt = self.incoming_update.recv() => {
                             bail_task_if!(
@@ -130,12 +151,7 @@ impl ProcessStep for DispatchWait {
                                 self,
                                 "outbound update broke"
                             );
-                            // drain the entire vec
-                            timers.drain(0..).for_each(|timer| timer.observe_duration());
-                            blocks.drain(0..).for_each(|dispatch_height| {
-                                let diff = block_number.saturating_sub(dispatch_height);
-                                self.metrics.blocks.observe(diff.as_u64() as f64);
-                            });
+                            self.handle_update(block_number);
                         }
                     }
                 }

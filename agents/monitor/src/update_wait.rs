@@ -42,7 +42,8 @@ impl UpdateWait {
     ) -> Self {
         let (tx, rx) = unbounded_channel();
 
-        let _ = SelectChannels::new(incoming_relays, tx).spawn();
+        SelectChannels::new(incoming_relays, tx).spawn();
+
         Self {
             incoming_update,
             incoming_relays: rx,

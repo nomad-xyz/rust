@@ -8,6 +8,7 @@ use crate::bail_task_if;
 
 use super::{HomeReplicaMap, ProcessStep, Restartable, StepHandle};
 
+// split handles from outputs
 pub(crate) fn split<T>(
     map: HashMap<&str, StepHandle<T>>,
 ) -> (
@@ -28,6 +29,7 @@ where
     (handles, map)
 }
 
+// split handles from outputs in a nested map
 pub(crate) fn nested_split<T>(
     map: HomeReplicaMap<StepHandle<T>>,
 ) -> (
