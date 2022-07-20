@@ -82,7 +82,7 @@ macro_rules! decl_config {
 
             #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
             #[serde(rename_all = "camelCase")]
-            #[doc = "Config for `" $name]
+            #[doc = "Config for `" $name "`"]
             #[allow(missing_copy_implementations)]
             pub struct [<$name Config>] {
                 $(

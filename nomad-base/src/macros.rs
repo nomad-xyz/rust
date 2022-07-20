@@ -61,7 +61,7 @@ macro_rules! decl_channel {
     ) => {
         affix::paste! {
             #[derive(Debug, Clone)]
-            #[doc = "Channel for `" $name]
+            #[doc = "Channel for `" $name "`"]
             pub struct [<$name Channel>] {
                 pub(crate) base: nomad_base::ChannelBase,
                 $(
