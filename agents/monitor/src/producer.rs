@@ -1,5 +1,3 @@
-use crate::{annotate::WithMeta, bail_task_if, ProcessStep, Restartable, StepHandle};
-
 use ethers::prelude::Middleware;
 use nomad_ethereum::bindings::{
     home::{DispatchFilter, Home, UpdateFilter},
@@ -8,11 +6,16 @@ use nomad_ethereum::bindings::{
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tracing::{info_span, Instrument};
 
+use crate::{
+    annotate::WithMeta, bail_task_if, DispatchFaucet, DispatchSink, ProcessStep, Restartable,
+    StepHandle,
+};
+
 #[derive(Debug)]
 pub(crate) struct DispatchProducer {
     home: Home<crate::Provider>,
     network: String,
-    tx: UnboundedSender<WithMeta<DispatchFilter>>,
+    tx: DispatchSink,
 }
 
 impl std::fmt::Display for DispatchProducer {
@@ -48,7 +51,7 @@ pub(crate) type DispatchProducerTask = Restartable<DispatchProducer>;
 pub(crate) type DispatchProducerHandle = StepHandle<DispatchProducer>;
 
 impl ProcessStep for DispatchProducer {
-    type Output = UnboundedReceiver<WithMeta<DispatchFilter>>;
+    type Output = DispatchFaucet;
 
     fn spawn(self) -> DispatchProducerTask {
         let span = info_span!(
@@ -148,7 +151,11 @@ impl ProcessStep for UpdateProducer {
         tokio::spawn(
             async move {
                 let provider = self.home.client();
-                let height = provider.get_block_number().await.unwrap();
+                let height = provider.get_block_number().await;
+
+                bail_task_if!(height.is_err(), self, "Err retrieving height");
+                let height = height.expect("checked");
+
                 let mut from = height - 10;
                 let mut to = height - 5;
                 loop {
@@ -171,7 +178,7 @@ impl ProcessStep for UpdateProducer {
                     let tip_res = provider.get_block_number().await;
                     bail_task_if!(tip_res.is_err(), self, tip_res.unwrap_err());
 
-                    let tip = tip_res.unwrap() - 5;
+                    let tip = tip_res.expect("checked") - 5;
                     from = to;
                     to = std::cmp::max(to, tip);
 

@@ -10,8 +10,6 @@ use tokio::task::JoinHandle;
 use tracing_subscriber::EnvFilter;
 
 use crate::{
-    between::{BetweenDispatch, BetweenProcess, BetweenRelay, BetweenUpdate},
-    dispatch_wait::DispatchWaitHandle,
     domain::Domain,
     metrics::Metrics,
     producer::{
@@ -223,15 +221,13 @@ impl Monitor {
         });
     }
 
-    // TODO
-    // pub(crate) fn run_update_to_relay<'a>(&'a self, faucets: &mut Faucets<'a>) {
-    //     self.networks.iter().for_each(|(k,v)| {
-    //         let incoming_update = faucets
-    //             .updates
-    //             .remove(network.as_str())
-    //             .expect("missing incoming update");
-
-    //         todo!()
-    //     });
-    // }
+    pub(crate) fn run_update_to_relay<'a>(&'a self, faucets: &mut Faucets<'a>) {
+        self.networks.iter().for_each(|(_, v)| {
+            v.update_to_relay(
+                &mut faucets.updates,
+                &mut faucets.relays,
+                self.metrics.clone(),
+            )
+        });
+    }
 }

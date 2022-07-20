@@ -18,8 +18,8 @@ pub(crate) struct UpdateWaitMetrics {
 
 #[derive(Debug)]
 pub(crate) struct UpdateWait {
-    incoming_update: UpdateFaucet,
-    incoming_relays: <SelectChannels<WithMeta<RelayFilter>> as ProcessStep>::Output,
+    update_faucet: UpdateFaucet,
+    relay_faucets: <SelectChannels<WithMeta<RelayFilter>> as ProcessStep>::Output,
 
     network: String,
     metrics: UpdateWaitMetrics,
@@ -27,32 +27,32 @@ pub(crate) struct UpdateWait {
     updates: HashMap<H256, Instant>,
     relays: HashMap<H256, HashMap<String, Instant>>,
 
-    outgoing_update: UpdateSink,
-    outgoing_relays: HashMap<String, RelaySink>,
+    update_sink: UpdateSink,
+    relay_sinks: HashMap<String, RelaySink>,
 }
 
 impl UpdateWait {
     pub(crate) fn new(
-        incoming_update: UpdateFaucet,
-        incoming_relays: HashMap<String, RelayFaucet>,
-        network: String,
+        update_faucet: UpdateFaucet,
+        relay_faucets: HashMap<String, RelayFaucet>,
+        network: impl AsRef<str>,
         metrics: UpdateWaitMetrics,
-        outgoing_update: UpdateSink,
-        outgoing_relays: HashMap<String, RelaySink>,
+        update_sink: UpdateSink,
+        relay_sinks: HashMap<String, RelaySink>,
     ) -> Self {
         let (tx, rx) = unbounded_channel();
 
-        SelectChannels::new(incoming_relays, tx).spawn();
+        SelectChannels::new(relay_faucets, tx).spawn();
 
         Self {
-            incoming_update,
-            incoming_relays: rx,
-            network,
+            update_faucet,
+            relay_faucets: rx,
+            network: network.as_ref().to_owned(),
             metrics,
             updates: Default::default(),
             relays: Default::default(),
-            outgoing_update,
-            outgoing_relays,
+            update_sink,
+            relay_sinks,
         }
     }
 }
@@ -128,7 +128,7 @@ impl ProcessStep for UpdateWait {
 
                         biased;
 
-                        update_opt = self.incoming_update.recv() => {
+                        update_opt = self.update_faucet.recv() => {
                             bail_task_if!(
                                 update_opt.is_none(),
                                 self,
@@ -138,14 +138,14 @@ impl ProcessStep for UpdateWait {
                             let root: H256 = update.log.new_root.into();
                             bail_task_if!{
                                 // send onwards
-                                self.outgoing_update.send(update).is_err(),
+                                self.update_sink.send(update).is_err(),
                                 self,
                                 "Outbound updates broke",
                             };
 
                             self.handle_update(root);
                         }
-                        relay_opt = self.incoming_relays.recv() => {
+                        relay_opt = self.relay_faucets.recv() => {
                             bail_task_if!(
                                 relay_opt.is_none(),
                                 self,
@@ -156,7 +156,7 @@ impl ProcessStep for UpdateWait {
 
                             bail_task_if!(
                                 // send onward
-                                self.outgoing_relays
+                                self.relay_sinks
                                     .get(&net)
                                     .expect("missing outgoing")
                                     .send(relay)

@@ -14,8 +14,9 @@ use crate::{
         DispatchProducer, DispatchProducerHandle, ProcessProducer, ProcessProducerHandle,
         RelayProducer, RelayProducerHandle, UpdateProducer, UpdateProducerHandle,
     },
-    DispatchFaucet, Faucet, NetworkMap, ProcessFaucet, ProcessStep, Provider, RelayFaucet,
-    StepHandle, UpdateFaucet,
+    update_wait::UpdateWait,
+    DispatchFaucet, Faucet, HomeReplicaMap, NetworkMap, ProcessFaucet, ProcessStep, Provider,
+    RelayFaucet, StepHandle, UpdateFaucet,
 };
 
 #[derive(Debug)]
@@ -251,5 +252,52 @@ impl Domain {
                 updates,
             },
         }
+    }
+
+    pub(crate) fn update_to_relay<'a>(
+        &'a self,
+        global_updates: &mut NetworkMap<'a, UpdateFaucet>,
+        global_relays: &mut HomeReplicaMap<'a, RelayFaucet>,
+        metrics: Arc<Metrics>,
+    ) {
+        let mut relay_faucets = HashMap::new();
+        let mut relay_sinks = HashMap::new();
+
+        // we want to go through each network that is NOT this network
+        // get the relay sink FOR THIS NETWORK'S REPLICA
+        global_relays
+            .iter_mut()
+            // does not match this network
+            .filter(|(k, _)| **k != self.network)
+            .for_each(|(k, v)| {
+                // create a new channel
+                let (sink, faucet) = unbounded_channel();
+                // insert this in the map we'll give to the metrics task
+                relay_sinks.insert(k.to_string(), sink);
+
+                // replace the faucet in the global producers map
+                let faucet = v
+                    .insert(self.name(), faucet)
+                    .expect("missing relay producer");
+                // insert upstream faucet into the map we'll give to the
+                // metrics task
+                relay_faucets.insert(k.to_string(), faucet);
+            });
+
+        let (update_sink, update_faucet) = unbounded_channel();
+
+        let update_faucet = global_updates
+            .insert(self.name(), update_faucet)
+            .expect("missing producer");
+
+        UpdateWait::new(
+            update_faucet,
+            relay_faucets,
+            self.name(),
+            metrics.update_wait_metrics(self.name(), &self.home_address()),
+            update_sink,
+            relay_sinks,
+        )
+        .spawn();
     }
 }
