@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use nomad_ethereum::bindings::{
-    home::Home,
+    home::{DispatchFilter, Home, UpdateFilter},
     replica::{ProcessFilter, Replica, UpdateFilter as RelayFilter},
 };
 use nomad_xyz_configuration::{contracts::CoreContracts, NomadConfig};
@@ -10,6 +10,7 @@ use tokio::sync::mpsc;
 use crate::{
     annotate::WithMeta,
     between::{BetweenEvents, BetweenHandle, BetweenMetrics},
+    dispatch_wait::{DispatchWait, DispatchWaitHandle, DispatchWaitOutput},
     init::provider_for,
     metrics::Metrics,
     producer::{
@@ -27,6 +28,10 @@ pub(crate) struct Domain {
 }
 
 impl Domain {
+    pub(crate) fn home_address(&self) -> String {
+        format!("{:?}", self.home.address())
+    }
+
     pub(crate) fn from_config(config: &NomadConfig, network: &str) -> eyre::Result<Self> {
         let network = network.to_owned();
         let provider = provider_for(config, &network)?;
@@ -135,67 +140,125 @@ impl Domain {
     {
         let network = self.network.clone();
         let (tx, rx) = mpsc::unbounded_channel();
+        let emitter = self.home_address();
+
+        tracing::debug!(
+            network = network,
+            home = emitter,
+            event = event.as_ref(),
+            "starting counter",
+        );
         let handle =
-            BetweenEvents::<WithMeta<T>>::new(incoming, metrics, network, event, tx).spawn();
+            BetweenEvents::<WithMeta<T>>::new(incoming, metrics, network, event, emitter, tx)
+                .spawn();
 
         StepHandle { handle, rx }
     }
 
+    pub(crate) fn count_dispatches(
+        &self,
+        incoming: mpsc::UnboundedReceiver<WithMeta<DispatchFilter>>,
+        metrics: BetweenMetrics,
+        event: impl AsRef<str>,
+    ) -> BetweenHandle<WithMeta<DispatchFilter>> {
+        self.count(incoming, metrics, event)
+    }
+
+    pub(crate) fn count_updates(
+        &self,
+        incoming: mpsc::UnboundedReceiver<WithMeta<UpdateFilter>>,
+        metrics: BetweenMetrics,
+        event: impl AsRef<str>,
+    ) -> BetweenHandle<WithMeta<UpdateFilter>> {
+        self.count(incoming, metrics, event)
+    }
+
     pub(crate) fn count_relays(
         &self,
+        mut incomings: HashMap<&str, mpsc::UnboundedReceiver<WithMeta<RelayFilter>>>,
         metrics: Arc<Metrics>,
     ) -> HashMap<&str, BetweenHandle<WithMeta<RelayFilter>>> {
-        self.relay_producers()
-            .into_iter()
-            .map(|(replica_of, producer)| {
-                let emitter = format!(
-                    "{:?}",
-                    self.replicas.get(&replica_of.to_owned()).unwrap().address()
-                );
-                let network = &self.network;
+        self.replicas
+            .iter()
+            .map(|(replica_of, replica)| {
+                let emitter = format!("{:?}", replica.address());
+                let network = self.name();
                 let event = "relay";
                 tracing::debug!(
-                    network = self.name(),
+                    network = network,
                     replica = emitter,
                     event,
-                    "starting relay counter",
+                    "starting counter",
                 );
-
+                let incoming = incomings
+                    .remove(replica_of.as_str())
+                    .expect("Missing channel");
                 let metrics = metrics.between_metrics(network, event, &emitter, Some(replica_of));
 
-                let between = self.count(producer.rx, metrics, event);
+                let between = self.count(incoming, metrics, event);
 
-                (replica_of, between)
+                (replica_of.as_str(), between)
             })
             .collect()
     }
 
     pub(crate) fn count_processes(
         &self,
+        mut incomings: HashMap<&str, mpsc::UnboundedReceiver<WithMeta<ProcessFilter>>>,
         metrics: Arc<Metrics>,
     ) -> HashMap<&str, BetweenHandle<WithMeta<ProcessFilter>>> {
-        self.process_producers()
-            .into_iter()
-            .map(|(replica_of, producer)| {
-                let emitter = format!(
-                    "{:?}",
-                    self.replicas.get(&replica_of.to_owned()).unwrap().address()
-                );
-                let network = &self.network;
+        self.replicas
+            .iter()
+            .map(|(replica_of, replica)| {
+                let emitter = format!("{:?}", replica.address());
+                let network = self.name();
                 let event = "process";
                 tracing::debug!(
-                    network = self.name(),
+                    network = network,
                     replica = emitter,
                     event,
-                    "starting process counter",
+                    "starting counter",
                 );
-
+                let incoming = incomings
+                    .remove(replica_of.as_str())
+                    .expect("Missing channel");
                 let metrics = metrics.between_metrics(network, event, &emitter, Some(replica_of));
 
-                let between = self.count(producer.rx, metrics, event);
+                let between = self.count(incoming, metrics, event);
 
-                (replica_of, between)
+                (replica_of.as_str(), between)
             })
             .collect()
+    }
+
+    pub(crate) fn dispatch_to_update(
+        &self,
+        incoming_dispatch: mpsc::UnboundedReceiver<WithMeta<DispatchFilter>>,
+        incoming_update: mpsc::UnboundedReceiver<WithMeta<UpdateFilter>>,
+        metrics: Arc<Metrics>,
+    ) -> DispatchWaitHandle {
+        let metrics = metrics.dispatch_wait_metrics(&self.network, &self.home_address());
+
+        let (outgoing_update, updates) = mpsc::unbounded_channel();
+        let (outgoing_dispatch, dispatches) = mpsc::unbounded_channel();
+
+        let handle = DispatchWait::new(
+            incoming_dispatch,
+            incoming_update,
+            self.name().to_owned(),
+            self.home_address(),
+            metrics,
+            outgoing_update,
+            outgoing_dispatch,
+        )
+        .spawn();
+
+        DispatchWaitHandle {
+            handle,
+            rx: DispatchWaitOutput {
+                dispatches,
+                updates,
+            },
+        }
     }
 }

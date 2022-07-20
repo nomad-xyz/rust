@@ -4,13 +4,16 @@ use prometheus::{Encoder, Histogram, HistogramOpts, HistogramVec, IntCounter, In
 use tokio::task::JoinHandle;
 use warp::Filter;
 
-use crate::between::BetweenMetrics;
+use crate::{between::BetweenMetrics, dispatch_wait::DispatchWaitMetrics};
 
 #[derive(Debug)]
 pub(crate) struct Metrics {
     wallclock_times: prometheus::HistogramVec,
     event_blocks: prometheus::HistogramVec,
-    counts: prometheus::IntCounterVec,
+    event_counts: prometheus::IntCounterVec,
+
+    dispatch_to_update_timers: prometheus::HistogramVec,
+    dispatch_to_update_blocks: prometheus::HistogramVec,
 }
 
 fn u16_from_env(s: impl AsRef<str>) -> Option<u16> {
@@ -27,6 +30,26 @@ fn gather() -> prometheus::Result<Vec<u8>> {
 
 impl Metrics {
     pub(crate) fn new() -> eyre::Result<Self> {
+        let dispatch_to_update_timers = HistogramVec::new(
+            HistogramOpts::new(
+                "dispatch_to_update_ms",
+                "Ms between dispatch and update, as observed by this agent",
+            )
+            .namespace("nomad")
+            .const_label("VERSION", env!("CARGO_PKG_VERSION")),
+            &["chain", "emitter"],
+        )?;
+
+        let dispatch_to_update_blocks = HistogramVec::new(
+            HistogramOpts::new(
+                "dispatch_to_update_blocks",
+                "Blocks between dispatch and update, as observed by this agent",
+            )
+            .namespace("nomad")
+            .const_label("VERSION", env!("CARGO_PKG_VERSION")),
+            &["chain", "emitter"],
+        )?;
+
         let wallclock_times = HistogramVec::new(
             HistogramOpts::new(
                 "inter_event_period_wallclock_ms",
@@ -67,11 +90,19 @@ impl Metrics {
         registry
             .register(Box::new(counts.clone()))
             .expect("unable to register metric");
+        registry
+            .register(Box::new(dispatch_to_update_timers.clone()))
+            .expect("unable to register metric");
+        registry
+            .register(Box::new(dispatch_to_update_blocks.clone()))
+            .expect("unable to register metric");
 
         Ok(Self {
             wallclock_times,
             event_blocks,
-            counts,
+            event_counts: counts,
+            dispatch_to_update_blocks,
+            dispatch_to_update_timers,
         })
     }
 
@@ -116,7 +147,7 @@ impl Metrics {
         emitter: &str,
         replica_of: Option<&str>,
     ) -> IntCounter {
-        self.counts
+        self.event_counts
             .with_label_values(&[network, event, emitter, replica_of.unwrap_or("n/a")])
     }
 
@@ -157,6 +188,21 @@ impl Metrics {
             count: self.event_counter(network, event, emitter, replica_of),
             wallclock_latency: self.wallclock_latency(network, event, emitter, replica_of),
             block_latency: self.block_latency(network, event, emitter, replica_of),
+        }
+    }
+
+    pub(crate) fn dispatch_wait_metrics(
+        &self,
+        network: &str,
+        emitter: &str,
+    ) -> DispatchWaitMetrics {
+        DispatchWaitMetrics {
+            timer: self
+                .dispatch_to_update_timers
+                .with_label_values(&[network, emitter]),
+            blocks: self
+                .dispatch_to_update_blocks
+                .with_label_values(&[network, emitter]),
         }
     }
 }

@@ -1,7 +1,6 @@
-use annotate::WithMeta;
-use std::{panic, sync::Arc};
-use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
-use tracing::{debug_span, info_span, Instrument};
+use std::{collections::HashMap, panic, sync::Arc};
+use tokio::task::JoinHandle;
+use tracing::info_span;
 
 use ethers::prelude::{Http, Provider as EthersProvider};
 
@@ -13,10 +12,15 @@ pub(crate) mod init;
 pub(crate) mod macros;
 pub(crate) mod metrics;
 pub(crate) mod producer;
+pub(crate) mod terminal;
+pub(crate) mod update_wait;
+pub(crate) mod utils;
 
 pub(crate) type Provider = ethers::prelude::TimeLag<EthersProvider<Http>>;
 pub(crate) type ArcProvider = Arc<Provider>;
 // pub(crate) type ProviderError = ContractError<Provider>;
+
+pub(crate) type HomeReplicaMap<'a, T> = HashMap<&'a str, HashMap<&'a str, T>>;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -29,35 +33,63 @@ async fn main() -> eyre::Result<()> {
         tracing::info!("setup complete!");
         let _http = monitor.run_http_server();
 
-        let dispatch_trackers = monitor.run_between_dispatch();
-        let _update_counters = monitor.run_between_update();
-        let _relay_counters = monitor.run_between_relay();
-        let _process_counters = monitor.run_between_process();
+        let dispatch_producer = monitor.run_dispatch_producers();
+        let update_producer = monitor.run_update_producers();
+        let relay_producers = monitor.run_relay_producers();
+        let process_producers = monitor.run_process_producers();
+
+        let (dispatch_handles, dispatch_producer) = utils::split(dispatch_producer);
+        let (update_handles, update_producer) = utils::split(update_producer);
+        let (relay_handles, relay_producers) = utils::nested_split(relay_producers);
+        let (process_handles, process_producers) = utils::nested_split(process_producers);
+
+        let dispatch_counters = monitor.run_between_dispatch(dispatch_producer);
+        let update_counters = monitor.run_between_update(update_producer);
+        let relay_counters = monitor.run_between_relay(relay_producers);
+        let process_counters = monitor.run_between_process(process_producers);
+
+        let (dispatch_count_handles, dispatch_producer) = utils::split(dispatch_counters);
+        let (update_count_handles, update_producer) = utils::split(update_counters);
+        let (relay_count_handles, relay_producer) = utils::nested_split(relay_counters);
+        let (process_count_handles, process_producer) = utils::nested_split(process_counters);
+
+        let d_to_u = monitor.run_dispatch_to_update(dispatch_producer, update_producer);
+
+        let (d_to_u_handles, d_and_u_producers) = utils::split(d_to_u);
 
         tracing::info!("counters started");
 
         // should cause it to run until crashes occur
-        let _ = dispatch_trackers.into_iter().next().unwrap().1.handle.await;
+        let _ = update_handles.into_iter().next().unwrap().await;
     }
     Ok(())
 }
 
 pub type Restartable<Task> = JoinHandle<(Task, eyre::Report)>;
 
-pub(crate) struct StepHandle<Task, Produces> {
+/// A step handle is the handle to the process, and its outbound channels.
+///
+/// Task creation reutns a step handle so that we can
+/// - track the
+pub(crate) struct StepHandle<Task>
+where
+    Task: ProcessStep,
+{
     handle: Restartable<Task>,
-    rx: UnboundedReceiver<Produces>,
+    rx: <Task as ProcessStep>::Output,
 }
 
-pub(crate) trait ProcessStep<T>
-where
-    T: 'static + Send + Sync + std::fmt::Debug,
-{
+pub(crate) trait ProcessStep: std::fmt::Display {
+    type Output: 'static + Send + Sync + std::fmt::Debug;
+
     fn spawn(self) -> Restartable<Self>
     where
         Self: 'static + Send + Sync + Sized;
 
-    fn forever(self) -> JoinHandle<()>
+    /// Run the task until it panics. Errors result in a task restart with the
+    /// same channels. This means that an error causes the task to lose only
+    /// the data that is in-scope when it faults.
+    fn run_until_panic(self) -> Restartable<Self>
     where
         Self: 'static + Send + Sync + Sized,
     {
@@ -72,43 +104,12 @@ where
                         handle
                     }
                     Err(e) => {
-                        tracing::error!(err = %e, "JoinError in forever");
-                        panic!("JoinError in forever");
+                        tracing::error!(err = %e, "JoinError in forever. Internal task panicked");
+                        panic!("JoinError in forever. Internal task panicked");
                     }
                 };
                 handle = again.spawn()
             }
         })
-    }
-}
-
-/// A process step that just drains its input and drops everything
-/// Its [`StepHandle`] will never produce values.
-pub(crate) struct Terminal<T>
-where
-    T: std::fmt::Debug,
-{
-    rx: UnboundedReceiver<WithMeta<T>>,
-}
-
-pub(crate) type TerminalHandle<T> = Restartable<Terminal<T>>;
-
-impl<T> ProcessStep<T> for Terminal<T>
-where
-    T: 'static + Send + Sync + std::fmt::Debug,
-{
-    fn spawn(mut self) -> TerminalHandle<T> {
-        let span = debug_span!("Terminal Handler");
-        tokio::spawn(
-            async move {
-                loop {
-                    if self.rx.recv().await.is_none() {
-                        tracing::info!("Upstream broke, shutting down");
-                        return (self, eyre::eyre!(""));
-                    }
-                }
-            }
-            .instrument(span),
-        )
     }
 }
