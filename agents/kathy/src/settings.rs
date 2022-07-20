@@ -12,6 +12,7 @@ mod test {
     use nomad_test::test_utils;
     use nomad_xyz_configuration::{agent::kathy::ChatGenConfig, AgentSecrets};
     use serde_json::json;
+    use std::collections::HashSet;
 
     #[tokio::test]
     #[serial_test::serial]
@@ -21,7 +22,7 @@ mod test {
                 .unwrap();
         let config_json = json!(config).to_string();
         test_utils::run_test_with_http_response(config_json, |url| async move {
-            test_utils::run_test_with_env("../../fixtures/env.test-agents", || async move {
+            test_utils::run_test_with_env("../../fixtures/env.external", || async move {
                 std::env::set_var("CONFIG_URL", url);
 
                 let agent_home = dotenv::var("AGENT_HOME_NAME").unwrap();
@@ -48,9 +49,15 @@ mod test {
                     )
                     .unwrap();
 
-                let agent_config = &config.agent().get("ethereum").unwrap().kathy;
-                assert_eq!(settings.agent.interval, agent_config.interval);
-                assert_eq!(settings.agent.chat, agent_config.chat);
+                let mut settings_networks = settings
+                    .base
+                    .replicas
+                    .values()
+                    .map(|c| c.name.clone())
+                    .collect::<HashSet<_>>();
+                settings_networks.insert(settings.base.home.name.clone());
+
+                assert_eq!(config.networks, settings_networks);
             })
             .await
         })
