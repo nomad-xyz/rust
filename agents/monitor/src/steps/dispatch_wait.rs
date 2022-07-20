@@ -16,8 +16,8 @@ pub(crate) struct DispatchWaitMetrics {
 
 #[derive(Debug)]
 pub(crate) struct DispatchWait {
-    incoming_dispatch: DispatchFaucet,
-    incoming_update: UpdateFaucet,
+    dispatch_faucet: DispatchFaucet,
+    update_faucet: UpdateFaucet,
 
     network: String,
     emitter: String,
@@ -27,8 +27,8 @@ pub(crate) struct DispatchWait {
     timers: Vec<HistogramTimer>,
     blocks: Vec<U64>,
 
-    outgoing_update: UpdateSink,
-    outgoing_dispatch: DispatchSink,
+    dispatch_sink: DispatchSink,
+    update_sink: UpdateSink,
 }
 
 impl std::fmt::Display for DispatchWait {
@@ -43,24 +43,24 @@ impl std::fmt::Display for DispatchWait {
 
 impl DispatchWait {
     pub(crate) fn new(
-        incoming_dispatch: DispatchFaucet,
-        incoming_update: UpdateFaucet,
+        dispatch_faucet: DispatchFaucet,
+        update_faucet: UpdateFaucet,
         network: String,
         emitter: String,
         metrics: DispatchWaitMetrics,
-        outgoing_update: UpdateSink,
-        outgoing_dispatch: DispatchSink,
+        dispatch_sink: DispatchSink,
+        update_sink: UpdateSink,
     ) -> Self {
         Self {
-            incoming_dispatch,
-            incoming_update,
+            dispatch_faucet,
+            update_faucet,
             network,
             emitter,
             metrics,
             timers: vec![],
             blocks: vec![],
-            outgoing_update,
-            outgoing_dispatch,
+            dispatch_sink,
+            update_sink,
         }
     }
 
@@ -82,7 +82,7 @@ impl DispatchWait {
 }
 
 pub(crate) type DispatchWaitTask = Restartable<DispatchWait>;
-pub(crate) type DispatchWaitHandle = StepHandle<DispatchWait>;
+pub(crate) type DispatchWaitHandle = StepHandle<DispatchWait, DispatchWaitOutput>;
 
 #[derive(Debug)]
 pub struct DispatchWaitOutput {
@@ -91,8 +91,6 @@ pub struct DispatchWaitOutput {
 }
 
 impl ProcessStep for DispatchWait {
-    type Output = DispatchWaitOutput;
-
     fn spawn(mut self) -> DispatchWaitTask
     where
         Self: 'static + Send + Sync + Sized,
@@ -121,7 +119,7 @@ impl ProcessStep for DispatchWait {
                         // first. i.e. ready dispatches will arrive first
                         biased;
 
-                        dispatch_next = self.incoming_dispatch.recv() => {
+                        dispatch_next = self.dispatch_faucet.recv() => {
                             bail_task_if!(
                                 dispatch_next.is_none(),
                                 self,
@@ -130,13 +128,13 @@ impl ProcessStep for DispatchWait {
                             let dispatch = dispatch_next.expect("checked in block");
                             let block_number = dispatch.meta.block_number;
                             bail_task_if!(
-                                self.outgoing_dispatch.send(dispatch).is_err(),
+                                self.dispatch_sink.send(dispatch).is_err(),
                                 self,
                                 "outbound dispatch broke"
                             );
                             self.handle_dispatch(block_number);
                         }
-                        update_opt = self.incoming_update.recv() => {
+                        update_opt = self.update_faucet.recv() => {
                             bail_task_if!(
                                 update_opt.is_none(),
                                 self,
@@ -146,7 +144,7 @@ impl ProcessStep for DispatchWait {
                             let block_number = update.meta.block_number;
 
                             bail_task_if!(
-                                self.outgoing_update.send(update).is_err(),
+                                self.update_sink.send(update).is_err(),
                                 self,
                                 "outbound update broke"
                             );

@@ -28,8 +28,6 @@ impl<T> ProcessStep for Terminal<T>
 where
     T: std::fmt::Debug + Send + Sync + 'static,
 {
-    type Output = ();
-
     fn spawn(mut self) -> TerminalHandle<T> {
         let span = debug_span!("Terminal Handler");
         tokio::spawn(

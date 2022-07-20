@@ -4,9 +4,9 @@ use nomad_ethereum::bindings::{
 };
 use tracing::{info_span, Instrument};
 
-use tokio::sync::mpsc::{self, UnboundedReceiver};
+use tokio::sync::mpsc::{self};
 
-use crate::{annotate::WithMeta, bail_task_if, ProcessStep, Restartable, StepHandle};
+use crate::{annotate::WithMeta, bail_task_if, Faucet, ProcessStep, Restartable, StepHandle};
 
 pub(crate) struct BetweenMetrics {
     pub(crate) count: prometheus::IntCounter,
@@ -16,12 +16,12 @@ pub(crate) struct BetweenMetrics {
 
 // Track time between events of the same kind
 pub(crate) struct BetweenEvents<T> {
-    pub(crate) incoming: mpsc::UnboundedReceiver<T>,
+    pub(crate) faucet: mpsc::UnboundedReceiver<T>,
     pub(crate) metrics: BetweenMetrics,
     pub(crate) network: String,
     pub(crate) event: String,
     pub(crate) emitter: String,
-    pub(crate) outgoing: mpsc::UnboundedSender<T>,
+    pub(crate) sink: mpsc::UnboundedSender<T>,
 }
 
 impl<T> std::fmt::Display for BetweenEvents<T> {
@@ -49,25 +49,25 @@ where
     T: 'static + std::fmt::Debug,
 {
     pub(crate) fn new(
-        incoming: mpsc::UnboundedReceiver<T>,
+        faucet: mpsc::UnboundedReceiver<T>,
         metrics: BetweenMetrics,
         network: impl AsRef<str>,
         event: impl AsRef<str>,
         emitter: impl AsRef<str>,
-        outgoing: mpsc::UnboundedSender<T>,
+        sink: mpsc::UnboundedSender<T>,
     ) -> Self {
         Self {
-            incoming,
+            faucet,
             metrics,
             network: network.as_ref().to_owned(),
             event: event.as_ref().to_owned(),
             emitter: emitter.as_ref().to_owned(),
-            outgoing,
+            sink,
         }
     }
 }
 
-pub(crate) type BetweenHandle<T> = StepHandle<BetweenEvents<T>>;
+pub(crate) type BetweenHandle<T> = StepHandle<BetweenEvents<T>, Faucet<T>>;
 pub(crate) type BetweenTask<T> = Restartable<BetweenEvents<T>>;
 pub(crate) type BetweenDispatch = BetweenHandle<WithMeta<DispatchFilter>>;
 pub(crate) type BetweenUpdate = BetweenHandle<WithMeta<UpdateFilter>>;
@@ -78,8 +78,6 @@ impl<T> ProcessStep for BetweenEvents<WithMeta<T>>
 where
     T: 'static + Send + Sync + std::fmt::Debug,
 {
-    type Output = UnboundedReceiver<WithMeta<T>>;
-
     fn spawn(mut self) -> BetweenTask<WithMeta<T>> {
         let span = info_span!(
             target: "monitor::between",
@@ -95,7 +93,7 @@ where
 
                 loop {
                     // get the next event from the channel
-                    let incoming = self.incoming.recv().await;
+                    let incoming = self.faucet.recv().await;
 
                     bail_task_if!(incoming.is_none(), self, "inbound channel broke");
                     let incoming = incoming.expect("checked on previous line");
@@ -122,7 +120,7 @@ where
 
                     // send the next event out
                     bail_task_if!(
-                        self.outgoing.send(incoming).is_err(),
+                        self.sink.send(incoming).is_err(),
                         self,
                         "outbound channel broke"
                     );

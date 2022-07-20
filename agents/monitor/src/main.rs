@@ -13,20 +13,20 @@ use tracing::info_span;
 use ethers::prelude::{Http, Provider as EthersProvider};
 
 pub(crate) mod annotate;
-pub(crate) mod between;
-pub(crate) mod dispatch_wait;
 pub(crate) mod domain;
 pub(crate) mod init;
 pub(crate) mod macros;
 pub(crate) mod metrics;
 pub(crate) mod producer;
+pub(crate) mod steps;
 pub(crate) mod terminal;
-pub(crate) mod update_wait;
 pub(crate) mod utils;
 
 pub(crate) type Provider = ethers::prelude::TimeLag<EthersProvider<Http>>;
 pub(crate) type ArcProvider = Arc<Provider>;
 // pub(crate) type ProviderError = ContractError<Provider>;
+
+pub(crate) type Restartable<Task> = JoinHandle<(Task, eyre::Report)>;
 
 pub(crate) type Faucet<T> = UnboundedReceiver<WithMeta<T>>;
 pub(crate) type Sink<T> = UnboundedSender<WithMeta<T>>;
@@ -48,6 +48,70 @@ pub(crate) struct Faucets<'a> {
     pub(crate) updates: NetworkMap<'a, UpdateFaucet>,
     pub(crate) relays: HomeReplicaMap<'a, RelayFaucet>,
     pub(crate) processes: HomeReplicaMap<'a, ProcessFaucet>,
+}
+
+impl<'a> Faucets<'a> {
+    pub(crate) fn swap_dispatch(
+        &mut self,
+        network: &'a str,
+        mut dispatch_faucet: DispatchFaucet,
+    ) -> DispatchFaucet {
+        self.dispatches
+            .get_mut(network)
+            .map(|old| {
+                std::mem::swap(old, &mut dispatch_faucet);
+                dispatch_faucet
+            })
+            .expect("missing dispatch faucet")
+    }
+
+    pub(crate) fn swap_update(
+        &mut self,
+        network: &'a str,
+        mut update_faucet: UpdateFaucet,
+    ) -> UpdateFaucet {
+        self.updates
+            .get_mut(network)
+            .map(|old| {
+                std::mem::swap(old, &mut update_faucet);
+                update_faucet
+            })
+            .expect("missing dispatch faucet")
+    }
+
+    pub(crate) fn swap_relay(
+        &mut self,
+        network: &'a str,
+        replica_of: &'a str,
+        mut relay_faucet: RelayFaucet,
+    ) -> RelayFaucet {
+        self.relays
+            .get_mut(network)
+            .expect("missing network")
+            .get_mut(replica_of)
+            .map(|old| {
+                std::mem::swap(old, &mut relay_faucet);
+                relay_faucet
+            })
+            .expect("missing faucet")
+    }
+
+    pub(crate) fn swap_process(
+        &mut self,
+        network: &'a str,
+        replica_of: &'a str,
+        mut process_faucet: ProcessFaucet,
+    ) -> ProcessFaucet {
+        self.processes
+            .get_mut(network)
+            .expect("missing network")
+            .get_mut(replica_of)
+            .map(|old| {
+                std::mem::swap(old, &mut process_faucet);
+                process_faucet
+            })
+            .expect("missing faucet")
+    }
 }
 
 #[tokio::main]
@@ -77,23 +141,7 @@ async fn main() -> eyre::Result<()> {
     }
 }
 
-pub type Restartable<Task> = JoinHandle<(Task, eyre::Report)>;
-
-/// A step handle is the handle to the process, and its outbound channels.
-///
-/// Task creation reutns a step handle so that we can
-/// - track the
-pub(crate) struct StepHandle<Task>
-where
-    Task: ProcessStep,
-{
-    handle: Restartable<Task>,
-    rx: <Task as ProcessStep>::Output,
-}
-
 pub(crate) trait ProcessStep: std::fmt::Display {
-    type Output: 'static + Send + Sync + std::fmt::Debug;
-
     fn spawn(self) -> Restartable<Self>
     where
         Self: 'static + Send + Sync + Sized;
@@ -124,4 +172,9 @@ pub(crate) trait ProcessStep: std::fmt::Display {
             }
         })
     }
+}
+
+pub(crate) struct StepHandle<Task, Output> {
+    handle: Restartable<Task>,
+    rx: Output,
 }

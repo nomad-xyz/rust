@@ -5,18 +5,18 @@ use nomad_xyz_configuration::{contracts::CoreContracts, NomadConfig};
 use tokio::sync::mpsc::unbounded_channel;
 
 use crate::{
-    annotate::WithMeta,
-    between::{BetweenDispatch, BetweenEvents, BetweenHandle, BetweenMetrics, BetweenUpdate},
-    dispatch_wait::{DispatchWait, DispatchWaitHandle, DispatchWaitOutput},
     init::provider_for,
     metrics::Metrics,
     producer::{
         DispatchProducer, DispatchProducerHandle, ProcessProducer, ProcessProducerHandle,
         RelayProducer, RelayProducerHandle, UpdateProducer, UpdateProducerHandle,
     },
-    update_wait::UpdateWait,
-    DispatchFaucet, Faucet, HomeReplicaMap, NetworkMap, ProcessFaucet, ProcessStep, Provider,
-    RelayFaucet, StepHandle, UpdateFaucet,
+    steps::{
+        between::{BetweenEvents, BetweenMetrics},
+        dispatch_wait::DispatchWait,
+        update_wait::UpdateWait,
+    },
+    Faucets, ProcessStep, Provider, StepHandle,
 };
 
 #[derive(Debug)]
@@ -128,18 +128,17 @@ impl Domain {
             .collect()
     }
 
-    pub(crate) fn count<T>(
-        &self,
-        incoming: Faucet<T>,
+    pub(crate) fn count_dispatches<'a>(
+        &'a self,
+        faucets: &mut Faucets<'a>,
         metrics: BetweenMetrics,
         event: impl AsRef<str>,
-    ) -> BetweenHandle<WithMeta<T>>
-    where
-        T: 'static + Send + Sync + std::fmt::Debug,
-    {
+    ) {
         let network = self.network.clone();
-        let (tx, rx) = unbounded_channel();
         let emitter = self.home_address();
+
+        let (sink, faucet) = unbounded_channel();
+        let faucet = faucets.swap_dispatch(self.name(), faucet);
 
         tracing::debug!(
             network = network,
@@ -147,36 +146,31 @@ impl Domain {
             event = event.as_ref(),
             "starting counter",
         );
-        let handle =
-            BetweenEvents::<WithMeta<T>>::new(incoming, metrics, network, event, emitter, tx)
-                .spawn();
-
-        StepHandle { handle, rx }
+        BetweenEvents::new(faucet, metrics, network, event, emitter, sink).spawn();
     }
 
-    pub(crate) fn count_dispatches(
-        &self,
-        incoming: DispatchFaucet,
-        metrics: BetweenMetrics,
-        event: impl AsRef<str>,
-    ) -> BetweenDispatch {
-        self.count(incoming, metrics, event)
-    }
-
-    pub(crate) fn count_updates(
-        &self,
-        incoming: UpdateFaucet,
-        metrics: BetweenMetrics,
-        event: impl AsRef<str>,
-    ) -> BetweenUpdate {
-        self.count(incoming, metrics, event)
-    }
-
-    pub(crate) fn count_relays<'a>(
+    pub(crate) fn count_updates<'a>(
         &'a self,
-        incomings: &mut NetworkMap<'a, RelayFaucet>,
-        metrics: Arc<Metrics>,
+        faucets: &mut Faucets<'a>,
+        metrics: BetweenMetrics,
+        event: impl AsRef<str>,
     ) {
+        let network = self.network.clone();
+        let emitter = self.home_address();
+
+        let (sink, faucet) = unbounded_channel();
+        let faucet = faucets.swap_update(self.name(), faucet);
+
+        tracing::debug!(
+            network = network,
+            home = emitter,
+            event = event.as_ref(),
+            "starting counter",
+        );
+        BetweenEvents::new(faucet, metrics, network, event, emitter, sink).spawn();
+    }
+
+    pub(crate) fn count_relays<'a>(&'a self, faucets: &mut Faucets<'a>, metrics: Arc<Metrics>) {
         self.replicas.iter().for_each(|(replica_of, replica)| {
             let emitter = format!("{:?}", replica.address());
             let network = self.name();
@@ -187,21 +181,18 @@ impl Domain {
                 event,
                 "starting counter",
             );
-            let incoming = incomings
-                .remove(replica_of.as_str())
-                .expect("Missing channel");
+
+            let (sink, faucet) = unbounded_channel();
+
+            let faucet = faucets.swap_relay(self.name(), replica_of, faucet);
+
             let metrics = metrics.between_metrics(network, event, &emitter, Some(replica_of));
 
-            let between = self.count(incoming, metrics, event);
-            incomings.insert(replica_of, between.rx);
+            BetweenEvents::new(faucet, metrics, network, event, emitter, sink).spawn();
         });
     }
 
-    pub(crate) fn count_processes<'a>(
-        &'a self,
-        incomings: &mut NetworkMap<'a, ProcessFaucet>,
-        metrics: Arc<Metrics>,
-    ) {
+    pub(crate) fn count_processes<'a>(&'a self, faucets: &mut Faucets<'a>, metrics: Arc<Metrics>) {
         self.replicas.iter().for_each(|(replica_of, replica)| {
             let emitter = format!("{:?}", replica.address());
             let network = self.name();
@@ -212,60 +203,50 @@ impl Domain {
                 event,
                 "starting counter",
             );
-            let incoming = incomings
-                .remove(replica_of.as_str())
-                .expect("Missing channel");
+
+            let (sink, faucet) = unbounded_channel();
+
+            let faucet = faucets.swap_process(self.name(), replica_of, faucet);
 
             let metrics = metrics.between_metrics(network, event, &emitter, Some(replica_of));
-            let between = self.count(incoming, metrics, event);
 
-            incomings.insert(replica_of, between.rx);
+            BetweenEvents::new(faucet, metrics, network, event, emitter, sink).spawn();
         });
     }
 
-    pub(crate) fn dispatch_to_update(
-        &self,
-        incoming_dispatch: DispatchFaucet,
-        incoming_update: UpdateFaucet,
+    pub(crate) fn dispatch_to_update<'a>(
+        &'a self,
+        faucets: &mut Faucets<'a>,
         metrics: Arc<Metrics>,
-    ) -> DispatchWaitHandle {
+    ) {
         let metrics = metrics.dispatch_wait_metrics(&self.network, &self.home_address());
 
-        let (outgoing_update, updates) = unbounded_channel();
-        let (outgoing_dispatch, dispatches) = unbounded_channel();
+        let (update_sink, update_faucet) = unbounded_channel();
+        let (dispatch_sink, dispatch_faucet) = unbounded_channel();
 
-        let handle = DispatchWait::new(
-            incoming_dispatch,
-            incoming_update,
+        let dispatch_faucet = faucets.swap_dispatch(self.name(), dispatch_faucet);
+        let update_faucet = faucets.swap_update(self.name(), update_faucet);
+
+        DispatchWait::new(
+            dispatch_faucet,
+            update_faucet,
             self.name().to_owned(),
             self.home_address(),
             metrics,
-            outgoing_update,
-            outgoing_dispatch,
+            dispatch_sink,
+            update_sink,
         )
         .spawn();
-
-        DispatchWaitHandle {
-            handle,
-            rx: DispatchWaitOutput {
-                dispatches,
-                updates,
-            },
-        }
     }
 
-    pub(crate) fn update_to_relay<'a>(
-        &'a self,
-        global_updates: &mut NetworkMap<'a, UpdateFaucet>,
-        global_relays: &mut HomeReplicaMap<'a, RelayFaucet>,
-        metrics: Arc<Metrics>,
-    ) {
+    pub(crate) fn update_to_relay<'a>(&'a self, faucets: &mut Faucets<'a>, metrics: Arc<Metrics>) {
         let mut relay_faucets = HashMap::new();
         let mut relay_sinks = HashMap::new();
 
         // we want to go through each network that is NOT this network
         // get the relay sink FOR THIS NETWORK'S REPLICA
-        global_relays
+        faucets
+            .relays
             .iter_mut()
             // does not match this network
             .filter(|(k, _)| **k != self.network)
@@ -275,7 +256,8 @@ impl Domain {
                 // insert this in the map we'll give to the metrics task
                 relay_sinks.insert(k.to_string(), sink);
 
-                // replace the faucet in the global producers map
+                // replace the faucet for the replica matching this network
+                // in the global producers map
                 let faucet = v
                     .insert(self.name(), faucet)
                     .expect("missing relay producer");
@@ -286,9 +268,7 @@ impl Domain {
 
         let (update_sink, update_faucet) = unbounded_channel();
 
-        let update_faucet = global_updates
-            .insert(self.name(), update_faucet)
-            .expect("missing producer");
+        let update_faucet = faucets.swap_update(self.name(), update_faucet);
 
         UpdateWait::new(
             update_faucet,
