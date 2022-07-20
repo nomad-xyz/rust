@@ -1,14 +1,14 @@
 use ethers::prelude::H256;
 use prometheus::Histogram;
 use std::{collections::HashMap, time::Instant};
-use tokio::sync::mpsc::unbounded_channel;
+use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 use tracing::{info_span, Instrument};
 
 use nomad_ethereum::bindings::replica::UpdateFilter as RelayFilter;
 
 use crate::{
     annotate::WithMeta, bail_task_if, utils::SelectChannels, ProcessStep, RelayFaucet, RelaySink,
-    Restartable, StepHandle, UpdateFaucet, UpdateSink,
+    Restartable, UpdateFaucet, UpdateSink,
 };
 
 #[derive(Debug)]
@@ -19,7 +19,7 @@ pub(crate) struct UpdateWaitMetrics {
 #[derive(Debug)]
 pub(crate) struct UpdateWait {
     update_faucet: UpdateFaucet,
-    relay_faucets: <SelectChannels<WithMeta<RelayFilter>> as ProcessStep>::Output,
+    relay_faucets: UnboundedReceiver<(String, WithMeta<RelayFilter>)>,
 
     network: String,
     metrics: UpdateWaitMetrics,
@@ -64,13 +64,6 @@ impl std::fmt::Display for UpdateWait {
 }
 
 pub(crate) type UpdateWaitTask = Restartable<UpdateWait>;
-pub(crate) type UpdateWaitHandle = StepHandle<UpdateWait>;
-
-#[derive(Debug)]
-pub struct UpdateWaitOutput {
-    pub(crate) updates: UpdateFaucet,
-    pub(crate) relays: HashMap<String, RelayFaucet>,
-}
 
 impl UpdateWait {
     fn handle_relay(&mut self, net: &str, root: H256) {
@@ -109,8 +102,6 @@ impl UpdateWait {
 }
 
 impl ProcessStep for UpdateWait {
-    type Output = UpdateWaitOutput;
-
     fn spawn(mut self) -> crate::Restartable<Self>
     where
         Self: 'static + Send + Sync + Sized,

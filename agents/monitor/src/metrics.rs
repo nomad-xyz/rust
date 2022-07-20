@@ -4,7 +4,7 @@ use prometheus::{Encoder, Histogram, HistogramOpts, HistogramVec, IntCounter, In
 use tokio::task::JoinHandle;
 use warp::Filter;
 
-use crate::{
+use crate::steps::{
     between::BetweenMetrics, dispatch_wait::DispatchWaitMetrics, update_wait::UpdateWaitMetrics,
 };
 

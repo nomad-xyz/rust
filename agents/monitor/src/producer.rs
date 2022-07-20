@@ -3,12 +3,12 @@ use nomad_ethereum::bindings::{
     home::{DispatchFilter, Home, UpdateFilter},
     replica::{ProcessFilter, Replica, UpdateFilter as RelayFilter},
 };
-use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
+use tokio::sync::mpsc::UnboundedSender;
 use tracing::{info_span, Instrument};
 
 use crate::{
-    annotate::WithMeta, bail_task_if, DispatchFaucet, DispatchSink, ProcessStep, Restartable,
-    StepHandle,
+    annotate::WithMeta, bail_task_if, DispatchFaucet, DispatchSink, ProcessFaucet, ProcessStep,
+    RelayFaucet, Restartable, StepHandle, UpdateFaucet,
 };
 
 #[derive(Debug)]
@@ -48,11 +48,9 @@ impl DispatchProducer {
 }
 
 pub(crate) type DispatchProducerTask = Restartable<DispatchProducer>;
-pub(crate) type DispatchProducerHandle = StepHandle<DispatchProducer>;
+pub(crate) type DispatchProducerHandle = StepHandle<DispatchProducer, DispatchFaucet>;
 
 impl ProcessStep for DispatchProducer {
-    type Output = DispatchFaucet;
-
     fn spawn(self) -> DispatchProducerTask {
         let span = info_span!(
             "DispatchProducer",
@@ -136,10 +134,9 @@ impl UpdateProducer {
 }
 
 pub(crate) type UpdateProducerTask = Restartable<UpdateProducer>;
-pub(crate) type UpdateProducerHandle = StepHandle<UpdateProducer>;
+pub(crate) type UpdateProducerHandle = StepHandle<UpdateProducer, UpdateFaucet>;
 
 impl ProcessStep for UpdateProducer {
-    type Output = UnboundedReceiver<WithMeta<UpdateFilter>>;
     fn spawn(self) -> UpdateProducerTask {
         let span = info_span!(
             "UpdateProducer",
@@ -231,10 +228,9 @@ impl RelayProducer {
 }
 
 pub(crate) type RelayProducerTask = Restartable<RelayProducer>;
-pub(crate) type RelayProducerHandle = StepHandle<RelayProducer>;
+pub(crate) type RelayProducerHandle = StepHandle<RelayProducer, RelayFaucet>;
 
 impl ProcessStep for RelayProducer {
-    type Output = UnboundedReceiver<WithMeta<RelayFilter>>;
     fn spawn(self) -> RelayProducerTask {
         let span = info_span!(
             "RelayProducer",
@@ -323,10 +319,9 @@ impl ProcessProducer {
 }
 
 pub(crate) type ProcessProducerTask = Restartable<ProcessProducer>;
-pub(crate) type ProcessProducerHandle = StepHandle<ProcessProducer>;
+pub(crate) type ProcessProducerHandle = StepHandle<ProcessProducer, ProcessFaucet>;
 
 impl ProcessStep for ProcessProducer {
-    type Output = UnboundedReceiver<WithMeta<ProcessFilter>>;
     fn spawn(self) -> ProcessProducerTask {
         let span = info_span!(
             "ProcessProducer",

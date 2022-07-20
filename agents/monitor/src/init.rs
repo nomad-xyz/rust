@@ -15,8 +15,7 @@ use crate::{
     producer::{
         DispatchProducerHandle, ProcessProducerHandle, RelayProducerHandle, UpdateProducerHandle,
     },
-    utils, ArcProvider, DispatchFaucet, Faucets, HomeReplicaMap, NetworkMap, ProcessFaucet,
-    RelayFaucet, UpdateFaucet,
+    utils, ArcProvider, Faucets, HomeReplicaMap,
 };
 
 pub(crate) fn config_from_file() -> Option<NomadConfig> {
@@ -141,93 +140,60 @@ impl Monitor {
     }
 
     #[tracing::instrument(skip_all, level = "debug")]
-    fn run_between_dispatch<'a>(&'a self, incomings: &mut NetworkMap<'a, DispatchFaucet>) {
+    fn run_between_dispatch<'a>(&'a self, faucets: &mut Faucets<'a>) {
         self.networks.iter().for_each(|(chain, domain)| {
             let emitter = domain.home_address();
             let event = "dispatch";
 
             let metrics = self.metrics.between_metrics(chain, event, &emitter, None);
 
-            let producer = incomings.remove(chain.as_str()).expect("missing producer");
-
-            let between = domain.count_dispatches(producer, metrics, event);
-
-            incomings.insert(chain, between.rx);
+            domain.count_dispatches(faucets, metrics, event);
         })
     }
 
     #[tracing::instrument(skip_all, level = "debug")]
-    fn run_between_update<'a>(&'a self, incomings: &mut NetworkMap<'a, UpdateFaucet>) {
+    fn run_between_update<'a>(&'a self, faucets: &mut Faucets<'a>) {
         self.networks.iter().for_each(|(chain, domain)| {
             let emitter = format!("{:?}", domain.home().address());
             let event = "update";
 
             let metrics = self.metrics.between_metrics(chain, event, &emitter, None);
 
-            let producer = incomings.remove(chain.as_str()).expect("missing producer");
-
-            let between = domain.count_updates(producer, metrics, event);
-
-            incomings.insert(chain, between.rx);
+            domain.count_updates(faucets, metrics, event);
         })
     }
 
     #[tracing::instrument(skip_all, level = "debug")]
-    fn run_between_relay<'a>(&'a self, incomings: &mut HomeReplicaMap<'a, RelayFaucet>) {
-        self.networks.iter().for_each(|(network, domain)| {
-            let inner = incomings
-                .get_mut(network.as_str())
-                .expect("missing producer");
-
-            domain.count_relays(inner, self.metrics.clone());
+    fn run_between_relay<'a>(&'a self, faucets: &mut Faucets<'a>) {
+        self.networks.values().for_each(|domain| {
+            domain.count_relays(faucets, self.metrics.clone());
         });
     }
 
     #[tracing::instrument(skip_all, level = "debug")]
-    fn run_between_process<'a>(&'a self, incomings: &mut HomeReplicaMap<'a, ProcessFaucet>) {
-        self.networks.iter().for_each(|(network, domain)| {
-            let inner = incomings
-                .get_mut(network.as_str())
-                .expect("missing producer");
-
-            domain.count_processes(inner, self.metrics.clone());
+    fn run_between_process<'a>(&'a self, faucets: &mut Faucets<'a>) {
+        self.networks.values().for_each(|domain| {
+            domain.count_processes(faucets, self.metrics.clone());
         });
     }
 
     pub(crate) fn run_betweens<'a>(&'a self, faucets: &mut Faucets<'a>) {
-        self.run_between_dispatch(&mut faucets.dispatches);
-        self.run_between_update(&mut faucets.updates);
-        self.run_between_relay(&mut faucets.relays);
-        self.run_between_process(&mut faucets.processes);
+        self.run_between_dispatch(faucets);
+        self.run_between_update(faucets);
+        self.run_between_relay(faucets);
+        self.run_between_process(faucets);
     }
 
     #[tracing::instrument(skip_all, level = "debug")]
     pub(crate) fn run_dispatch_to_update<'a>(&'a self, faucets: &mut Faucets<'a>) {
-        self.networks.iter().for_each(|(network, domain)| {
-            let incoming_dispatch = faucets
-                .dispatches
-                .remove(network.as_str())
-                .expect("missing incoming dispatch");
-            let incoming_update = faucets
-                .updates
-                .remove(network.as_str())
-                .expect("missing incoming update");
-
-            let d_to_r =
-                domain.dispatch_to_update(incoming_dispatch, incoming_update, self.metrics.clone());
-
-            faucets.dispatches.insert(network, d_to_r.rx.dispatches);
-            faucets.updates.insert(network, d_to_r.rx.updates);
+        self.networks.values().for_each(|domain| {
+            domain.dispatch_to_update(faucets, self.metrics.clone());
         });
     }
 
     pub(crate) fn run_update_to_relay<'a>(&'a self, faucets: &mut Faucets<'a>) {
-        self.networks.iter().for_each(|(_, v)| {
-            v.update_to_relay(
-                &mut faucets.updates,
-                &mut faucets.relays,
-                self.metrics.clone(),
-            )
-        });
+        self.networks
+            .iter()
+            .for_each(|(_, v)| v.update_to_relay(faucets, self.metrics.clone()));
     }
 }
