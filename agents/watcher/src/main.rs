@@ -38,7 +38,7 @@ async fn main() -> Result<()> {
         }
     };
 
-    agent.start_tracing(agent.metrics().span_duration())?;
+    let metrics_guard = agent.start_tracing(agent.metrics().span_duration());
     let _ = agent.metrics().run_http_server();
 
     agent.run_all().await??;

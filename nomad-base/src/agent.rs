@@ -12,9 +12,9 @@ use async_trait::async_trait;
 use color_eyre::{eyre::WrapErr, Result};
 use futures_util::future::select_all;
 use nomad_core::{db::DB, Common};
-use tracing::instrument::Instrumented;
+use tracing::{dispatcher::DefaultGuard, instrument::Instrumented};
 use tracing::{error, info_span, warn, Instrument};
-use tracing_subscriber::prelude::*;
+use tracing_subscriber::{prelude::*, util::SubscriberInitExt};
 
 use std::{
     collections::HashMap,
@@ -270,8 +270,12 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
         .instrument(span)
     }
 
-    /// Attempt to instantiate and register a tracing subscriber setup from settings.
-    fn start_tracing(&self, latencies: prometheus::HistogramVec) -> Result<()> {
+    /// Attempt to instantiate and register a tracing subscriber setup from
+    /// settings.
+    ///
+    /// Returns a default guard that will set the agent's tracing as the
+    /// default subscriber
+    fn start_tracing(&self, latencies: prometheus::HistogramVec) -> DefaultGuard {
         let log = self.as_ref().settings.logging;
         let level_filter = log_level_to_level_filter(log.level);
         let fmt_layer: LogOutputLayer<_> = log.fmt.into();
@@ -283,7 +287,6 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
             .with(fmt_layer)
             .with(err_layer);
 
-        subscriber.try_init()?;
-        Ok(())
+        subscriber.set_default()
     }
 }

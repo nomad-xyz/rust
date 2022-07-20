@@ -41,7 +41,7 @@ async fn main() -> Result<()> {
     };
 
     // TODO: top-level root span customizations?
-    agent.start_tracing(agent.metrics().span_duration())?;
+    let metrics_guard = agent.start_tracing(agent.metrics().span_duration());
 
     let _ = agent.metrics().run_http_server();
 
