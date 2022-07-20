@@ -2282,6 +2282,7 @@ dependencies = [
  "async-trait",
  "ethers",
  "eyre",
+ "futures-util",
  "nomad-core",
  "nomad-ethereum",
  "nomad-xyz-configuration",
