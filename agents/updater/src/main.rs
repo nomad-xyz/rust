@@ -22,23 +22,22 @@ use tracing_subscriber::prelude::*;
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     color_eyre::install()?;
-    let agent = {
-        // sets the subscriber for this scope only
-        let _sub = tracing_subscriber::FmtSubscriber::builder()
-            .json()
-            .with_level(true)
-            .set_default();
+    // sets the subscriber for this scope only
+    let _bootup_guard = tracing_subscriber::FmtSubscriber::builder()
+        .json()
+        .with_level(true)
+        .set_default();
 
-        {
-            let span = info_span!("UpdaterBootup");
-            let _span = span.enter();
+    let span = info_span!("UpdaterBootup");
+    let _span = span.enter();
 
-            let settings = Settings::new()?;
-            Updater::from_settings(settings).await?
-        }
-    };
+    let settings = Settings::new()?;
+    let agent = Updater::from_settings(settings).await?;
 
-    let metrics_guard = agent.start_tracing(agent.metrics().span_duration());
+    drop(_span);
+    drop(span);
+
+    let _tracing_guard = agent.start_tracing(agent.metrics().span_duration());
 
     let _ = agent.metrics().run_http_server();
 

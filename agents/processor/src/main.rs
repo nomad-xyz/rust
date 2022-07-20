@@ -25,23 +25,21 @@ use tracing_subscriber::prelude::*;
 async fn main() -> Result<()> {
     color_eyre::install()?;
 
-    let agent = {
-        // sets the subscriber for this scope only
-        let _sub = tracing_subscriber::FmtSubscriber::builder()
-            .json()
-            .with_level(true)
-            .set_default();
-        {
-            let span = info_span!("ProcessorBootup");
-            let _span = span.enter();
+    let _bootup_guard = tracing_subscriber::FmtSubscriber::builder()
+        .json()
+        .with_level(true)
+        .set_default();
 
-            let settings = Settings::new()?;
-            Processor::from_settings(settings).await?
-        }
-    };
+    let span = info_span!("ProcessorBootup");
+    let _span = span.enter();
 
-    // TODO: top-level root span customizations?
-    let metrics_guard = agent.start_tracing(agent.metrics().span_duration());
+    let settings = Settings::new()?;
+    let agent = Processor::from_settings(settings).await?;
+
+    drop(_span);
+    drop(span);
+
+    let _tracing_guard = agent.start_tracing(agent.metrics().span_duration());
 
     let _ = agent.metrics().run_http_server();
 
