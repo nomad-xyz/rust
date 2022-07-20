@@ -54,21 +54,27 @@ pub(crate) struct Faucets<'a> {
 async fn main() -> eyre::Result<()> {
     init::init_tracing();
     {
-        let span = info_span!("MonitorBootup");
-        let _span = span.enter();
+        let monitor = info_span!("MonitorBootup").in_scope(|| {
+            let monitor = init::monitor()?;
+            tracing::info!("setup complete!");
+            Ok::<_, eyre::Report>(monitor)
+        })?;
 
-        let monitor = init::monitor()?;
-        tracing::info!("setup complete!");
         let _http = monitor.run_http_server();
 
         let mut faucets = monitor.producers();
 
         monitor.run_betweens(&mut faucets);
         monitor.run_dispatch_to_update(&mut faucets);
+        monitor.run_update_to_relay(&mut faucets);
 
         tracing::info!("counters started");
+
+        // just run forever
+        loop {
+            tokio::time::sleep(std::time::Duration::from_secs(10000)).await
+        }
     }
-    Ok(())
 }
 
 pub type Restartable<Task> = JoinHandle<(Task, eyre::Report)>;

@@ -4,7 +4,9 @@ use prometheus::{Encoder, Histogram, HistogramOpts, HistogramVec, IntCounter, In
 use tokio::task::JoinHandle;
 use warp::Filter;
 
-use crate::{between::BetweenMetrics, dispatch_wait::DispatchWaitMetrics};
+use crate::{
+    between::BetweenMetrics, dispatch_wait::DispatchWaitMetrics, update_wait::UpdateWaitMetrics,
+};
 
 #[derive(Debug)]
 pub(crate) struct Metrics {
@@ -14,6 +16,8 @@ pub(crate) struct Metrics {
 
     dispatch_to_update_timers: prometheus::HistogramVec,
     dispatch_to_update_blocks: prometheus::HistogramVec,
+
+    update_to_relay_timers: prometheus::HistogramVec,
 }
 
 fn u16_from_env(s: impl AsRef<str>) -> Option<u16> {
@@ -30,6 +34,16 @@ fn gather() -> prometheus::Result<Vec<u8>> {
 
 impl Metrics {
     pub(crate) fn new() -> eyre::Result<Self> {
+        let update_to_relay_timers = HistogramVec::new(
+            HistogramOpts::new(
+                "update_to_relay_ms",
+                "Ms between update and relay, as observed by this agent",
+            )
+            .namespace("nomad")
+            .const_label("VERSION", env!("CARGO_PKG_VERSION")),
+            &["chain", "emitter"],
+        )?;
+
         let dispatch_to_update_timers = HistogramVec::new(
             HistogramOpts::new(
                 "dispatch_to_update_ms",
@@ -103,6 +117,7 @@ impl Metrics {
             event_counts: counts,
             dispatch_to_update_blocks,
             dispatch_to_update_timers,
+            update_to_relay_timers,
         })
     }
 
@@ -202,6 +217,14 @@ impl Metrics {
                 .with_label_values(&[network, emitter]),
             blocks: self
                 .dispatch_to_update_blocks
+                .with_label_values(&[network, emitter]),
+        }
+    }
+
+    pub(crate) fn update_wait_metrics(&self, network: &str, emitter: &str) -> UpdateWaitMetrics {
+        UpdateWaitMetrics {
+            times: self
+                .update_to_relay_timers
                 .with_label_values(&[network, emitter]),
         }
     }
