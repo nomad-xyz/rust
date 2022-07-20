@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use color_eyre::Result;
+use color_eyre::{eyre::ensure, Result};
 use std::{sync::Arc, time::Duration};
 use tokio::{sync::Mutex, task::JoinHandle, time::sleep};
 use tracing::{info, instrument::Instrumented, Instrument};
@@ -169,6 +169,16 @@ impl NomadAgent for Relayer {
     #[tracing::instrument]
     fn run(channel: Self::Channel) -> Instrumented<JoinHandle<Result<()>>> {
         tokio::spawn(async move {
+            let home_updater = channel.home().updater().await?;
+            let replica_updater = channel.replica().updater().await?;
+
+            ensure!(
+                home_updater == replica_updater,
+                "Home and replica updaters do not match. Home: {:x}. Replica: {:x}.",
+                home_updater,
+                replica_updater
+            );
+
             let update_poller = UpdatePoller::new(
                 channel.home(),
                 channel.replica(),
@@ -183,8 +193,7 @@ impl NomadAgent for Relayer {
 
 #[cfg(test)]
 mod test {
-
-    use ethers::prelude::ProviderError;
+    use ethers::prelude::{ProviderError, H256};
     use nomad_base::{
         chains::PageSettings, CommonIndexers, ContractSync, ContractSyncMetrics, CoreMetrics,
         HomeIndexers, IndexSettings, NomadDB,
@@ -233,6 +242,10 @@ mod test {
 
             {
                 home_mock.expect__name().return_const("home_1".to_owned());
+                home_mock
+                    .expect__updater()
+                    .times(..)
+                    .returning(|| Ok(H256::zero()));
             }
 
             let home = CachingHome::new(home_mock.into(), home_sync, home_db.clone()).into();
@@ -240,6 +253,10 @@ mod test {
             // Setting replica
             let mut replica_mock = MockReplicaContract::new();
             {
+                replica_mock
+                    .expect__updater()
+                    .times(..)
+                    .returning(|| Ok(H256::zero()));
                 replica_mock
                     .expect__committed_root()
                     .times(..)
