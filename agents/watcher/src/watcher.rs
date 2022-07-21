@@ -741,6 +741,7 @@ mod test {
             let home_sync = ContractSync::new(
                 AGENT_NAME.to_owned(),
                 "home_1".to_owned(),
+                "replica_1".to_owned(),
                 nomad_db.clone(),
                 home_indexer.clone(),
                 IndexSettings::default(),
@@ -836,6 +837,7 @@ mod test {
             let home_sync = ContractSync::new(
                 AGENT_NAME.to_owned(),
                 "home_1".to_owned(),
+                "replica_1".to_owned(),
                 nomad_db.clone(),
                 home_indexer.clone(),
                 IndexSettings::default(),
@@ -938,6 +940,7 @@ mod test {
             let home_sync = ContractSync::new(
                 AGENT_NAME.to_owned(),
                 "home_1".to_owned(),
+                "replica_1".to_owned(),
                 nomad_db.clone(),
                 home_indexer,
                 IndexSettings::default(),
@@ -1147,6 +1150,7 @@ mod test {
             let home_sync = ContractSync::new(
                 AGENT_NAME.to_owned(),
                 "home_1".to_owned(),
+                "replica_1".to_owned(),
                 home_db.clone(),
                 home_indexer.clone(),
                 IndexSettings::default(),
@@ -1157,6 +1161,7 @@ mod test {
             let replica_1_sync = ContractSync::new(
                 AGENT_NAME.to_owned(),
                 "replica_1".to_owned(),
+                "replica_1".to_owned(),
                 replica_1_db.clone(),
                 replica_indexer.clone(),
                 IndexSettings::default(),
@@ -1166,6 +1171,7 @@ mod test {
             );
             let replica_2_sync = ContractSync::new(
                 AGENT_NAME.to_owned(),
+                "home_2".to_owned(),
                 "replica_2".to_owned(),
                 replica_2_db.clone(),
                 replica_indexer.clone(),
@@ -1340,6 +1346,7 @@ mod test {
             let home_sync = ContractSync::new(
                 AGENT_NAME.to_owned(),
                 "home_1".to_owned(),
+                "replica_1".to_owned(),
                 home_db.clone(),
                 home_indexer.clone(),
                 IndexSettings::default(),
@@ -1349,6 +1356,7 @@ mod test {
             );
             let replica_1_sync = ContractSync::new(
                 AGENT_NAME.to_owned(),
+                "home_1".to_owned(),
                 "replica_1".to_owned(),
                 replica_1_db.clone(),
                 replica_indexer.clone(),
@@ -1359,6 +1367,7 @@ mod test {
             );
             let replica_2_sync = ContractSync::new(
                 AGENT_NAME.to_owned(),
+                "home_2".to_owned(),
                 "replica_2".to_owned(),
                 replica_2_db.clone(),
                 replica_indexer.clone(),
