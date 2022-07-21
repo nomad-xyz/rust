@@ -6,7 +6,7 @@ use color_eyre::Result;
 use nomad_base::{CachingHome, NomadDB, UpdaterError};
 use nomad_core::{Common, Home, SignedUpdate, Signers};
 use tokio::{task::JoinHandle, time::sleep};
-use tracing::{debug, error, info, info_span, instrument::Instrumented, Instrument};
+use tracing::{debug, error, info, info_span, Instrument};
 
 #[derive(Debug)]
 pub(crate) struct UpdateProducer {
@@ -72,24 +72,24 @@ impl UpdateProducer {
     /// Note that all data retrieved from either contract calls or the
     /// updater's db are confirmed state in the chain, as both indexed data and
     /// contract state are retrieved with a timelag.
-    pub(crate) fn spawn(self) -> Instrumented<JoinHandle<Result<()>>> {
+    pub(crate) fn spawn(self) -> JoinHandle<Result<()>> {
         let span = info_span!("UpdateProducer");
         tokio::spawn(async move {
             loop {
                 // We sleep at the top to make continues work fine
                 sleep(Duration::from_secs(self.interval_seconds)).await;
 
-                // Get home indexer's latest seen update from home. This call 
-                // will only return a root from an update that is confirmed in 
+                // Get home indexer's latest seen update from home. This call
+                // will only return a root from an update that is confirmed in
                 // the chain, as the updater indexer's timelag will ensure this.
                 let current_root = self.find_latest_root()?;
 
-                // The produced update is also confirmed state in the chain, as 
+                // The produced update is also confirmed state in the chain, as
                 // updater home timelag ensures this.
                 if let Some(suggested) = self.home.produce_update().await? {
                     if suggested.previous_root != current_root {
                         // This either indicates that the indexer is catching
-                        // up or that the chain is awaiting a new update. We 
+                        // up or that the chain is awaiting a new update. We
                         // should ignore it.
                         debug!(
                             local = ?suggested.previous_root,
@@ -123,9 +123,9 @@ impl UpdateProducer {
                         "Storing new update in DB for broadcast"
                     );
 
-                    // Once we have stored signed update in db, updater can 
-                    // never produce a double update building off the same 
-                    // previous root (we check db each time we produce new 
+                    // Once we have stored signed update in db, updater can
+                    // never produce a double update building off the same
+                    // previous root (we check db each time we produce new
                     // signed update)
                     self.store_produced_update(&signed)?
                 } else {
@@ -133,7 +133,8 @@ impl UpdateProducer {
                     info!("No updates to sign. Waiting for new root building off of current root {:?}.", committed_root);
                 }
             }
-        })
+        }
         .instrument(span)
+    )
     }
 }
