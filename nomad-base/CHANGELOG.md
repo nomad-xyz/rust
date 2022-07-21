@@ -1,5 +1,7 @@
 # Changelog
 
+- fix: instrument futures, not joinhandles
+
 ### Unreleased
 
 - Have both Home/Replica and Home/Replica indexers return `Self::Error`
