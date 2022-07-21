@@ -11,6 +11,7 @@ pub(crate) struct BetweenMetrics {
 }
 
 // Track time between events of the same kind
+#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
 pub(crate) struct BetweenEvents<T> {
     pub(crate) faucet: mpsc::UnboundedReceiver<T>,
     pub(crate) metrics: BetweenMetrics,

@@ -1,10 +1,8 @@
-use std::{collections::HashMap, fmt::Display, pin::Pin};
+use std::{collections::HashMap, pin::Pin};
 
-use futures_util::future::select_all;
-use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
-use tracing::{info_span, Instrument};
+use tokio::sync::mpsc::UnboundedReceiver;
 
-use crate::{bail_task_if, HomeReplicaMap, ProcessStep, Restartable, StepHandle};
+use crate::{HomeReplicaMap, ProcessStep, Restartable, StepHandle};
 
 // split handles from outputs
 pub(crate) fn split<T, U>(
@@ -55,56 +53,4 @@ pub(crate) fn nexts<K: ToOwned, T>(
         })
         .map(Box::pin)
         .collect()
-}
-
-#[derive(Debug)]
-pub(crate) struct SelectChannels<T> {
-    channels: HashMap<String, UnboundedReceiver<T>>,
-    outbound: UnboundedSender<(String, T)>,
-}
-
-impl<T> SelectChannels<T> {
-    pub(crate) fn new(
-        channels: HashMap<String, UnboundedReceiver<T>>,
-        outbound: UnboundedSender<(String, T)>,
-    ) -> Self {
-        Self { channels, outbound }
-    }
-}
-
-impl<T> Display for SelectChannels<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "SelectChannels")
-    }
-}
-
-impl<T> ProcessStep for SelectChannels<T>
-where
-    T: 'static + Send + Sync + std::fmt::Debug,
-{
-    fn spawn(mut self) -> Restartable<Self>
-    where
-        Self: 'static + Send + Sync + Sized,
-    {
-        let span = info_span!("SelectChannels");
-        tokio::spawn(
-            async move {
-                loop {
-                    let ((net, next_opt), _, _) = select_all(nexts(&mut self.channels)).await;
-                    bail_task_if!(
-                        next_opt.is_none(),
-                        self,
-                        format!("Inbound from {} broke", net),
-                    );
-                    let next = next_opt.expect("checked");
-                    bail_task_if!(
-                        self.outbound.send((net, next)).is_err(),
-                        self,
-                        "outbound channel broke"
-                    );
-                }
-            }
-            .instrument(span),
-        )
-    }
 }

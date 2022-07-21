@@ -4,6 +4,7 @@ use tracing::{debug_span, Instrument};
 use crate::{ProcessStep, Restartable};
 
 #[derive(Debug)]
+#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
 /// A process step that just drains its input and drops everything
 /// Its [`StepHandle`] will never produce values.
 pub(crate) struct Terminal<T>

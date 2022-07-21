@@ -7,8 +7,8 @@ use tracing::{info_span, Instrument};
 use nomad_ethereum::bindings::replica::UpdateFilter as RelayFilter;
 
 use crate::{
-    annotate::WithMeta, bail_task_if, utils::SelectChannels, ProcessStep, RelayFaucet, RelaySink,
-    UpdateFaucet, UpdateSink,
+    annotate::WithMeta, bail_task_if, steps::combine::CombineChannels, ProcessStep, RelayFaucet,
+    RelaySink, UpdateFaucet, UpdateSink,
 };
 
 #[derive(Debug)]
@@ -17,6 +17,7 @@ pub(crate) struct UpdateWaitMetrics {
 }
 
 #[derive(Debug)]
+#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
 pub(crate) struct UpdateWait {
     update_faucet: UpdateFaucet,
     relay_faucets: UnboundedReceiver<(String, WithMeta<RelayFilter>)>,
@@ -42,7 +43,7 @@ impl UpdateWait {
     ) -> Self {
         let (tx, rx) = unbounded_channel();
 
-        SelectChannels::new(relay_faucets, tx).spawn();
+        CombineChannels::new(relay_faucets, tx).spawn();
 
         Self {
             update_faucet,
