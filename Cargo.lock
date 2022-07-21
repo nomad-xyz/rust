@@ -120,6 +120,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "assert-json-diff"
+version = "2.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "47e4f2b81832e72834d7518d8487a0396a28cc408186a2e8854c0f98011faf12"
+dependencies = [
+ "serde 1.0.137",
+ "serde_json",
+]
+
+[[package]]
 name = "async-stream"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -220,7 +230,7 @@ name = "balance-exporter"
 version = "0.1.0"
 dependencies = [
  "clap 3.1.18",
- "color-eyre 0.6.1",
+ "color-eyre",
  "ethers-core",
  "futures",
  "human-panic",
@@ -674,44 +684,17 @@ dependencies = [
 
 [[package]]
 name = "color-eyre"
-version = "0.5.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f1885697ee8a177096d42f158922251a41973117f6d8a234cee94b9509157b7"
-dependencies = [
- "backtrace",
- "color-spantrace 0.1.6",
- "eyre",
- "indenter",
- "once_cell",
- "owo-colors 1.3.0",
- "tracing-error 0.1.2",
-]
-
-[[package]]
-name = "color-eyre"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ebf286c900a6d5867aeff75cfee3192857bb7f24b547d4f0df2ed6baa812c90"
 dependencies = [
  "backtrace",
- "color-spantrace 0.2.0",
+ "color-spantrace",
  "eyre",
  "indenter",
  "once_cell",
- "owo-colors 3.4.0",
- "tracing-error 0.2.0",
-]
-
-[[package]]
-name = "color-spantrace"
-version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6eee477a4a8a72f4addd4de416eb56d54bc307b284d6601bafdee1f4ea462d1"
-dependencies = [
- "once_cell",
- "owo-colors 1.3.0",
- "tracing-core",
- "tracing-error 0.1.2",
+ "owo-colors",
+ "tracing-error",
 ]
 
 [[package]]
@@ -721,9 +704,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ba75b3d9449ecdccb27ecbc479fdc0b87fa2dd43d2f8298f9bf0e59aacc8dce"
 dependencies = [
  "once_cell",
- "owo-colors 3.4.0",
+ "owo-colors",
  "tracing-core",
- "tracing-error 0.2.0",
+ "tracing-error",
 ]
 
 [[package]]
@@ -2025,7 +2008,7 @@ version = "1.0.0"
 dependencies = [
  "affix",
  "async-trait",
- "color-eyre 0.5.11",
+ "color-eyre",
  "config 0.10.1",
  "dotenv",
  "ethers",
@@ -2045,7 +2028,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-futures",
- "tracing-subscriber 0.2.25",
+ "tracing-subscriber 0.3.14",
 ]
 
 [[package]]
@@ -2059,7 +2042,7 @@ name = "kms-cli"
 version = "0.1.0"
 dependencies = [
  "clap 3.1.18",
- "color-eyre 0.5.11",
+ "color-eyre",
  "ethers",
  "ethers-signers",
  "hex",
@@ -2210,15 +2193,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b823e83b2affd8f40a9ee8c29dbc56404c1e34cd2710921f2801e2cf29527afa"
 dependencies = [
  "libc",
-]
-
-[[package]]
-name = "matchers"
-version = "0.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f099785f7595cc4b4553a174ce30dd7589ef93391ff414dbb67f62392b9e0ce1"
-dependencies = [
- "regex-automata",
 ]
 
 [[package]]
@@ -2422,6 +2396,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "mockito"
+version = "0.31.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "401edc088069634afaa5f4a29617b36dba683c0c16fe4435a86debad23fa2f1a"
+dependencies = [
+ "assert-json-diff",
+ "colored",
+ "httparse",
+ "lazy_static",
+ "log",
+ "rand",
+ "regex",
+ "serde_json",
+ "serde_urlencoded",
+ "similar",
+]
+
+[[package]]
 name = "multipart"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2490,7 +2482,7 @@ version = "0.1.0"
 dependencies = [
  "affix",
  "async-trait",
- "color-eyre 0.5.11",
+ "color-eyre",
  "ethers",
  "futures-util",
  "mockall 0.10.2",
@@ -2511,10 +2503,10 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
- "tracing-error 0.1.2",
+ "tracing-error",
  "tracing-futures",
  "tracing-opentelemetry",
- "tracing-subscriber 0.2.25",
+ "tracing-subscriber 0.3.14",
  "warp",
 ]
 
@@ -2522,7 +2514,7 @@ dependencies = [
 name = "nomad-cli"
 version = "0.1.0"
 dependencies = [
- "color-eyre 0.5.11",
+ "color-eyre",
  "ethers",
  "ethers-signers",
  "hex",
@@ -2544,7 +2536,7 @@ dependencies = [
  "accumulator",
  "async-trait",
  "bytes",
- "color-eyre 0.5.11",
+ "color-eyre",
  "ethers",
  "ethers-providers",
  "ethers-signers",
@@ -2574,7 +2566,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "color-eyre 0.5.11",
+ "color-eyre",
  "ethers",
  "ethers-contract",
  "ethers-core",
@@ -2605,12 +2597,13 @@ name = "nomad-test"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "color-eyre 0.5.11",
+ "color-eyre",
  "config 0.10.1",
  "dotenv",
  "ethers",
  "futures-util",
  "mockall 0.10.2",
+ "mockito",
  "nomad-core",
  "nomad-ethereum",
  "nomad-xyz-configuration",
@@ -2629,14 +2622,13 @@ name = "nomad-types"
 version = "0.1.0"
 dependencies = [
  "affix",
- "color-eyre 0.5.11",
+ "color-eyre",
  "ethers",
  "hex",
  "prometheus",
  "serde 1.0.137",
  "serde_json",
  "thiserror",
- "tracing-subscriber 0.2.25",
 ]
 
 [[package]]
@@ -2657,6 +2649,7 @@ dependencies = [
  "serde_yaml",
  "serial_test",
  "tokio",
+ "tracing",
  "wasm-bindgen",
  "wee_alloc",
 ]
@@ -2870,12 +2863,6 @@ checksum = "c3df761f6470298359f84fcfb60d86db02acc22c251c37265c07a3d1057d2389"
 dependencies = [
  "regex",
 ]
-
-[[package]]
-name = "owo-colors"
-version = "1.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2386b4ebe91c2f7f51082d4cefa145d030e33a1842a96b12e4885cc3c01f7a55"
 
 [[package]]
 name = "owo-colors"
@@ -3250,7 +3237,7 @@ version = "1.0.0"
 dependencies = [
  "affix",
  "async-trait",
- "color-eyre 0.5.11",
+ "color-eyre",
  "config 0.10.1",
  "dotenv",
  "ethers",
@@ -3272,7 +3259,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-futures",
- "tracing-subscriber 0.2.25",
+ "tracing-subscriber 0.3.14",
 ]
 
 [[package]]
@@ -3434,15 +3421,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "regex-automata"
-version = "0.1.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c230d73fb8d8c1b9c0b3135c5142a8acee3a0558fb8db5cf1cb65f8d7862132"
-dependencies = [
- "regex-syntax",
-]
-
-[[package]]
 name = "regex-syntax"
 version = "0.6.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3454,7 +3432,7 @@ version = "1.0.0"
 dependencies = [
  "affix",
  "async-trait",
- "color-eyre 0.5.11",
+ "color-eyre",
  "config 0.10.1",
  "dotenv",
  "ethers",
@@ -3473,7 +3451,7 @@ dependencies = [
  "tokio-test",
  "tracing",
  "tracing-futures",
- "tracing-subscriber 0.2.25",
+ "tracing-subscriber 0.3.14",
 ]
 
 [[package]]
@@ -4146,6 +4124,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "similar"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e24979f63a11545f5f2c60141afe249d4f19f84581ea2138065e400941d83d3"
+
+[[package]]
 name = "siphasher"
 version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4598,22 +4582,12 @@ dependencies = [
 
 [[package]]
 name = "tracing-core"
-version = "0.1.27"
+version = "0.1.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7709595b8878a4965ce5e87ebf880a7d39c9afc6837721b21a5a816a8117d921"
+checksum = "7b7358be39f2f274f322d2aaed611acc57f382e8eb1e5b48cb9ae30933495ce7"
 dependencies = [
  "once_cell",
  "valuable",
-]
-
-[[package]]
-name = "tracing-error"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4d7c0b83d4a500748fa5879461652b361edf5c9d51ede2a2ac03875ca185e24"
-dependencies = [
- "tracing",
- "tracing-subscriber 0.2.25",
 ]
 
 [[package]]
@@ -4623,7 +4597,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d686ec1c0f384b1277f097b2f279a2ecc11afe8c133c1aabf036a27cb4cd206e"
 dependencies = [
  "tracing",
- "tracing-subscriber 0.3.11",
+ "tracing-subscriber 0.3.14",
 ]
 
 [[package]]
@@ -4676,31 +4650,26 @@ version = "0.2.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e0d2eaa99c3c2e41547cfa109e910a68ea03823cccad4a0525dcbc9b01e8c71"
 dependencies = [
+ "sharded-slab",
+ "thread_local",
+ "tracing-core",
+]
+
+[[package]]
+name = "tracing-subscriber"
+version = "0.3.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a713421342a5a666b7577783721d3117f1b69a393df803ee17bb73b1e122a59"
+dependencies = [
  "ansi_term",
- "chrono",
- "lazy_static",
- "matchers",
- "regex",
  "serde 1.0.137",
  "serde_json",
  "sharded-slab",
  "smallvec",
  "thread_local",
- "tracing",
  "tracing-core",
  "tracing-log",
  "tracing-serde",
-]
-
-[[package]]
-name = "tracing-subscriber"
-version = "0.3.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4bc28f93baff38037f64e6f43d34cfa1605f27a49c34e8a04c5e78b0babf2596"
-dependencies = [
- "sharded-slab",
- "thread_local",
- "tracing-core",
 ]
 
 [[package]]
@@ -4836,7 +4805,7 @@ version = "1.0.0"
 dependencies = [
  "affix",
  "async-trait",
- "color-eyre 0.5.11",
+ "color-eyre",
  "config 0.11.0",
  "dotenv",
  "ethers",
@@ -4858,7 +4827,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-futures",
- "tracing-subscriber 0.2.25",
+ "tracing-subscriber 0.3.14",
  "warp",
 ]
 
@@ -5066,7 +5035,7 @@ version = "1.0.0"
 dependencies = [
  "affix",
  "async-trait",
- "color-eyre 0.5.11",
+ "color-eyre",
  "config 0.10.1",
  "dotenv",
  "ethers",
@@ -5087,7 +5056,7 @@ dependencies = [
  "tokio-test",
  "tracing",
  "tracing-futures",
- "tracing-subscriber 0.2.25",
+ "tracing-subscriber 0.3.14",
 ]
 
 [[package]]

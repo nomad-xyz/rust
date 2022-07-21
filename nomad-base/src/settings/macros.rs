@@ -72,18 +72,25 @@ macro_rules! decl_settings {
             }
 
             impl [<$name Settings>] {
-                pub fn new() -> color_eyre::Result<Self>{
+                pub async fn new() -> color_eyre::Result<Self>{
                     // Get agent and home names
+                    tracing::info!("Building settings from env");
                     let agent = std::stringify!($name).to_lowercase();
                     let home = std::env::var("AGENT_HOME_NAME").expect("missing AGENT_HOME_NAME");
 
                     // Get config
-                    let config_path = std::env::var("CONFIG_PATH").ok();
-                    let config: nomad_xyz_configuration::NomadConfig = match config_path {
-                        Some(path) => nomad_xyz_configuration::NomadConfig::from_file(path).expect("!config"),
+                    let config_url = std::env::var("CONFIG_URL").ok();
+                    let config: nomad_xyz_configuration::NomadConfig = match config_url {
+                        Some(url) => nomad_xyz_configuration::NomadConfig::fetch(&url).await.expect("!config url"),
                         None => {
-                            let env = std::env::var("RUN_ENV").expect("missing RUN_ENV");
-                            nomad_xyz_configuration::get_builtin(&env).expect("!config").to_owned()
+                            let config_path = std::env::var("CONFIG_PATH").ok();
+                            match config_path {
+                                Some(path) => nomad_xyz_configuration::NomadConfig::from_file(path).expect("!config path"),
+                                None => {
+                                    let env = std::env::var("RUN_ENV").expect("missing RUN_ENV");
+                                    nomad_xyz_configuration::get_builtin(&env).expect("!config builtin").to_owned()
+                                }
+                            }
                         }
                     };
                     config.validate()?;

@@ -1,4 +1,5 @@
 use futures_util::FutureExt;
+use mockito;
 use nomad_core::db::DB;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
@@ -68,9 +69,29 @@ where
     assert!(result.is_ok())
 }
 
+/// Run test with a mock http server response
+pub async fn run_test_with_http_response<T, Fut>(response_body: impl AsRef<[u8]>, test: T)
+where
+    T: FnOnce(String) -> Fut + panic::UnwindSafe,
+    Fut: Future<Output = ()>,
+{
+    let result = {
+        let url = mockito::server_url();
+        let _m = mockito::mock("GET", "/")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(response_body)
+            .create();
+        let func = panic::AssertUnwindSafe(async { test(url).await });
+        func.catch_unwind().await
+    };
+
+    assert!(result.is_ok())
+}
+
 pub fn clear_env_vars() {
     let env_vars = env::vars();
-    for (key, _) in env_vars.into_iter() {
+    for (key, _) in env_vars {
         env::remove_var(key);
     }
 }

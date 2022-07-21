@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- make *Settings::new async for optionally fetching config from a remote url
+- add bootup-only tracing subscriber
 - bug: add check for empty intersection of specified and subsidized
 - refactor: processor now uses global AWS client when proof pushing is enabled
 - prevent processor from retrying messages it has previously attempted to

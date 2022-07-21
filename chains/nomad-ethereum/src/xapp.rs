@@ -38,12 +38,18 @@ where
         submitter: TxSubmitter<W>,
         read_provider: Arc<R>,
         ContractLocator {
-            name: _,
+            name,
             domain,
             address,
         }: &ContractLocator,
         gas: Option<ConnectionManagerGasLimits>,
     ) -> Self {
+        tracing::info!(
+            address = ?address.as_ethereum_address(),
+            name = name,
+            domain = domain,
+            "Connecting XappConnectionManager"
+        );
         Self {
             submitter,
             contract: Arc::new(EthereumConnectionManagerInternal::new(

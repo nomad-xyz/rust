@@ -11,15 +11,67 @@ mod test {
     use nomad_base::{get_remotes_from_env, NomadAgent};
     use nomad_test::test_utils;
     use nomad_xyz_configuration::{agent::kathy::ChatGenConfig, AgentSecrets};
+    use serde_json::json;
+    use std::collections::HashSet;
 
-    #[test]
+    #[tokio::test]
     #[serial_test::serial]
-    fn it_overrides_settings_from_env() {
-        test_utils::run_test_with_env_sync("../../fixtures/env.test-agents", move || {
+    async fn it_loads_remote_config() {
+        let config =
+            nomad_xyz_configuration::NomadConfig::from_file("../../fixtures/external_config.json")
+                .unwrap();
+        let config_json = json!(config).to_string();
+        test_utils::run_test_with_http_response(config_json, |url| async move {
+            test_utils::run_test_with_env("../../fixtures/env.external", || async move {
+                std::env::set_var("CONFIG_URL", url);
+
+                let agent_home = dotenv::var("AGENT_HOME_NAME").unwrap();
+
+                let settings = KathySettings::new().await.unwrap();
+
+                let remotes = get_remotes_from_env!(agent_home, config);
+                let mut networks = remotes.clone();
+                networks.insert(agent_home.clone());
+
+                let secrets = AgentSecrets::from_env(&networks).unwrap();
+                secrets
+                    .validate("kathy", &networks)
+                    .expect("!secrets validate");
+
+                settings
+                    .base
+                    .validate_against_config_and_secrets(
+                        crate::Kathy::AGENT_NAME,
+                        &agent_home,
+                        &remotes,
+                        &config,
+                        &secrets,
+                    )
+                    .unwrap();
+
+                let mut settings_networks = settings
+                    .base
+                    .replicas
+                    .values()
+                    .map(|c| c.name.clone())
+                    .collect::<HashSet<_>>();
+                settings_networks.insert(settings.base.home.name.clone());
+
+                assert_eq!(config.networks, settings_networks);
+            })
+            .await
+        })
+        .await
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_overrides_settings_from_env() {
+        test_utils::run_test_with_env("../../fixtures/env.test-agents", || async move {
             let run_env = dotenv::var("RUN_ENV").unwrap();
             let agent_home = dotenv::var("AGENT_HOME_NAME").unwrap();
 
-            let settings = KathySettings::new().unwrap();
+            let settings = KathySettings::new().await.unwrap();
 
             let config = nomad_xyz_configuration::get_builtin(&run_env).unwrap();
 
@@ -50,7 +102,8 @@ mod test {
                 }
             );
             assert_eq!(settings.agent.interval, 999);
-        });
+        })
+        .await
     }
 
     async fn test_build_from_env_file(path: &str) {
@@ -58,7 +111,7 @@ mod test {
             let run_env = dotenv::var("RUN_ENV").unwrap();
             let agent_home = dotenv::var("AGENT_HOME_NAME").unwrap();
 
-            let settings = KathySettings::new().unwrap();
+            let settings = KathySettings::new().await.unwrap();
 
             let config = nomad_xyz_configuration::get_builtin(&run_env).unwrap();
 
@@ -108,7 +161,7 @@ mod test {
             std::env::set_var("CONFIG_PATH", "../../fixtures/external_config.json");
             let agent_home = dotenv::var("AGENT_HOME_NAME").unwrap();
 
-            let settings = KathySettings::new().unwrap();
+            let settings = KathySettings::new().await.unwrap();
 
             let config = nomad_xyz_configuration::NomadConfig::from_file(
                 "../../fixtures/external_config.json",
