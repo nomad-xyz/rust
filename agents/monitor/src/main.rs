@@ -61,6 +61,7 @@ async fn main() -> eyre::Result<()> {
         monitor.run_dispatch_to_update(&mut faucets);
         monitor.run_update_to_relay(&mut faucets);
         monitor.run_relay_to_process(&mut faucets);
+        monitor.run_e2e(&mut faucets);
 
         tracing::info!("tasks started");
 

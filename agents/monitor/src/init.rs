@@ -13,10 +13,14 @@ use crate::{
     domain::Domain,
     faucets::Faucets,
     metrics::Metrics,
-    steps::producer::{
-        DispatchProducerHandle, ProcessProducerHandle, RelayProducerHandle, UpdateProducerHandle,
+    steps::{
+        e2e::E2ELatency,
+        producer::{
+            DispatchProducerHandle, ProcessProducerHandle, RelayProducerHandle,
+            UpdateProducerHandle,
+        },
     },
-    utils, ArcProvider, HomeReplicaMap,
+    utils, ArcProvider, HomeReplicaMap, ProcessStep,
 };
 
 pub(crate) fn config_from_file() -> Option<NomadConfig> {
@@ -205,6 +209,27 @@ impl Monitor {
     }
 
     pub(crate) fn run_e2e<'a>(&'a self, faucets: &mut Faucets<'a>) {
-        todo!()
+        let (process_sinks, process_faucets) = faucets.swap_all_processes();
+        let (dispatch_sinks, dispatch_faucets) = faucets.swap_all_dispatches();
+
+        let metrics = self
+            .metrics
+            .e2e_metrics(process_sinks.keys().map(AsRef::as_ref));
+
+        let domain_to_network = self
+            .networks
+            .values()
+            .map(|domain| (domain.domain_number, domain.name().to_owned()))
+            .collect();
+
+        E2ELatency::new(
+            dispatch_faucets,
+            process_faucets,
+            domain_to_network,
+            metrics,
+            dispatch_sinks,
+            process_sinks,
+        )
+        .spawn();
     }
 }
