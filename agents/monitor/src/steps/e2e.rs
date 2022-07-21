@@ -18,7 +18,8 @@ use crate::{
 use super::combine::CombineChannels;
 
 pub(crate) struct E2EMetrics {
-    timers: HashMap<String, Histogram>,
+    // home to times
+    pub(crate) timers: HashMap<String, Histogram>,
 }
 
 #[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]

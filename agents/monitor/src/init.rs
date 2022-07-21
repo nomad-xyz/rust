@@ -11,11 +11,12 @@ use tracing_subscriber::EnvFilter;
 
 use crate::{
     domain::Domain,
+    faucets::Faucets,
     metrics::Metrics,
     steps::producer::{
         DispatchProducerHandle, ProcessProducerHandle, RelayProducerHandle, UpdateProducerHandle,
     },
-    utils, ArcProvider, Faucets, HomeReplicaMap,
+    utils, ArcProvider, HomeReplicaMap,
 };
 
 pub(crate) fn config_from_file() -> Option<NomadConfig> {
@@ -201,5 +202,9 @@ impl Monitor {
         self.networks
             .values()
             .for_each(|domain| domain.relay_to_process(faucets, self.metrics.clone()));
+    }
+
+    pub(crate) fn run_e2e<'a>(&'a self, faucets: &mut Faucets<'a>) {
+        todo!()
     }
 }

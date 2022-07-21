@@ -14,9 +14,11 @@ use ethers::prelude::{Http, Provider as EthersProvider};
 
 pub(crate) mod annotate;
 pub(crate) mod domain;
+pub(crate) mod faucets;
 pub(crate) mod init;
 pub(crate) mod macros;
 pub(crate) mod metrics;
+pub(crate) mod pipe;
 pub(crate) mod steps;
 pub(crate) mod utils;
 
@@ -26,91 +28,20 @@ pub(crate) type ArcProvider = Arc<Provider>;
 
 pub(crate) type Restartable<Task> = JoinHandle<(Task, eyre::Report)>;
 
-pub(crate) type Faucet<T> = UnboundedReceiver<WithMeta<T>>;
-pub(crate) type Sink<T> = UnboundedSender<WithMeta<T>>;
+pub(crate) type Faucet<T> = UnboundedReceiver<T>;
+pub(crate) type Sink<T> = UnboundedSender<T>;
 
-pub(crate) type DispatchFaucet = Faucet<DispatchFilter>;
-pub(crate) type UpdateFaucet = Faucet<UpdateFilter>;
-pub(crate) type RelayFaucet = Faucet<RelayFilter>;
-pub(crate) type ProcessFaucet = Faucet<ProcessFilter>;
-pub(crate) type DispatchSink = Sink<DispatchFilter>;
-pub(crate) type UpdateSink = Sink<UpdateFilter>;
-pub(crate) type RelaySink = Sink<RelayFilter>;
-pub(crate) type ProcessSink = Sink<ProcessFilter>;
+pub(crate) type DispatchFaucet = Faucet<WithMeta<DispatchFilter>>;
+pub(crate) type UpdateFaucet = Faucet<WithMeta<UpdateFilter>>;
+pub(crate) type RelayFaucet = Faucet<WithMeta<RelayFilter>>;
+pub(crate) type ProcessFaucet = Faucet<WithMeta<ProcessFilter>>;
+pub(crate) type DispatchSink = Sink<WithMeta<DispatchFilter>>;
+pub(crate) type UpdateSink = Sink<WithMeta<UpdateFilter>>;
+pub(crate) type RelaySink = Sink<WithMeta<RelayFilter>>;
+pub(crate) type ProcessSink = Sink<WithMeta<ProcessFilter>>;
 
 pub(crate) type NetworkMap<'a, T> = HashMap<&'a str, T>;
 pub(crate) type HomeReplicaMap<'a, T> = HashMap<&'a str, HashMap<&'a str, T>>;
-
-pub(crate) struct Faucets<'a> {
-    pub(crate) dispatches: NetworkMap<'a, DispatchFaucet>,
-    pub(crate) updates: NetworkMap<'a, UpdateFaucet>,
-    pub(crate) relays: HomeReplicaMap<'a, RelayFaucet>,
-    pub(crate) processes: HomeReplicaMap<'a, ProcessFaucet>,
-}
-
-impl<'a> Faucets<'a> {
-    pub(crate) fn swap_dispatch(
-        &mut self,
-        network: &'a str,
-        mut dispatch_faucet: DispatchFaucet,
-    ) -> DispatchFaucet {
-        self.dispatches
-            .get_mut(network)
-            .map(|old| {
-                std::mem::swap(old, &mut dispatch_faucet);
-                dispatch_faucet
-            })
-            .expect("missing dispatch faucet")
-    }
-
-    pub(crate) fn swap_update(
-        &mut self,
-        network: &'a str,
-        mut update_faucet: UpdateFaucet,
-    ) -> UpdateFaucet {
-        self.updates
-            .get_mut(network)
-            .map(|old| {
-                std::mem::swap(old, &mut update_faucet);
-                update_faucet
-            })
-            .expect("missing dispatch faucet")
-    }
-
-    pub(crate) fn swap_relay(
-        &mut self,
-        network: &'a str,
-        replica_of: &'a str,
-        mut relay_faucet: RelayFaucet,
-    ) -> RelayFaucet {
-        self.relays
-            .get_mut(network)
-            .expect("missing network")
-            .get_mut(replica_of)
-            .map(|old| {
-                std::mem::swap(old, &mut relay_faucet);
-                relay_faucet
-            })
-            .expect("missing faucet")
-    }
-
-    pub(crate) fn swap_process(
-        &mut self,
-        network: &'a str,
-        replica_of: &'a str,
-        mut process_faucet: ProcessFaucet,
-    ) -> ProcessFaucet {
-        self.processes
-            .get_mut(network)
-            .expect("missing network")
-            .get_mut(replica_of)
-            .map(|old| {
-                std::mem::swap(old, &mut process_faucet);
-                process_faucet
-            })
-            .expect("missing faucet")
-    }
-}
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {

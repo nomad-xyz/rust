@@ -5,6 +5,7 @@ use nomad_xyz_configuration::{contracts::CoreContracts, NomadConfig};
 use tokio::sync::mpsc::unbounded_channel;
 
 use crate::{
+    faucets::Faucets,
     init::provider_for,
     metrics::Metrics,
     steps::{
@@ -17,7 +18,7 @@ use crate::{
         relay_wait::RelayWait,
         update_wait::UpdateWait,
     },
-    Faucets, ProcessStep, Provider, StepHandle,
+    ProcessStep, Provider, StepHandle,
 };
 
 #[derive(Debug)]
@@ -282,14 +283,24 @@ impl Domain {
         .spawn();
     }
 
-    // TODO
-    // pub(crate) fn relay_to_process<'a>(&'a self, faucets: &mut Faucets<'a>, metrics: Arc<Metrics>) {
+    pub(crate) fn relay_to_process<'a>(&'a self, faucets: &mut Faucets<'a>, metrics: Arc<Metrics>) {
+        self.replicas.iter().for_each(|(replica_of, replica)| {
+            let emitter = format!("{:?}", replica.address());
 
-    //     let relay_faucet = faucets.relays.get(self.)
+            let relay_pipe = faucets.relay_pipe(self.name(), replica_of);
+            let process_pipe = faucets.process_pipe(self.name(), replica_of);
 
-    //     RelayWait::new(
-    //         faucet
-    //     );
+            let metrics = metrics.relay_wait_metrics(self.name(), replica_of, &emitter);
 
-    // }
+            RelayWait::new(
+                relay_pipe,
+                process_pipe,
+                self.name().to_owned(),
+                replica_of.to_owned(),
+                emitter,
+                metrics,
+            )
+            .spawn();
+        });
+    }
 }
