@@ -14,6 +14,7 @@ COPY ${TARGET_DIR}/release/updater \
      ${TARGET_DIR}/release/watcher \
      ${TARGET_DIR}/release/processor \
      ${TARGET_DIR}/release/kathy \
+     ${TARGET_DIR}/release/monitor \
      ${TARGET_DIR}/release/kms-cli \
      ${TARGET_DIR}/release/nomad-cli ./
 
