@@ -1,5 +1,7 @@
 # Changelog
 
+- fix: instrument futures, not joinhandles
+
 ### Unreleased
 
 - add home and remote labels to contract sync metrics for event differentiation
