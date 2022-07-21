@@ -101,8 +101,6 @@ impl E2ELatency {
                     .insert(message_hash, now);
             }
         }
-
-        todo!()
     }
 
     fn record_process(&mut self, network: String, replica_of: String, message_hash: H256) {
