@@ -12,3 +12,18 @@ macro_rules! bail_task_if {
         }
     };
 }
+
+#[macro_export]
+macro_rules! unwrap_pipe_item {
+    ($pipe_output:ident, $self:ident,) => {{
+        unwrap_pipe_output!($pipe_output, $self)
+    }};
+    ($pipe_output:ident, $self:ident) => {{
+        bail_task_if!($pipe_output.is_err(), $self, $pipe_output.unwrap_err(),);
+
+        let item_opt = $pipe_output.unwrap();
+        bail_task_if!(item_opt.is_none(), $self, "inbound pipe failed",);
+
+        item_opt.unwrap()
+    }};
+}

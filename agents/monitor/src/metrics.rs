@@ -5,7 +5,8 @@ use tokio::task::JoinHandle;
 use warp::Filter;
 
 use crate::steps::{
-    between::BetweenMetrics, dispatch_wait::DispatchWaitMetrics, update_wait::UpdateWaitMetrics,
+    between::BetweenMetrics, dispatch_wait::DispatchWaitMetrics, e2e::E2EMetrics,
+    relay_wait::RelayWaitMetrics, update_wait::UpdateWaitMetrics,
 };
 
 #[derive(Debug)]
@@ -18,6 +19,11 @@ pub(crate) struct Metrics {
     dispatch_to_update_blocks: prometheus::HistogramVec,
 
     update_to_relay_timers: prometheus::HistogramVec,
+
+    relay_to_process_timers: prometheus::HistogramVec,
+    relay_to_process_blocks: prometheus::HistogramVec,
+
+    e2e_timers: prometheus::HistogramVec,
 }
 
 fn u16_from_env(s: impl AsRef<str>) -> Option<u16> {
@@ -34,6 +40,16 @@ fn gather() -> prometheus::Result<Vec<u8>> {
 
 impl Metrics {
     pub(crate) fn new() -> eyre::Result<Self> {
+        let e2e_timers = HistogramVec::new(
+            HistogramOpts::new(
+                "e2e_ms",
+                "Ms between dispatch and associated process, as observed by this agent",
+            )
+            .namespace("nomad")
+            .const_label("VERSION", env!("CARGO_PKG_VERSION")),
+            &["chain"],
+        )?;
+
         let update_to_relay_timers = HistogramVec::new(
             HistogramOpts::new(
                 "update_to_relay_ms",
@@ -62,6 +78,26 @@ impl Metrics {
             .namespace("nomad")
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             &["chain", "emitter"],
+        )?;
+
+        let relay_to_process_timers = HistogramVec::new(
+            HistogramOpts::new(
+                "relay_to_process_ms",
+                "Ms between relay and process, as observed by this agent",
+            )
+            .namespace("nomad")
+            .const_label("VERSION", env!("CARGO_PKG_VERSION")),
+            &["chain", "replica_of", "emitter"],
+        )?;
+
+        let relay_to_process_blocks = HistogramVec::new(
+            HistogramOpts::new(
+                "relay_to_process_blocks",
+                "Blocks between dispatch and update, as observed by this agent",
+            )
+            .namespace("nomad")
+            .const_label("VERSION", env!("CARGO_PKG_VERSION")),
+            &["chain", "replica_of", "emitter"],
         )?;
 
         let wallclock_times = HistogramVec::new(
@@ -110,6 +146,15 @@ impl Metrics {
         registry
             .register(Box::new(dispatch_to_update_blocks.clone()))
             .expect("unable to register metric");
+        registry
+            .register(Box::new(update_to_relay_timers.clone()))
+            .expect("unable to register metric");
+        registry
+            .register(Box::new(relay_to_process_timers.clone()))
+            .expect("unable to register metric");
+        registry
+            .register(Box::new(relay_to_process_blocks.clone()))
+            .expect("unable to register metric");
 
         Ok(Self {
             wallclock_times,
@@ -118,6 +163,9 @@ impl Metrics {
             dispatch_to_update_blocks,
             dispatch_to_update_timers,
             update_to_relay_timers,
+            relay_to_process_timers,
+            relay_to_process_blocks,
+            e2e_timers,
         })
     }
 
@@ -227,5 +275,34 @@ impl Metrics {
                 .update_to_relay_timers
                 .with_label_values(&[network, emitter]),
         }
+    }
+
+    pub(crate) fn relay_wait_metrics(
+        &self,
+        network: &str,
+        replica_of: &str,
+        emitter: &str,
+    ) -> RelayWaitMetrics {
+        RelayWaitMetrics {
+            timers: self
+                .relay_to_process_timers
+                .with_label_values(&[network, replica_of, emitter]),
+            blocks: self
+                .relay_to_process_blocks
+                .with_label_values(&[network, replica_of, emitter]),
+        }
+    }
+
+    pub(crate) fn e2e_metrics<'a>(&self, networks: impl Iterator<Item = &'a str>) -> E2EMetrics {
+        let timers = networks
+            .map(|network| {
+                (
+                    network.to_owned(),
+                    self.e2e_timers.with_label_values(&[network]),
+                )
+            })
+            .collect();
+
+        E2EMetrics { timers }
     }
 }
