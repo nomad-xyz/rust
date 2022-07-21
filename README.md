@@ -147,7 +147,7 @@ Releases are managed on GitHub [here](https://github.com/nomad-xyz/rust/releases
 ### Aggregating the Changelog
 
 - Output a patch file by running `git diff <tag of last release> --no-prefix --output <location to output patch txt file> -- */CHANGELOG.md */*/CHANGELOG.md`
-- Organize and format patch file into a changelog (for tag message and release notes)
+- Organize and format patch file into release notes (see [template](./RELEASE-TEMPLATE.md))
 
 ### Bumping Versions
 
@@ -162,8 +162,7 @@ Releases are managed on GitHub [here](https://github.com/nomad-xyz/rust/releases
 - Push tags by running `git push --tags`
 - Visit the [releases page](https://github.com/nomad-xyz/rust/releases) for the `rust` repo
 - Draft a new release using the newly published tag
-- Include your changelog as the release notes
-- Publish release
+- Publish release with your included release notes
 
 ## Advanced Usage
 
