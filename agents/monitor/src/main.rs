@@ -17,9 +17,7 @@ pub(crate) mod domain;
 pub(crate) mod init;
 pub(crate) mod macros;
 pub(crate) mod metrics;
-pub(crate) mod producer;
 pub(crate) mod steps;
-pub(crate) mod terminal;
 pub(crate) mod utils;
 
 pub(crate) type Provider = ethers::prelude::TimeLag<EthersProvider<Http>>;
@@ -131,8 +129,9 @@ async fn main() -> eyre::Result<()> {
         monitor.run_betweens(&mut faucets);
         monitor.run_dispatch_to_update(&mut faucets);
         monitor.run_update_to_relay(&mut faucets);
+        monitor.run_relay_to_process(&mut faucets);
 
-        tracing::info!("counters started");
+        tracing::info!("tasks started");
 
         // just run forever
         loop {

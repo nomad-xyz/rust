@@ -7,13 +7,14 @@ use tokio::sync::mpsc::unbounded_channel;
 use crate::{
     init::provider_for,
     metrics::Metrics,
-    producer::{
-        DispatchProducer, DispatchProducerHandle, ProcessProducer, ProcessProducerHandle,
-        RelayProducer, RelayProducerHandle, UpdateProducer, UpdateProducerHandle,
-    },
     steps::{
         between::{BetweenEvents, BetweenMetrics},
         dispatch_wait::DispatchWait,
+        producer::{
+            DispatchProducer, DispatchProducerHandle, ProcessProducer, ProcessProducerHandle,
+            RelayProducer, RelayProducerHandle, UpdateProducer, UpdateProducerHandle,
+        },
+        relay_wait::RelayWait,
         update_wait::UpdateWait,
     },
     Faucets, ProcessStep, Provider, StepHandle,
@@ -280,4 +281,15 @@ impl Domain {
         )
         .spawn();
     }
+
+    // TODO
+    // pub(crate) fn relay_to_process<'a>(&'a self, faucets: &mut Faucets<'a>, metrics: Arc<Metrics>) {
+
+    //     let relay_faucet = faucets.relays.get(self.)
+
+    //     RelayWait::new(
+    //         faucet
+    //     );
+
+    // }
 }

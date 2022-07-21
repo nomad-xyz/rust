@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use ethers::prelude::U64;
 use prometheus::Histogram;
 use tokio::time::Instant;
@@ -6,11 +8,14 @@ use tracing::{info_span, Instrument};
 
 use crate::{bail_task_if, ProcessFaucet, ProcessSink, ProcessStep, RelayFaucet, RelaySink};
 
+#[derive(Debug)]
 pub struct RelayWaitMetrics {
     timers: Histogram,
     blocks: Histogram,
 }
 
+#[derive(Debug)]
+#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
 pub(crate) struct RelayWait {
     relay_faucet: RelayFaucet,
     process_faucet: ProcessFaucet,
@@ -25,6 +30,32 @@ pub(crate) struct RelayWait {
 
     relay_sink: RelaySink,
     process_sink: ProcessSink,
+}
+
+impl RelayWait {
+    pub(crate) fn new(
+        relay_faucet: RelayFaucet,
+        process_faucet: ProcessFaucet,
+        network: String,
+        replica_of: String,
+        emitter: String,
+        metrics: RelayWaitMetrics,
+        relay_sink: RelaySink,
+        process_sink: ProcessSink,
+    ) -> Self {
+        Self {
+            relay_faucet,
+            process_faucet,
+            network,
+            replica_of,
+            emitter,
+            metrics,
+            relay_instant: Instant::now() + Duration::from_secs(86400 * 30 * 12 * 30),
+            relay_block: U64::zero(),
+            relay_sink,
+            process_sink,
+        }
+    }
 }
 
 impl std::fmt::Display for RelayWait {

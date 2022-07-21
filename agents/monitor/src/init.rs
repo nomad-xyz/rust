@@ -12,7 +12,7 @@ use tracing_subscriber::EnvFilter;
 use crate::{
     domain::Domain,
     metrics::Metrics,
-    producer::{
+    steps::producer::{
         DispatchProducerHandle, ProcessProducerHandle, RelayProducerHandle, UpdateProducerHandle,
     },
     utils, ArcProvider, Faucets, HomeReplicaMap,
@@ -193,7 +193,13 @@ impl Monitor {
 
     pub(crate) fn run_update_to_relay<'a>(&'a self, faucets: &mut Faucets<'a>) {
         self.networks
-            .iter()
-            .for_each(|(_, v)| v.update_to_relay(faucets, self.metrics.clone()));
+            .values()
+            .for_each(|v| v.update_to_relay(faucets, self.metrics.clone()));
+    }
+
+    pub(crate) fn run_relay_to_process<'a>(&'a self, faucets: &mut Faucets<'a>) {
+        self.networks
+            .values()
+            .for_each(|domain| domain.relay_to_process(faucets, self.metrics.clone()));
     }
 }

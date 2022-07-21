@@ -12,6 +12,7 @@ use crate::{
 };
 
 #[derive(Debug)]
+#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
 pub(crate) struct DispatchProducer {
     home: Home<crate::Provider>,
     network: String,
@@ -98,6 +99,7 @@ impl ProcessStep for DispatchProducer {
 }
 
 #[derive(Debug)]
+#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
 pub(crate) struct UpdateProducer {
     home: Home<crate::Provider>,
     network: String,
@@ -188,6 +190,7 @@ impl ProcessStep for UpdateProducer {
 }
 
 #[derive(Debug)]
+#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
 pub(crate) struct RelayProducer {
     replica: Replica<crate::Provider>,
     network: String,
@@ -279,6 +282,7 @@ impl ProcessStep for RelayProducer {
 }
 
 #[derive(Debug)]
+#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
 pub(crate) struct ProcessProducer {
     replica: Replica<crate::Provider>,
     network: String,

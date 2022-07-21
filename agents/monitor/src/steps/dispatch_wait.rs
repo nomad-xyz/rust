@@ -14,6 +14,7 @@ pub(crate) struct DispatchWaitMetrics {
 }
 
 #[derive(Debug)]
+#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
 pub(crate) struct DispatchWait {
     dispatch_faucet: DispatchFaucet,
     update_faucet: UpdateFaucet,
