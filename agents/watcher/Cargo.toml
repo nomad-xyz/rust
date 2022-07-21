@@ -1,6 +1,6 @@
 [package]
 name = "watcher"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["Luke Tchang <luke@nomad.xyz>", "James Prestwich <james@nomad.xyz>"]
 edition = "2021"
 description = "Nomad watcher agent"
