@@ -55,7 +55,7 @@ mod test {
                     .values()
                     .map(|c| c.name.clone())
                     .collect::<HashSet<_>>();
-                settings_networks.insert(settings.base.home.name.clone());
+                settings_networks.insert(settings.base.home.name);
 
                 assert_eq!(config.networks, settings_networks);
             })
