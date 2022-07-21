@@ -2,7 +2,7 @@
 
 ### Unreleased
 
-- add environment variable override for remote config uri
+- make *Settings::new async for optionally fetching config from a remote url
 - add bootup-only tracing subscriber
 - bug: add check for empty intersection of specified and subsidized
 - refactor: processor now uses global AWS client when proof pushing is enabled

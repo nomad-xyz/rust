@@ -2,7 +2,7 @@
 
 ### Unreleased
 
-- add environment variable override for remote config uri
+- add `CONFIG_URL` check to `decl_settings` to optionally fetch config from a remote url
 - bug: add checks for empty replica name arrays in `NomadAgent::run_many` and
   `NomadAgent::run_all`
 - add `previously_attempted` to the DB schema
