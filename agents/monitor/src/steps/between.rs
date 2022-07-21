@@ -1,7 +1,5 @@
 use tracing::{info_span, Instrument};
 
-use tokio::sync::mpsc::{self};
-
 use crate::{
     annotate::WithMeta, bail_task_if, pipe::Pipe, unwrap_pipe_item, ProcessStep, Restartable,
 };

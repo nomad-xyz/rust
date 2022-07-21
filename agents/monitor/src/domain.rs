@@ -24,6 +24,7 @@ use crate::{
 #[derive(Debug)]
 pub(crate) struct Domain {
     pub(crate) network: String,
+    pub(crate) domain_number: u32,
     pub(crate) home: Home<Provider>,
     pub(crate) replicas: HashMap<String, Replica<Provider>>,
 }
@@ -36,6 +37,11 @@ impl Domain {
     pub(crate) fn from_config(config: &NomadConfig, network: &str) -> eyre::Result<Self> {
         let network = network.to_owned();
         let provider = provider_for(config, &network)?;
+
+        let domain_number = config
+            .protocol()
+            .resolve_name_to_domain(&network)
+            .expect("invalid config");
 
         let CoreContracts::Evm(core) = config.core().get(&network).expect("invalid config");
 
@@ -57,6 +63,7 @@ impl Domain {
             network,
             home,
             replicas,
+            domain_number,
         })
     }
 
