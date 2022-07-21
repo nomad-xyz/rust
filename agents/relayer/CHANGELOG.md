@@ -2,6 +2,7 @@
 
 ### Unreleased
 
+- make *Settings::new async for optionally fetching config from a remote url
 - relayer checks replica updater addresses match, errors channel if otherwise
 - add bootup-only tracing subscriber
 - add environment variable overrides for agent configuration

@@ -32,13 +32,14 @@ async fn main() -> Result<()> {
     let span = info_span!("WatcherBootup");
     let _span = span.enter();
 
-    let settings = Settings::new()?;
+    let settings = Settings::new().await?;
     let agent = Watcher::from_settings(settings).await?;
 
     drop(_span);
     drop(span);
 
     let _tracing_guard = agent.start_tracing(agent.metrics().span_duration());
+
     let _ = agent.metrics().run_http_server();
 
     agent.run_all().await??;

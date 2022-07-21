@@ -20,6 +20,7 @@ rocksdb = { git = "https://github.com/rust-rocksdb/rust-rocksdb" }
 dotenv = "0.15.0"
 tracing = "0.1.35"
 prometheus = "0.12.0"
+mockito = "0.31.0"
 
 nomad-xyz-configuration = { path = "../configuration" }
 nomad-core = { path = "../nomad-core" }
