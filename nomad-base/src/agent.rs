@@ -25,13 +25,29 @@ use tokio::{task::JoinHandle, time::sleep};
 
 const MAX_EXPONENTIAL: u32 = 7; // 2^7 = 128 second timeout
 
+/// General or agent-specific connection map
+#[derive(Debug, Clone)]
+pub enum AgentConnections {
+    /// Connections for watchers
+    Watcher {
+        /// A map of boxed Homes
+        homes: HashMap<String, Arc<CachingHome>>,
+        // ...
+    },
+    /// Connections for other agents
+    Default {
+        /// A boxed Home
+        home: Arc<CachingHome>,
+        /// A map of boxed Replicas
+        replicas: HashMap<String, Arc<CachingReplica>>,
+    },
+}
+
 /// Properties shared across all agents
 #[derive(Debug, Clone)]
 pub struct AgentCore {
-    /// A boxed Home
-    pub home: Arc<CachingHome>,
-    /// A map of boxed Replicas
-    pub replicas: HashMap<String, Arc<CachingReplica>>,
+    /// Agent connections
+    pub connections: AgentConnections,
     /// A persistent KV Store (currently implemented as rocksdb)
     pub db: DB,
     /// Prometheus metrics
