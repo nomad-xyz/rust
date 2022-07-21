@@ -1,8 +1,6 @@
-use nomad_ethereum::bindings::home::UpdateFilter;
 use tokio::sync::mpsc::unbounded_channel;
 
 use crate::{
-    annotate::WithMeta,
     pipe::{DispatchPipe, Pipe, ProcessPipe, RelayPipe, UpdatePipe},
     DispatchFaucet, HomeReplicaMap, NetworkMap, ProcessFaucet, RelayFaucet, UpdateFaucet,
 };
