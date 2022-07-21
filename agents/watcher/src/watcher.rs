@@ -12,7 +12,7 @@ use tokio::{
     task::JoinHandle,
     time::sleep,
 };
-use tracing::{error, info, info_span, instrument::Instrumented, Instrument};
+use tracing::{error, info, info_span, Instrument};
 
 use nomad_base::{
     cancel_task, AgentCore, AttestationSigner, BaseError, CachingHome, ChainCommunicationError,
@@ -282,7 +282,7 @@ impl UpdateHandler {
     }
 }
 
-type TaskMap = Arc<RwLock<HashMap<String, Instrumented<JoinHandle<Result<()>>>>>>;
+type TaskMap = Arc<RwLock<HashMap<String, JoinHandle<Result<()>>>>>;
 
 #[derive(Debug)]
 pub struct Watcher {
@@ -345,7 +345,7 @@ impl Watcher {
     /// Spawn UpdateHandler and sync tasks. Have sync tasks send UpdateHandler
     /// signed updates through mpsc. Return Some(double_update) if any
     /// conflicting updates are found.
-    fn watch_double_update(&self) -> Instrumented<JoinHandle<Result<Option<DoubleUpdate>>>> {
+    fn watch_double_update(&self) -> JoinHandle<Result<Option<DoubleUpdate>>> {
         let home = self.home();
         let replicas = self.replicas().clone();
         let watcher_db_name = format!("{}_{}", home.name(), AGENT_NAME);
@@ -355,80 +355,78 @@ impl Watcher {
         let watch_tasks = self.watch_tasks.clone();
         let updates_inspected_for_double = self.updates_inspected_for_double.clone();
 
-        tokio::spawn(async move {
-            // Spawn update handler
-            let (tx, rx) = mpsc::channel(200);
-            let handler = UpdateHandler::new(rx, watcher_db, home.clone()).spawn();
+        tokio::spawn(
+            async move {
+                // Spawn update handler
+                let (tx, rx) = mpsc::channel(200);
+                let handler = UpdateHandler::new(rx, watcher_db, home.clone()).spawn();
 
-            // For each replica, spawn polling and history syncing tasks
-            info!("Spawning replica watch and sync tasks...");
-            for (name, replica) in replicas {
-                info!("Spawning watch and sync tasks for replica {}.", name);
-                let from = replica.committed_root().await?;
+                // For each replica, spawn polling and history syncing tasks
+                info!("Spawning replica watch and sync tasks...");
+                for (name, replica) in replicas {
+                    info!("Spawning watch and sync tasks for replica {}.", name);
+                    let from = replica.committed_root().await?;
 
+                    let inspected = updates_inspected_for_double.with_label_values(&[
+                        home.name(),
+                        replica.name(),
+                        Self::AGENT_NAME,
+                    ]);
+
+                    watch_tasks.write().await.insert(
+                        (*name).to_owned(),
+                        ContractWatcher::new(
+                            interval_seconds,
+                            from,
+                            tx.clone(),
+                            replica.clone(),
+                            inspected.clone(),
+                        )
+                        .spawn(),
+                    );
+                    sync_tasks.write().await.insert(
+                        (*name).to_owned(),
+                        HistorySync::new(interval_seconds, from, tx.clone(), replica, inspected)
+                            .spawn(),
+                    );
+                }
+
+                // Spawn polling and history syncing tasks for home
+                info!("Starting watch and sync tasks for home {}.", home.name());
+                let from = home.committed_root().await?;
                 let inspected = updates_inspected_for_double.with_label_values(&[
                     home.name(),
-                    replica.name(),
+                    home.name(),
                     Self::AGENT_NAME,
                 ]);
 
-                watch_tasks.write().await.insert(
-                    (*name).to_owned(),
-                    ContractWatcher::new(
-                        interval_seconds,
-                        from,
-                        tx.clone(),
-                        replica.clone(),
-                        inspected.clone(),
-                    )
-                    .spawn()
-                    .in_current_span(),
-                );
-                sync_tasks.write().await.insert(
-                    (*name).to_owned(),
-                    HistorySync::new(interval_seconds, from, tx.clone(), replica, inspected)
-                        .spawn()
-                        .in_current_span(),
-                );
+                let home_watcher = ContractWatcher::new(
+                    interval_seconds,
+                    from,
+                    tx.clone(),
+                    home.clone(),
+                    inspected.clone(),
+                )
+                .spawn();
+                let home_sync =
+                    HistorySync::new(interval_seconds, from, tx.clone(), home, inspected).spawn();
+
+                // Wait for update handler to finish (should only happen watcher is
+                // manually shut down)
+                let double_update_res = handler.await?;
+
+                // Cancel running tasks
+                tracing::info!("Update handler has resolved. Cancelling all other tasks");
+                cancel_task!(home_watcher);
+                cancel_task!(home_sync);
+
+                // Map Result<DoubleUpdate> into Option. If handler returned error
+                // no double update. If handler returned Ok(double_update), map into
+                // Some(double_update).
+                Ok(double_update_res.ok())
             }
-
-            // Spawn polling and history syncing tasks for home
-            info!("Starting watch and sync tasks for home {}.", home.name());
-            let from = home.committed_root().await?;
-            let inspected = updates_inspected_for_double.with_label_values(&[
-                home.name(),
-                home.name(),
-                Self::AGENT_NAME,
-            ]);
-
-            let home_watcher = ContractWatcher::new(
-                interval_seconds,
-                from,
-                tx.clone(),
-                home.clone(),
-                inspected.clone(),
-            )
-            .spawn()
-            .in_current_span();
-            let home_sync = HistorySync::new(interval_seconds, from, tx.clone(), home, inspected)
-                .spawn()
-                .in_current_span();
-
-            // Wait for update handler to finish (should only happen watcher is
-            // manually shut down)
-            let double_update_res = handler.await?;
-
-            // Cancel running tasks
-            tracing::info!("Update handler has resolved. Cancelling all other tasks");
-            cancel_task!(home_watcher);
-            cancel_task!(home_sync);
-
-            // Map Result<DoubleUpdate> into Option. If handler returned error
-            // no double update. If handler returned Ok(double_update), map into
-            // Some(double_update).
-            Ok(double_update_res.ok())
-        })
-        .in_current_span()
+            .in_current_span(),
+        )
     }
 
     async fn create_signed_failure(&self) -> SignedFailureNotification {
@@ -581,15 +579,15 @@ impl NomadAgent for Watcher {
     }
 
     #[tracing::instrument]
-    fn run(_channel: Self::Channel) -> Instrumented<tokio::task::JoinHandle<Result<()>>> {
+    fn run(_channel: Self::Channel) -> JoinHandle<Result<()>> {
         panic!("Watcher::run should not be called. Always call run_all")
     }
 
-    fn run_many(&self, _replicas: &[&str]) -> Instrumented<JoinHandle<Result<()>>> {
+    fn run_many(&self, _replicas: &[&str]) -> JoinHandle<Result<()>> {
         panic!("Watcher::run_many should not be called. Always call run_all")
     }
 
-    fn run_all(self) -> Instrumented<JoinHandle<Result<()>>>
+    fn run_all(self) -> JoinHandle<Result<()>>
     where
         Self: Sized + 'static,
     {
@@ -600,7 +598,7 @@ impl NomadAgent for Watcher {
                 .home()
                 .sync();
 
-            let replica_sync_tasks: Vec<Instrumented<JoinHandle<Result<()>>>> = self.replicas().values().map(|replica| {
+            let replica_sync_tasks: Vec<JoinHandle<Result<()>>> = self.replicas().values().map(|replica| {
                 replica.sync()
             }).collect();
 
@@ -676,8 +674,9 @@ impl NomadAgent for Watcher {
             }
 
             Ok(())
-        })
+        }
         .instrument(info_span!("Watcher::run_all"))
+    )
     }
 }
 

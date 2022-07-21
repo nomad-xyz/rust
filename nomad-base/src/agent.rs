@@ -12,7 +12,7 @@ use async_trait::async_trait;
 use color_eyre::{eyre::WrapErr, Result};
 use futures_util::future::select_all;
 use nomad_core::{db::DB, Common};
-use tracing::{dispatcher::DefaultGuard, instrument::Instrumented};
+use tracing::dispatcher::DefaultGuard;
 use tracing::{error, info_span, warn, Instrument};
 use tracing_subscriber::{prelude::*, util::SubscriberInitExt};
 
@@ -111,61 +111,63 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
     }
 
     /// Run the agent with the given home and replica
-    fn run(channel: Self::Channel) -> Instrumented<JoinHandle<Result<()>>>;
+    fn run(channel: Self::Channel) -> JoinHandle<Result<()>>;
 
     /// Run the agent for a given channel. If the channel dies, exponentially
     /// retry. If failures are more than 5 minutes apart, reset exponential
     /// backoff (likely unrelated after that point).
     #[allow(clippy::unit_arg)]
     #[tracing::instrument]
-    fn run_report_error(&self, replica: String) -> Instrumented<JoinHandle<Result<()>>> {
+    fn run_report_error(&self, replica: String) -> JoinHandle<Result<()>> {
         let channel = self.build_channel(&replica);
         let channel_faults_gauge = self.metrics().channel_faults_gauge(&replica);
 
-        tokio::spawn(async move {
-            let mut exponential = 0;
-            loop {
-                let running_time = SystemTime::now();
+        tokio::spawn(
+            async move {
+                let mut exponential = 0;
+                loop {
+                    let running_time = SystemTime::now();
 
-                let handle = Self::run(channel.clone());
-                let res = handle
-                    .await?
-                    .wrap_err(format!("Task for replica named {} failed", &replica));
+                    let handle = Self::run(channel.clone());
+                    let res = handle
+                        .await?
+                        .wrap_err(format!("Task for replica named {} failed", &replica));
 
-                match res {
-                    Ok(_) => return Ok(()),
-                    Err(e) => {
-                        error!(
-                            "Channel for replica {} errored out! Error: {:?}",
-                            &replica, e
-                        );
-                        channel_faults_gauge.inc();
+                    match res {
+                        Ok(_) => return Ok(()),
+                        Err(e) => {
+                            error!(
+                                "Channel for replica {} errored out! Error: {:?}",
+                                &replica, e
+                            );
+                            channel_faults_gauge.inc();
 
-                        // If running time >= 5 minutes, current failure likely
-                        // unrelated to previous
-                        if running_time.elapsed().unwrap().as_secs() >= 300 {
-                            exponential = 0;
-                        } else if exponential < MAX_EXPONENTIAL {
-                            exponential += 1;
+                            // If running time >= 5 minutes, current failure likely
+                            // unrelated to previous
+                            if running_time.elapsed().unwrap().as_secs() >= 300 {
+                                exponential = 0;
+                            } else if exponential < MAX_EXPONENTIAL {
+                                exponential += 1;
+                            }
+
+                            let sleep_time = 2u64.pow(exponential);
+                            warn!(
+                                "Restarting channel to {} in {} seconds",
+                                &replica, sleep_time
+                            );
+
+                            sleep(Duration::from_secs(sleep_time)).await;
                         }
-
-                        let sleep_time = 2u64.pow(exponential);
-                        warn!(
-                            "Restarting channel to {} in {} seconds",
-                            &replica, sleep_time
-                        );
-
-                        sleep(Duration::from_secs(sleep_time)).await;
                     }
                 }
             }
-        })
-        .in_current_span()
+            .in_current_span(),
+        )
     }
 
     /// Run several agents by replica name
     #[allow(clippy::unit_arg)]
-    fn run_many(&self, replicas: &[&str]) -> Instrumented<JoinHandle<Result<()>>> {
+    fn run_many(&self, replicas: &[&str]) -> JoinHandle<Result<()>> {
         let span = info_span!("run_many");
 
         // easy check that the slice is non-empty
@@ -178,96 +180,104 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
             .map(|replica| self.run_report_error(replica.to_string()))
             .collect();
 
-        tokio::spawn(async move {
-            // This gets the first future to resolve.
-            let (res, _, remaining) = select_all(handles).await;
+        tokio::spawn(
+            async move {
+                // This gets the first future to resolve.
+                let (res, _, remaining) = select_all(handles).await;
 
-            for task in remaining.into_iter() {
-                cancel_task!(task);
+                for task in remaining.into_iter() {
+                    cancel_task!(task);
+                }
+
+                res?
             }
-
-            res?
-        })
-        .instrument(span)
+            .instrument(span),
+        )
     }
 
     /// Run several agents
     #[allow(clippy::unit_arg, unused_must_use)]
-    fn run_all(self) -> Instrumented<JoinHandle<Result<()>>>
+    fn run_all(self) -> JoinHandle<Result<()>>
     where
         Self: Sized + 'static,
     {
         let span = info_span!("run_all");
-        tokio::spawn(async move {
-            // this is the unused must use
-            let names: Vec<&str> = self.replicas().keys().map(|k| k.as_str()).collect();
+        tokio::spawn(
+            async move {
+                // this is the unused must use
+                let names: Vec<&str> = self.replicas().keys().map(|k| k.as_str()).collect();
 
-            // quick check that at least 1 replica is configured
-            names
-                .first()
-                .expect("Attempted to run without any replicas");
+                // quick check that at least 1 replica is configured
+                names
+                    .first()
+                    .expect("Attempted to run without any replicas");
 
-            let run_task = self.run_many(&names);
-            let mut tasks = vec![run_task];
+                let run_task = self.run_many(&names);
+                let mut tasks = vec![run_task];
 
-            // kludge
-            if Self::AGENT_NAME != "kathy" {
-                // Only the processor needs to index messages so default is
-                // just indexing updates
-                let sync_task = self.home().sync();
+                // kludge
+                if Self::AGENT_NAME != "kathy" {
+                    // Only the processor needs to index messages so default is
+                    // just indexing updates
+                    let sync_task = self.home().sync();
 
-                tasks.push(sync_task);
+                    tasks.push(sync_task);
+                }
+
+                let (res, _, remaining) = select_all(tasks).await;
+
+                for task in remaining.into_iter() {
+                    cancel_task!(task);
+                }
+
+                res?
             }
-
-            let (res, _, remaining) = select_all(tasks).await;
-
-            for task in remaining.into_iter() {
-                cancel_task!(task);
-            }
-
-            res?
-        })
-        .instrument(span)
+            .instrument(span),
+        )
     }
 
     /// Spawn a task which continuously watch home for getting into failed state
     /// and resolve once it happened.
     /// `Reported` flag turns `Ok(())` into `Err(Report)` on failed home.
     #[allow(clippy::unit_arg)]
-    fn watch_home_fail(&self, interval: u64) -> Instrumented<JoinHandle<Result<()>>> {
+    fn watch_home_fail(&self, interval: u64) -> JoinHandle<Result<()>> {
         let span = info_span!("home_watch");
         let home = self.home();
         let home_failure_checks = self.metrics().home_failure_checks();
         let home_failure_observations = self.metrics().home_failure_observations();
 
-        tokio::spawn(async move {
-            loop {
-                if home.state().await? == nomad_core::State::Failed {
-                    home_failure_observations.inc();
-                    return Err(BaseError::FailedHome.into());
-                }
+        tokio::spawn(
+            async move {
+                loop {
+                    if home.state().await? == nomad_core::State::Failed {
+                        home_failure_observations.inc();
+                        return Err(BaseError::FailedHome.into());
+                    }
 
-                home_failure_checks.inc();
-                sleep(Duration::from_secs(interval)).await;
+                    home_failure_checks.inc();
+                    sleep(Duration::from_secs(interval)).await;
+                }
             }
-        })
-        .instrument(span)
+            .instrument(span),
+        )
     }
 
     /// Returns `true` if home is in failed state. Intended to return once and immediately
     #[allow(clippy::unit_arg)]
-    fn assert_home_not_failed(&self) -> Instrumented<JoinHandle<Result<()>>> {
+    fn assert_home_not_failed(&self) -> JoinHandle<Result<()>> {
         use nomad_core::Common;
         let span = info_span!("check_home_state");
         let home = self.home();
-        tokio::spawn(async move {
-            if home.state().await? == nomad_core::State::Failed {
-                Err(BaseError::FailedHome.into())
-            } else {
-                Ok(())
+        tokio::spawn(
+            async move {
+                if home.state().await? == nomad_core::State::Failed {
+                    Err(BaseError::FailedHome.into())
+                } else {
+                    Ok(())
+                }
             }
-        })
-        .instrument(span)
+            .instrument(span),
+        )
     }
 
     /// Attempt to instantiate and register a tracing subscriber setup from

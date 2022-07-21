@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use color_eyre::{eyre::ensure, Result};
 use std::{sync::Arc, time::Duration};
 use tokio::{sync::Mutex, task::JoinHandle, time::sleep};
-use tracing::{info, instrument::Instrumented, Instrument};
+use tracing::{info, Instrument};
 
 use nomad_base::{decl_agent, decl_channel, AgentCore, CachingHome, CachingReplica, NomadAgent};
 use nomad_core::{Common, CommonEvents};
@@ -167,27 +167,29 @@ impl NomadAgent for Relayer {
     }
 
     #[tracing::instrument]
-    fn run(channel: Self::Channel) -> Instrumented<JoinHandle<Result<()>>> {
-        tokio::spawn(async move {
-            let home_updater = channel.home().updater().await?;
-            let replica_updater = channel.replica().updater().await?;
+    fn run(channel: Self::Channel) -> JoinHandle<Result<()>> {
+        tokio::spawn(
+            async move {
+                let home_updater = channel.home().updater().await?;
+                let replica_updater = channel.replica().updater().await?;
 
-            ensure!(
-                home_updater == replica_updater,
-                "Home and replica updaters do not match. Home: {:x}. Replica: {:x}.",
-                home_updater,
-                replica_updater
-            );
+                ensure!(
+                    home_updater == replica_updater,
+                    "Home and replica updaters do not match. Home: {:x}. Replica: {:x}.",
+                    home_updater,
+                    replica_updater
+                );
 
-            let update_poller = UpdatePoller::new(
-                channel.home(),
-                channel.replica(),
-                channel.interval,
-                channel.updates_relayed_count,
-            );
-            update_poller.spawn().await?
-        })
-        .in_current_span()
+                let update_poller = UpdatePoller::new(
+                    channel.home(),
+                    channel.replica(),
+                    channel.interval,
+                    channel.updates_relayed_count,
+                );
+                update_poller.spawn().await?
+            }
+            .in_current_span(),
+        )
     }
 }
 
@@ -306,9 +308,7 @@ mod test {
                     .expect("Couldn't join relayer's run task");
             assert!(run_result.is_err(), "Must have returned error");
 
-            let run_report_error_task = agent
-                .run_report_error(channel_name.to_string())
-                .into_inner();
+            let run_report_error_task = agent.run_report_error(channel_name.to_string());
 
             sleep(Duration::from_secs(3)).await;
 

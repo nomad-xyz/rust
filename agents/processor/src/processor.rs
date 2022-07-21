@@ -9,9 +9,7 @@ use std::{
     time::Duration,
 };
 use tokio::{sync::RwLock, task::JoinHandle, time::sleep};
-use tracing::{
-    debug, error, info, info_span, instrument, instrument::Instrumented, warn, Instrument,
-};
+use tracing::{debug, error, info, info_span, instrument, warn, Instrument};
 
 use nomad_base::{
     cancel_task, decl_agent, decl_channel, AgentCore, CachingHome, CachingReplica,
@@ -370,79 +368,84 @@ impl NomadAgent for Processor {
         }
     }
 
-    fn run(channel: Self::Channel) -> Instrumented<JoinHandle<Result<()>>> {
-        tokio::spawn(async move {
-            Replica {
-                interval: channel.interval,
-                replica: channel.replica(),
-                home: channel.home(),
-                db: channel.db(),
-                allowed: channel.allowed,
-                denied: channel.denied,
-                next_message_nonce: channel.next_message_nonce,
+    fn run(channel: Self::Channel) -> JoinHandle<Result<()>> {
+        tokio::spawn(
+            async move {
+                Replica {
+                    interval: channel.interval,
+                    replica: channel.replica(),
+                    home: channel.home(),
+                    db: channel.db(),
+                    allowed: channel.allowed,
+                    denied: channel.denied,
+                    next_message_nonce: channel.next_message_nonce,
+                }
+                .main()
+                .await?
             }
-            .main()
-            .await?
-        })
-        .in_current_span()
+            .in_current_span(),
+        )
     }
 
-    fn run_all(self) -> Instrumented<JoinHandle<Result<()>>>
+    fn run_all(self) -> JoinHandle<Result<()>>
     where
         Self: Sized + 'static,
     {
-        tokio::spawn(async move {
-            self.assert_home_not_failed().await??;
+        tokio::spawn(
+            async move {
+                self.assert_home_not_failed().await??;
 
-            info!("Starting Processor tasks");
+                info!("Starting Processor tasks");
 
-            // tree sync
-            info!("Starting ProverSync");
-            let db = NomadDB::new(self.home().name(), self.db());
-            let sync = ProverSync::from_disk(db.clone());
-            let prover_sync_task = sync.spawn();
+                // tree sync
+                info!("Starting ProverSync");
+                let db = NomadDB::new(self.home().name(), self.db());
+                let sync = ProverSync::from_disk(db.clone());
+                let prover_sync_task = sync.spawn();
 
-            info!("Starting indexer");
-            let home_sync_task = self.home().sync();
+                info!("Starting indexer");
+                let home_sync_task = self.home().sync();
 
-            let home_fail_watch_task = self.watch_home_fail(self.interval);
+                let home_fail_watch_task = self.watch_home_fail(self.interval);
 
-            info!("started indexer, sync and home fail watch");
+                info!("started indexer, sync and home fail watch");
 
-            // instantiate task array here so we can optionally push run_task
-            let mut tasks = vec![home_sync_task, prover_sync_task, home_fail_watch_task];
+                // instantiate task array here so we can optionally push run_task
+                let mut tasks = vec![home_sync_task, prover_sync_task, home_fail_watch_task];
 
-            if !self.subsidized_remotes.is_empty() {
-                // Get intersection of specified remotes (replicas in settings)
-                // and subsidized remotes
-                let specified_subsidized: Vec<&str> = self
-                    .subsidized_remotes
-                    .iter()
-                    .filter(|r| self.replicas().contains_key(*r))
-                    .map(AsRef::as_ref)
-                    .collect();
+                if !self.subsidized_remotes.is_empty() {
+                    // Get intersection of specified remotes (replicas in settings)
+                    // and subsidized remotes
+                    let specified_subsidized: Vec<&str> = self
+                        .subsidized_remotes
+                        .iter()
+                        .filter(|r| self.replicas().contains_key(*r))
+                        .map(AsRef::as_ref)
+                        .collect();
 
-                if !specified_subsidized.is_empty() {
-                    tasks.push(self.run_many(&specified_subsidized));
+                    if !specified_subsidized.is_empty() {
+                        tasks.push(self.run_many(&specified_subsidized));
+                    }
                 }
-            }
 
-            // if we have a bucket, add a task to push to it
-            if let Some(config) = &self.config {
-                info!(bucket = %config.bucket, "Starting S3 push tasks");
-                let pusher = Pusher::new(self.core.home.name(), &config.bucket, db.clone()).await;
-                tasks.push(pusher.spawn())
-            }
+                // if we have a bucket, add a task to push to it
+                if let Some(config) = &self.config {
+                    info!(bucket = %config.bucket, "Starting S3 push tasks");
+                    let pusher =
+                        Pusher::new(self.core.home.name(), &config.bucket, db.clone()).await;
+                    tasks.push(pusher.spawn())
+                }
 
-            // find the first task to shut down. Then cancel all others
-            debug!(tasks = tasks.len(), "Selecting across Processor tasks");
-            let (res, _, remaining) = select_all(tasks).await;
-            for task in remaining.into_iter() {
-                cancel_task!(task);
-            }
+                // find the first task to shut down. Then cancel all others
+                debug!(tasks = tasks.len(), "Selecting across Processor tasks");
+                let (res, _, remaining) = select_all(tasks).await;
+                for task in remaining.into_iter() {
+                    cancel_task!(task);
+                }
 
-            res?
-        })
-        .instrument(info_span!("Processor::run_all"))
+                res?
+            }
+            .instrument(info_span!("Processor::run_all")),
+        )
     }
 }
