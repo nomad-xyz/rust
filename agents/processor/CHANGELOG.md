@@ -2,7 +2,9 @@
 
 ### Unreleased
 
-- make *Settings::new async for optionally fetching config from a remote url
+### agents@1.1.0
+
+- make \*Settings::new async for optionally fetching config from a remote url
 - add bootup-only tracing subscriber
 - bug: add check for empty intersection of specified and subsidized
 - refactor: processor now uses global AWS client when proof pushing is enabled
@@ -13,7 +15,7 @@
 - add tests for agent environment variable overrides
 - remove `enabled` flag from agents project-wide
 
-### 1.0.0
+### agents@1.0.0
 
 - bumps version for first release
 - adds a changelog
