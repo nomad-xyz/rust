@@ -139,16 +139,20 @@ impl Domain {
         let network = self.network.clone();
         let emitter = self.home_address();
 
-        let (sink, faucet) = unbounded_channel();
-        let faucet = faucets.swap_dispatch(self.name(), faucet);
-
         tracing::debug!(
             network = network,
             home = emitter,
             event = event.as_ref(),
             "starting counter",
         );
-        BetweenEvents::new(faucet, metrics, network, event, emitter, sink).spawn();
+        BetweenEvents::new(
+            faucets.dispatch_pipe(self.name()),
+            metrics,
+            network,
+            event,
+            emitter,
+        )
+        .spawn();
     }
 
     pub(crate) fn count_updates<'a>(
@@ -160,16 +164,14 @@ impl Domain {
         let network = self.network.clone();
         let emitter = self.home_address();
 
-        let (sink, faucet) = unbounded_channel();
-        let faucet = faucets.swap_update(self.name(), faucet);
-
+        let pipe = faucets.update_pipe(&self.network);
         tracing::debug!(
             network = network,
             home = emitter,
             event = event.as_ref(),
             "starting counter",
         );
-        BetweenEvents::new(faucet, metrics, network, event, emitter, sink).spawn();
+        BetweenEvents::new(pipe, metrics, network, event, emitter).spawn();
     }
 
     pub(crate) fn count_relays<'a>(&'a self, faucets: &mut Faucets<'a>, metrics: Arc<Metrics>) {
@@ -184,13 +186,11 @@ impl Domain {
                 "starting counter",
             );
 
-            let (sink, faucet) = unbounded_channel();
-
-            let faucet = faucets.swap_relay(self.name(), replica_of, faucet);
+            let pipe = faucets.relay_pipe(&self.network, replica_of);
 
             let metrics = metrics.between_metrics(network, event, &emitter, Some(replica_of));
 
-            BetweenEvents::new(faucet, metrics, network, event, emitter, sink).spawn();
+            BetweenEvents::new(pipe, metrics, network, event, emitter).spawn();
         });
     }
 
@@ -206,13 +206,11 @@ impl Domain {
                 "starting counter",
             );
 
-            let (sink, faucet) = unbounded_channel();
-
-            let faucet = faucets.swap_process(self.name(), replica_of, faucet);
+            let pipe = faucets.process_pipe(&self.network, replica_of);
 
             let metrics = metrics.between_metrics(network, event, &emitter, Some(replica_of));
 
-            BetweenEvents::new(faucet, metrics, network, event, emitter, sink).spawn();
+            BetweenEvents::new(pipe, metrics, network, event, emitter).spawn();
         });
     }
 

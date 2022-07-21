@@ -2,7 +2,9 @@ use tracing::{info_span, Instrument};
 
 use tokio::sync::mpsc::{self};
 
-use crate::{annotate::WithMeta, bail_task_if, ProcessStep, Restartable};
+use crate::{
+    annotate::WithMeta, bail_task_if, pipe::Pipe, unwrap_pipe_item, ProcessStep, Restartable,
+};
 
 pub(crate) struct BetweenMetrics {
     pub(crate) count: prometheus::IntCounter,
@@ -13,12 +15,11 @@ pub(crate) struct BetweenMetrics {
 // Track time between events of the same kind
 #[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
 pub(crate) struct BetweenEvents<T> {
-    pub(crate) faucet: mpsc::UnboundedReceiver<T>,
+    pub(crate) pipe: Pipe<T>,
     pub(crate) metrics: BetweenMetrics,
     pub(crate) network: String,
     pub(crate) event: String,
     pub(crate) emitter: String,
-    pub(crate) sink: mpsc::UnboundedSender<T>,
 }
 
 impl<T> std::fmt::Display for BetweenEvents<T> {
@@ -46,20 +47,18 @@ where
     T: 'static + std::fmt::Debug,
 {
     pub(crate) fn new(
-        faucet: mpsc::UnboundedReceiver<T>,
+        pipe: Pipe<T>,
         metrics: BetweenMetrics,
         network: impl AsRef<str>,
         event: impl AsRef<str>,
         emitter: impl AsRef<str>,
-        sink: mpsc::UnboundedSender<T>,
     ) -> Self {
         Self {
-            faucet,
+            pipe,
             metrics,
             network: network.as_ref().to_owned(),
             event: event.as_ref().to_owned(),
             emitter: emitter.as_ref().to_owned(),
-            sink,
         }
     }
 }
@@ -85,10 +84,9 @@ where
 
                 loop {
                     // get the next event from the channel
-                    let incoming = self.faucet.recv().await;
+                    let incoming = self.pipe.next().await;
 
-                    bail_task_if!(incoming.is_none(), self, "inbound channel broke");
-                    let incoming = incoming.expect("checked on previous line");
+                    let incoming = unwrap_pipe_item!(incoming, self);
 
                     tracing::debug!(
                         target: "monitor::between",
@@ -109,13 +107,6 @@ where
                     // update our metrics
                     self.metrics.count.inc();
                     wallclock_latency.observe_duration();
-
-                    // send the next event out
-                    bail_task_if!(
-                        self.sink.send(incoming).is_err(),
-                        self,
-                        "outbound channel broke"
-                    );
 
                     // restart the timer
                     wallclock_latency = self.metrics.wallclock_latency.start_timer();
