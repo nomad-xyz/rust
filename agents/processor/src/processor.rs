@@ -357,10 +357,11 @@ impl NomadAgent for Processor {
     }
 
     fn build_channel(&self, replica: &str) -> Self::Channel {
+        let home = self.connections().home().expect("!home");
         Self::Channel {
             base: self.channel_base(replica),
             next_message_nonce: self.next_message_nonces.with_label_values(&[
-                self.home().name(),
+                home.name(),
                 replica,
                 Self::AGENT_NAME,
             ]),
@@ -395,15 +396,16 @@ impl NomadAgent for Processor {
             self.assert_home_not_failed().await??;
 
             info!("Starting Processor tasks");
+            let home = self.connections().home().expect("!home");
 
             // tree sync
             info!("Starting ProverSync");
-            let db = NomadDB::new(self.home().name(), self.db());
+            let db = NomadDB::new(home.name(), self.db());
             let sync = ProverSync::from_disk(db.clone());
             let prover_sync_task = sync.spawn();
 
             info!("Starting indexer");
-            let home_sync_task = self.home().sync();
+            let home_sync_task = home.sync();
 
             let home_fail_watch_task = self.watch_home_fail(self.interval);
 
@@ -415,10 +417,11 @@ impl NomadAgent for Processor {
             if !self.subsidized_remotes.is_empty() {
                 // Get intersection of specified remotes (replicas in settings)
                 // and subsidized remotes
+                let replicas = self.connections().replicas().expect("!replicas");
                 let specified_subsidized: Vec<&str> = self
                     .subsidized_remotes
                     .iter()
-                    .filter(|r| self.replicas().contains_key(*r))
+                    .filter(|r| replicas.contains_key(*r))
                     .map(AsRef::as_ref)
                     .collect();
 
@@ -430,7 +433,8 @@ impl NomadAgent for Processor {
             // if we have a bucket, add a task to push to it
             if let Some(config) = &self.config {
                 info!(bucket = %config.bucket, "Starting S3 push tasks");
-                let pusher = Pusher::new(self.core.home.name(), &config.bucket, db.clone()).await;
+                let home = self.connections().home().expect("!home");
+                let pusher = Pusher::new(home.name(), &config.bucket, db.clone()).await;
                 tasks.push(pusher.spawn())
             }
 

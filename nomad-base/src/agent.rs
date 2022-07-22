@@ -120,10 +120,14 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
 
     /// Build channel base for home <> replica channel
     fn channel_base(&self, replica: &str) -> ChannelBase {
+        let home = self.connections().home().expect("!home");
         ChannelBase {
-            home: self.home(),
-            replica: self.replica_by_name(replica).expect("!replica exist"),
-            db: NomadDB::new(self.home().name(), self.db()),
+            home: home.clone(),
+            replica: self
+                .connections()
+                .replica_by_name(replica)
+                .expect("!replica exist"),
+            db: NomadDB::new(home.name(), self.db()),
         }
     }
 
@@ -232,7 +236,8 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
         let span = info_span!("run_all");
         tokio::spawn(async move {
             // this is the unused must use
-            let names: Vec<&str> = self.replicas().keys().map(|k| k.as_str()).collect();
+            let replicas = self.connections().replicas().expect("!replicas");
+            let names: Vec<&str> = replicas.keys().map(|k| k.as_str()).collect();
 
             // quick check that at least 1 replica is configured
             names
@@ -246,7 +251,7 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
             if Self::AGENT_NAME != "kathy" {
                 // Only the processor needs to index messages so default is
                 // just indexing updates
-                let sync_task = self.home().sync();
+                let sync_task = self.connections().home().expect("!home").sync();
 
                 tasks.push(sync_task);
             }
@@ -268,7 +273,7 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
     #[allow(clippy::unit_arg)]
     fn watch_home_fail(&self, interval: u64) -> Instrumented<JoinHandle<Result<()>>> {
         let span = info_span!("home_watch");
-        let home = self.home();
+        let home = self.connections().home().expect("!home");
         let home_failure_checks = self.metrics().home_failure_checks();
         let home_failure_observations = self.metrics().home_failure_observations();
 
@@ -291,7 +296,7 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
     fn assert_home_not_failed(&self) -> Instrumented<JoinHandle<Result<()>>> {
         use nomad_core::Common;
         let span = info_span!("check_home_state");
-        let home = self.home();
+        let home = self.connections().home().expect("!home");
         tokio::spawn(async move {
             if home.state().await? == nomad_core::State::Failed {
                 Err(BaseError::FailedHome.into())

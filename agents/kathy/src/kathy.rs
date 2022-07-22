@@ -67,12 +67,13 @@ impl NomadAgent for Kathy {
     }
 
     fn build_channel(&self, replica: &str) -> Self::Channel {
+        let home = self.connections().home().expect("!home");
         Self::Channel {
             base: self.channel_base(replica),
             home_lock: self.home_lock.clone(),
             generator: self.generator.clone(),
             messages_dispatched: self.messages_dispatched.with_label_values(&[
-                self.home().name(),
+                home.name(),
                 replica,
                 Self::AGENT_NAME,
             ]),

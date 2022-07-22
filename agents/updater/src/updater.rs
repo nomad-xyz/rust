@@ -39,7 +39,8 @@ impl Updater {
         finalization_seconds: u64,
         core: AgentCore,
     ) -> Self {
-        let home_name = core.home.name();
+        let home = core.connections.home().expect("!home");
+        let home_name = home.name();
         let signed_attestation_count = core
             .metrics
             .new_int_counter(
@@ -73,9 +74,10 @@ impl Updater {
 
 impl From<&Updater> for UpdaterChannel {
     fn from(updater: &Updater) -> Self {
+        let home = updater.connections().home().expect("!home");
         UpdaterChannel {
-            home: updater.home(),
-            db: NomadDB::new(updater.home().name(), updater.db()),
+            home: home.clone(),
+            db: NomadDB::new(home.name(), updater.db()),
             signer: updater.signer.clone(),
             signed_attestation_count: updater.signed_attestation_count.clone(),
             submitted_update_count: updater.submitted_update_count.clone(),
@@ -199,7 +201,7 @@ impl NomadAgent for Updater {
             let home_fail_watch_task = self.watch_home_fail(self.interval_seconds);
 
             info!("Starting updater sync task...");
-            let sync_task = self.home().sync();
+            let sync_task = self.connections().home().expect("!home").sync();
 
             // Run a single error-catching task for producing and submitting
             // updates. While we use the agent channel pattern, this run task

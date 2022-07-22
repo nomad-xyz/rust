@@ -155,10 +155,11 @@ impl NomadAgent for Relayer {
     }
 
     fn build_channel(&self, replica: &str) -> Self::Channel {
+        let home = self.connections().home().expect("!home");
         Self::Channel {
             base: self.channel_base(replica),
             updates_relayed_count: self.updates_relayed_counts.with_label_values(&[
-                self.home().name(),
+                home.name(),
                 replica,
                 Self::AGENT_NAME,
             ]),
