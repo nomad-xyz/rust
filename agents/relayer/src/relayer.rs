@@ -196,8 +196,8 @@ impl NomadAgent for Relayer {
 mod test {
     use ethers::prelude::{ProviderError, H256};
     use nomad_base::{
-        chains::PageSettings, CommonIndexers, ContractSync, ContractSyncMetrics, CoreMetrics,
-        HomeIndexers, IndexSettings, NomadDB,
+        chains::PageSettings, AgentConnections, CommonIndexers, ContractSync, ContractSyncMetrics,
+        CoreMetrics, HomeIndexers, IndexSettings, NomadDB,
     };
     use nomad_core::ChainCommunicationError;
     use nomad_test::mocks::{MockHomeContract, MockIndexer, MockReplicaContract};
@@ -294,8 +294,7 @@ mod test {
 
             // Setting agent
             let core = AgentCore {
-                home,
-                replicas,
+                connections: AgentConnections::Default { home, replicas },
                 db,
                 metrics,
                 indexer: IndexSettings::default(),
