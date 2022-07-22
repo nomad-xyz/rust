@@ -1,4 +1,4 @@
-use ethers::prelude::Middleware;
+use ethers::prelude::{Middleware, U64};
 use nomad_ethereum::bindings::{
     home::{DispatchFilter, Home, UpdateFilter},
     replica::{ProcessFilter, Replica, UpdateFilter as RelayFilter},
@@ -19,6 +19,7 @@ pub const BEHIND_TIP: u64 = 5;
 pub(crate) struct DispatchProducer {
     home: Home<crate::Provider>,
     network: String,
+    from: Option<U64>,
     tx: DispatchSink,
 }
 
@@ -46,6 +47,7 @@ impl DispatchProducer {
         Self {
             home,
             network: network.as_ref().to_owned(),
+            from: None,
             tx,
         }
     }
@@ -55,7 +57,7 @@ pub(crate) type DispatchProducerTask = Restartable<DispatchProducer>;
 pub(crate) type DispatchProducerHandle = StepHandle<DispatchProducer, DispatchFaucet>;
 
 impl ProcessStep for DispatchProducer {
-    fn spawn(self) -> DispatchProducerTask {
+    fn spawn(mut self) -> DispatchProducerTask {
         let span = info_span!(
             "DispatchProducer",
             home = format!("{:?}", self.home.address()),
@@ -67,7 +69,7 @@ impl ProcessStep for DispatchProducer {
             async move {
                 let provider = self.home.client();
                 let height = provider.get_block_number().await.unwrap();
-                let mut from = height - (2 * BEHIND_TIP);
+                let from = self.from.unwrap_or(height - (2 * BEHIND_TIP));
                 let mut to = height - BEHIND_TIP;
                 loop {
                     if from < to {
@@ -90,7 +92,7 @@ impl ProcessStep for DispatchProducer {
                     bail_task_if!(tip_res.is_err(), self, tip_res.unwrap_err());
 
                     let tip = tip_res.unwrap() - BEHIND_TIP;
-                    from = to;
+                    self.from = Some(to);
                     to = std::cmp::max(to, tip);
 
                     tokio::time::sleep(std::time::Duration::from_secs(POLLING_INTERVAL_SECS)).await;
@@ -106,6 +108,7 @@ impl ProcessStep for DispatchProducer {
 pub(crate) struct UpdateProducer {
     home: Home<crate::Provider>,
     network: String,
+    from: Option<U64>,
     tx: UnboundedSender<WithMeta<UpdateFilter>>,
 }
 
@@ -133,6 +136,7 @@ impl UpdateProducer {
         Self {
             home,
             network: network.as_ref().to_owned(),
+            from: None,
             tx,
         }
     }
@@ -142,7 +146,7 @@ pub(crate) type UpdateProducerTask = Restartable<UpdateProducer>;
 pub(crate) type UpdateProducerHandle = StepHandle<UpdateProducer, UpdateFaucet>;
 
 impl ProcessStep for UpdateProducer {
-    fn spawn(self) -> UpdateProducerTask {
+    fn spawn(mut self) -> UpdateProducerTask {
         let span = info_span!(
             "UpdateProducer",
             home = format!("{:?}", self.home.address()),
@@ -157,8 +161,7 @@ impl ProcessStep for UpdateProducer {
 
                 bail_task_if!(height.is_err(), self, "Err retrieving height");
                 let height = height.expect("checked");
-
-                let mut from = height - (2 * BEHIND_TIP);
+                let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                 let mut to = height - BEHIND_TIP;
                 loop {
                     if from < to {
@@ -181,7 +184,7 @@ impl ProcessStep for UpdateProducer {
                     bail_task_if!(tip_res.is_err(), self, tip_res.unwrap_err());
 
                     let tip = tip_res.expect("checked") - BEHIND_TIP;
-                    from = to;
+                    self.from = Some(to);
                     to = std::cmp::max(to, tip);
 
                     tokio::time::sleep(std::time::Duration::from_secs(POLLING_INTERVAL_SECS)).await;
@@ -197,6 +200,7 @@ impl ProcessStep for UpdateProducer {
 pub(crate) struct RelayProducer {
     replica: Replica<crate::Provider>,
     network: String,
+    from: Option<U64>,
     replica_of: String,
     tx: UnboundedSender<WithMeta<RelayFilter>>,
 }
@@ -227,6 +231,7 @@ impl RelayProducer {
         Self {
             replica,
             network: network.as_ref().to_owned(),
+            from: None,
             replica_of: replica_of.as_ref().to_owned(),
             tx,
         }
@@ -237,7 +242,7 @@ pub(crate) type RelayProducerTask = Restartable<RelayProducer>;
 pub(crate) type RelayProducerHandle = StepHandle<RelayProducer, RelayFaucet>;
 
 impl ProcessStep for RelayProducer {
-    fn spawn(self) -> RelayProducerTask {
+    fn spawn(mut self) -> RelayProducerTask {
         let span = info_span!(
             "RelayProducer",
             replica = format!("{:?}", self.replica.address()),
@@ -250,7 +255,7 @@ impl ProcessStep for RelayProducer {
             async move {
                 let provider = self.replica.client();
                 let height = provider.get_block_number().await.unwrap();
-                let mut from = height - (2 * BEHIND_TIP);
+                let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                 let mut to = height - BEHIND_TIP;
                 loop {
                     tracing::trace!(from = from.as_u64(), to = to.as_u64(), "produce_loop");
@@ -273,7 +278,7 @@ impl ProcessStep for RelayProducer {
                     let tip_res = provider.get_block_number().await;
                     bail_task_if!(tip_res.is_err(), self, tip_res.unwrap_err());
                     let tip = tip_res.unwrap() - BEHIND_TIP;
-                    from = to;
+                    self.from = Some(to);
                     to = std::cmp::max(to, tip);
 
                     tokio::time::sleep(std::time::Duration::from_secs(POLLING_INTERVAL_SECS)).await;
@@ -289,6 +294,7 @@ impl ProcessStep for RelayProducer {
 pub(crate) struct ProcessProducer {
     replica: Replica<crate::Provider>,
     network: String,
+    from: Option<U64>,
     replica_of: String,
     tx: UnboundedSender<WithMeta<ProcessFilter>>,
 }
@@ -315,6 +321,7 @@ impl ProcessProducer {
         Self {
             replica,
             network: network.as_ref().to_owned(),
+            from: None,
             replica_of: replica_of.as_ref().to_owned(),
             tx,
         }
@@ -329,7 +336,7 @@ pub(crate) type ProcessProducerTask = Restartable<ProcessProducer>;
 pub(crate) type ProcessProducerHandle = StepHandle<ProcessProducer, ProcessFaucet>;
 
 impl ProcessStep for ProcessProducer {
-    fn spawn(self) -> ProcessProducerTask {
+    fn spawn(mut self) -> ProcessProducerTask {
         let span = info_span!(
             "ProcessProducer",
             replica = format!("{:?}", self.replica.address()),
@@ -342,7 +349,7 @@ impl ProcessStep for ProcessProducer {
             async move {
                 let provider = self.replica.client();
                 let height = provider.get_block_number().await.unwrap();
-                let mut from = height - (2 * BEHIND_TIP);
+                let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                 let mut to = height - BEHIND_TIP;
                 loop {
                     if from < to {
@@ -365,7 +372,7 @@ impl ProcessStep for ProcessProducer {
                     bail_task_if!(tip_res.is_err(), self, tip_res.unwrap_err());
 
                     let tip = tip_res.unwrap() - BEHIND_TIP;
-                    from = to;
+                    self.from = Some(to);
                     to = std::cmp::max(to, tip);
 
                     tokio::time::sleep(std::time::Duration::from_secs(POLLING_INTERVAL_SECS)).await;
