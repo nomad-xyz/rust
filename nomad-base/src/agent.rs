@@ -43,6 +43,32 @@ pub enum AgentConnections {
     },
 }
 
+/// Accessor methods for AgentConnections
+impl AgentConnections {
+    /// Get an optional clone of home
+    pub fn home(&self) -> Option<Arc<CachingHome>> {
+        use AgentConnections::*;
+        match self {
+            Default { home, .. } => Some(home.clone()),
+            _ => None,
+        }
+    }
+
+    /// Get an optional clone of the map of replicas
+    pub fn replicas(&self) -> Option<HashMap<String, Arc<CachingReplica>>> {
+        use AgentConnections::*;
+        match self {
+            Default { replicas, .. } => Some(replicas.clone()),
+            _ => None,
+        }
+    }
+
+    /// Get an optional clone of a replica by its name
+    pub fn replica_by_name(&self, name: &str) -> Option<Arc<CachingReplica>> {
+        self.replicas().and_then(|r| r.get(name).map(Clone::clone))
+    }
+}
+
 /// Properties shared across all agents
 #[derive(Debug, Clone)]
 pub struct AgentCore {
@@ -111,19 +137,9 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
         self.as_ref().db.clone()
     }
 
-    /// Return a reference to a home contract
-    fn home(&self) -> Arc<CachingHome> {
-        self.as_ref().home.clone()
-    }
-
-    /// Get a reference to the replicas map
-    fn replicas(&self) -> &HashMap<String, Arc<CachingReplica>> {
-        &self.as_ref().replicas
-    }
-
-    /// Get a reference to a replica by its name
-    fn replica_by_name(&self, name: &str) -> Option<Arc<CachingReplica>> {
-        self.replicas().get(name).map(Clone::clone)
+    /// Return a reference to the connections object
+    fn connections(&self) -> &AgentConnections {
+        &self.as_ref().connections
     }
 
     /// Run the agent with the given home and replica
