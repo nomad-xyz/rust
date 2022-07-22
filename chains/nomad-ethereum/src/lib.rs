@@ -30,7 +30,7 @@ pub use submitter::*;
 
 /// Contract binding
 #[cfg(not(doctest))]
-pub(crate) mod bindings;
+pub mod bindings;
 
 /// Home abi
 #[cfg(not(doctest))]

@@ -32,14 +32,14 @@ fn main() {
     names.sort();
 
     for name in names.iter() {
-        writeln!(mod_file, "pub(crate) mod {};", name).expect("failed to write to modfile");
+        writeln!(mod_file, "pub mod {};", name).expect("failed to write to modfile");
     }
 }
 
 fn create_mod_rs() -> File {
     let mod_file_path = PathBuf::from(&format!("{}/mod.rs", BINDINGS_DIR));
     let mut mod_file = std::fs::File::create(&mod_file_path).expect("could not create modfile");
-    writeln!(mod_file, "#![allow(clippy::all)]").unwrap();
+    writeln!(mod_file, "#![allow(clippy::all, missing_docs)]").unwrap();
     mod_file
 }
 

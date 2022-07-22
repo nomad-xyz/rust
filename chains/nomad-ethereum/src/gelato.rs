@@ -182,7 +182,7 @@ where
             .await
             .map_err(|e| ChainCommunicationError::CustomError(e.into()))?;
 
-        let request = ForwardRequestBuilder::default()
+        let params = ForwardRequestBuilder::default()
             .chain_id(self.chain_id)
             .target(target)
             .data(data.into())
@@ -197,12 +197,12 @@ where
             .expect("signer doesn't fail");
 
         info!(
-            request = serde_json::to_string(&request).unwrap().as_str(),
+            request = serde_json::to_string(&params).unwrap().as_str(),
             "Signed gelato forward request."
         );
 
         self.gelato()
-            .send_forward_request(&request)
+            .send_forward_request(&params)
             .await
             .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))
     }
