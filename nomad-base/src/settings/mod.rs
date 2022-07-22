@@ -11,8 +11,9 @@
 //! corresponding env file and/or secrets.json file.
 
 use crate::{
-    agent::AgentCore, CachingHome, CachingReplica, CommonIndexerVariants, CommonIndexers,
-    ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes, NomadDB, Replicas,
+    agent::AgentCore, AgentConnections, CachingHome, CachingReplica, CommonIndexerVariants,
+    CommonIndexers, ContractSync, ContractSyncMetrics, HomeIndexerVariants, HomeIndexers, Homes,
+    NomadDB, Replicas,
 };
 use color_eyre::{eyre::bail, Result};
 use nomad_core::{db::DB, Common, ContractLocator};
@@ -419,8 +420,7 @@ impl Settings {
             .await?;
 
         Ok(AgentCore {
-            home,
-            replicas,
+            connections: AgentConnections::Default { home, replicas },
             db,
             settings: self.clone(),
             metrics,
