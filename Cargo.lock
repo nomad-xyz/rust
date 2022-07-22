@@ -5030,36 +5030,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "watcher"
-version = "1.0.0"
-dependencies = [
- "affix",
- "async-trait",
- "color-eyre",
- "config 0.10.1",
- "dotenv",
- "ethers",
- "futures-util",
- "log",
- "nomad-base",
- "nomad-core",
- "nomad-ethereum",
- "nomad-test",
- "nomad-xyz-configuration",
- "prometheus",
- "rocksdb",
- "serde 1.0.137",
- "serde_json",
- "serial_test",
- "thiserror",
- "tokio",
- "tokio-test",
- "tracing",
- "tracing-futures",
- "tracing-subscriber 0.3.14",
-]
-
-[[package]]
 name = "web-sys"
 version = "0.3.57"
 source = "registry+https://github.com/rust-lang/crates.io-index"

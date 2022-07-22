@@ -13,7 +13,7 @@ members = [
     "agents/kathy",
     "agents/updater",
     "agents/relayer",
-    "agents/watcher",
+#    "agents/watcher",
     "agents/processor",
     "tools/kms-cli",
     "tools/nomad-cli",
