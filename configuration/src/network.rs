@@ -26,15 +26,6 @@ pub struct ContractConfig {
     /// Optimsitic seconds for replicas to wait
     #[serde(deserialize_with = "deser_nomad_u64")]
     pub optimistic_seconds: u64,
-    /// Default process gas
-    #[serde(deserialize_with = "deser_nomad_u64")]
-    pub process_gas: u64,
-    /// Reserve gas
-    #[serde(deserialize_with = "deser_nomad_u64")]
-    pub reserve_gas: u64,
-    /// Maximum preflight gas
-    #[serde(deserialize_with = "deser_nomad_u64")]
-    pub maximum_gas: u64,
     /// List of updaters for this network
     pub updater: NomadIdentifier,
     /// List of watchers for this network

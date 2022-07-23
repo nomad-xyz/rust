@@ -29,14 +29,21 @@ export interface BaseAgentConfig {
   interval: number | string;
 }
 
+export type ProcessorConfig = BaseAgentConfig & {
+  allowed?: string[];
+  denied?: string[];
+  subsidizedRemotes?: string[];
+  s3?: S3Config;
+};
+
 export interface AgentConfig {
   rpcStyle: string;
-  timelag: number | string;
   db: string;
+  metrics: number;
   logging: LogConfig;
   updater: BaseAgentConfig;
   relayer: BaseAgentConfig;
-  processor: BaseAgentConfig;
+  processor: ProcessorConfig;
   watcher: BaseAgentConfig;
   kathy: BaseAgentConfig;
 }
@@ -87,9 +94,6 @@ export interface Governance {
 
 export interface ContractConfig {
   optimisticSeconds: number | string;
-  processGas: number | string;
-  reserveGas: number | string;
-  maximumGas: number | string;
   governance: Governance;
   updater: NomadIdentifier;
   watchers: Array<NomadIdentifier>;
@@ -115,8 +119,6 @@ export interface CustomTokenSpecifier {
 export interface BridgeConfiguration {
   weth?: NomadIdentifier;
   customs?: Array<CustomTokenSpecifier>;
-  mintGas: number | string;
-  deployGas: number | string;
 }
 
 export interface Domain {

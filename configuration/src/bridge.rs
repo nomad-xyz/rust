@@ -89,12 +89,4 @@ pub struct BridgeConfiguration {
     /// Custom token deployment specifiers
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub customs: Option<HashSet<CustomTokenSpecifier>>,
-    /// Amount of gas required to execute a `Transfer` message that DOST NOT
-    /// cause contract deployment
-    #[serde(default, deserialize_with = "deser_nomad_u64")]
-    pub mint_gas: u64,
-    /// Amount of gas required to execute a `Transfer` message that DOES cause
-    /// contract deployment
-    #[serde(default, deserialize_with = "deser_nomad_u64")]
-    pub deploy_gas: u64,
 }

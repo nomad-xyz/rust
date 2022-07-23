@@ -7,6 +7,10 @@ use prometheus::{
 use std::sync::Arc;
 use tokio::task::JoinHandle;
 
+fn u16_from_env(s: impl AsRef<str>) -> Option<u16> {
+    std::env::var(s.as_ref()).ok().and_then(|i| i.parse().ok())
+}
+
 #[derive(Debug)]
 /// Metrics for a particular domain
 pub struct CoreMetrics {
@@ -237,7 +241,9 @@ impl CoreMetrics {
         use warp::Filter;
 
         // Default to port 9090
-        let port = self.listen_port.unwrap_or(9090);
+        let port = u16_from_env("METRICS_PORT")
+            .or(self.listen_port)
+            .unwrap_or(9090);
         tracing::info!(
             port,
             "starting prometheus server on 0.0.0.0:{port}",
