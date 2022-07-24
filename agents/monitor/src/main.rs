@@ -84,21 +84,24 @@ pub(crate) trait ProcessStep: std::fmt::Display {
     where
         Self: 'static + Send + Sync + Sized,
     {
+        let task_description = format!("{}", self);
         tokio::spawn(async move {
             let mut handle = self.spawn();
             loop {
                 let result = handle.await;
 
-                let again = match result {
-                    Ok((handle, report)) => {
-                        tracing::warn!(error = %report, "Restarting task");
-                        handle
-                    }
+                let (again, report) = match result {
+                    Ok((handle, report)) => (handle, report),
                     Err(e) => {
-                        tracing::error!(err = %e, "JoinError in forever. Internal task panicked");
+                        tracing::error!(err = %e, task = task_description.as_str(), "Internal task panicked");
                         panic!("JoinError in forever. Internal task panicked");
                     }
                 };
+                tracing::warn!(
+                    error = %report,
+                    task = task_description.as_str(),
+                    "Restarting task",
+                );
                 handle = again.spawn();
             }
         })
