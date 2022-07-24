@@ -10,8 +10,12 @@ use tokio::task::JoinHandle;
 use tracing_subscriber::EnvFilter;
 
 use crate::{
-    domain::Domain, faucets::Faucets, metrics::Metrics, steps::e2e::E2ELatency, ArcProvider,
-    DispatchFaucet, HomeReplicaMap, ProcessFaucet, ProcessStep, RelayFaucet, UpdateFaucet,
+    domain::Domain,
+    faucets::Faucets,
+    metrics::Metrics,
+    steps::{e2e::E2ELatency, terminal::Terminal},
+    ArcProvider, DispatchFaucet, HomeReplicaMap, ProcessFaucet, ProcessStep, RelayFaucet,
+    UpdateFaucet,
 };
 
 pub(crate) fn config_from_file() -> Option<NomadConfig> {
@@ -223,5 +227,32 @@ impl Monitor {
             process_sinks,
         )
         .run_until_panic();
+    }
+
+    /// take ownership of all faucets and terminate them
+    pub(crate) fn run_terminals<'a>(&'a self, faucets: Faucets<'a>) -> Vec<JoinHandle<()>> {
+        let mut tasks = vec![];
+
+        faucets.dispatches.into_iter().for_each(|(_, v)| {
+            tasks.push(Terminal::new(v).run_until_panic());
+        });
+
+        faucets.updates.into_iter().for_each(|(_, v)| {
+            tasks.push(Terminal::new(v).run_until_panic());
+        });
+
+        faucets.relays.into_iter().for_each(|(_, v)| {
+            v.into_iter().for_each(|(_, v)| {
+                tasks.push(Terminal::new(v).run_until_panic());
+            });
+        });
+
+        faucets.processes.into_iter().for_each(|(_, v)| {
+            v.into_iter().for_each(|(_, v)| {
+                tasks.push(Terminal::new(v).run_until_panic());
+            });
+        });
+
+        tasks
     }
 }

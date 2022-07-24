@@ -1,4 +1,5 @@
 use annotate::WithMeta;
+use futures_util::future::select_all;
 use nomad_ethereum::bindings::{
     home::{DispatchFilter, UpdateFilter},
     replica::{ProcessFilter, UpdateFilter as RelayFilter},
@@ -63,13 +64,16 @@ async fn main() -> eyre::Result<()> {
         monitor.run_relay_to_process(&mut faucets);
         monitor.run_e2e(&mut faucets);
 
+        // sink em
+        let tasks = monitor.run_terminals(faucets);
+
         tracing::info!("tasks started");
 
-        // just run forever
-        loop {
-            tokio::time::sleep(std::time::Duration::from_secs(10000)).await
-        }
+        // run until there's a failure of a terminal
+        // this would imply there is a series of upstream channel failures
+        let (_, _, _) = select_all(tasks).await;
     }
+    Ok(())
 }
 
 pub(crate) trait ProcessStep: std::fmt::Display {
@@ -80,7 +84,7 @@ pub(crate) trait ProcessStep: std::fmt::Display {
     /// Run the task until it panics. Errors result in a task restart with the
     /// same channels. This means that an error causes the task to lose only
     /// the data that is in-scope when it faults.
-    fn run_until_panic(self) -> Restartable<()>
+    fn run_until_panic(self) -> JoinHandle<()>
     where
         Self: 'static + Send + Sync + Sized,
     {

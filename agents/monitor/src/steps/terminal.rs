@@ -14,6 +14,15 @@ where
     pub(crate) rx: UnboundedReceiver<T>,
 }
 
+impl<T> Terminal<T>
+where
+    T: std::fmt::Debug,
+{
+    pub(crate) fn new(rx: UnboundedReceiver<T>) -> Self {
+        Self { rx }
+    }
+}
+
 impl<T> std::fmt::Display for Terminal<T>
 where
     T: std::fmt::Debug,
@@ -35,7 +44,7 @@ where
             async move {
                 loop {
                     if self.rx.recv().await.is_none() {
-                        tracing::info!("Upstream broke, shutting down");
+                        tracing::debug!(self = %self, "Upstream broke, shutting down");
                         return (self, eyre::eyre!(""));
                     }
                 }
