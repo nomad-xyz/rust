@@ -12,7 +12,7 @@ pub const POLLING_INTERVAL_SECS: u64 = 5;
 pub const BEHIND_TIP: u64 = 5;
 
 #[derive(Debug)]
-#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
+#[must_use = "Tasks do nothing unless you call .spawn() or .run_until_panic()"]
 pub(crate) struct DispatchProducer {
     home: Home<crate::Provider>,
     network: String,
@@ -100,7 +100,7 @@ impl ProcessStep for DispatchProducer {
 }
 
 #[derive(Debug)]
-#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
+#[must_use = "Tasks do nothing unless you call .spawn() or .run_until_panic()"]
 pub(crate) struct UpdateProducer {
     home: Home<crate::Provider>,
     network: String,
@@ -191,7 +191,7 @@ impl ProcessStep for UpdateProducer {
 }
 
 #[derive(Debug)]
-#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
+#[must_use = "Tasks do nothing unless you call .spawn() or .run_until_panic()"]
 pub(crate) struct RelayProducer {
     replica: Replica<crate::Provider>,
     network: String,
@@ -284,7 +284,7 @@ impl ProcessStep for RelayProducer {
 }
 
 #[derive(Debug)]
-#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
+#[must_use = "Tasks do nothing unless you call .spawn() or .run_until_panic()"]
 pub(crate) struct ProcessProducer {
     replica: Replica<crate::Provider>,
     network: String,

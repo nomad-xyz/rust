@@ -6,7 +6,7 @@ use tracing::{info_span, Instrument};
 use crate::{bail_task_if, utils::nexts, ProcessStep, Restartable};
 
 #[derive(Debug)]
-#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
+#[must_use = "Tasks do nothing unless you call .spawn() or .run_until_panic()"]
 pub(crate) struct CombineChannels<T> {
     pub(crate) faucets: HashMap<String, UnboundedReceiver<T>>,
     pub(crate) sink: UnboundedSender<(String, T)>,
@@ -31,7 +31,7 @@ impl<T> CombineChannels<T> {
             .into_iter()
             .map(|(k, v)| {
                 let (sink, faucet) = unbounded_channel();
-                CombineChannels::<T>::new(v, sink).spawn();
+                CombineChannels::<T>::new(v, sink).run_until_panic();
                 (k, faucet)
             })
             .collect();

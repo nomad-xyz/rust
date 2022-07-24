@@ -85,7 +85,7 @@ pub(crate) trait ProcessStep: std::fmt::Display {
         Self: 'static + Send + Sync + Sized,
     {
         tokio::spawn(async move {
-            let mut handle = self.spawn();
+            let mut handle = self.run_until_panic();
             loop {
                 let result = handle.await;
 
@@ -99,7 +99,7 @@ pub(crate) trait ProcessStep: std::fmt::Display {
                         panic!("JoinError in forever. Internal task panicked");
                     }
                 };
-                handle = again.spawn()
+                handle = again.run_until_panic()
             }
         })
     }

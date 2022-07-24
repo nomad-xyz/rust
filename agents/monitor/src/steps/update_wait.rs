@@ -17,7 +17,7 @@ pub(crate) struct UpdateWaitMetrics {
 }
 
 #[derive(Debug)]
-#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
+#[must_use = "Tasks do nothing unless you call .spawn() or .run_until_panic()"]
 pub(crate) struct UpdateWait {
     update_faucet: UpdateFaucet,
     relay_faucets: UnboundedReceiver<(String, WithMeta<RelayFilter>)>,
@@ -43,7 +43,7 @@ impl UpdateWait {
     ) -> Self {
         let (tx, rx) = unbounded_channel();
 
-        CombineChannels::new(relay_faucets, tx).spawn();
+        CombineChannels::new(relay_faucets, tx).run_until_panic();
 
         Self {
             update_faucet,

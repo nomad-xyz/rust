@@ -9,7 +9,7 @@ pub(crate) struct BetweenMetrics {
 }
 
 // Track time between events of the same kind
-#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
+#[must_use = "Tasks do nothing unless you call .spawn() or .run_until_panic()"]
 pub(crate) struct BetweenEvents<T> {
     pub(crate) pipe: Pipe<T>,
     pub(crate) metrics: BetweenMetrics,

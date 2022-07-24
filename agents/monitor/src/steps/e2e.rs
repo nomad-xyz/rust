@@ -22,7 +22,7 @@ pub(crate) struct E2EMetrics {
     pub(crate) timers: HashMap<String, Histogram>,
 }
 
-#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
+#[must_use = "Tasks do nothing unless you call .spawn() or .run_until_panic()"]
 pub struct E2ELatency {
     dispatch_faucet: UnboundedReceiver<(String, WithMeta<DispatchFilter>)>,
     process_faucet: UnboundedReceiver<(String, (String, WithMeta<ProcessFilter>))>,
@@ -58,8 +58,8 @@ impl E2ELatency {
         let (process_sink, process_faucet) = unbounded_channel();
         let (dispatch_sink, dispatch_faucet) = unbounded_channel();
 
-        CombineChannels::new(dispatch_faucets, dispatch_sink).spawn();
-        CombineChannels::nested(process_faucets, process_sink).spawn();
+        CombineChannels::new(dispatch_faucets, dispatch_sink).run_until_panic();
+        CombineChannels::nested(process_faucets, process_sink).run_until_panic();
 
         Self {
             dispatch_faucet,

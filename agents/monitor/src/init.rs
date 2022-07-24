@@ -222,6 +222,6 @@ impl Monitor {
             dispatch_sinks,
             process_sinks,
         )
-        .spawn();
+        .run_until_panic();
     }
 }

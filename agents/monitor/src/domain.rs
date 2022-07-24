@@ -79,7 +79,7 @@ impl Domain {
     pub(crate) fn dispatch_producer(&self) -> DispatchFaucet {
         let (tx, rx) = unbounded_channel();
 
-        DispatchProducer::new(self.home.clone(), self.network.clone(), tx).spawn();
+        DispatchProducer::new(self.home.clone(), &self.network, tx).run_until_panic();
 
         rx
     }
@@ -87,7 +87,7 @@ impl Domain {
     pub(crate) fn update_producer(&self) -> UpdateFaucet {
         let (tx, rx) = unbounded_channel();
 
-        UpdateProducer::new(self.home.clone(), self.network.clone(), tx).spawn();
+        UpdateProducer::new(self.home.clone(), &self.network, tx).run_until_panic();
 
         rx
     }
@@ -95,7 +95,7 @@ impl Domain {
     pub fn relay_producer_for(&self, replica: &Replica<Provider>, replica_of: &str) -> RelayFaucet {
         let (tx, rx) = unbounded_channel();
 
-        RelayProducer::new(replica.clone(), &self.network, replica_of, tx).spawn();
+        RelayProducer::new(replica.clone(), &self.network, replica_of, tx).run_until_panic();
         rx
     }
 
@@ -116,7 +116,7 @@ impl Domain {
     ) -> ProcessFaucet {
         let (tx, rx) = unbounded_channel();
 
-        ProcessProducer::new(replica.clone(), &self.network, replica_of, tx).spawn();
+        ProcessProducer::new(replica.clone(), &self.network, replica_of, tx).run_until_panic();
         rx
     }
 
@@ -152,7 +152,7 @@ impl Domain {
             event,
             emitter,
         )
-        .spawn();
+        .run_until_panic();
     }
 
     pub(crate) fn count_updates<'a>(
@@ -171,7 +171,7 @@ impl Domain {
             event = event.as_ref(),
             "starting counter",
         );
-        BetweenEvents::new(pipe, metrics, network, event, emitter).spawn();
+        BetweenEvents::new(pipe, metrics, network, event, emitter).run_until_panic();
     }
 
     pub(crate) fn count_relays<'a>(&'a self, faucets: &mut Faucets<'a>, metrics: Arc<Metrics>) {
@@ -190,7 +190,7 @@ impl Domain {
 
             let metrics = metrics.between_metrics(network, event, &emitter, Some(replica_of));
 
-            BetweenEvents::new(pipe, metrics, network, event, emitter).spawn();
+            BetweenEvents::new(pipe, metrics, network, event, emitter).run_until_panic();
         });
     }
 
@@ -210,7 +210,7 @@ impl Domain {
 
             let metrics = metrics.between_metrics(network, event, &emitter, Some(replica_of));
 
-            BetweenEvents::new(pipe, metrics, network, event, emitter).spawn();
+            BetweenEvents::new(pipe, metrics, network, event, emitter).run_until_panic();
         });
     }
 
@@ -227,11 +227,11 @@ impl Domain {
         DispatchWait::new(
             dispatch_pipe,
             update_pipe,
-            self.name().to_owned(),
+            self.name(),
             self.home_address(),
             metrics,
         )
-        .spawn();
+        .run_until_panic();
     }
 
     pub(crate) fn update_to_relay<'a>(&'a self, faucets: &mut Faucets<'a>, metrics: Arc<Metrics>) {
@@ -273,7 +273,7 @@ impl Domain {
             update_sink,
             relay_sinks,
         )
-        .spawn();
+        .run_until_panic();
     }
 
     pub(crate) fn relay_to_process<'a>(&'a self, faucets: &mut Faucets<'a>, metrics: Arc<Metrics>) {
@@ -293,7 +293,7 @@ impl Domain {
                 emitter,
                 metrics,
             )
-            .spawn();
+            .run_until_panic();
         });
     }
 }

@@ -15,7 +15,7 @@ pub(crate) struct DispatchWaitMetrics {
 }
 
 #[derive(Debug)]
-#[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
+#[must_use = "Tasks do nothing unless you call .spawn() or .run_until_panic()"]
 pub(crate) struct DispatchWait {
     dispatch_pipe: DispatchPipe,
     update_pipe: UpdatePipe,
@@ -43,15 +43,15 @@ impl DispatchWait {
     pub(crate) fn new(
         dispatch_pipe: DispatchPipe,
         update_pipe: UpdatePipe,
-        network: String,
-        emitter: String,
+        network: impl AsRef<str>,
+        emitter: impl AsRef<str>,
         metrics: DispatchWaitMetrics,
     ) -> Self {
         Self {
             dispatch_pipe,
             update_pipe,
-            network,
-            emitter,
+            network: network.as_ref().to_owned(),
+            emitter: emitter.as_ref().to_owned(),
             metrics,
             timers: vec![],
             blocks: vec![],
