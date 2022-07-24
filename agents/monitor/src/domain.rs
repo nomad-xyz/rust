@@ -228,20 +228,15 @@ impl Domain {
     ) {
         let metrics = metrics.dispatch_wait_metrics(&self.network, &self.home_address());
 
-        let (update_sink, update_faucet) = unbounded_channel();
-        let (dispatch_sink, dispatch_faucet) = unbounded_channel();
-
-        let dispatch_faucet = faucets.swap_dispatch(self.name(), dispatch_faucet);
-        let update_faucet = faucets.swap_update(self.name(), update_faucet);
+        let dispatch_pipe = faucets.dispatch_pipe(self.name());
+        let update_pipe = faucets.update_pipe(self.name());
 
         DispatchWait::new(
-            dispatch_faucet,
-            update_faucet,
+            dispatch_pipe,
+            update_pipe,
             self.name().to_owned(),
             self.home_address(),
             metrics,
-            dispatch_sink,
-            update_sink,
         )
         .spawn();
     }

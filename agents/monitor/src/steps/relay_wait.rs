@@ -7,7 +7,6 @@ use tokio::time::Instant;
 use tracing::{info_span, Instrument};
 
 use crate::{
-    bail_task_if,
     pipe::{ProcessPipe, RelayPipe},
     unwrap_pipe_item, ProcessStep,
 };

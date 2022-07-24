@@ -4,7 +4,8 @@ use tokio::select;
 use tracing::{info_span, Instrument};
 
 use crate::{
-    bail_task_if, DispatchFaucet, DispatchSink, ProcessStep, Restartable, UpdateFaucet, UpdateSink,
+    pipe::{DispatchPipe, UpdatePipe},
+    unwrap_pipe_item, ProcessStep, Restartable,
 };
 
 #[derive(Debug)]
@@ -16,8 +17,8 @@ pub(crate) struct DispatchWaitMetrics {
 #[derive(Debug)]
 #[must_use = "Tasks do nothing unless you call .spawn() or .forever()"]
 pub(crate) struct DispatchWait {
-    dispatch_faucet: DispatchFaucet,
-    update_faucet: UpdateFaucet,
+    dispatch_pipe: DispatchPipe,
+    update_pipe: UpdatePipe,
 
     network: String,
     emitter: String,
@@ -26,9 +27,6 @@ pub(crate) struct DispatchWait {
 
     timers: Vec<HistogramTimer>,
     blocks: Vec<U64>,
-
-    dispatch_sink: DispatchSink,
-    update_sink: UpdateSink,
 }
 
 impl std::fmt::Display for DispatchWait {
@@ -43,24 +41,20 @@ impl std::fmt::Display for DispatchWait {
 
 impl DispatchWait {
     pub(crate) fn new(
-        dispatch_faucet: DispatchFaucet,
-        update_faucet: UpdateFaucet,
+        dispatch_pipe: DispatchPipe,
+        update_pipe: UpdatePipe,
         network: String,
         emitter: String,
         metrics: DispatchWaitMetrics,
-        dispatch_sink: DispatchSink,
-        update_sink: UpdateSink,
     ) -> Self {
         Self {
-            dispatch_faucet,
-            update_faucet,
+            dispatch_pipe,
+            update_pipe,
             network,
             emitter,
             metrics,
             timers: vec![],
             blocks: vec![],
-            dispatch_sink,
-            update_sink,
         }
     }
 
@@ -112,35 +106,14 @@ impl ProcessStep for DispatchWait {
                         // first. i.e. ready dispatches will arrive first
                         biased;
 
-                        dispatch_next = self.dispatch_faucet.recv() => {
-                            bail_task_if!(
-                                dispatch_next.is_none(),
-                                self,
-                                "inbound dispatch broke"
-                            );
-                            let dispatch = dispatch_next.expect("checked in block");
+                        dispatch_next = self.dispatch_pipe.next() => {
+                            let dispatch = unwrap_pipe_item!(dispatch_next,self);
                             let block_number = dispatch.meta.block_number;
-                            bail_task_if!(
-                                self.dispatch_sink.send(dispatch).is_err(),
-                                self,
-                                "outbound dispatch broke"
-                            );
                             self.handle_dispatch(block_number);
                         }
-                        update_opt = self.update_faucet.recv() => {
-                            bail_task_if!(
-                                update_opt.is_none(),
-                                self,
-                                "inbound update broke"
-                            );
-                            let update = update_opt.expect("checked in block");
+                        update_next = self.update_pipe.next() => {
+                            let update = unwrap_pipe_item!(update_next, self);
                             let block_number = update.meta.block_number;
-
-                            bail_task_if!(
-                                self.update_sink.send(update).is_err(),
-                                self,
-                                "outbound update broke"
-                            );
                             self.handle_update(block_number);
                         }
                     }

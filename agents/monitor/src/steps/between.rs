@@ -1,8 +1,6 @@
 use tracing::{info_span, Instrument};
 
-use crate::{
-    annotate::WithMeta, bail_task_if, pipe::Pipe, unwrap_pipe_item, ProcessStep, Restartable,
-};
+use crate::{annotate::WithMeta, pipe::Pipe, unwrap_pipe_item, ProcessStep, Restartable};
 
 pub(crate) struct BetweenMetrics {
     pub(crate) count: prometheus::IntCounter,
