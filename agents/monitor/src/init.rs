@@ -10,17 +10,8 @@ use tokio::task::JoinHandle;
 use tracing_subscriber::EnvFilter;
 
 use crate::{
-    domain::Domain,
-    faucets::Faucets,
-    metrics::Metrics,
-    steps::{
-        e2e::E2ELatency,
-        producer::{
-            DispatchProducerHandle, ProcessProducerHandle, RelayProducerHandle,
-            UpdateProducerHandle,
-        },
-    },
-    utils, ArcProvider, HomeReplicaMap, ProcessStep,
+    domain::Domain, faucets::Faucets, metrics::Metrics, steps::e2e::E2ELatency, ArcProvider,
+    DispatchFaucet, HomeReplicaMap, ProcessFaucet, ProcessStep, RelayFaucet, UpdateFaucet,
 };
 
 pub(crate) fn config_from_file() -> Option<NomadConfig> {
@@ -108,39 +99,40 @@ impl Monitor {
         self.metrics.clone().run_http_server()
     }
 
-    fn run_dispatch_producers(&self) -> HashMap<&str, DispatchProducerHandle> {
+    fn run_dispatch_producers(&self) -> HashMap<&str, DispatchFaucet> {
         self.networks
             .iter()
             .map(|(network, domain)| (network.as_str(), domain.dispatch_producer()))
             .collect()
     }
 
-    fn run_update_producers(&self) -> HashMap<&str, UpdateProducerHandle> {
+    fn run_update_producers(&self) -> HashMap<&str, UpdateFaucet> {
         self.networks
             .iter()
             .map(|(network, domain)| (network.as_str(), domain.update_producer()))
             .collect()
     }
 
-    fn run_relay_producers(&self) -> HomeReplicaMap<RelayProducerHandle> {
+    fn run_relay_producers(&self) -> HomeReplicaMap<RelayFaucet> {
         self.networks
             .iter()
             .map(|(network, domain)| (network.as_str(), domain.relay_producers()))
             .collect()
     }
 
-    fn run_process_producers(&self) -> HomeReplicaMap<ProcessProducerHandle> {
+    fn run_process_producers(&self) -> HomeReplicaMap<ProcessFaucet> {
         self.networks
             .iter()
             .map(|(network, domain)| (network.as_str(), domain.process_producers()))
             .collect()
     }
+
     pub(crate) fn producers(&self) -> Faucets {
         Faucets {
-            dispatches: utils::split(self.run_dispatch_producers()).1,
-            updates: utils::split(self.run_update_producers()).1,
-            relays: utils::nested_split(self.run_relay_producers()).1,
-            processes: utils::nested_split(self.run_process_producers()).1,
+            dispatches: self.run_dispatch_producers(),
+            updates: self.run_update_producers(),
+            relays: self.run_relay_producers(),
+            processes: self.run_process_producers(),
         }
     }
 

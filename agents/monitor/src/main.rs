@@ -104,8 +104,3 @@ pub(crate) trait ProcessStep: std::fmt::Display {
         })
     }
 }
-
-pub(crate) struct StepHandle<Task, Output> {
-    handle: Restartable<Task>,
-    rx: Output,
-}

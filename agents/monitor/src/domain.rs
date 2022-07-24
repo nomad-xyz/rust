@@ -11,14 +11,11 @@ use crate::{
     steps::{
         between::{BetweenEvents, BetweenMetrics},
         dispatch_wait::DispatchWait,
-        producer::{
-            DispatchProducer, DispatchProducerHandle, ProcessProducer, ProcessProducerHandle,
-            RelayProducer, RelayProducerHandle, UpdateProducer, UpdateProducerHandle,
-        },
+        producer::{DispatchProducer, ProcessProducer, RelayProducer, UpdateProducer},
         relay_wait::RelayWait,
         update_wait::UpdateWait,
     },
-    ProcessStep, Provider, StepHandle,
+    DispatchFaucet, ProcessFaucet, ProcessStep, Provider, RelayFaucet, UpdateFaucet,
 };
 
 #[derive(Debug)]
@@ -79,34 +76,30 @@ impl Domain {
         &self.replicas
     }
 
-    pub(crate) fn dispatch_producer(&self) -> DispatchProducerHandle {
+    pub(crate) fn dispatch_producer(&self) -> DispatchFaucet {
         let (tx, rx) = unbounded_channel();
 
-        let handle = DispatchProducer::new(self.home.clone(), self.network.clone(), tx).spawn();
+        DispatchProducer::new(self.home.clone(), self.network.clone(), tx).spawn();
 
-        StepHandle { handle, rx }
+        rx
     }
 
-    pub(crate) fn update_producer(&self) -> UpdateProducerHandle {
+    pub(crate) fn update_producer(&self) -> UpdateFaucet {
         let (tx, rx) = unbounded_channel();
 
-        let handle = UpdateProducer::new(self.home.clone(), self.network.clone(), tx).spawn();
+        UpdateProducer::new(self.home.clone(), self.network.clone(), tx).spawn();
 
-        StepHandle { handle, rx }
+        rx
     }
 
-    pub fn relay_producer_for(
-        &self,
-        replica: &Replica<Provider>,
-        replica_of: &str,
-    ) -> RelayProducerHandle {
+    pub fn relay_producer_for(&self, replica: &Replica<Provider>, replica_of: &str) -> RelayFaucet {
         let (tx, rx) = unbounded_channel();
 
-        let handle = RelayProducer::new(replica.clone(), &self.network, replica_of, tx).spawn();
-        StepHandle { handle, rx }
+        RelayProducer::new(replica.clone(), &self.network, replica_of, tx).spawn();
+        rx
     }
 
-    pub(crate) fn relay_producers(&self) -> HashMap<&str, RelayProducerHandle> {
+    pub(crate) fn relay_producers(&self) -> HashMap<&str, RelayFaucet> {
         self.replicas()
             .iter()
             .map(|(network, replica)| {
@@ -120,14 +113,14 @@ impl Domain {
         &self,
         replica: &Replica<Provider>,
         replica_of: &str,
-    ) -> ProcessProducerHandle {
+    ) -> ProcessFaucet {
         let (tx, rx) = unbounded_channel();
 
-        let handle = ProcessProducer::new(replica.clone(), &self.network, replica_of, tx).spawn();
-        StepHandle { handle, rx }
+        ProcessProducer::new(replica.clone(), &self.network, replica_of, tx).spawn();
+        rx
     }
 
-    pub(crate) fn process_producers(&self) -> HashMap<&str, ProcessProducerHandle> {
+    pub(crate) fn process_producers(&self) -> HashMap<&str, ProcessFaucet> {
         self.replicas()
             .iter()
             .map(|(replica_of, replica)| {

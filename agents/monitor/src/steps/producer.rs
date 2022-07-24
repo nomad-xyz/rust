@@ -6,10 +6,7 @@ use nomad_ethereum::bindings::{
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{info_span, Instrument};
 
-use crate::{
-    annotate::WithMeta, bail_task_if, DispatchFaucet, DispatchSink, ProcessFaucet, ProcessStep,
-    RelayFaucet, Restartable, StepHandle, UpdateFaucet,
-};
+use crate::{annotate::WithMeta, bail_task_if, DispatchSink, ProcessStep, Restartable};
 
 pub const POLLING_INTERVAL_SECS: u64 = 5;
 pub const BEHIND_TIP: u64 = 5;
@@ -54,7 +51,6 @@ impl DispatchProducer {
 }
 
 pub(crate) type DispatchProducerTask = Restartable<DispatchProducer>;
-pub(crate) type DispatchProducerHandle = StepHandle<DispatchProducer, DispatchFaucet>;
 
 impl ProcessStep for DispatchProducer {
     fn spawn(mut self) -> DispatchProducerTask {
@@ -143,7 +139,6 @@ impl UpdateProducer {
 }
 
 pub(crate) type UpdateProducerTask = Restartable<UpdateProducer>;
-pub(crate) type UpdateProducerHandle = StepHandle<UpdateProducer, UpdateFaucet>;
 
 impl ProcessStep for UpdateProducer {
     fn spawn(mut self) -> UpdateProducerTask {
@@ -239,7 +234,6 @@ impl RelayProducer {
 }
 
 pub(crate) type RelayProducerTask = Restartable<RelayProducer>;
-pub(crate) type RelayProducerHandle = StepHandle<RelayProducer, RelayFaucet>;
 
 impl ProcessStep for RelayProducer {
     fn spawn(mut self) -> RelayProducerTask {
@@ -333,7 +327,6 @@ impl ProcessProducer {
 }
 
 pub(crate) type ProcessProducerTask = Restartable<ProcessProducer>;
-pub(crate) type ProcessProducerHandle = StepHandle<ProcessProducer, ProcessFaucet>;
 
 impl ProcessStep for ProcessProducer {
     fn spawn(mut self) -> ProcessProducerTask {
