@@ -80,12 +80,12 @@ pub(crate) trait ProcessStep: std::fmt::Display {
     /// Run the task until it panics. Errors result in a task restart with the
     /// same channels. This means that an error causes the task to lose only
     /// the data that is in-scope when it faults.
-    fn run_until_panic(self) -> Restartable<Self>
+    fn run_until_panic(self) -> Restartable<()>
     where
         Self: 'static + Send + Sync + Sized,
     {
         tokio::spawn(async move {
-            let mut handle = self.run_until_panic();
+            let mut handle = self.spawn();
             loop {
                 let result = handle.await;
 
@@ -99,7 +99,7 @@ pub(crate) trait ProcessStep: std::fmt::Display {
                         panic!("JoinError in forever. Internal task panicked");
                     }
                 };
-                handle = again.run_until_panic()
+                handle = again.spawn();
             }
         })
     }
