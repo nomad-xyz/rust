@@ -7,6 +7,7 @@ use ethers::{
 
 use nomad_xyz_configuration::{get_builtin, NomadConfig};
 use tokio::task::JoinHandle;
+use tracing::Level;
 use tracing_subscriber::EnvFilter;
 
 use crate::{
@@ -40,6 +41,7 @@ pub(crate) fn config() -> eyre::Result<NomadConfig> {
 pub(crate) fn init_tracing() {
     tracing_subscriber::FmtSubscriber::builder()
         .pretty()
+        .with_max_level(Level::INFO)
         .with_env_filter(EnvFilter::from_default_env())
         .with_level(true)
         .init();
