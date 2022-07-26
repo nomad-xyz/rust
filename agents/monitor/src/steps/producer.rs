@@ -4,7 +4,7 @@ use nomad_ethereum::bindings::{
     replica::{ProcessFilter, Replica, UpdateFilter as RelayFilter},
 };
 use tokio::sync::mpsc::UnboundedSender;
-use tracing::{info_span, Instrument};
+use tracing::{info_span, trace, Instrument};
 
 use crate::{annotate::WithMeta, bail_task_if, DispatchSink, ProcessStep, Restartable};
 
@@ -79,7 +79,18 @@ impl ProcessStep for DispatchProducer {
 
                         bail_task_if!(res.is_err(), self, res.unwrap_err());
 
-                        for event in res.unwrap().into_iter() {
+                        let events = res.unwrap();
+
+                        if !events.is_empty() {
+                            trace!(
+                                count = events.len(),
+                                from = %from,
+                                to = %to,
+                                "Received events"
+                            );
+                        }
+
+                        for event in events.into_iter() {
                             let res = self.tx.send(event.into());
                             bail_task_if!(res.is_err(), self, res.unwrap_err());
                         }
@@ -170,7 +181,18 @@ impl ProcessStep for UpdateProducer {
 
                         bail_task_if!(res.is_err(), self, res.unwrap_err());
 
-                        for event in res.unwrap().into_iter() {
+                        let events = res.unwrap();
+
+                        if !events.is_empty() {
+                            trace!(
+                                count = events.len(),
+                                from = %from,
+                                to = %to,
+                                "Received events"
+                            );
+                        }
+
+                        for event in events.into_iter() {
                             let res = self.tx.send(event.into());
                             bail_task_if!(res.is_err(), self, res.unwrap_err());
                         }
@@ -252,7 +274,6 @@ impl ProcessStep for RelayProducer {
                 let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                 let mut to = height - BEHIND_TIP;
                 loop {
-                    tracing::trace!(from = from.as_u64(), to = to.as_u64(), "produce_loop");
                     if from < to {
                         let res = self
                             .replica
@@ -264,7 +285,18 @@ impl ProcessStep for RelayProducer {
 
                         bail_task_if!(res.is_err(), self, res.unwrap_err());
 
-                        for event in res.unwrap().into_iter() {
+                        let events = res.unwrap();
+
+                        if !events.is_empty() {
+                            trace!(
+                                count = events.len(),
+                                from = %from,
+                                to = %to,
+                                "Received events"
+                            );
+                        }
+
+                        for event in events.into_iter() {
                             let res = self.tx.send(event.into());
                             bail_task_if!(res.is_err(), self, res.unwrap_err());
                         }
@@ -356,7 +388,18 @@ impl ProcessStep for ProcessProducer {
 
                         bail_task_if!(res.is_err(), self, res.unwrap_err());
 
-                        for event in res.unwrap().into_iter() {
+                        let events = res.unwrap();
+
+                        if !events.is_empty() {
+                            trace!(
+                                count = events.len(),
+                                from = %from,
+                                to = %to,
+                                "Received events"
+                            );
+                        }
+
+                        for event in events.into_iter() {
                             let res = self.tx.send(event.into());
                             bail_task_if!(res.is_err(), self, res.unwrap_err());
                         }

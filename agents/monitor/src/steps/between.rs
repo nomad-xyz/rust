@@ -88,6 +88,8 @@ where
                         target: "monitor::between",
                         block_number = %incoming.meta.block_number,
                         event = self.event.as_str(),
+                        tx_hash = ?incoming.meta.transaction_hash,
+                        emitter = ?incoming.meta.address,
                         "received incoming event"
                     );
 
