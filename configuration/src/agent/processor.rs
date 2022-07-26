@@ -6,10 +6,13 @@ use std::collections::HashSet;
 
 decl_config!(Processor {
     /// Allow list
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     allowed: Option<HashSet<H256>>,
     /// Deny list
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     denied: Option<HashSet<H256>>,
     /// Remote chains to subsidize processing on
+    #[serde(default, skip_serializing_if = "HashSet::is_empty")]
     subsidized_remotes: HashSet<String>,
     /// Whether to upload proofs to s3
     #[serde(default, skip_serializing_if = "Option::is_none")]
