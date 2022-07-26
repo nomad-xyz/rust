@@ -45,7 +45,7 @@ where
                 loop {
                     if self.rx.recv().await.is_none() {
                         tracing::debug!(self = %self, "Upstream broke, shutting down");
-                        return (self, eyre::eyre!(""));
+                        panic!();
                     }
                 }
             }
