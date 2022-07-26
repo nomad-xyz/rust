@@ -31,7 +31,11 @@ impl Domain {
         format!("{:?}", self.home.address())
     }
 
-    pub(crate) fn from_config(config: &NomadConfig, network: &str) -> eyre::Result<Self> {
+    pub(crate) fn from_config(
+        config: &NomadConfig,
+        network: &str,
+        to_monitor: &[String],
+    ) -> eyre::Result<Self> {
         let network = network.to_owned();
         let provider = provider_for(config, &network)?;
 
@@ -47,6 +51,7 @@ impl Domain {
         let replicas = core
             .replicas
             .iter()
+            .filter(|(s, _)| to_monitor.contains(s))
             .map(|(k, v)| {
                 let replica = Replica::new(
                     v.proxy.as_ethereum_address().expect("invalid addr"),

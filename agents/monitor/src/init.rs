@@ -47,6 +47,12 @@ pub(crate) fn init_tracing() {
         .init();
 }
 
+pub(crate) fn networks_from_env() -> Option<Vec<String>> {
+    std::env::var("MONITOR_NETWORKS")
+        .ok()
+        .map(|s| s.split(',').map(ToOwned::to_owned).collect())
+}
+
 pub(crate) fn rpc_from_env(network: &str) -> Option<String> {
     std::env::var(format!("{}_CONNECTION_URL", network.to_uppercase())).ok()
 }
@@ -94,8 +100,13 @@ pub(crate) struct Monitor {
 impl Monitor {
     pub(crate) fn from_config(config: &NomadConfig) -> eyre::Result<Self> {
         let mut networks = HashMap::new();
-        for network in config.networks.iter() {
-            networks.insert(network.to_owned(), Domain::from_config(config, network)?);
+        let to_monitor =
+            networks_from_env().unwrap_or_else(|| config.networks.iter().cloned().collect());
+        for network in config.networks.iter().filter(|s| to_monitor.contains(s)) {
+            networks.insert(
+                network.to_owned(),
+                Domain::from_config(config, network, &to_monitor)?,
+            );
         }
         let metrics = Metrics::new()?.into();
         Ok(Monitor { networks, metrics })
