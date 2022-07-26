@@ -91,8 +91,7 @@ impl ProcessStep for DispatchProducer {
                         }
 
                         for event in events.into_iter() {
-                            let res = self.tx.send(event.into());
-                            bail_task_if!(res.is_err(), self, res.unwrap_err());
+                            self.tx.send(event.into()).expect("outbound channel broke");
                         }
                     }
                     let tip_res = provider.get_block_number().await;
@@ -193,8 +192,7 @@ impl ProcessStep for UpdateProducer {
                         }
 
                         for event in events.into_iter() {
-                            let res = self.tx.send(event.into());
-                            bail_task_if!(res.is_err(), self, res.unwrap_err());
+                            self.tx.send(event.into()).expect("outbound channel broke");
                         }
                     }
                     let tip_res = provider.get_block_number().await;
@@ -297,8 +295,7 @@ impl ProcessStep for RelayProducer {
                         }
 
                         for event in events.into_iter() {
-                            let res = self.tx.send(event.into());
-                            bail_task_if!(res.is_err(), self, res.unwrap_err());
+                            self.tx.send(event.into()).expect("outbound channel broke");
                         }
                     }
                     let tip_res = provider.get_block_number().await;
@@ -400,8 +397,7 @@ impl ProcessStep for ProcessProducer {
                         }
 
                         for event in events.into_iter() {
-                            let res = self.tx.send(event.into());
-                            bail_task_if!(res.is_err(), self, res.unwrap_err());
+                            self.tx.send(event.into()).expect("outbound channel broke");
                         }
                     }
                     let tip_res = provider.get_block_number().await;

@@ -7,8 +7,8 @@ use tracing::{info_span, Instrument};
 use nomad_ethereum::bindings::replica::UpdateFilter as RelayFilter;
 
 use crate::{
-    annotate::WithMeta, bail_task_if, steps::combine::CombineChannels, ProcessStep, RelayFaucet,
-    RelaySink, UpdateFaucet, UpdateSink,
+    annotate::WithMeta, steps::combine::CombineChannels, ProcessStep, RelayFaucet, RelaySink,
+    UpdateFaucet, UpdateSink,
 };
 
 #[derive(Debug)]
@@ -124,41 +124,20 @@ impl ProcessStep for UpdateWait {
                         biased;
 
                         update_opt = self.update_faucet.recv() => {
-                            bail_task_if!(
-                                update_opt.is_none(),
-                                self,
-                                "Inbound updates broke",
-                            );
-                            let update = update_opt.unwrap();
+                            let update = update_opt.expect("inbound update channel broke");
                             let root: H256 = update.log.new_root.into();
-                            bail_task_if!{
-                                // send onwards
-                                self.update_sink.send(update).is_err(),
-                                self,
-                                "Outbound updates broke",
-                            };
-
+                            self.update_sink.send(update).expect("outbound update broke");
                             self.handle_update(root);
                         }
                         relay_opt = self.relay_faucets.recv() => {
-                            bail_task_if!(
-                                relay_opt.is_none(),
-                                self,
-                                format!("Inbound relays broke"),
-                            );
-                            let (replica_network, relay) = relay_opt.unwrap();
+                            let (replica_network, relay) = relay_opt.expect("Inbound relays broke");
                             let root: H256 = relay.log.new_root.into();
 
-                            bail_task_if!(
-                                // send onward
-                                self.relay_sinks
+                            self.relay_sinks
                                     .get(&replica_network)
                                     .expect("missing outgoing")
                                     .send(relay)
-                                    .is_err(),
-                                self,
-                                format!("outgoing relay for {} broke", &replica_network)
-                            );
+                                    .unwrap_or_else(|_| panic!("outgoing relay for {} broke", &replica_network));
 
                             self.handle_relay(&replica_network, root);
                          }

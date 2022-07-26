@@ -1,6 +1,6 @@
 use tracing::{info_span, Instrument};
 
-use crate::{annotate::WithMeta, pipe::Pipe, unwrap_pipe_item, ProcessStep, Restartable};
+use crate::{annotate::WithMeta, pipe::Pipe, ProcessStep, Restartable};
 
 pub(crate) struct BetweenMetrics {
     pub(crate) count: prometheus::IntCounter,
@@ -80,9 +80,7 @@ where
 
                 loop {
                     // get the next event from the channel
-                    let incoming = self.pipe.next().await;
-
-                    let incoming = unwrap_pipe_item!(incoming, self);
+                    let incoming = self.pipe.next().await.expect("inbound pipe failed");
 
                     tracing::debug!(
                         target: "monitor::between",

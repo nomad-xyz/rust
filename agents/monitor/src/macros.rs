@@ -14,16 +14,16 @@ macro_rules! bail_task_if {
 }
 
 #[macro_export]
-macro_rules! unwrap_pipe_item {
-    ($pipe_output:ident, $self:ident,) => {{
-        unwrap_pipe_output!($pipe_output, $self)
+macro_rules! unwrap_channel_item {
+    ($channel_item:ident, $self:ident,) => {{
+        unwrap_channel_item!($channel_item, $self)
     }};
-    ($pipe_output:ident, $self:ident) => {{
-        $crate::bail_task_if!($pipe_output.is_err(), $self, $pipe_output.unwrap_err(),);
-
-        let item_opt = $pipe_output.unwrap();
-        $crate::bail_task_if!(item_opt.is_none(), $self, "inbound pipe failed",);
-
-        item_opt.unwrap()
+    ($channel_item:ident, $self:ident) => {{
+        if $channel_item.is_none() {
+            tracing::debug!(
+                task = %$self, "inbound channel broke"
+            );
+        }
+        $channel_item.expect("inbound channel broke")
     }};
 }

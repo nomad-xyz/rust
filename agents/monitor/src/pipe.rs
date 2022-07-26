@@ -39,13 +39,13 @@ where
         Ok(())
     }
 
-    pub(crate) async fn next(&mut self) -> eyre::Result<Option<&T>> {
+    pub(crate) async fn next(&mut self) -> eyre::Result<&T> {
         self.finish()?;
 
         self.contents = self.rx.recv().await;
         if self.contents.is_none() {
-            bail!("Rx Broke")
+            bail!("rx broke")
         }
-        Ok(self.read())
+        Ok(self.read().expect("checked"))
     }
 }

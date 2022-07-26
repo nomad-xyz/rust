@@ -8,7 +8,7 @@ use tracing::{info_span, Instrument};
 
 use crate::{
     pipe::{ProcessPipe, RelayPipe},
-    unwrap_pipe_item, ProcessStep,
+    ProcessStep,
 };
 
 #[derive(Debug)]
@@ -83,7 +83,7 @@ impl ProcessStep for RelayWait {
                         biased;
 
                         process_next = self.process_pipe.next() => {
-                            let process = unwrap_pipe_item!(process_next, self);
+                            let process = process_next.expect("inbound process pipe failed");
                             let process_instant = tokio::time::Instant::now();
                             let process_block = process.meta.block_number;
 
@@ -94,7 +94,7 @@ impl ProcessStep for RelayWait {
                             self.metrics.blocks.observe(elapsed_blocks);
                         }
                         relay_next = self.relay_pipe.next() => {
-                            let relay = unwrap_pipe_item!(relay_next, self);
+                            let relay = relay_next.expect("inbound relay pipe failed");
                             self.relay_instant = tokio::time::Instant::now();
                             self.relay_block = relay.meta.block_number;
                         }

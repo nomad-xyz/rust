@@ -3,7 +3,7 @@ use std::{collections::HashMap, fmt::Display};
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 use tracing::{info_span, Instrument};
 
-use crate::{bail_task_if, utils::nexts, ProcessStep, Restartable};
+use crate::{unwrap_channel_item, utils::nexts, ProcessStep, Restartable};
 
 #[derive(Debug)]
 #[must_use = "Tasks do nothing unless you call .spawn() or .run_until_panic()"]
@@ -59,17 +59,11 @@ where
             async move {
                 loop {
                     let ((net, next_opt), _, _) = select_all(nexts(&mut self.faucets)).await;
-                    bail_task_if!(
-                        next_opt.is_none(),
-                        self,
-                        format!("Inbound from {} broke", net),
-                    );
-                    let next = next_opt.expect("checked");
-                    bail_task_if!(
-                        self.sink.send((net, next)).is_err(),
-                        self,
-                        "sink channel broke"
-                    );
+                    let next = unwrap_channel_item!(next_opt, self);
+
+                    self.sink
+                        .send((net, next))
+                        .expect("outbound channel failed");
                 }
             }
             .instrument(span),

@@ -11,8 +11,7 @@ use ethers::prelude::H256;
 use tracing::{info_span, Instrument};
 
 use crate::{
-    annotate::WithMeta, bail_task_if, DispatchFaucet, DispatchSink, ProcessFaucet, ProcessSink,
-    ProcessStep,
+    annotate::WithMeta, DispatchFaucet, DispatchSink, ProcessFaucet, ProcessSink, ProcessStep,
 };
 
 use super::combine::CombineChannels;
@@ -140,40 +139,22 @@ impl ProcessStep for E2ELatency {
                 loop {
                     tokio::select! {
                         dispatch_opt = self.dispatch_faucet.recv() => {
-                            bail_task_if!(
-                                dispatch_opt.is_none(),
-                                self,
-                                "inbound dispatch broke",
-                            );
-                            let (network, dispatch) = dispatch_opt.expect("checked");
+                            let (network, dispatch) = dispatch_opt.expect("inbound dispatch broke");
                             let message_hash: H256 = dispatch.log.message_hash.into();
                             let destination: u32  = (dispatch.log.destination_and_nonce >> 32) as u32;
 
                             let outbound = self.dispatch_sinks.get(&network).expect("missing sink");
-
-                            bail_task_if!(
-                                outbound.send(dispatch).is_err(), self, "outbound dispatch broke",
-                            );
+                            outbound.send(dispatch).expect("outbound dispatch broke");
                             self.record_dispatch(network,destination, message_hash);
                         }
                         process_opt = self.process_faucet.recv() => {
-                            bail_task_if!(
-                                process_opt.is_none(),
-                                self,
-                                "inbound process broke",
-                            );
-
-                            let (network, (replica_of, process)) = process_opt.expect("checked");
+                            let (network, (replica_of, process)) = process_opt.expect("inbound process broke");
 
                             let message_hash: H256 = process.log.message_hash.into();
 
                             let outbound = self.process_sinks.get(&network).expect("missing network").get(&replica_of).expect("missing sink");
+                            outbound.send(process).expect("outbound dispatch broke");
 
-                            bail_task_if!(
-                                outbound.send(process).is_err(),
-                                self,
-                                "outbound dispatch broke",
-                            );
                             self.record_process(network, replica_of, message_hash);
                         }
                     }

@@ -5,7 +5,7 @@ use tracing::{info_span, Instrument};
 
 use crate::{
     pipe::{DispatchPipe, UpdatePipe},
-    unwrap_pipe_item, ProcessStep, Restartable,
+    ProcessStep, Restartable,
 };
 
 #[derive(Debug)]
@@ -107,12 +107,12 @@ impl ProcessStep for DispatchWait {
                         biased;
 
                         dispatch_next = self.dispatch_pipe.next() => {
-                            let dispatch = unwrap_pipe_item!(dispatch_next,self);
+                            let dispatch = dispatch_next.expect("inbound dispatch pipe failed");
                             let block_number = dispatch.meta.block_number;
                             self.handle_dispatch(block_number);
                         }
                         update_next = self.update_pipe.next() => {
-                            let update = unwrap_pipe_item!(update_next, self);
+                            let update = update_next.expect("inbound update pipe failed");
                             let block_number = update.meta.block_number;
                             self.handle_update(block_number);
                         }
