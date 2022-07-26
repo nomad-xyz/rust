@@ -32,11 +32,15 @@ where
         self.contents.as_ref()
     }
 
-    /// Get the
-    pub(crate) async fn next(&mut self) -> eyre::Result<Option<&T>> {
+    pub(crate) fn finish(&mut self) -> eyre::Result<()> {
         if let Some(contents) = self.contents.take() {
             self.tx.send(contents)?;
         }
+        Ok(())
+    }
+
+    pub(crate) async fn next(&mut self) -> eyre::Result<Option<&T>> {
+        self.finish()?;
 
         self.contents = self.rx.recv().await;
         if self.contents.is_none() {
