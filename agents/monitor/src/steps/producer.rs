@@ -65,9 +65,9 @@ impl ProcessStep for DispatchProducer {
             async move {
                 let provider = self.home.client();
                 let height = provider.get_block_number().await.unwrap();
-                let from = self.from.unwrap_or(height - (2 * BEHIND_TIP));
                 let mut to = height - BEHIND_TIP;
                 loop {
+                    let from = self.from.unwrap_or(height - (2 * BEHIND_TIP));
                     if from < to {
                         let res = self
                             .home
@@ -166,9 +166,9 @@ impl ProcessStep for UpdateProducer {
 
                 bail_task_if!(height.is_err(), self, "Err retrieving height");
                 let height = height.expect("checked");
-                let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                 let mut to = height - BEHIND_TIP;
                 loop {
+                    let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                     if from < to {
                         let res = self
                             .home
@@ -269,9 +269,9 @@ impl ProcessStep for RelayProducer {
             async move {
                 let provider = self.replica.client();
                 let height = provider.get_block_number().await.unwrap();
-                let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                 let mut to = height - BEHIND_TIP;
                 loop {
+                    let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                     if from < to {
                         let res = self
                             .replica
@@ -371,9 +371,9 @@ impl ProcessStep for ProcessProducer {
             async move {
                 let provider = self.replica.client();
                 let height = provider.get_block_number().await.unwrap();
-                let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                 let mut to = height - BEHIND_TIP;
                 loop {
+                    let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                     if from < to {
                         let res = self
                             .replica
