@@ -40,7 +40,7 @@ pub(crate) fn config() -> eyre::Result<NomadConfig> {
 
 pub(crate) fn init_tracing() {
     tracing_subscriber::FmtSubscriber::builder()
-        .pretty()
+        .json()
         .with_max_level(Level::INFO)
         .with_env_filter(EnvFilter::from_default_env())
         .with_level(true)
