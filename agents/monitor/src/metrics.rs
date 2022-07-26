@@ -86,7 +86,7 @@ impl Metrics {
             .namespace(NAMESPACE)
             .buckets(TIME_BUCKETS.to_vec())
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
-            &["chain", "emitter"],
+            &["chain", "emitter", "replica_chain"],
         )?;
 
         let dispatch_to_update_timers = HistogramVec::new(
@@ -304,12 +304,25 @@ impl Metrics {
         }
     }
 
-    pub(crate) fn update_wait_metrics(&self, network: &str, emitter: &str) -> UpdateWaitMetrics {
-        UpdateWaitMetrics {
-            times: self
-                .update_to_relay_timers
-                .with_label_values(&[network, emitter]),
-        }
+    pub(crate) fn update_wait_metrics(
+        &self,
+        home_network: &str,
+        replica_networks: &[&str],
+        emitter: &str,
+    ) -> UpdateWaitMetrics {
+        let times = replica_networks
+            .iter()
+            .map(|replica_network| {
+                let timer = self.update_to_relay_timers.with_label_values(&[
+                    home_network,
+                    emitter,
+                    replica_network,
+                ]);
+                (replica_network.to_string(), timer)
+            })
+            .collect();
+
+        UpdateWaitMetrics { times }
     }
 
     pub(crate) fn relay_wait_metrics(

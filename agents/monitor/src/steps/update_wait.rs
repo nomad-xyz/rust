@@ -13,7 +13,7 @@ use crate::{
 
 #[derive(Debug)]
 pub(crate) struct UpdateWaitMetrics {
-    pub(crate) times: Histogram,
+    pub(crate) times: HashMap<String, Histogram>,
 }
 
 #[derive(Debug)]
@@ -26,6 +26,7 @@ pub(crate) struct UpdateWait {
     metrics: UpdateWaitMetrics,
 
     updates: HashMap<H256, Instant>,
+    // maps root -> replica -> timer
     relays: HashMap<H256, HashMap<String, Instant>>,
 
     update_sink: UpdateSink,
@@ -65,18 +66,18 @@ impl std::fmt::Display for UpdateWait {
 }
 
 impl UpdateWait {
-    fn handle_relay(&mut self, net: &str, root: H256) {
+    fn handle_relay(&mut self, replica_network: &str, root: H256) {
         let now = std::time::Instant::now();
 
         // mem optimization: don't need to store the relay time
         // if we observe immediately
         if let Some(update_time) = self.updates.get(&root) {
-            self.record(now, *update_time)
+            self.record(replica_network, now, *update_time)
         } else {
             self.relays
                 .entry(root)
                 .or_default()
-                .insert(net.to_owned(), now);
+                .insert(replica_network.to_owned(), now);
         }
     }
 
@@ -88,15 +89,19 @@ impl UpdateWait {
         // any future relay times for this root
         if let Some(mut relays) = self.relays.remove(&root) {
             // times
-            relays.drain().for_each(|(_, relay)| {
-                self.record(relay, now);
+            relays.drain().for_each(|(replica_network, relay)| {
+                self.record(&replica_network, relay, now);
             })
         }
     }
 
-    fn record(&self, relay: Instant, update: Instant) {
+    fn record(&self, replica_network: &str, relay: Instant, update: Instant) {
         let v = relay.saturating_duration_since(update);
-        self.metrics.times.observe(v.as_millis() as f64)
+        self.metrics
+            .times
+            .get(replica_network)
+            .expect("missing metric")
+            .observe(v.as_millis() as f64)
     }
 }
 
@@ -141,21 +146,21 @@ impl ProcessStep for UpdateWait {
                                 self,
                                 format!("Inbound relays broke"),
                             );
-                            let (net, relay) = relay_opt.unwrap();
+                            let (replica_network, relay) = relay_opt.unwrap();
                             let root: H256 = relay.log.new_root.into();
 
                             bail_task_if!(
                                 // send onward
                                 self.relay_sinks
-                                    .get(&net)
+                                    .get(&replica_network)
                                     .expect("missing outgoing")
                                     .send(relay)
                                     .is_err(),
                                 self,
-                                format!("outgoing relay for {} broke", &net)
+                                format!("outgoing relay for {} broke", &replica_network)
                             );
 
-                            self.handle_relay(&net, root);
+                            self.handle_relay(&replica_network, root);
                          }
                     }
                 }

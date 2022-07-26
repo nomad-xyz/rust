@@ -240,11 +240,18 @@ impl Domain {
 
         // we want to go through each network that is NOT this network
         // get the relay sink FOR THIS NETWORK'S REPLICA
+        let other_nets: Vec<&str> = faucets
+            .relays
+            .keys()
+            // does not match this network
+            .filter(|k| **k != self.network)
+            .copied()
+            .collect();
+
         faucets
             .relays
             .iter_mut()
-            // does not match this network
-            .filter(|(k, _)| **k != self.network)
+            .filter(|(k, _)| other_nets.contains(k))
             .for_each(|(k, v)| {
                 // create a new channel
                 let (sink, faucet) = unbounded_channel();
@@ -265,11 +272,13 @@ impl Domain {
 
         let update_faucet = faucets.swap_update(self.name(), update_faucet);
 
+        let metrics = metrics.update_wait_metrics(self.name(), &other_nets, &self.home_address());
+
         UpdateWait::new(
             update_faucet,
             relay_faucets,
             self.name(),
-            metrics.update_wait_metrics(self.name(), &self.home_address()),
+            metrics,
             update_sink,
             relay_sinks,
         )
