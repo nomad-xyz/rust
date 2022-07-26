@@ -7,6 +7,8 @@ use prometheus::{
 use std::sync::Arc;
 use tokio::task::JoinHandle;
 
+const NAMESPACE: &str = "nomad";
+
 fn u16_from_env(s: impl AsRef<str>) -> Option<u16> {
     std::env::var(s.as_ref()).ok().and_then(|i| i.parse().ok())
 }
@@ -44,7 +46,7 @@ impl CoreMetrics {
                     "transactions_total",
                     "Number of transactions sent by this agent since boot",
                 )
-                .namespace("nomad")
+                .namespace(NAMESPACE)
                 .const_label("VERSION", env!("CARGO_PKG_VERSION")),
                 &["chain", "wallet", "agent"],
             )?),
@@ -53,7 +55,7 @@ impl CoreMetrics {
                     "wallet_balance_total",
                     "Balance of the smart contract wallet",
                 )
-                .namespace("nomad")
+                .namespace(NAMESPACE)
                 .const_label("VERSION", env!("CARGO_PKG_VERSION")),
                 &["chain", "wallet", "agent"],
             )?),
@@ -62,7 +64,7 @@ impl CoreMetrics {
                     "channel_faults",
                     "Number of per home <> replica channel faults (errors)",
                 )
-                .namespace("nomad")
+                .namespace(NAMESPACE)
                 .const_label("VERSION", env!("CARGO_PKG_VERSION")),
                 &["home", "replica", "agent"],
             )?),
@@ -71,7 +73,7 @@ impl CoreMetrics {
                     "rpc_duration_ms",
                     "Duration from dispatch to receipt-of-response for RPC calls",
                 )
-                .namespace("nomad")
+                .namespace(NAMESPACE)
                 .const_label("VERSION", env!("CARGO_PKG_VERSION")),
                 &["chain", "method", "agent"],
             )?),
@@ -80,7 +82,7 @@ impl CoreMetrics {
                     "span_duration_sec",
                     "Duration from span creation to span destruction",
                 )
-                .namespace("nomad")
+                .namespace(NAMESPACE)
                 .const_label("VERSION", env!("CARGO_PKG_VERSION")),
                 &["span_name", "target"],
             )?),
@@ -89,7 +91,7 @@ impl CoreMetrics {
                     "home_failure_checks",
                     "Number of times agent has checked home for failed state",
                 )
-                .namespace("nomad")
+                .namespace(NAMESPACE)
                 .const_label("VERSION", env!("CARGO_PKG_VERSION")),
                 &["home", "agent"]
             )?),
@@ -98,7 +100,7 @@ impl CoreMetrics {
                     "home_failure_observations",
                     "Number of times agent has seen the home failed (anything > 0 is major red flag!)",
                 )
-                .namespace("nomad")
+                .namespace(NAMESPACE)
                 .const_label("VERSION", env!("CARGO_PKG_VERSION")),
                 &["home", "agent"]
             )?),
@@ -132,7 +134,7 @@ impl CoreMetrics {
     ) -> Result<prometheus::IntGaugeVec> {
         let gauge_vec = IntGaugeVec::new(
             Opts::new(metric_name, help)
-                .namespace("nomad")
+                .namespace(NAMESPACE)
                 .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             labels,
         )?;
@@ -150,7 +152,7 @@ impl CoreMetrics {
     ) -> Result<prometheus::IntCounterVec> {
         let counter = IntCounterVec::new(
             Opts::new(metric_name, help)
-                .namespace("nomad")
+                .namespace(NAMESPACE)
                 .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             labels,
         )?;
@@ -170,7 +172,7 @@ impl CoreMetrics {
     ) -> Result<prometheus::HistogramVec> {
         let histogram = HistogramVec::new(
             HistogramOpts::new(metric_name, help)
-                .namespace("nomad")
+                .namespace(NAMESPACE)
                 .buckets(buckets.to_owned())
                 .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             labels,

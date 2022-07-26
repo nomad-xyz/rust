@@ -4,6 +4,8 @@ use prometheus::{Encoder, Histogram, HistogramOpts, HistogramVec, IntCounter, In
 use tokio::task::JoinHandle;
 use warp::Filter;
 
+const NAMESPACE: &str = "nomad_monitor";
+
 use crate::steps::{
     between::BetweenMetrics, dispatch_wait::DispatchWaitMetrics, e2e::E2EMetrics,
     relay_wait::RelayWaitMetrics, update_wait::UpdateWaitMetrics,
@@ -45,7 +47,7 @@ impl Metrics {
                 "e2e_ms",
                 "Ms between dispatch and associated process, as observed by this agent",
             )
-            .namespace("nomad")
+            .namespace(NAMESPACE)
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             &["chain"],
         )?;
@@ -55,7 +57,7 @@ impl Metrics {
                 "update_to_relay_ms",
                 "Ms between update and relay, as observed by this agent",
             )
-            .namespace("nomad")
+            .namespace(NAMESPACE)
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             &["chain", "emitter"],
         )?;
@@ -65,7 +67,7 @@ impl Metrics {
                 "dispatch_to_update_ms",
                 "Ms between dispatch and update, as observed by this agent",
             )
-            .namespace("nomad")
+            .namespace(NAMESPACE)
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             &["chain", "emitter"],
         )?;
@@ -75,7 +77,7 @@ impl Metrics {
                 "dispatch_to_update_blocks",
                 "Blocks between dispatch and update, as observed by this agent",
             )
-            .namespace("nomad")
+            .namespace(NAMESPACE)
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             &["chain", "emitter"],
         )?;
@@ -85,7 +87,7 @@ impl Metrics {
                 "relay_to_process_ms",
                 "Ms between relay and process, as observed by this agent",
             )
-            .namespace("nomad")
+            .namespace(NAMESPACE)
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             &["chain", "replica_of", "emitter"],
         )?;
@@ -95,7 +97,7 @@ impl Metrics {
                 "relay_to_process_blocks",
                 "Blocks between dispatch and update, as observed by this agent",
             )
-            .namespace("nomad")
+            .namespace(NAMESPACE)
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             &["chain", "replica_of", "emitter"],
         )?;
@@ -105,7 +107,7 @@ impl Metrics {
                 "inter_event_period_wallclock_ms",
                 "Ms between events periods, as observed by this agent",
             )
-            .namespace("nomad")
+            .namespace(NAMESPACE)
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             &["chain", "event", "emitter", "replica_of"],
         )?;
@@ -115,7 +117,7 @@ impl Metrics {
                 "inter_event_blocks",
                 "Blocks between events, as marked by the chain (i.e. 0 means same block, 1 means next block, etc)",
             )
-            .namespace("nomad")
+            .namespace(NAMESPACE)
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             &["chain", "event", "emitter", "replica_of"],
         )?;
@@ -125,7 +127,7 @@ impl Metrics {
                 "event_counts",
                 "Counts of each event, labeled by name and chain",
             )
-            .namespace("nomad")
+            .namespace(NAMESPACE)
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             &["chain", "event", "emitter", "replica_of"],
         )?;
