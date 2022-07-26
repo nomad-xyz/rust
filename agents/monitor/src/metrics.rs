@@ -5,17 +5,30 @@ use tokio::task::JoinHandle;
 use warp::Filter;
 
 const NAMESPACE: &str = "nomad_monitor";
-// 1 sec, 5 secs, 30 sec, 1 min, 5 min, 30 min, 1 hour
-const TIME_BUCKETS: &[f64] = &[
-    1_000.0,
-    5_000.0,
-    30_000.0,
-    60_000.0,
-    120_000.0,
-    600_000.0,
-    3_600_000.0,
-    7_200_000.0,
+
+const LOCAL_TIME_BUCKETS: &[f64] = &[
+    1_000.0,     // 1 sec
+    5_000.0,     // 5 secs
+    30_000.0,    // 30 secs
+    60_000.0,    // 1 minu
+    120_000.0,   // 2 min
+    600_000.0,   // 10 min
+    1_800_000.0, // 30 min
+    3_600_000.0, // 1 hour
+    7_200_000.0, // 2 hour
 ];
+// time buckets for e2e metric
+const E2E_TIME_BUCKETS: &[f64] = &[
+    2_100_000.0,  // 35 minutes
+    2_400_000.0,  // 40 minutes
+    2_700_000.0,  // 45 minutes
+    3_000_000.0,  // 50 minutes
+    3_300_000.0,  // 55 minutes
+    3_600_000.0,  // 1 hour
+    7_200_000.0,  // 2 hours
+    10_800_000.0, // 3 hours
+];
+
 const BLOCKS_BUCKETS: &[f64] = &[0.0, 1.0, 5.0, 10.0, 25.0, 50.0, 100.0, 200.0, 500.0, 1000.0];
 
 use crate::steps::{
@@ -60,7 +73,7 @@ impl Metrics {
                 "Ms between dispatch and associated process, as observed by this agent",
             )
             .namespace(NAMESPACE)
-            .buckets(TIME_BUCKETS.to_vec())
+            .buckets(E2E_TIME_BUCKETS.to_vec())
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             &["chain"],
         )?;
@@ -71,7 +84,7 @@ impl Metrics {
                 "Ms between update and relay, as observed by this agent",
             )
             .namespace(NAMESPACE)
-            .buckets(TIME_BUCKETS.to_vec())
+            .buckets(LOCAL_TIME_BUCKETS.to_vec())
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             &["chain", "emitter"],
         )?;
@@ -82,7 +95,7 @@ impl Metrics {
                 "Ms between dispatch and update, as observed by this agent",
             )
             .namespace(NAMESPACE)
-            .buckets(TIME_BUCKETS.to_vec())
+            .buckets(LOCAL_TIME_BUCKETS.to_vec())
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             &["chain", "emitter"],
         )?;
@@ -104,7 +117,7 @@ impl Metrics {
                 "Ms between relay and process, as observed by this agent",
             )
             .namespace(NAMESPACE)
-            .buckets(TIME_BUCKETS.to_vec())
+            .buckets(LOCAL_TIME_BUCKETS.to_vec())
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             &["chain", "replica_of", "emitter"],
         )?;
@@ -126,7 +139,7 @@ impl Metrics {
                 "Ms between events periods, as observed by this agent",
             )
             .namespace(NAMESPACE)
-            .buckets(TIME_BUCKETS.to_vec())
+            .buckets(LOCAL_TIME_BUCKETS.to_vec())
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             &["chain", "event", "emitter", "replica_of"],
         )?;
