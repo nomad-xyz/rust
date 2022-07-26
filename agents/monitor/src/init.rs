@@ -39,12 +39,15 @@ pub(crate) fn config() -> eyre::Result<NomadConfig> {
 }
 
 pub(crate) fn init_tracing() {
-    tracing_subscriber::FmtSubscriber::builder()
-        .pretty()
+    let builder = tracing_subscriber::FmtSubscriber::builder()
         .with_max_level(Level::INFO)
         .with_env_filter(EnvFilter::from_default_env())
-        .with_level(true)
-        .init();
+        .with_level(true);
+    if std::env::var("MONITOR_PRETTY").is_ok() {
+        builder.pretty().init()
+    } else {
+        builder.json().init()
+    }
 }
 
 pub(crate) fn networks_from_env() -> Option<Vec<String>> {
