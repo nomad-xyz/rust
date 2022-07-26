@@ -10,7 +10,7 @@ const TIME_BUCKETS: &[f64] = &[
     1_000.0,     // 1 sec
     5_000.0,     // 5 secs
     30_000.0,    // 30 secs
-    60_000.0,    // 1 minu
+    60_000.0,    // 1 min
     120_000.0,   // 2 min
     600_000.0,   // 10 min
     1_800_000.0, // 30 min
@@ -19,11 +19,11 @@ const TIME_BUCKETS: &[f64] = &[
 ];
 // time buckets for e2e metric
 const E2E_TIME_BUCKETS: &[f64] = &[
-    2_100_000.0,  // 35 minutes
-    2_400_000.0,  // 40 minutes
-    2_700_000.0,  // 45 minutes
-    3_000_000.0,  // 50 minutes
-    3_300_000.0,  // 55 minutes
+    2_100_000.0,  // 35 min
+    2_400_000.0,  // 40 min
+    2_700_000.0,  // 45 min
+    3_000_000.0,  // 50 min
+    3_300_000.0,  // 55 min
     3_600_000.0,  // 1 hour
     7_200_000.0,  // 2 hours
     10_800_000.0, // 3 hours
@@ -227,10 +227,10 @@ impl Metrics {
                         )
                     })
                     .or(warp::any().map(|| {
-                        warp::reply::with_status(
-                            "go look at /metrics",
-                            warp::http::StatusCode::NOT_FOUND,
-                        )
+                        warp::http::Response::builder()
+                            .header("Location", "/metrics")
+                            .status(301)
+                            .body("".to_string())
                     })),
             )
             .run(([0, 0, 0, 0], port))

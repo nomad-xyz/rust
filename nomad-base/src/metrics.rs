@@ -266,10 +266,10 @@ impl CoreMetrics {
                         )
                     })
                     .or(warp::any().map(|| {
-                        warp::reply::with_status(
-                            "go look at /metrics",
-                            warp::http::StatusCode::NOT_FOUND,
-                        )
+                        warp::http::Response::builder()
+                            .header("Location", "/metrics")
+                            .status(301)
+                            .body("".to_string())
                     })),
             )
             .run(([0, 0, 0, 0], port))
