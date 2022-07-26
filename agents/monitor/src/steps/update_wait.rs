@@ -101,7 +101,7 @@ impl UpdateWait {
             .times
             .get(replica_network)
             .expect("missing metric")
-            .observe(v.as_millis() as f64)
+            .observe(v.as_secs_f64())
     }
 }
 

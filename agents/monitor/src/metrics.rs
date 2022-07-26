@@ -7,26 +7,26 @@ use warp::Filter;
 const NAMESPACE: &str = "nomad_monitor";
 
 const TIME_BUCKETS: &[f64] = &[
-    1_000.0,     // 1 sec
-    5_000.0,     // 5 secs
-    30_000.0,    // 30 secs
-    60_000.0,    // 1 min
-    120_000.0,   // 2 min
-    600_000.0,   // 10 min
-    1_800_000.0, // 30 min
-    3_600_000.0, // 1 hour
-    7_200_000.0, // 2 hour
+    1.0,     // 1 sec
+    5.0,     // 5 secs
+    30.0,    // 30 secs
+    60.0,    // 1 min
+    120.0,   // 2 min
+    600.0,   // 10 min
+    1_800.0, // 30 min
+    3_600.0, // 1 hour
+    7_200.0, // 2 hour
 ];
 // time buckets for e2e metric
 const E2E_TIME_BUCKETS: &[f64] = &[
-    2_100_000.0,  // 35 min
-    2_400_000.0,  // 40 min
-    2_700_000.0,  // 45 min
-    3_000_000.0,  // 50 min
-    3_300_000.0,  // 55 min
-    3_600_000.0,  // 1 hour
-    7_200_000.0,  // 2 hours
-    10_800_000.0, // 3 hours
+    2_100.0,  // 35 min
+    2_400.0,  // 40 min
+    2_700.0,  // 45 min
+    3_000.0,  // 50 min
+    3_300.0,  // 55 min
+    3_600.0,  // 1 hour
+    7_200.0,  // 2 hours
+    10_800.0, // 3 hours
 ];
 
 const BLOCKS_BUCKETS: &[f64] = &[0.0, 1.0, 5.0, 10.0, 25.0, 50.0, 100.0, 200.0, 500.0, 1000.0];
@@ -69,8 +69,8 @@ impl Metrics {
     pub(crate) fn new() -> eyre::Result<Self> {
         let e2e_timers = HistogramVec::new(
             HistogramOpts::new(
-                "e2e_ms",
-                "Ms between dispatch and associated process, as observed by this agent",
+                "e2e_sec",
+                "Seconds between dispatch and associated process, as observed by this agent",
             )
             .namespace(NAMESPACE)
             .buckets(E2E_TIME_BUCKETS.to_vec())
@@ -80,8 +80,8 @@ impl Metrics {
 
         let update_to_relay_timers = HistogramVec::new(
             HistogramOpts::new(
-                "update_to_relay_ms",
-                "Ms between update and relay, as observed by this agent",
+                "update_to_relay_secs",
+                "Seconds between update and relay, as observed by this agent",
             )
             .namespace(NAMESPACE)
             .buckets(TIME_BUCKETS.to_vec())
@@ -91,8 +91,8 @@ impl Metrics {
 
         let dispatch_to_update_timers = HistogramVec::new(
             HistogramOpts::new(
-                "dispatch_to_update_ms",
-                "Ms between dispatch and update, as observed by this agent",
+                "dispatch_to_update_secs",
+                "Seconds between dispatch and update, as observed by this agent",
             )
             .namespace(NAMESPACE)
             .buckets(TIME_BUCKETS.to_vec())
@@ -113,8 +113,8 @@ impl Metrics {
 
         let relay_to_process_timers = HistogramVec::new(
             HistogramOpts::new(
-                "relay_to_process_ms",
-                "Ms between relay and process, as observed by this agent",
+                "relay_to_process_secs",
+                "Seconds between relay and process, as observed by this agent",
             )
             .namespace(NAMESPACE)
             .buckets(TIME_BUCKETS.to_vec())
@@ -135,8 +135,8 @@ impl Metrics {
 
         let wallclock_times = HistogramVec::new(
             HistogramOpts::new(
-                "inter_event_period_wallclock_ms",
-                "Ms between events periods, as observed by this agent",
+                "inter_event_period_wallclock_secs",
+                "Seconds between events periods, as observed by this agent",
             )
             .namespace(NAMESPACE)
             .buckets(TIME_BUCKETS.to_vec())

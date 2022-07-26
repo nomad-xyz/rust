@@ -87,7 +87,7 @@ impl ProcessStep for RelayWait {
                             let process_instant = tokio::time::Instant::now();
                             let process_block = process.meta.block_number;
 
-                            let elapsed_ms = process_instant.saturating_duration_since(self.relay_instant).as_millis() as f64;
+                            let elapsed_ms = process_instant.saturating_duration_since(self.relay_instant).as_secs_f64();
                             let elapsed_blocks = process_block.saturating_sub(self.relay_block).as_u64() as f64;
 
                             self.metrics.timers.observe(elapsed_ms);
