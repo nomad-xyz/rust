@@ -67,7 +67,8 @@ impl ProcessStep for DispatchProducer {
         tokio::spawn(
             async move {
                 let provider = self.home.client();
-                let height = provider.get_block_number().await.unwrap();
+                let height_res = provider.get_block_number().await;
+                let height = unwrap_result_recoverable!(height_res, self);
                 let mut to = height - BEHIND_TIP;
                 loop {
                     let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
@@ -273,7 +274,8 @@ impl ProcessStep for RelayProducer {
         tokio::spawn(
             async move {
                 let provider = self.replica.client();
-                let height = provider.get_block_number().await.unwrap();
+                let height_res = provider.get_block_number().await;
+                let height = unwrap_result_recoverable!(height_res, self);
                 let mut to = height - BEHIND_TIP;
                 loop {
                     let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
@@ -376,7 +378,8 @@ impl ProcessStep for ProcessProducer {
         tokio::spawn(
             async move {
                 let provider = self.replica.client();
-                let height = provider.get_block_number().await.unwrap();
+                let height_res = provider.get_block_number().await;
+                let height = unwrap_result_recoverable!(height_res, self);
                 let mut to = height - BEHIND_TIP;
                 loop {
                     let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
