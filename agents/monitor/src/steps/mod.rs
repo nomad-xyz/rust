@@ -9,6 +9,12 @@ pub(crate) mod update_wait;
 
 #[derive(Debug)]
 pub(crate) enum TaskResult<T> {
-    Recoverable { task: T, err: eyre::Report },
-    Unrecoverable(eyre::Report),
+    Recoverable {
+        task: T,
+        err: eyre::Report,
+    },
+    Unrecoverable {
+        err: eyre::Report,
+        worth_logging: bool,
+    },
 }

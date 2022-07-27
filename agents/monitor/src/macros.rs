@@ -23,7 +23,7 @@ macro_rules! unwrap_channel_item {
             tracing::debug!(
                 task = %$self, "inbound channel broke"
             );
-            return $crate::steps::TaskResult::Unrecoverable(eyre::eyre!("inbound channel broke"))
+            return $crate::steps::TaskResult::Unrecoverable{err: eyre::eyre!("inbound channel broke"), worth_logging: false}
         }
         $channel_item.unwrap()
     }};

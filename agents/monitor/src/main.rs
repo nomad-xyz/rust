@@ -106,8 +106,10 @@ pub(crate) trait ProcessStep: std::fmt::Display {
                         task
                     }
 
-                    Ok(TaskResult::Unrecoverable(err)) => {
-                        tracing::error!(err = %err, task = task_description.as_str(), "Unrecoverable error encountered");
+                    Ok(TaskResult::Unrecoverable { err, worth_logging }) => {
+                        if worth_logging {
+                            tracing::error!(err = %err, task = task_description.as_str(), "Unrecoverable error encountered");
+                        }
                         break;
                     }
 
@@ -186,7 +188,10 @@ mod test {
             Self: 'static + Send + Sync + Sized,
         {
             tokio::spawn(async move {
-                TaskResult::Unrecoverable(eyre::eyre!("This error was unrecoverable"))
+                TaskResult::Unrecoverable {
+                    err: eyre::eyre!("This error was unrecoverable"),
+                    worth_logging: true,
+                }
             })
         }
     }
