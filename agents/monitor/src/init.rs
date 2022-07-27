@@ -120,31 +120,43 @@ impl Monitor {
     }
 
     fn run_dispatch_producers(&self) -> HashMap<&str, DispatchFaucet> {
-        self.networks
+        let faucets: HashMap<_, _> = self
+            .networks
             .iter()
             .map(|(network, domain)| (network.as_str(), domain.dispatch_producer()))
-            .collect()
+            .collect();
+        tracing::debug!(count = faucets.len(), "running dispatch_producer");
+        faucets
     }
 
     fn run_update_producers(&self) -> HashMap<&str, UpdateFaucet> {
-        self.networks
+        let faucets: HashMap<_, _> = self
+            .networks
             .iter()
             .map(|(network, domain)| (network.as_str(), domain.update_producer()))
-            .collect()
+            .collect();
+        tracing::debug!(count = faucets.len(), "running update_producer");
+        faucets
     }
 
     fn run_relay_producers(&self) -> HomeReplicaMap<RelayFaucet> {
-        self.networks
+        let faucets: HashMap<_, _> = self
+            .networks
             .iter()
             .map(|(network, domain)| (network.as_str(), domain.relay_producers()))
-            .collect()
+            .collect();
+        tracing::debug!(count = faucets.len(), "running relay_producers");
+        faucets
     }
 
     fn run_process_producers(&self) -> HomeReplicaMap<ProcessFaucet> {
-        self.networks
+        let faucets: HashMap<_, _> = self
+            .networks
             .iter()
             .map(|(network, domain)| (network.as_str(), domain.process_producers()))
-            .collect()
+            .collect();
+        tracing::debug!(count = faucets.len(), "running process_producers");
+        faucets
     }
 
     pub(crate) fn producers(&self) -> Faucets {
