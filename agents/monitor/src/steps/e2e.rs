@@ -11,7 +11,8 @@ use ethers::prelude::H256;
 use tracing::{debug, debug_span, info_span, trace, Instrument};
 
 use crate::{
-    annotate::WithMeta, DispatchFaucet, DispatchSink, ProcessFaucet, ProcessSink, ProcessStep,
+    annotate::WithMeta, send_unrecoverable, unwrap_channel_item_unrecoverable, DispatchFaucet,
+    DispatchSink, ProcessFaucet, ProcessSink, ProcessStep,
 };
 
 use super::combine::CombineChannels;
@@ -159,21 +160,23 @@ impl ProcessStep for E2ELatency {
                 loop {
                     tokio::select! {
                         dispatch_opt = self.dispatch_faucet.recv() => {
-                            let (network, dispatch) = dispatch_opt.expect("inbound dispatch broke");
+                            let (network, dispatch) = unwrap_channel_item_unrecoverable!(dispatch_opt, self);
                             let message_hash: H256 = dispatch.log.message_hash.into();
                             let destination: u32  = (dispatch.log.destination_and_nonce >> 32) as u32;
 
                             let outbound = self.dispatch_sinks.get(&network).expect("missing sink");
-                            outbound.send(dispatch).expect("outbound dispatch broke");
+                            send_unrecoverable!(outbound, dispatch, self);
+
                             self.record_dispatch(network,destination, message_hash);
                         }
                         process_opt = self.process_faucet.recv() => {
-                            let (network, (replica_of, process)) = process_opt.expect("inbound process broke");
+                            let (network, (replica_of, process)) = unwrap_channel_item_unrecoverable!(process_opt, self);
 
                             let message_hash: H256 = process.log.message_hash.into();
 
                             let outbound = self.process_sinks.get(&network).expect("missing network").get(&replica_of).expect("missing sink");
-                            outbound.send(process).expect("outbound dispatch broke");
+
+                            send_unrecoverable!(outbound, process, self);
 
                             self.record_process(network, replica_of, message_hash);
                         }
