@@ -1,7 +1,7 @@
 use tokio::sync::mpsc::UnboundedReceiver;
 use tracing::{debug_span, Instrument};
 
-use crate::{ProcessStep, Restartable};
+use crate::{steps::TaskResult, ProcessStep, Restartable};
 
 #[derive(Debug)]
 #[must_use = "Tasks do nothing unless you call .spawn() or .run_until_panic()"]
@@ -45,7 +45,10 @@ where
                 loop {
                     if self.rx.recv().await.is_none() {
                         tracing::debug!(self = %self, "Upstream broke, shutting down");
-                        panic!();
+                        return TaskResult::Unrecoverable {
+                            err: eyre::eyre!("Upstream broke, shutting down"),
+                            worth_logging: false,
+                        };
                     }
                 }
             }
