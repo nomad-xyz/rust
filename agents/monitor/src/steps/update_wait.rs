@@ -2,13 +2,14 @@ use ethers::prelude::H256;
 use prometheus::Histogram;
 use std::{collections::HashMap, time::Instant};
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
-use tracing::{info_span, Instrument};
+use tracing::{debug, info_span, trace, Instrument};
 
 use nomad_ethereum::bindings::replica::UpdateFilter as RelayFilter;
 
 use crate::{
-    annotate::WithMeta, steps::combine::CombineChannels, ProcessStep, RelayFaucet, RelaySink,
-    UpdateFaucet, UpdateSink,
+    annotate::WithMeta, send_unrecoverable, steps::combine::CombineChannels,
+    unwrap_channel_item_unrecoverable, ProcessStep, RelayFaucet, RelaySink, UpdateFaucet,
+    UpdateSink,
 };
 
 #[derive(Debug)]
@@ -68,7 +69,11 @@ impl std::fmt::Display for UpdateWait {
 impl UpdateWait {
     fn handle_relay(&mut self, replica_network: &str, root: H256) {
         let now = std::time::Instant::now();
-
+        debug!(
+            replica_network = replica_network,
+            root = ?root,
+            "Handling relay"
+        );
         // mem optimization: don't need to store the relay time
         // if we observe immediately
         if let Some(update_time) = self.updates.get(&root) {
@@ -84,6 +89,7 @@ impl UpdateWait {
     fn handle_update(&mut self, root: H256) {
         let now = std::time::Instant::now();
         self.updates.insert(root, now);
+        debug!(root = ?root, "Starting timers for update");
 
         // mem optimization: remove the hashmap as we no longer need to store
         // any future relay times for this root
@@ -96,12 +102,17 @@ impl UpdateWait {
     }
 
     fn record(&self, replica_network: &str, relay: Instant, update: Instant) {
-        let v = relay.saturating_duration_since(update);
+        let v = relay.saturating_duration_since(update).as_secs_f64();
+        trace!(
+            elapsed = v,
+            replica_network = replica_network,
+            "Recording relay duration"
+        );
         self.metrics
             .times
             .get(replica_network)
             .expect("missing metric")
-            .observe(v.as_secs_f64())
+            .observe(v)
     }
 }
 
@@ -124,20 +135,18 @@ impl ProcessStep for UpdateWait {
                         biased;
 
                         update_opt = self.update_faucet.recv() => {
-                            let update = update_opt.expect("inbound update channel broke");
+                            let update = unwrap_channel_item_unrecoverable!(update_opt, self);
                             let root: H256 = update.log.new_root.into();
-                            self.update_sink.send(update).expect("outbound update broke");
+                            send_unrecoverable!(self.update_sink, update, self);
                             self.handle_update(root);
                         }
                         relay_opt = self.relay_faucets.recv() => {
-                            let (replica_network, relay) = relay_opt.expect("Inbound relays broke");
+                            let (replica_network, relay) = unwrap_channel_item_unrecoverable!(relay_opt, self);
                             let root: H256 = relay.log.new_root.into();
 
-                            self.relay_sinks
+                            send_unrecoverable!(self.relay_sinks
                                     .get(&replica_network)
-                                    .expect("missing outgoing")
-                                    .send(relay)
-                                    .unwrap_or_else(|_| panic!("outgoing relay for {} broke", &replica_network));
+                                    .expect("missing outgoing"), relay, self);
 
                             self.handle_relay(&replica_network, root);
                          }

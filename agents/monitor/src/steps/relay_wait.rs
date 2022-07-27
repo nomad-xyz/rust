@@ -4,11 +4,11 @@ use ethers::prelude::U64;
 use prometheus::Histogram;
 use tokio::time::Instant;
 
-use tracing::{info_span, Instrument};
+use tracing::{debug, info_span, Instrument};
 
 use crate::{
     pipe::{ProcessPipe, RelayPipe},
-    ProcessStep,
+    unwrap_pipe_item_unrecoverable, ProcessStep,
 };
 
 #[derive(Debug)]
@@ -83,18 +83,27 @@ impl ProcessStep for RelayWait {
                         biased;
 
                         process_next = self.process_pipe.next() => {
-                            let process = process_next.expect("inbound process pipe failed");
+                            let process = unwrap_pipe_item_unrecoverable!(process_next, self);
                             let process_instant = tokio::time::Instant::now();
                             let process_block = process.meta.block_number;
 
-                            let elapsed_ms = process_instant.saturating_duration_since(self.relay_instant).as_secs_f64();
+                            let elapsed = process_instant.saturating_duration_since(self.relay_instant).as_secs_f64();
                             let elapsed_blocks = process_block.saturating_sub(self.relay_block).as_u64() as f64;
 
-                            self.metrics.timers.observe(elapsed_ms);
+                            debug!(
+                                elapsed_blocks = elapsed_blocks,
+                                elapsed = elapsed,
+                                "Recording time since relay"
+                            );
+                            self.metrics.timers.observe(elapsed);
                             self.metrics.blocks.observe(elapsed_blocks);
                         }
                         relay_next = self.relay_pipe.next() => {
-                            let relay = relay_next.expect("inbound relay pipe failed");
+                            let relay = unwrap_pipe_item_unrecoverable!(relay_next, self);
+                            debug!(
+                                relay_block = %relay.meta.block_number,
+                                "Starting relay timers"
+                            );
                             self.relay_instant = tokio::time::Instant::now();
                             self.relay_block = relay.meta.block_number;
                         }

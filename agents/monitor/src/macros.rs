@@ -15,7 +15,7 @@ macro_rules! bail_task_if {
 #[macro_export]
 macro_rules! unwrap_channel_item_unrecoverable {
     ($channel_item:ident, $self:ident,) => {{
-        unwrap_channel_item!($channel_item, $self)
+        unwrap_channel_item_unrecoverable!($channel_item, $self)
     }};
     ($channel_item:ident, $self:ident) => {{
         if $channel_item.is_none() {
@@ -25,6 +25,22 @@ macro_rules! unwrap_channel_item_unrecoverable {
             return $crate::steps::TaskResult::Unrecoverable{err: eyre::eyre!("inbound channel broke"), worth_logging: false}
         }
         $channel_item.unwrap()
+    }};
+}
+
+#[macro_export]
+macro_rules! unwrap_pipe_item_unrecoverable {
+    ($pipe_item:ident, $self:ident,) => {{
+        unwrap_pipe_item_unrecoverable!($pipe_item, $self)
+    }};
+    ($pipe_item:ident, $self:ident) => {{
+        if $pipe_item.is_ok() {
+            tracing::debug!(
+                task = %$self, "inbound channel broke"
+            );
+            return $crate::steps::TaskResult::Unrecoverable{err: eyre::eyre!("inbound pipe broke"), worth_logging: false}
+        }
+        $pipe_item.unwrap()
     }};
 }
 

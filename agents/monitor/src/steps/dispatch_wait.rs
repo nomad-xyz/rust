@@ -1,7 +1,7 @@
 use ethers::prelude::U64;
 use prometheus::{Histogram, HistogramTimer};
 use tokio::select;
-use tracing::{info_span, Instrument};
+use tracing::{debug, info_span, trace, Instrument};
 
 use crate::{
     pipe::{DispatchPipe, UpdatePipe},
@@ -61,16 +61,23 @@ impl DispatchWait {
     fn handle_dispatch(&mut self, block_number: U64) {
         self.timers.push(self.metrics.timer.start_timer());
         self.blocks.push(block_number);
+        debug!(event = "dispatch", "Starting timer for dispatch event",);
     }
 
     fn handle_update(&mut self, block_number: U64) {
+        if !self.timers.is_empty() {
+            debug!(count = self.timers.len(), "Ending dispatch timers")
+        }
+
         // drain the entire vec
-        self.timers
-            .drain(0..)
-            .for_each(|timer| timer.observe_duration());
+        self.timers.drain(0..).for_each(|timer| {
+            let elapsed = timer.stop_and_record();
+            trace!(elapsed = elapsed, "ending dispatch timer");
+        });
         self.blocks.drain(0..).for_each(|dispatch_height| {
             let diff = block_number.saturating_sub(dispatch_height);
             self.metrics.blocks.observe(diff.as_u64() as f64);
+            trace!(elapsed = %diff, "ending dispatch block count");
         });
     }
 }

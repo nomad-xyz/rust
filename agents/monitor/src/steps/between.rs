@@ -1,4 +1,4 @@
-use tracing::{info_span, Instrument};
+use tracing::{debug, info_span, Instrument};
 
 use crate::{annotate::WithMeta, pipe::Pipe, ProcessStep, Restartable};
 
@@ -82,7 +82,7 @@ where
                     // get the next event from the channel
                     let incoming = self.pipe.next().await.expect("inbound pipe failed");
 
-                    tracing::debug!(
+                    debug!(
                         target: "monitor::between",
                         block_number = %incoming.meta.block_number,
                         event = self.event.as_str(),

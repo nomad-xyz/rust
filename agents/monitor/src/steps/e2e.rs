@@ -8,7 +8,7 @@ use tokio::{
 };
 
 use ethers::prelude::H256;
-use tracing::{info_span, Instrument};
+use tracing::{debug, debug_span, info_span, trace, Instrument};
 
 use crate::{
     annotate::WithMeta, DispatchFaucet, DispatchSink, ProcessFaucet, ProcessSink, ProcessStep,
@@ -73,6 +73,15 @@ impl E2ELatency {
     }
 
     fn record_dispatch(&mut self, network: String, destination: u32, message_hash: H256) {
+        let _span = debug_span!(
+            "record_dispatch",
+            network = network.as_str(),
+            destination,
+            message_hash = ?message_hash,
+            destination_network = self.domain_to_network.get(&destination).unwrap().as_str(),
+        )
+        .entered();
+        debug!("Recording dispatch");
         // ignore unknown destinations
         if let Some(destination) = self.domain_to_network.get(&destination) {
             let now = Instant::now();
@@ -86,12 +95,14 @@ impl E2ELatency {
                 .and_then(|entry| entry.remove(&message_hash))
                 .is_some()
             {
+                trace!(elapsed = 0.0, "dispatch preceded by process");
                 self.metrics
                     .timers
                     .get_mut(&network)
                     .unwrap()
                     .observe(0 as f64);
             } else {
+                trace!("Starting dispatch e2e timer");
                 self.dispatches
                     .entry(network.clone())
                     .or_default()
@@ -103,6 +114,13 @@ impl E2ELatency {
     }
 
     fn record_process(&mut self, network: String, replica_of: String, message_hash: H256) {
+        debug_span!(
+            "record_process",
+            network = network.as_str(),
+            replica_of = replica_of.as_str(),
+            message_hash = ?message_hash
+        );
+        tracing::debug!("Recording process");
         let now = Instant::now();
 
         // if we know of a matching dispatch, mark it and remove from map
@@ -112,6 +130,7 @@ impl E2ELatency {
             .and_then(|inner| inner.get_mut(&network))
             .and_then(|inner| inner.remove(&message_hash))
         {
+            trace!("Matching dispatch found.");
             let time = now.saturating_duration_since(dispatch).as_secs_f64();
             self.metrics
                 .timers
@@ -119,6 +138,7 @@ impl E2ELatency {
                 .unwrap()
                 .observe(time);
         } else {
+            trace!("No matching dispatch found");
             // record it for later
             self.processes
                 .entry(replica_of)
