@@ -6,3 +6,9 @@ pub(crate) mod producer;
 pub(crate) mod relay_wait;
 pub(crate) mod terminal;
 pub(crate) mod update_wait;
+
+#[derive(Debug)]
+pub(crate) enum TaskResult<T> {
+    Recoverable { task: T, err: eyre::Report },
+    Unrecoverable(eyre::Report),
+}

@@ -5,6 +5,7 @@ use nomad_ethereum::bindings::{
     replica::{ProcessFilter, UpdateFilter as RelayFilter},
 };
 use std::{collections::HashMap, panic, sync::Arc};
+use steps::TaskResult;
 use tokio::{
     sync::mpsc::{UnboundedReceiver, UnboundedSender},
     task::JoinHandle,
@@ -27,7 +28,7 @@ pub(crate) type Provider = ethers::prelude::TimeLag<EthersProvider<Http>>;
 pub(crate) type ArcProvider = Arc<Provider>;
 // pub(crate) type ProviderError = ContractError<Provider>;
 
-pub(crate) type Restartable<Task> = JoinHandle<(Task, eyre::Report)>;
+pub(crate) type Restartable<Task> = JoinHandle<TaskResult<Task>>;
 
 pub(crate) type Faucet<T> = UnboundedReceiver<T>;
 pub(crate) type Sink<T> = UnboundedSender<T>;
@@ -73,6 +74,7 @@ async fn main() -> eyre::Result<()> {
         // this would imply there is a series of upstream channel failures
         let (_, _, _) = select_all(tasks).await;
     }
+
     Ok(())
 }
 
@@ -94,18 +96,37 @@ pub(crate) trait ProcessStep: std::fmt::Display {
             loop {
                 let result = handle.await;
 
-                let (again, report) = match result {
-                    Ok((handle, report)) => (handle, report),
+                let again = match result {
+                    Ok(TaskResult::Recoverable { task, err }) => {
+                        tracing::warn!(
+                            error = %err,
+                            task = task_description.as_str(),
+                            "Restarting task",
+                        );
+                        task
+                    }
+
+                    Ok(TaskResult::Unrecoverable(err)) => {
+                        tracing::error!(err = %err, task = task_description.as_str(), "Unrecoverable error encountered");
+                        break;
+                    }
+
                     Err(e) => {
-                        tracing::error!(err = %e, task = task_description.as_str(), "Internal task panicked");
-                        panic!("JoinError in forever. Internal task panicked");
+                        let panic_res = e.try_into_panic();
+
+                        if panic_res.is_err() {
+                            tracing::trace!(
+                                task = task_description.as_str(),
+                                "Internal task cancelled"
+                            );
+                            break;
+                        }
+                        let p = panic_res.unwrap();
+                        tracing::error!("Internal task panicked");
+                        panic::resume_unwind(p);
                     }
                 };
-                tracing::warn!(
-                    error = %report,
-                    task = task_description.as_str(),
-                    "Restarting task",
-                );
+
                 handle = again.spawn();
             }
         })

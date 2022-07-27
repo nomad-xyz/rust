@@ -8,7 +8,7 @@ macro_rules! bail_task_if {
         if $cond {
             let err = eyre::eyre!($err);
             tracing::error!(task = %$self, err = %err, "Task failed");
-            return ($self, err);
+            return $crate::steps::TaskResult::Recoverable{task: $self, err};
         }
     };
 }
@@ -23,7 +23,19 @@ macro_rules! unwrap_channel_item {
             tracing::debug!(
                 task = %$self, "inbound channel broke"
             );
+            return $crate::steps::TaskResult::Unrecoverable(eyre::eyre!("inbound channel broke"))
         }
-        $channel_item.expect("inbound channel broke")
+        $channel_item.unwrap()
+    }};
+}
+
+#[macro_export]
+macro_rules! unwrap_or_bail {
+    ($result:ident, $self:ident,) => {{
+        unwrap_err_or_bail!($result, $self)
+    }};
+    ($result:ident, $self:ident) => {{
+        bail_task_if!($result.is_err(), $self, $result.unwrap_err());
+        $result.unwrap()
     }};
 }

@@ -6,7 +6,9 @@ use nomad_ethereum::bindings::{
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{info_span, trace, Instrument};
 
-use crate::{annotate::WithMeta, bail_task_if, DispatchSink, ProcessStep, Restartable};
+use crate::{
+    annotate::WithMeta, bail_task_if, unwrap_or_bail, DispatchSink, ProcessStep, Restartable,
+};
 
 pub const POLLING_INTERVAL_SECS: u64 = 5;
 pub const BEHIND_TIP: u64 = 5;
@@ -95,9 +97,8 @@ impl ProcessStep for DispatchProducer {
                         }
                     }
                     let tip_res = provider.get_block_number().await;
-                    bail_task_if!(tip_res.is_err(), self, tip_res.unwrap_err());
+                    let tip = unwrap_or_bail!(tip_res, self) - BEHIND_TIP;
 
-                    let tip = tip_res.unwrap() - BEHIND_TIP;
                     self.from = Some(to);
                     to = std::cmp::max(to, tip);
 
@@ -196,9 +197,8 @@ impl ProcessStep for UpdateProducer {
                         }
                     }
                     let tip_res = provider.get_block_number().await;
-                    bail_task_if!(tip_res.is_err(), self, tip_res.unwrap_err());
+                    let tip = unwrap_or_bail!(tip_res, self) - BEHIND_TIP;
 
-                    let tip = tip_res.expect("checked") - BEHIND_TIP;
                     self.from = Some(to);
                     to = std::cmp::max(to, tip);
 
@@ -299,8 +299,8 @@ impl ProcessStep for RelayProducer {
                         }
                     }
                     let tip_res = provider.get_block_number().await;
-                    bail_task_if!(tip_res.is_err(), self, tip_res.unwrap_err());
-                    let tip = tip_res.unwrap() - BEHIND_TIP;
+                    let tip = unwrap_or_bail!(tip_res, self) - BEHIND_TIP;
+
                     self.from = Some(to);
                     to = std::cmp::max(to, tip);
 
@@ -401,9 +401,8 @@ impl ProcessStep for ProcessProducer {
                         }
                     }
                     let tip_res = provider.get_block_number().await;
-                    bail_task_if!(tip_res.is_err(), self, tip_res.unwrap_err());
 
-                    let tip = tip_res.unwrap() - BEHIND_TIP;
+                    let tip = unwrap_or_bail!(tip_res, self) - BEHIND_TIP;
                     self.from = Some(to);
                     to = std::cmp::max(to, tip);
 
