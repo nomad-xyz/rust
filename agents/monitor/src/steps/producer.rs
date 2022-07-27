@@ -102,7 +102,7 @@ impl ProcessStep for DispatchProducer {
                     let tip_res = provider.get_block_number().await;
                     let tip = unwrap_result_recoverable!(tip_res, self) - BEHIND_TIP;
 
-                    self.from = Some(to);
+                    self.from = Some(to + 1);
                     to = std::cmp::max(to, tip);
 
                     noisy_sleep(POLLING_INTERVAL_MILLIS).await;
@@ -204,7 +204,7 @@ impl ProcessStep for UpdateProducer {
                     let tip_res = provider.get_block_number().await;
                     let tip = unwrap_result_recoverable!(tip_res, self) - BEHIND_TIP;
 
-                    self.from = Some(to);
+                    self.from = Some(to + 1);
                     to = std::cmp::max(to, tip);
 
                     noisy_sleep(POLLING_INTERVAL_MILLIS).await;
@@ -307,7 +307,7 @@ impl ProcessStep for RelayProducer {
                     let tip_res = provider.get_block_number().await;
                     let tip = unwrap_result_recoverable!(tip_res, self) - BEHIND_TIP;
 
-                    self.from = Some(to);
+                    self.from = Some(to + 1);
                     to = std::cmp::max(to, tip);
 
                     noisy_sleep(POLLING_INTERVAL_MILLIS).await;
@@ -411,7 +411,7 @@ impl ProcessStep for ProcessProducer {
                     let tip_res = provider.get_block_number().await;
 
                     let tip = unwrap_result_recoverable!(tip_res, self) - BEHIND_TIP;
-                    self.from = Some(to);
+                    self.from = Some(to + 1);
                     to = std::cmp::max(to, tip);
 
                     noisy_sleep(POLLING_INTERVAL_MILLIS).await;
