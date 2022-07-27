@@ -109,6 +109,8 @@ pub(crate) trait ProcessStep: std::fmt::Display {
                     Ok(TaskResult::Unrecoverable { err, worth_logging }) => {
                         if worth_logging {
                             tracing::error!(err = %err, task = task_description.as_str(), "Unrecoverable error encountered");
+                        } else {
+                            tracing::trace!(err = %err, task = task_description.as_str(), "Unrecoverable error encountered");
                         }
                         break;
                     }

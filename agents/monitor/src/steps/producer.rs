@@ -7,7 +7,8 @@ use tokio::sync::mpsc::UnboundedSender;
 use tracing::{info_span, trace, Instrument};
 
 use crate::{
-    annotate::WithMeta, bail_task_if, unwrap_or_bail, DispatchSink, ProcessStep, Restartable,
+    annotate::WithMeta, bail_task_if, send_unrecoverable, unwrap_result_recoverable, DispatchSink,
+    ProcessStep, Restartable,
 };
 
 pub const POLLING_INTERVAL_SECS: u64 = 5;
@@ -69,8 +70,9 @@ impl ProcessStep for DispatchProducer {
                 let height = provider.get_block_number().await.unwrap();
                 let mut to = height - BEHIND_TIP;
                 loop {
-                    let from = self.from.unwrap_or(height - (2 * BEHIND_TIP));
+                    let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                     if from < to {
+                        trace!(from = %from, to = %to, "querying dispatch events");
                         let res = self
                             .home
                             .dispatch_filter()
@@ -88,16 +90,16 @@ impl ProcessStep for DispatchProducer {
                                 count = events.len(),
                                 from = %from,
                                 to = %to,
-                                "Received events"
+                                "Received dispatch events"
                             );
                         }
 
                         for event in events.into_iter() {
-                            self.tx.send(event.into()).expect("outbound channel broke");
+                            send_unrecoverable!(self.tx, event.into(), self);
                         }
                     }
                     let tip_res = provider.get_block_number().await;
-                    let tip = unwrap_or_bail!(tip_res, self) - BEHIND_TIP;
+                    let tip = unwrap_result_recoverable!(tip_res, self) - BEHIND_TIP;
 
                     self.from = Some(to);
                     to = std::cmp::max(to, tip);
@@ -171,6 +173,7 @@ impl ProcessStep for UpdateProducer {
                 loop {
                     let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                     if from < to {
+                        trace!(from = %from, to = %to, "querying update events");
                         let res = self
                             .home
                             .update_filter()
@@ -188,16 +191,16 @@ impl ProcessStep for UpdateProducer {
                                 count = events.len(),
                                 from = %from,
                                 to = %to,
-                                "Received events"
+                                "Received update events"
                             );
                         }
 
                         for event in events.into_iter() {
-                            self.tx.send(event.into()).expect("outbound channel broke");
+                            send_unrecoverable!(self.tx, event.into(), self);
                         }
                     }
                     let tip_res = provider.get_block_number().await;
-                    let tip = unwrap_or_bail!(tip_res, self) - BEHIND_TIP;
+                    let tip = unwrap_result_recoverable!(tip_res, self) - BEHIND_TIP;
 
                     self.from = Some(to);
                     to = std::cmp::max(to, tip);
@@ -273,6 +276,7 @@ impl ProcessStep for RelayProducer {
                 loop {
                     let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                     if from < to {
+                        trace!(from = %from, to = %to, "querying relay events");
                         let res = self
                             .replica
                             .update_filter()
@@ -288,18 +292,18 @@ impl ProcessStep for RelayProducer {
                         if !events.is_empty() {
                             trace!(
                                 count = events.len(),
-                                from = %from,
+                                from=%from,
                                 to = %to,
-                                "Received events"
+                                "Received relay events"
                             );
                         }
 
                         for event in events.into_iter() {
-                            self.tx.send(event.into()).expect("outbound channel broke");
+                            send_unrecoverable!(self.tx, event.into(), self);
                         }
                     }
                     let tip_res = provider.get_block_number().await;
-                    let tip = unwrap_or_bail!(tip_res, self) - BEHIND_TIP;
+                    let tip = unwrap_result_recoverable!(tip_res, self) - BEHIND_TIP;
 
                     self.from = Some(to);
                     to = std::cmp::max(to, tip);
@@ -375,6 +379,7 @@ impl ProcessStep for ProcessProducer {
                 loop {
                     let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                     if from < to {
+                        trace!(from = %from, to = %to, "querying process events");
                         let res = self
                             .replica
                             .process_filter()
@@ -392,17 +397,17 @@ impl ProcessStep for ProcessProducer {
                                 count = events.len(),
                                 from = %from,
                                 to = %to,
-                                "Received events"
+                                "Received process events"
                             );
                         }
 
                         for event in events.into_iter() {
-                            self.tx.send(event.into()).expect("outbound channel broke");
+                            send_unrecoverable!(self.tx, event.into(), self);
                         }
                     }
                     let tip_res = provider.get_block_number().await;
 
-                    let tip = unwrap_or_bail!(tip_res, self) - BEHIND_TIP;
+                    let tip = unwrap_result_recoverable!(tip_res, self) - BEHIND_TIP;
                     self.from = Some(to);
                     to = std::cmp::max(to, tip);
 

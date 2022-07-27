@@ -3,7 +3,7 @@ use std::{collections::HashMap, fmt::Display};
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 use tracing::{info_span, Instrument};
 
-use crate::{unwrap_channel_item, utils::nexts, ProcessStep, Restartable};
+use crate::{unwrap_channel_item_unrecoverable, utils::nexts, ProcessStep, Restartable};
 
 #[derive(Debug)]
 #[must_use = "Tasks do nothing unless you call .spawn() or .run_until_panic()"]
@@ -59,7 +59,7 @@ where
             async move {
                 loop {
                     let ((net, next_opt), _, _) = select_all(nexts(&mut self.faucets)).await;
-                    let next = unwrap_channel_item!(next_opt, self);
+                    let next = unwrap_channel_item_unrecoverable!(next_opt, self);
 
                     self.sink
                         .send((net, next))

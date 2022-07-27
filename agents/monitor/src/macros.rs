@@ -14,7 +14,7 @@ macro_rules! bail_task_if {
 }
 
 #[macro_export]
-macro_rules! unwrap_channel_item {
+macro_rules! unwrap_channel_item_unrecoverable {
     ($channel_item:ident, $self:ident,) => {{
         unwrap_channel_item!($channel_item, $self)
     }};
@@ -30,7 +30,7 @@ macro_rules! unwrap_channel_item {
 }
 
 #[macro_export]
-macro_rules! unwrap_or_bail {
+macro_rules! unwrap_result_recoverable {
     ($result:ident, $self:ident,) => {{
         unwrap_err_or_bail!($result, $self)
     }};
@@ -38,4 +38,16 @@ macro_rules! unwrap_or_bail {
         bail_task_if!($result.is_err(), $self, $result.unwrap_err());
         $result.unwrap()
     }};
+}
+
+#[macro_export]
+macro_rules! send_unrecoverable {
+    ($tx:expr, $item:expr, $self:ident) => {
+        if $tx.send($item).is_err() {
+            return $crate::steps::TaskResult::Unrecoverable {
+                err: eyre::eyre!("outbound channel broke"),
+                worth_logging: false,
+            };
+        }
+    };
 }
