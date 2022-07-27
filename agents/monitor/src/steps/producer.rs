@@ -7,11 +7,11 @@ use tokio::sync::mpsc::UnboundedSender;
 use tracing::{info_span, trace, Instrument};
 
 use crate::{
-    annotate::WithMeta, bail_task_if, send_unrecoverable, unwrap_result_recoverable, DispatchSink,
-    ProcessStep, Restartable,
+    annotate::WithMeta, bail_task_if, send_unrecoverable, steps::noisy_sleep,
+    unwrap_result_recoverable, DispatchSink, ProcessStep, Restartable,
 };
 
-pub const POLLING_INTERVAL_SECS: u64 = 5;
+pub const POLLING_INTERVAL_MILLIS: u64 = 5000;
 pub const BEHIND_TIP: u64 = 5;
 
 #[derive(Debug)]
@@ -72,7 +72,7 @@ impl ProcessStep for DispatchProducer {
                 loop {
                     let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                     if from < to {
-                        trace!(from = %from, to = %to, "querying dispatch events");
+                        trace!(from = %from, to = %to, progress = %(to - from), "querying dispatch events");
                         let res = self
                             .home
                             .dispatch_filter()
@@ -90,6 +90,7 @@ impl ProcessStep for DispatchProducer {
                                 count = events.len(),
                                 from = %from,
                                 to = %to,
+                                progress = %(to - from),
                                 "Received dispatch events"
                             );
                         }
@@ -104,7 +105,7 @@ impl ProcessStep for DispatchProducer {
                     self.from = Some(to);
                     to = std::cmp::max(to, tip);
 
-                    tokio::time::sleep(std::time::Duration::from_secs(POLLING_INTERVAL_SECS)).await;
+                    noisy_sleep(POLLING_INTERVAL_MILLIS).await;
                 }
             }
             .instrument(span),
@@ -173,7 +174,7 @@ impl ProcessStep for UpdateProducer {
                 loop {
                     let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                     if from < to {
-                        trace!(from = %from, to = %to, "querying update events");
+                        trace!(from = %from, to = %to, progress = %(to - from), "querying update events");
                         let res = self
                             .home
                             .update_filter()
@@ -191,6 +192,7 @@ impl ProcessStep for UpdateProducer {
                                 count = events.len(),
                                 from = %from,
                                 to = %to,
+                                progress = %(to - from),
                                 "Received update events"
                             );
                         }
@@ -205,7 +207,7 @@ impl ProcessStep for UpdateProducer {
                     self.from = Some(to);
                     to = std::cmp::max(to, tip);
 
-                    tokio::time::sleep(std::time::Duration::from_secs(POLLING_INTERVAL_SECS)).await;
+                    noisy_sleep(POLLING_INTERVAL_MILLIS).await;
                 }
             }
             .instrument(span),
@@ -276,7 +278,7 @@ impl ProcessStep for RelayProducer {
                 loop {
                     let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                     if from < to {
-                        trace!(from = %from, to = %to, "querying relay events");
+                        trace!(from = %from, to = %to, progress = %(to - from), "querying relay events");
                         let res = self
                             .replica
                             .update_filter()
@@ -308,7 +310,7 @@ impl ProcessStep for RelayProducer {
                     self.from = Some(to);
                     to = std::cmp::max(to, tip);
 
-                    tokio::time::sleep(std::time::Duration::from_secs(POLLING_INTERVAL_SECS)).await;
+                    noisy_sleep(POLLING_INTERVAL_MILLIS).await;
                 }
             }
             .instrument(span),
@@ -379,7 +381,7 @@ impl ProcessStep for ProcessProducer {
                 loop {
                     let from = self.from.unwrap_or(height - (BEHIND_TIP * 2));
                     if from < to {
-                        trace!(from = %from, to = %to, "querying process events");
+                        trace!(from = %from, to = %to, progress = %(to - from), "querying process events");
                         let res = self
                             .replica
                             .process_filter()
@@ -397,6 +399,7 @@ impl ProcessStep for ProcessProducer {
                                 count = events.len(),
                                 from = %from,
                                 to = %to,
+                                progress = %(to - from),
                                 "Received process events"
                             );
                         }
@@ -411,7 +414,7 @@ impl ProcessStep for ProcessProducer {
                     self.from = Some(to);
                     to = std::cmp::max(to, tip);
 
-                    tokio::time::sleep(std::time::Duration::from_secs(POLLING_INTERVAL_SECS)).await;
+                    noisy_sleep(POLLING_INTERVAL_MILLIS).await;
                 }
             }
             .instrument(span),
