@@ -34,9 +34,9 @@ macro_rules! unwrap_pipe_item_unrecoverable {
         unwrap_pipe_item_unrecoverable!($pipe_item, $self)
     }};
     ($pipe_item:ident, $self:ident) => {{
-        if $pipe_item.is_ok() {
+        if $pipe_item.is_err() {
             tracing::debug!(
-                task = %$self, "inbound channel broke"
+                task = %$self, "inbound pipe broke"
             );
             return $crate::steps::TaskResult::Unrecoverable{err: eyre::eyre!("inbound pipe broke"), worth_logging: false}
         }

@@ -14,6 +14,7 @@ use crate::{
 
 #[derive(Debug)]
 pub(crate) struct UpdateWaitMetrics {
+    // maps replica network to timing histogram
     pub(crate) times: HashMap<String, Histogram>,
 }
 
@@ -36,6 +37,7 @@ pub(crate) struct UpdateWait {
 impl UpdateWait {
     pub(crate) fn new(
         update_pipe: UpdatePipe,
+
         network: impl AsRef<str>,
         metrics: UpdateWaitMetrics,
 
@@ -60,7 +62,7 @@ impl UpdateWait {
 
 impl std::fmt::Display for UpdateWait {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "UpdateToRelay - {}", self.network)
+        write!(f, "UpdateToRelay - updates from {}", self.network)
     }
 }
 
@@ -75,7 +77,7 @@ impl UpdateWait {
         // mem optimization: don't need to store the relay time
         // if we observe immediately
         if let Some(update_time) = self.updates.get(&root) {
-            self.record(replica_network, now, *update_time)
+            self.record(replica_network, now, *update_time);
         } else {
             trace!("Starting timer for relay");
             self.relays
@@ -120,9 +122,10 @@ impl ProcessStep for UpdateWait {
     where
         Self: 'static + Send + Sync + Sized,
     {
-        let span = info_span!("UpdateWait");
+        let span = info_span!("UpdateWait", home_network = self.network.as_str());
         tokio::spawn(
             async move {
+                trace!("Top of update_wait spawn loop");
                 loop {
                     tokio::select! {
                         // how this works:
@@ -134,11 +137,13 @@ impl ProcessStep for UpdateWait {
                         biased;
 
                         update_opt = self.update_pipe.next() => {
+                            trace!("updatewait got update");
                             let update = unwrap_pipe_item_unrecoverable!(update_opt, self);
                             let root: H256 = update.log.new_root.into();
                             self.handle_update(root);
                         }
                         relay_opt = self.relay_faucets.recv() => {
+                            trace!("updatewait got relay");
                             let (replica_network, relay) = unwrap_channel_item_unrecoverable!(relay_opt, self);
                             let root: H256 = relay.log.new_root.into();
 
