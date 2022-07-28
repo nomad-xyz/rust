@@ -2,6 +2,7 @@
 
 ### Unreleased
 
+- emit event for source of config loaded at bootup
 - implement `std::fmt::Display` for `Home` and `Replica` enums
 - add home and remote labels to contract sync metrics for event differentiation
 - add `CONFIG_URL` check to `decl_settings` to optionally fetch config from a remote url
