@@ -190,6 +190,9 @@ impl Metrics {
         registry
             .register(Box::new(relay_to_process_blocks.clone()))
             .expect("unable to register metric");
+        registry
+            .register(Box::new(e2e_timers.clone()))
+            .expect("unable to register metric");
 
         Ok(Self {
             wallclock_times,
