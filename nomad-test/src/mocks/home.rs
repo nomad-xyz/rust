@@ -72,6 +72,12 @@ impl std::fmt::Debug for MockHomeContract {
     }
 }
 
+impl std::fmt::Display for MockHomeContract {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "MockHome")
+    }
+}
+
 #[async_trait]
 impl Home for MockHomeContract {
     fn local_domain(&self) -> u32 {

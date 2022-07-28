@@ -23,7 +23,7 @@ pub struct CachingHome {
 
 impl std::fmt::Display for CachingHome {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "CachingHome {}", self.home)
     }
 }
 
@@ -199,6 +199,12 @@ impl CommonEvents for CachingHome {
 /// Arc wrapper for HomeVariants enum
 pub struct Homes(Arc<HomeVariants>);
 
+impl std::fmt::Display for Homes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 impl From<HomeVariants> for Homes {
     fn from(homes: HomeVariants) -> Self {
         Self(Arc::new(homes))
@@ -228,6 +234,23 @@ pub enum HomeVariants {
     Mock(Box<MockHomeContract>),
     /// Other home variant
     Other(Box<dyn Home>),
+}
+
+impl std::fmt::Display for HomeVariants {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            HomeVariants::Ethereum(inner) => {
+                write!(
+                    f,
+                    "{{ Home for {} {} }}",
+                    inner.local_domain(),
+                    inner.name()
+                )
+            }
+            HomeVariants::Mock(_inner) => write!(f, "MockHome"),
+            HomeVariants::Other(_inner) => write!(f, "OtherHome"),
+        }
+    }
 }
 
 impl HomeVariants {

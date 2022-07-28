@@ -53,6 +53,12 @@ impl std::fmt::Debug for MockReplicaContract {
     }
 }
 
+impl std::fmt::Display for MockReplicaContract {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "MockReplica")
+    }
+}
+
 #[async_trait]
 impl Replica for MockReplicaContract {
     fn local_domain(&self) -> u32 {
