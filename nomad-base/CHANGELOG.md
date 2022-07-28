@@ -2,6 +2,7 @@
 
 ### Unreleased
 
+- implement display for home and replica enums
 - add home and remote labels to contract sync metrics for event differentiation
 - add `CONFIG_URL` check to `decl_settings` to optionally fetch config from a remote url
 - prometheus metrics accepts port by env var
