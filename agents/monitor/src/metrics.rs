@@ -1,6 +1,8 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
-use prometheus::{Encoder, Histogram, HistogramOpts, HistogramVec, IntCounter, IntCounterVec};
+use prometheus::{
+    Encoder, Histogram, HistogramOpts, HistogramVec, IntCounter, IntCounterVec, IntGaugeVec,
+};
 use tokio::task::JoinHandle;
 use warp::Filter;
 
@@ -51,6 +53,7 @@ pub(crate) struct Metrics {
     relay_to_process_blocks: prometheus::HistogramVec,
 
     e2e_timers: prometheus::HistogramVec,
+    unprocessed_dispatches: prometheus::IntGaugeVec,
 }
 
 fn u16_from_env(s: impl AsRef<str>) -> Option<u16> {
@@ -67,6 +70,16 @@ fn gather() -> prometheus::Result<Vec<u8>> {
 
 impl Metrics {
     pub(crate) fn new() -> eyre::Result<Self> {
+        let unprocessed_dispatches = IntGaugeVec::new(
+            prometheus::core::Opts::new(
+                "unprocessed_messages",
+                "Dispatch events for which no corresponding process has been observed",
+            )
+            .namespace(NAMESPACE)
+            .const_label("VERSION", env!("CARGO_PKG_VERSION")),
+            &["home_network"],
+        )?;
+
         let e2e_timers = HistogramVec::new(
             HistogramOpts::new(
                 "e2e_sec",
@@ -193,6 +206,9 @@ impl Metrics {
         registry
             .register(Box::new(e2e_timers.clone()))
             .expect("unable to register metric");
+        registry
+            .register(Box::new(unprocessed_dispatches.clone()))
+            .expect("unable to register metric");
 
         Ok(Self {
             wallclock_times,
@@ -204,6 +220,7 @@ impl Metrics {
             relay_to_process_timers,
             relay_to_process_blocks,
             e2e_timers,
+            unprocessed_dispatches,
         })
     }
 
@@ -345,15 +362,20 @@ impl Metrics {
     }
 
     pub(crate) fn e2e_metrics<'a>(&self, networks: impl Iterator<Item = &'a str>) -> E2EMetrics {
-        let timers = networks
-            .map(|network| {
-                (
-                    network.to_owned(),
-                    self.e2e_timers.with_label_values(&[network]),
-                )
-            })
-            .collect();
+        let mut gauges = HashMap::new();
+        let mut timers = HashMap::new();
 
-        E2EMetrics { timers }
+        for network in networks {
+            timers.insert(
+                network.to_owned(),
+                self.e2e_timers.with_label_values(&[network]),
+            );
+            gauges.insert(
+                network.to_owned(),
+                self.unprocessed_dispatches.with_label_values(&[network]),
+            );
+        }
+
+        E2EMetrics { timers, gauges }
     }
 }

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use nomad_ethereum::bindings::{home::DispatchFilter, replica::ProcessFilter};
-use prometheus::Histogram;
+use prometheus::{Histogram, IntGauge};
 use tokio::{
     sync::mpsc::{unbounded_channel, UnboundedReceiver},
     time::Instant,
@@ -20,6 +20,8 @@ use super::combine::CombineChannels;
 pub(crate) struct E2EMetrics {
     // home to times
     pub(crate) timers: HashMap<String, Histogram>,
+    // home to gauges
+    pub(crate) gauges: HashMap<String, IntGauge>,
 }
 
 #[must_use = "Tasks do nothing unless you call .spawn() or .run_until_panic()"]
@@ -108,13 +110,22 @@ impl E2ELatency {
                     .unwrap()
                     .observe(0 as f64);
             } else {
-                trace!("Starting dispatch e2e timer");
                 self.dispatches
                     .entry(network.clone())
                     .or_default()
                     .entry(destination.to_owned())
                     .or_default()
                     .insert(message_hash, now);
+                let gauge = self
+                    .metrics
+                    .gauges
+                    .get_mut(&network)
+                    .expect("missing gauge");
+                gauge.inc();
+                trace!(
+                    unprocessed_dispatches = gauge.get(),
+                    "Started dispatch e2e timer"
+                );
             }
         }
     }
@@ -135,13 +146,18 @@ impl E2ELatency {
             .and_then(|inner| inner.get_mut(&network))
             .and_then(|inner| inner.remove(&message_hash))
         {
-            debug!("Recording process w/ matching dispatch");
             let time = now.saturating_duration_since(dispatch).as_secs_f64();
             self.metrics
                 .timers
                 .get_mut(&replica_of)
                 .unwrap()
                 .observe(time);
+            let gauge = self.metrics.gauges.get(&replica_of).expect("missing guage");
+            gauge.dec();
+            debug!(
+                unprocessed_dispatches = gauge.get(),
+                "Recorded process w/ matching dispatch"
+            );
         } else {
             debug!("Recording process w/o matching dispatch");
             // record it for later
