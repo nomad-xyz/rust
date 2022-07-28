@@ -273,19 +273,16 @@ impl Domain {
                 relay_faucets.insert(k.to_string(), faucet);
             });
 
-        let (update_sink, update_faucet) = unbounded_channel();
-
-        let update_faucet = faucets.swap_update(self.name(), update_faucet);
+        let update_pipe = faucets.update_pipe(self.name());
 
         let metrics = metrics.update_wait_metrics(self.name(), &other_nets, &self.home_address());
 
         UpdateWait::new(
-            update_faucet,
-            relay_faucets,
+            update_pipe,
             self.name(),
             metrics,
-            update_sink,
             relay_sinks,
+            relay_faucets,
         )
         .run_until_panic();
     }

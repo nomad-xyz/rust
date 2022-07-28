@@ -7,9 +7,9 @@ use tracing::{debug, info_span, trace, Instrument};
 use nomad_ethereum::bindings::replica::UpdateFilter as RelayFilter;
 
 use crate::{
-    annotate::WithMeta, send_unrecoverable, steps::combine::CombineChannels,
-    unwrap_channel_item_unrecoverable, ProcessStep, RelayFaucet, RelaySink, UpdateFaucet,
-    UpdateSink,
+    annotate::WithMeta, pipe::UpdatePipe, send_unrecoverable, steps::combine::CombineChannels,
+    unwrap_channel_item_unrecoverable, unwrap_pipe_item_unrecoverable, ProcessStep, RelayFaucet,
+    RelaySink,
 };
 
 #[derive(Debug)]
@@ -20,8 +20,7 @@ pub(crate) struct UpdateWaitMetrics {
 #[derive(Debug)]
 #[must_use = "Tasks do nothing unless you call .spawn() or .run_until_panic()"]
 pub(crate) struct UpdateWait {
-    update_faucet: UpdateFaucet,
-    relay_faucets: UnboundedReceiver<(String, WithMeta<RelayFilter>)>,
+    update_pipe: UpdatePipe,
 
     network: String,
     metrics: UpdateWaitMetrics,
@@ -30,31 +29,30 @@ pub(crate) struct UpdateWait {
     // maps root -> replica -> timer
     relays: HashMap<H256, HashMap<String, Instant>>,
 
-    update_sink: UpdateSink,
+    relay_faucets: UnboundedReceiver<(String, WithMeta<RelayFilter>)>,
     relay_sinks: HashMap<String, RelaySink>,
 }
 
 impl UpdateWait {
     pub(crate) fn new(
-        update_faucet: UpdateFaucet,
-        relay_faucets: HashMap<String, RelayFaucet>,
+        update_pipe: UpdatePipe,
         network: impl AsRef<str>,
         metrics: UpdateWaitMetrics,
-        update_sink: UpdateSink,
+
         relay_sinks: HashMap<String, RelaySink>,
+        relay_faucets: HashMap<String, RelayFaucet>,
     ) -> Self {
         let (tx, rx) = unbounded_channel();
 
         CombineChannels::new(relay_faucets, tx).run_until_panic();
 
         Self {
-            update_faucet,
-            relay_faucets: rx,
+            update_pipe,
             network: network.as_ref().to_owned(),
             metrics,
             updates: Default::default(),
             relays: Default::default(),
-            update_sink,
+            relay_faucets: rx,
             relay_sinks,
         }
     }
@@ -79,6 +77,7 @@ impl UpdateWait {
         if let Some(update_time) = self.updates.get(&root) {
             self.record(replica_network, now, *update_time)
         } else {
+            trace!("Starting timer for relay");
             self.relays
                 .entry(root)
                 .or_default()
@@ -134,10 +133,9 @@ impl ProcessStep for UpdateWait {
 
                         biased;
 
-                        update_opt = self.update_faucet.recv() => {
-                            let update = unwrap_channel_item_unrecoverable!(update_opt, self);
+                        update_opt = self.update_pipe.next() => {
+                            let update = unwrap_pipe_item_unrecoverable!(update_opt, self);
                             let root: H256 = update.log.new_root.into();
-                            send_unrecoverable!(self.update_sink, update, self);
                             self.handle_update(root);
                         }
                         relay_opt = self.relay_faucets.recv() => {

@@ -38,7 +38,7 @@ pub(crate) type UpdateFaucet = Faucet<WithMeta<UpdateFilter>>;
 pub(crate) type RelayFaucet = Faucet<WithMeta<RelayFilter>>;
 pub(crate) type ProcessFaucet = Faucet<WithMeta<ProcessFilter>>;
 pub(crate) type DispatchSink = Sink<WithMeta<DispatchFilter>>;
-pub(crate) type UpdateSink = Sink<WithMeta<UpdateFilter>>;
+// pub(crate) type UpdateSink = Sink<WithMeta<UpdateFilter>>;
 pub(crate) type RelaySink = Sink<WithMeta<RelayFilter>>;
 pub(crate) type ProcessSink = Sink<WithMeta<ProcessFilter>>;
 
