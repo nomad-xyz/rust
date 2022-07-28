@@ -5,7 +5,7 @@ use tracing::{debug, info_span, trace, Instrument};
 
 use crate::{
     pipe::{DispatchPipe, UpdatePipe},
-    ProcessStep, Restartable,
+    unwrap_pipe_item_unrecoverable, ProcessStep, Restartable,
 };
 
 #[derive(Debug)]
@@ -98,6 +98,10 @@ impl ProcessStep for DispatchWait {
         tokio::spawn(
             async move {
                 loop {
+                    trace!(
+                        dispatches_tracked = self.timers.len(),
+                        "top of DispatchWait::spawn() loop"
+                    );
                     // how this works:
                     // For each dispatch, we mark its block height and start a
                     // timer.
@@ -114,13 +118,25 @@ impl ProcessStep for DispatchWait {
                         biased;
 
                         dispatch_next = self.dispatch_pipe.next() => {
-                            let dispatch = dispatch_next.expect("inbound dispatch pipe failed");
+                            trace!("got dispatch pipe item");
+                            let dispatch = unwrap_pipe_item_unrecoverable!(dispatch_next, self);
                             let block_number = dispatch.meta.block_number;
+                            trace!(
+                                block_number = %block_number,
+                                message_hash = ?dispatch.log.message_hash,
+                                "dispatch channel item unwrapped"
+                            );
                             self.handle_dispatch(block_number);
                         }
                         update_next = self.update_pipe.next() => {
-                            let update = update_next.expect("inbound update pipe failed");
+                            trace!("got update pipe item");
+                            let update = unwrap_pipe_item_unrecoverable!(update_next, self);
                             let block_number = update.meta.block_number;
+                            trace!(
+                                block_number = %block_number,
+                                new_root = ?update.log.new_root,
+                                "update channel item unwrapped"
+                            );
                             self.handle_update(block_number);
                         }
                     }

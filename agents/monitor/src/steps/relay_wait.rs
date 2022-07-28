@@ -4,7 +4,7 @@ use ethers::prelude::U64;
 use prometheus::Histogram;
 use tokio::time::Instant;
 
-use tracing::{debug, info_span, Instrument};
+use tracing::{debug, info_span, trace, Instrument};
 
 use crate::{
     pipe::{ProcessPipe, RelayPipe},
@@ -79,24 +79,31 @@ impl ProcessStep for RelayWait {
         tokio::spawn(
             async move {
                 loop {
+                    trace!(
+                        relay_tracked = !self.relay_block.is_zero(),
+                        "top of RelayWait::spawn() loop"
+                    );
                     tokio::select! {
                         biased;
 
                         process_next = self.process_pipe.next() => {
                             let process = unwrap_pipe_item_unrecoverable!(process_next, self);
-                            let process_instant = tokio::time::Instant::now();
-                            let process_block = process.meta.block_number;
 
-                            let elapsed = process_instant.saturating_duration_since(self.relay_instant).as_secs_f64();
-                            let elapsed_blocks = process_block.saturating_sub(self.relay_block).as_u64() as f64;
+                            if !self.relay_block.is_zero() {
+                                let process_instant = tokio::time::Instant::now();
+                                let process_block = process.meta.block_number;
 
-                            debug!(
-                                elapsed_blocks = elapsed_blocks,
-                                elapsed = elapsed,
-                                "Recording time since relay"
-                            );
-                            self.metrics.timers.observe(elapsed);
-                            self.metrics.blocks.observe(elapsed_blocks);
+                                let elapsed = process_instant.saturating_duration_since(self.relay_instant).as_secs_f64();
+                                let elapsed_blocks = process_block.saturating_sub(self.relay_block).as_u64() as f64;
+
+                                debug!(
+                                    elapsed_blocks = elapsed_blocks,
+                                    elapsed = elapsed,
+                                    "Recording time since relay"
+                                );
+                                self.metrics.timers.observe(elapsed);
+                                self.metrics.blocks.observe(elapsed_blocks);
+                            }
                         }
                         relay_next = self.relay_pipe.next() => {
                             let relay = unwrap_pipe_item_unrecoverable!(relay_next, self);

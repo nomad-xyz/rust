@@ -67,6 +67,10 @@ impl std::fmt::Display for UpdateWait {
 }
 
 impl UpdateWait {
+    fn relays_tracked(&self) -> usize {
+        self.relays.values().map(|v| v.len()).sum()
+    }
+
     fn handle_relay(&mut self, replica_network: &str, root: H256) {
         let now = std::time::Instant::now();
         debug!(
@@ -125,7 +129,11 @@ impl ProcessStep for UpdateWait {
         let span = info_span!("UpdateWait", home_network = self.network.as_str());
         tokio::spawn(
             async move {
-                trace!("Top of update_wait spawn loop");
+                trace!(
+                    updates_tracked = self.updates.len(),
+                    relays_tracked = self.relays_tracked(),
+                    "Top of UpdateWait::spawn() loop"
+                );
                 loop {
                     tokio::select! {
                         // how this works:
@@ -137,16 +145,21 @@ impl ProcessStep for UpdateWait {
                         biased;
 
                         update_opt = self.update_pipe.next() => {
-                            trace!("updatewait got update");
+                            trace!("got update pipe item");
                             let update = unwrap_pipe_item_unrecoverable!(update_opt, self);
                             let root: H256 = update.log.new_root.into();
+                            trace!(root = ?root, "update chapipennel item unwrapped");
                             self.handle_update(root);
                         }
                         relay_opt = self.relay_faucets.recv() => {
-                            trace!("updatewait got relay");
+                            trace!("got relay channel item");
                             let (replica_network, relay) = unwrap_channel_item_unrecoverable!(relay_opt, self);
                             let root: H256 = relay.log.new_root.into();
-
+                            trace!(
+                                root = ?root,
+                                replica_network = replica_network.as_str(),
+                                "relay channel item unwrapped"
+                            );
                             send_unrecoverable!(self.relay_sinks
                                     .get(&replica_network)
                                     .expect("missing outgoing"), relay, self);
