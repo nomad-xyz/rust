@@ -74,12 +74,17 @@ impl E2ELatency {
     }
 
     fn record_dispatch(&mut self, network: String, destination: u32, message_hash: H256) {
+        if !self.domain_to_network.contains_key(&destination) {
+            tracing::trace!("dispatch to un-monitored network");
+            return;
+        }
+
         let _span = debug_span!(
             "record_dispatch",
             network = network.as_str(),
             destination,
             message_hash = ?message_hash,
-            destination_network = self.domain_to_network.get(&destination).unwrap().as_str(),
+            destination_network = self.domain_to_network.get(&destination).expect("checked").as_str(),
         )
         .entered();
         debug!("Recording dispatch");
@@ -121,7 +126,7 @@ impl E2ELatency {
             replica_of = replica_of.as_str(),
             message_hash = ?message_hash
         );
-        tracing::debug!("Recording process");
+        debug!("Recording process");
         let now = Instant::now();
 
         // if we know of a matching dispatch, mark it and remove from map
