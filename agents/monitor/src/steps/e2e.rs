@@ -152,6 +152,7 @@ impl E2ELatency {
                 .get_mut(&replica_of)
                 .unwrap()
                 .observe(time);
+            // gauges is keyed by the home network, so we use replica_of here
             let gauge = self.metrics.gauges.get(&replica_of).expect("missing guage");
             gauge.dec();
             debug!(
