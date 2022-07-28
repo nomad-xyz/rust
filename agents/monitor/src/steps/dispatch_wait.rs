@@ -1,4 +1,4 @@
-use ethers::prelude::U64;
+use ethers::prelude::{H256, U64};
 use prometheus::{Histogram, HistogramTimer};
 use tokio::select;
 use tracing::{debug, info_span, trace, Instrument};
@@ -123,7 +123,7 @@ impl ProcessStep for DispatchWait {
                             let block_number = dispatch.meta.block_number;
                             trace!(
                                 block_number = %block_number,
-                                message_hash = ?dispatch.log.message_hash,
+                                message_hash = ?H256::from(dispatch.log.message_hash),
                                 "dispatch channel item unwrapped"
                             );
                             self.handle_dispatch(block_number);
@@ -134,7 +134,7 @@ impl ProcessStep for DispatchWait {
                             let block_number = update.meta.block_number;
                             trace!(
                                 block_number = %block_number,
-                                new_root = ?update.log.new_root,
+                                new_root = ?H256::from(update.log.new_root),
                                 "update channel item unwrapped"
                             );
                             self.handle_update(block_number);

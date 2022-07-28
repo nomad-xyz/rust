@@ -87,9 +87,9 @@ impl E2ELatency {
             destination_network = self.domain_to_network.get(&destination).expect("checked").as_str(),
         )
         .entered();
-        debug!("Recording dispatch");
-        // ignore unknown destinations
+        // this will always pass because we check earlier
         if let Some(destination) = self.domain_to_network.get(&destination) {
+            debug!("Recording dispatch");
             let now = Instant::now();
 
             // if we know of a matching process on the appropriate destination
@@ -126,7 +126,6 @@ impl E2ELatency {
             replica_of = replica_of.as_str(),
             message_hash = ?message_hash
         );
-        debug!("Recording process");
         let now = Instant::now();
 
         // if we know of a matching dispatch, mark it and remove from map
@@ -136,7 +135,7 @@ impl E2ELatency {
             .and_then(|inner| inner.get_mut(&network))
             .and_then(|inner| inner.remove(&message_hash))
         {
-            trace!("Matching dispatch found.");
+            debug!("Recording process w/ matching dispatch");
             let time = now.saturating_duration_since(dispatch).as_secs_f64();
             self.metrics
                 .timers
@@ -144,7 +143,7 @@ impl E2ELatency {
                 .unwrap()
                 .observe(time);
         } else {
-            trace!("No matching dispatch found");
+            debug!("Recording process w/o matching dispatch");
             // record it for later
             self.processes
                 .entry(replica_of)

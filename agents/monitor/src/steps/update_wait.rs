@@ -148,7 +148,7 @@ impl ProcessStep for UpdateWait {
                             trace!("got update pipe item");
                             let update = unwrap_pipe_item_unrecoverable!(update_opt, self);
                             let root: H256 = update.log.new_root.into();
-                            trace!(root = ?root, "update chapipennel item unwrapped");
+                            trace!(root = ?root, "update pipe item unwrapped");
                             self.handle_update(root);
                         }
                         relay_opt = self.relay_faucets.recv() => {
