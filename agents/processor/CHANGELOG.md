@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- use `std::fmt::Display` to log contracts
+
 ### agents@1.1.0
 
 - make \*Settings::new async for optionally fetching config from a remote url

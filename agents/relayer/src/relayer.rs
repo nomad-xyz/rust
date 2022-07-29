@@ -22,7 +22,7 @@ impl std::fmt::Display for UpdatePoller {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "UpdatePoller: {{ home: {:?}, replica: {:?} }}",
+            "UpdatePoller: {{ home: {}, replica: {} }}",
             self.home, self.replica
         )
     }

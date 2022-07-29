@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- Add English description to XCM error log, change to use `Display`
+
 ### agents@1.1.0
 
 - make \*Settings::new async for optionally fetching config from a remote url

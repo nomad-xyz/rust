@@ -108,7 +108,7 @@ where
 
 /// Interface for attributes shared by Home and Replica
 #[async_trait]
-pub trait Common: Sync + Send + std::fmt::Debug {
+pub trait Common: Sync + Send + std::fmt::Debug + std::fmt::Display {
     /// Return an identifier (not necessarily unique) for the chain this
     /// contract is running on.
     fn name(&self) -> &str;

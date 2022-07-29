@@ -49,7 +49,7 @@ impl std::fmt::Display for Replica {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "ReplicaProcessor: {{ home: {:?}, replica: {:?}, allowed: {:?}, denied: {:?} }}",
+            "ReplicaProcessor: {{ home: {}, replica: {}, allowed: {:?}, denied: {:?} }}",
             self.home, self.replica, self.allowed, self.denied
         )
     }

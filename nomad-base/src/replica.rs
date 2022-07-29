@@ -188,6 +188,18 @@ pub enum ReplicaVariants {
     Other(Box<dyn Replica>),
 }
 
+impl std::fmt::Display for ReplicaVariants {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ReplicaVariants::Ethereum(inner) => {
+                write!(f, "{}", inner)
+            }
+            ReplicaVariants::Mock(inner) => write!(f, "{}", inner),
+            ReplicaVariants::Other(inner) => write!(f, "{}", inner),
+        }
+    }
+}
+
 impl ReplicaVariants {
     /// Calls checkpoint on mock variant. Should
     /// only be used during tests.

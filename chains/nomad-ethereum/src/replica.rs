@@ -169,6 +169,22 @@ where
     }
 }
 
+impl<W, R> std::fmt::Display for EthereumReplica<W, R>
+where
+    W: ethers::providers::Middleware + 'static,
+    R: ethers::providers::Middleware + 'static,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "EthereumHome {{ address: {}, domain: {}, name: {} }}",
+            self.contract.address(),
+            self.domain,
+            self.name
+        )
+    }
+}
+
 #[async_trait]
 impl<W, R> Common for EthereumReplica<W, R>
 where

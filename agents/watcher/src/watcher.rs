@@ -548,7 +548,7 @@ impl NomadAgent for Watcher {
         // Report any invalid ConnectionManager chain setups
         errors.into_iter().for_each(|e| {
             let err = e.unwrap_err();
-            tracing::error!("{:?}", err)
+            tracing::error!(err = %err, "Invalid XCM setup");
         });
 
         let connection_managers: Vec<_> = connection_managers
