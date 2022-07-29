@@ -1,5 +1,5 @@
 use ethers::prelude::H256;
-use prometheus::Histogram;
+use prometheus::{Histogram, IntGauge};
 use std::{collections::HashMap, time::Instant};
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 use tracing::{debug, info_span, trace, Instrument};
@@ -16,6 +16,7 @@ use crate::{
 pub(crate) struct UpdateWaitMetrics {
     // maps replica network to timing histogram
     pub(crate) times: HashMap<String, Histogram>,
+    pub(crate) unrelayed: HashMap<String, IntGauge>,
 }
 
 #[derive(Debug)]
@@ -67,20 +68,62 @@ impl std::fmt::Display for UpdateWait {
 }
 
 impl UpdateWait {
+    fn incr_update_gauges(&mut self) {
+        self.metrics
+            .unrelayed
+            .values_mut()
+            .for_each(|gauge| gauge.inc());
+    }
+
+    fn decr_update_gauge(&self, destination: &str) {
+        self.metrics
+            .unrelayed
+            .get(destination)
+            .expect("missing gauge")
+            .dec();
+    }
+
+    fn start_update_timer(&mut self, root: H256) {
+        let now = std::time::Instant::now();
+        self.updates.insert(root, now);
+        self.incr_update_gauges();
+        debug!(
+            root = ?root,
+            pending_relays = self.pending_relays(),
+            "Received new update"
+        );
+    }
+
+    fn finish_relay_timers(&mut self, root: H256) {
+        // mem optimization: remove the hashmap as we no longer need to store
+        // any future relay times for this root
+        if let Some(mut relays) = self.relays.remove(&root) {
+            // times
+            relays.drain().for_each(|(destination, relay)| {
+                self.record(&destination, relay, *self.updates.get(&root).unwrap());
+            })
+        }
+    }
+
+    fn pending_relays(&self) -> i64 {
+        self.metrics
+            .unrelayed
+            .values()
+            .map(|gauge| gauge.get())
+            .sum()
+    }
+
     fn relays_tracked(&self) -> usize {
         self.relays.values().map(|v| v.len()).sum()
     }
 
     fn handle_relay(&mut self, replica_network: &str, root: H256) {
         let now = std::time::Instant::now();
-        debug!(
-            replica_network = replica_network,
-            root = ?root,
-            "Handling relay"
-        );
+
         // mem optimization: don't need to store the relay time
         // if we observe immediately
         if let Some(update_time) = self.updates.get(&root) {
+            trace!("Relay for already-seen update");
             self.record(replica_network, now, *update_time);
         } else {
             trace!("Starting timer for relay");
@@ -89,35 +132,32 @@ impl UpdateWait {
                 .or_default()
                 .insert(replica_network.to_owned(), now);
         }
+        debug!(
+            replica_network = replica_network,
+            root = ?root,
+            pending_relays = self.pending_relays(),
+            "Handled relay"
+        );
     }
 
     fn handle_update(&mut self, root: H256) {
-        let now = std::time::Instant::now();
-        self.updates.insert(root, now);
-        debug!(root = ?root, "Starting timers for update");
-
-        // mem optimization: remove the hashmap as we no longer need to store
-        // any future relay times for this root
-        if let Some(mut relays) = self.relays.remove(&root) {
-            // times
-            relays.drain().for_each(|(replica_network, relay)| {
-                self.record(&replica_network, relay, now);
-            })
-        }
+        self.start_update_timer(root);
+        self.finish_relay_timers(root);
     }
 
-    fn record(&self, replica_network: &str, relay: Instant, update: Instant) {
+    fn record(&self, destination: &str, relay: Instant, update: Instant) {
         let v = relay.saturating_duration_since(update).as_secs_f64();
         trace!(
             elapsed = v,
-            replica_network = replica_network,
+            destination = destination,
             "Recording relay duration"
         );
         self.metrics
             .times
-            .get(replica_network)
+            .get(destination)
             .expect("missing metric")
-            .observe(v)
+            .observe(v);
+        self.decr_update_gauge(destination);
     }
 }
 
@@ -130,6 +170,7 @@ impl ProcessStep for UpdateWait {
         tokio::spawn(
             async move {
                 trace!(
+                    pending_relays = self.pending_relays(),
                     updates_tracked = self.updates.len(),
                     relays_tracked = self.relays_tracked(),
                     "Top of UpdateWait::spawn() loop"

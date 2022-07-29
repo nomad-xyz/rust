@@ -51,6 +51,7 @@ pub(crate) struct Metrics {
 
     // update to relay
     update_to_relay_timers: prometheus::HistogramVec,
+    unrelayed_updates: prometheus::IntGaugeVec,
 
     // relay to process
     relay_to_process_timers: prometheus::HistogramVec,
@@ -104,7 +105,17 @@ impl Metrics {
             .namespace(NAMESPACE)
             .buckets(TIME_BUCKETS.to_vec())
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
-            &["chain", "emitter", "replica_chain"],
+            &["chain", "emitter", "destination"],
+        )?;
+
+        let unrelayed_updates = IntGaugeVec::new(
+            prometheus::core::Opts::new(
+                "unrelayed_updates",
+                "Update events that have not been relayed to their destination",
+            )
+            .namespace(NAMESPACE)
+            .const_label("VERSION", env!("CARGO_PKG_VERSION")),
+            &["chain", "emitter", "destination"],
         )?;
 
         let dispatch_to_update_timers = HistogramVec::new(
@@ -213,6 +224,9 @@ impl Metrics {
             .register(Box::new(update_to_relay_timers.clone()))
             .expect("unable to register metric");
         registry
+            .register(Box::new(unrelayed_updates.clone()))
+            .expect("unable to register metric");
+        registry
             .register(Box::new(relay_to_process_timers.clone()))
             .expect("unable to register metric");
         registry
@@ -233,6 +247,7 @@ impl Metrics {
             dispatch_to_update_timers,
             dispatch_queue,
             update_to_relay_timers,
+            unrelayed_updates,
             relay_to_process_timers,
             relay_to_process_blocks,
             e2e_timers,
@@ -359,7 +374,19 @@ impl Metrics {
             })
             .collect();
 
-        UpdateWaitMetrics { times }
+        let unrelayed = replica_networks
+            .iter()
+            .map(|replica_network| {
+                let gauge = self.unrelayed_updates.with_label_values(&[
+                    home_network,
+                    emitter,
+                    replica_network,
+                ]);
+                (replica_network.to_string(), gauge)
+            })
+            .collect();
+
+        UpdateWaitMetrics { times, unrelayed }
     }
 
     pub(crate) fn relay_wait_metrics(
