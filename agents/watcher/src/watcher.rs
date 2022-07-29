@@ -1,8 +1,11 @@
 use async_trait::async_trait;
-use color_eyre::{eyre::bail, Report, Result};
+use color_eyre::{
+    eyre::{bail, ensure},
+    Report, Result,
+};
 use thiserror::Error;
 
-use ethers::core::types::H256;
+use ethers::{core::types::H256, prelude::H160};
 use futures_util::future::{join, join_all, select_all};
 use prometheus::{IntGauge, IntGaugeVec};
 use std::{collections::HashMap, fmt::Display, sync::Arc, time::Duration};
@@ -206,6 +209,7 @@ pub struct UpdateHandler {
     rx: mpsc::Receiver<SignedUpdate>,
     watcher_db: NomadDB,
     home: Arc<CachingHome>,
+    updater: H160,
 }
 
 impl UpdateHandler {
@@ -213,11 +217,13 @@ impl UpdateHandler {
         rx: mpsc::Receiver<SignedUpdate>,
         watcher_db: NomadDB,
         home: Arc<CachingHome>,
+        updater: H160,
     ) -> Self {
         Self {
             rx,
             watcher_db,
             home,
+            updater,
         }
     }
 
@@ -246,11 +252,12 @@ impl UpdateHandler {
                     return Ok(());
                 }
 
+                let existing_signer = existing_signer.unwrap();
+                let new_signer = new_signer.unwrap();
+
                 // ensure both new roots are different, and the signer is the
-                // same
-                if existing.update.new_root != new_root
-                    && existing_signer.unwrap() == new_signer.unwrap()
-                {
+                // same. we perform this check in addition
+                if existing.update.new_root != new_root && existing_signer == new_signer {
                     error!(
                         "UpdateHandler detected double update! Existing: {:?}. Double: {:?}.",
                         &existing, &update
@@ -286,6 +293,14 @@ impl UpdateHandler {
 
                 let update = update.unwrap();
                 let old_root = update.update.previous_root;
+
+                // This check may appear redundant with the check in
+                // `check_double_update` that signers match, however,
+                // this is
+                ensure!(
+                    update.verify(self.updater).is_ok(),
+                    "Handling update signed by another updater. This agent is misconfigured"
+                );
 
                 if old_root == self.home.committed_root().await? {
                     // It is okay if tx reverts
@@ -374,9 +389,10 @@ impl Watcher {
         let updates_inspected_for_double = self.updates_inspected_for_double.clone();
 
         tokio::spawn(async move {
+            let updater = home.updater().await?;
             // Spawn update handler
             let (tx, rx) = mpsc::channel(200);
-            let handler = UpdateHandler::new(rx, watcher_db, home.clone()).spawn();
+            let handler = UpdateHandler::new(rx, watcher_db, home.clone(), updater.into()).spawn();
 
             // For each replica, spawn polling and history syncing tasks
             info!("Spawning replica watch and sync tasks...");
@@ -907,6 +923,7 @@ mod test {
                 "1111111111111111111111111111111111111111111111111111111111111111"
                     .parse()
                     .unwrap();
+            let updater = signer.address();
 
             let first_root = H256::from([1; 32]);
             let second_root = H256::from([2; 32]);
@@ -976,6 +993,7 @@ mod test {
                 rx,
                 watcher_db: nomad_db,
                 home,
+                updater,
             };
 
             handler
