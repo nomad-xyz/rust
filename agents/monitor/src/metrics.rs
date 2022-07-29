@@ -111,7 +111,7 @@ impl Metrics {
         let unrelayed_updates = IntGaugeVec::new(
             prometheus::core::Opts::new(
                 "unrelayed_updates",
-                "Update events that have not been relayed to their destination",
+                "Update events that have not been relayed to their destination. Note: in rare circumstances, this gauge may have some noise, as relays for an update may have occurred before the agent booted.",
             )
             .namespace(NAMESPACE)
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
