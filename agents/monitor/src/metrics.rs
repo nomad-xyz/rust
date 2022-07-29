@@ -44,14 +44,19 @@ pub(crate) struct Metrics {
     event_blocks: prometheus::HistogramVec,
     event_counts: prometheus::IntCounterVec,
 
+    // dispatch to update
     dispatch_to_update_timers: prometheus::HistogramVec,
     dispatch_to_update_blocks: prometheus::HistogramVec,
+    dispatch_queue: prometheus::IntGaugeVec,
 
+    // update to relay
     update_to_relay_timers: prometheus::HistogramVec,
 
+    // relay to process
     relay_to_process_timers: prometheus::HistogramVec,
     relay_to_process_blocks: prometheus::HistogramVec,
 
+    // e2e
     e2e_timers: prometheus::HistogramVec,
     unprocessed_dispatches: prometheus::IntGaugeVec,
 }
@@ -121,6 +126,13 @@ impl Metrics {
             .namespace(NAMESPACE)
             .buckets(BLOCKS_BUCKETS.to_vec())
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
+            &["chain", "emitter"],
+        )?;
+
+        let dispatch_queue = IntGaugeVec::new(
+            prometheus::core::Opts::new("dispatches_waiting", "Dispatch events awaiting an update")
+                .namespace(NAMESPACE)
+                .const_label("VERSION", env!("CARGO_PKG_VERSION")),
             &["chain", "emitter"],
         )?;
 
@@ -195,6 +207,9 @@ impl Metrics {
             .register(Box::new(dispatch_to_update_blocks.clone()))
             .expect("unable to register metric");
         registry
+            .register(Box::new(dispatch_queue.clone()))
+            .expect("unable to register metric");
+        registry
             .register(Box::new(update_to_relay_timers.clone()))
             .expect("unable to register metric");
         registry
@@ -216,6 +231,7 @@ impl Metrics {
             event_counts: counts,
             dispatch_to_update_blocks,
             dispatch_to_update_timers,
+            dispatch_queue,
             update_to_relay_timers,
             relay_to_process_timers,
             relay_to_process_blocks,
@@ -321,6 +337,7 @@ impl Metrics {
             blocks: self
                 .dispatch_to_update_blocks
                 .with_label_values(&[network, emitter]),
+            in_queue: self.dispatch_queue.with_label_values(&[network, emitter]),
         }
     }
 

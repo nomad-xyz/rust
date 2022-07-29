@@ -1,5 +1,5 @@
 use ethers::prelude::{H256, U64};
-use prometheus::{Histogram, HistogramTimer};
+use prometheus::{Histogram, HistogramTimer, IntGauge};
 use tokio::select;
 use tracing::{debug, info_span, trace, Instrument};
 
@@ -12,6 +12,7 @@ use crate::{
 pub(crate) struct DispatchWaitMetrics {
     pub(crate) timer: Histogram,
     pub(crate) blocks: Histogram,
+    pub(crate) in_queue: IntGauge,
 }
 
 #[derive(Debug)]
@@ -61,6 +62,7 @@ impl DispatchWait {
     fn handle_dispatch(&mut self, block_number: U64) {
         self.timers.push(self.metrics.timer.start_timer());
         self.blocks.push(block_number);
+        self.metrics.in_queue.set(self.timers.len() as i64);
         debug!(event = "dispatch", "Starting timer for dispatch event",);
     }
 
@@ -79,6 +81,7 @@ impl DispatchWait {
             self.metrics.blocks.observe(diff.as_u64() as f64);
             trace!(elapsed = %diff, "ending dispatch block count");
         });
+        self.metrics.in_queue.set(0);
     }
 }
 
