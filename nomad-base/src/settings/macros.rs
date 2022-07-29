@@ -22,21 +22,22 @@ macro_rules! get_remotes_from_env {
             connections
         } else {
             let connections = (0..)
-            .map(|i| format!("AGENT_REPLICA_{}_NAME", i))
-            .take_while(|s| std::env::var(&s).is_ok())
-            .map(|replica| {
-                let replica = std::env::var(&replica).expect("checked by take_while");
-                if !connections.contains(&replica) {
-                    panic!("Attempted to run agent with unconnected replica. Home: {}. Replica: {}", $home, &replica);
-                }
-                replica
-            })
-            .collect::<std::collections::HashSet<_>>();
-            tracing::info!(
-                count = connections.len(),
-                "Remotes configured by env",
-            );
-            connections
+                .map(|i| format!("AGENT_REPLICA_{}_NAME", i))
+                .map(|s| std::env::var(&s))
+                .take_while(Result::is_ok)
+                .map(Result::unwrap)
+                .map(|replica| {
+                    if !connections.contains(&replica) {
+                        panic!("Attempted to run agent with unconnected replica. Home: {}. Replica: {}", $home, &replica);
+                    }
+                    replica
+                })
+                .collect::<std::collections::HashSet<_>>();
+                tracing::info!(
+                    count = connections.len(),
+                    "Remotes configured by env",
+                );
+                connections
         }
     }};
 }

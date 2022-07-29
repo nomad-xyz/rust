@@ -2,6 +2,9 @@
 
 ### Unreleased
 
+- un-nest, simplify & add event to setup code for determining which replicas to
+  run
+- un-nest, simplify & add event to setup code for config source discovery
 - emit event for source of config loaded at bootup
 - implement `std::fmt::Display` for `Home` and `Replica` enums
 - add home and remote labels to contract sync metrics for event differentiation
