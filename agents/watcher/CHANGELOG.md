@@ -2,6 +2,9 @@
 
 ### Unreleased
 
+- update handler now errors if incoming updates have an unexpected updater
+- double-update routine now checks that both updates are signed by the same
+  updater
 - Add English description to XCM error log, change to use `Display`
 
 ### agents@1.1.0
