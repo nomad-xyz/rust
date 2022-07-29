@@ -215,7 +215,7 @@ impl ProcessStep for E2ELatency {
                             let outbound = self.dispatch_sinks.get(&network).expect("missing sink");
                             send_unrecoverable!(outbound, dispatch, self);
 
-                            self.record_dispatch(network,destination, message_hash);
+                            self.record_dispatch(network, destination, message_hash);
                         }
                         process_opt = self.process_faucet.recv() => {
                             let (network, (replica_of, process)) = unwrap_channel_item_unrecoverable!(process_opt, self);
