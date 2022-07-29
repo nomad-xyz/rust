@@ -2,7 +2,7 @@
 
 ### Unreleased
 
-- use display to log contracts
+- use `std::fmt::Display` to log contracts
 
 ### agents@1.1.0
 
