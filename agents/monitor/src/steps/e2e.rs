@@ -19,9 +19,9 @@ use super::combine::CombineChannels;
 
 pub(crate) struct E2EMetrics {
     // home to times
-    pub(crate) timers: HashMap<String, Histogram>,
-    // home to gauges
-    pub(crate) gauges: HashMap<String, IntGauge>,
+    pub(crate) timers: HashMap<String, HashMap<String, Histogram>>,
+    // home network to remote network to gauges
+    pub(crate) gauges: HashMap<String, HashMap<String, IntGauge>>,
 }
 
 #[must_use = "Tasks do nothing unless you call .spawn() or .run_until_panic()"]
@@ -49,6 +49,58 @@ impl std::fmt::Display for E2ELatency {
 }
 
 impl E2ELatency {
+    fn timer(&mut self, home: &String, remote: &String) -> &mut Histogram {
+        self.metrics
+            .timers
+            .get_mut(home)
+            .expect("missing network")
+            .get_mut(remote)
+            .expect("missing histogram")
+    }
+
+    fn gauge(&mut self, home: &String, remote: &String) -> &mut IntGauge {
+        self.metrics
+            .gauges
+            .get_mut(home)
+            .expect("missing network")
+            .get_mut(remote)
+            .expect("missing gauge")
+    }
+
+    fn inc(&mut self, home: &String, remote: &String) -> i64 {
+        let gauge = &mut self.gauge(home, remote);
+        gauge.inc();
+        gauge.get()
+    }
+
+    fn dec(&mut self, home: &String, remote: &String) -> i64 {
+        let gauge = &mut self.gauge(home, remote);
+        gauge.dec();
+        gauge.get()
+    }
+
+    fn get_dispatch_timer(
+        &mut self,
+        home: &String,
+        remote: &String,
+        message_hash: H256,
+    ) -> Option<Instant> {
+        self.dispatches
+            .get_mut(home)
+            .and_then(|inner| inner.get_mut(remote))
+            .and_then(|inner| inner.remove(&message_hash))
+    }
+
+    fn start_dispatch_timer(&mut self, home: &str, remote: &str, message_hash: H256) {
+        let now = Instant::now();
+        self.dispatches
+            .entry(home.to_string())
+            .or_default()
+            .entry(remote.to_string())
+            .or_default()
+            .insert(message_hash, now);
+    }
+
     pub(crate) fn new(
         dispatch_faucets: HashMap<String, DispatchFaucet>,
         process_faucets: HashMap<String, HashMap<String, ProcessFaucet>>,
@@ -80,53 +132,37 @@ impl E2ELatency {
             tracing::trace!("dispatch to un-monitored network");
             return;
         }
+        let destination = self
+            .domain_to_network
+            .get(&destination)
+            .expect("checked")
+            .clone();
 
         let _span = debug_span!(
             "record_dispatch",
             network = network.as_str(),
             destination,
             message_hash = ?message_hash,
-            destination_network = self.domain_to_network.get(&destination).expect("checked").as_str(),
         )
         .entered();
-        // this will always pass because we check earlier
-        if let Some(destination) = self.domain_to_network.get(&destination) {
-            debug!("Recording dispatch");
-            let now = Instant::now();
 
-            // if we know of a matching process on the appropriate destination
-            // mark it
-            // otherwise store in dispatch map
-            if self
-                .processes
-                .get_mut(&network)
-                .and_then(|entry| entry.remove(&message_hash))
-                .is_some()
-            {
-                trace!(elapsed = 0.0, "dispatch preceded by process");
-                self.metrics
-                    .timers
-                    .get_mut(&network)
-                    .unwrap()
-                    .observe(0 as f64);
-            } else {
-                self.dispatches
-                    .entry(network.clone())
-                    .or_default()
-                    .entry(destination.to_owned())
-                    .or_default()
-                    .insert(message_hash, now);
-                let gauge = self
-                    .metrics
-                    .gauges
-                    .get_mut(&network)
-                    .expect("missing gauge");
-                gauge.inc();
-                trace!(
-                    unprocessed_dispatches = gauge.get(),
-                    "Started dispatch e2e timer"
-                );
-            }
+        debug!("Recording dispatch");
+        // if we know of a matching process on the appropriate destination
+        // mark it
+        // otherwise store in dispatch map
+        if self
+            .processes
+            .get_mut(&network)
+            .and_then(|entry| entry.remove(&message_hash))
+            .is_some()
+        {
+            trace!(elapsed = 0.0, "dispatch preceded by process");
+            self.timer(&network, &destination).observe(0 as f64);
+        } else {
+            self.start_dispatch_timer(&network, &destination, message_hash);
+
+            let unprocessed_dispatches = self.inc(&network, &destination);
+            trace!(unprocessed_dispatches, "Started dispatch e2e timer");
         }
     }
 
@@ -140,24 +176,15 @@ impl E2ELatency {
         let now = Instant::now();
 
         // if we know of a matching dispatch, mark it and remove from map
-        if let Some(dispatch) = self
-            .dispatches
-            .get_mut(&replica_of)
-            .and_then(|inner| inner.get_mut(&network))
-            .and_then(|inner| inner.remove(&message_hash))
-        {
+        if let Some(dispatch) = self.get_dispatch_timer(&replica_of, &network, message_hash) {
             let time = now.saturating_duration_since(dispatch).as_secs_f64();
-            self.metrics
-                .timers
-                .get_mut(&replica_of)
-                .unwrap()
-                .observe(time);
+
             // gauges is keyed by the home network, so we use replica_of here
-            let gauge = self.metrics.gauges.get(&replica_of).expect("missing guage");
-            gauge.dec();
+            let unprocessed_dispatches = self.dec(&replica_of, &network);
+            self.timer(&replica_of, &network).observe(time);
             debug!(
-                unprocessed_dispatches = gauge.get(),
-                "Recorded process w/ matching dispatch"
+                unprocessed_dispatches,
+                time, "Recorded process w/ matching dispatch",
             );
         } else {
             debug!("Recording process w/o matching dispatch");

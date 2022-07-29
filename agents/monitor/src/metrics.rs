@@ -77,7 +77,7 @@ impl Metrics {
             )
             .namespace(NAMESPACE)
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
-            &["home_network"],
+            &["home_network", "replica_network"],
         )?;
 
         let e2e_timers = HistogramVec::new(
@@ -88,7 +88,7 @@ impl Metrics {
             .namespace(NAMESPACE)
             .buckets(E2E_TIME_BUCKETS.to_vec())
             .const_label("VERSION", env!("CARGO_PKG_VERSION")),
-            &["chain"],
+            &["home_network", "replica_network"],
         )?;
 
         let update_to_relay_timers = HistogramVec::new(
@@ -365,15 +365,24 @@ impl Metrics {
         let mut gauges = HashMap::new();
         let mut timers = HashMap::new();
 
-        for network in networks {
-            timers.insert(
-                network.to_owned(),
-                self.e2e_timers.with_label_values(&[network]),
-            );
-            gauges.insert(
-                network.to_owned(),
-                self.unprocessed_dispatches.with_label_values(&[network]),
-            );
+        let networks: Vec<_> = networks.collect();
+
+        for home in networks.iter() {
+            let mut gauge = HashMap::new();
+            let mut timer = HashMap::new();
+            for remote in networks.iter().filter(|n| n != &home) {
+                gauge.insert(
+                    remote.to_string(),
+                    self.unprocessed_dispatches
+                        .with_label_values(&[home, remote]),
+                );
+                timer.insert(
+                    remote.to_string(),
+                    self.e2e_timers.with_label_values(&[home, remote]),
+                );
+            }
+            gauges.insert(home.to_string(), gauge);
+            timers.insert(home.to_string(), timer);
         }
 
         E2EMetrics { timers, gauges }
