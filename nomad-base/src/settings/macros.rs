@@ -10,34 +10,33 @@ macro_rules! get_remotes_from_env {
             .connections
             .clone();
 
-        let all_connections = if let Ok(val) = std::env::var("AGENT_REPLICAS_ALL") {
-            // If set to true/false, return value
-            val.parse::<bool>().expect("misformatted AGENT_REPLICAS_ALL")
-        } else {
-            // If unset, return false
-            false
-        };
+        let all_connections = std::env::var("AGENT_REPLICAS_ALL")
+            .map_or(Ok(false), |val| val.parse::<bool>())
+            .expect("misformatted AGENT_REPLICAS_ALL, expected 'true' or 'false'");
 
         if all_connections {
+            tracing::info!(
+                count = connections.len(),
+                "All remotes configured",
+            );
             connections
         } else {
-            let mut remotes = std::collections::HashSet::new();
-            for i in 0.. {
-                let replica_var = format!("AGENT_REPLICA_{}_NAME", i);
-                let replica_res = std::env::var(&replica_var);
-
-                if let Ok(replica) = replica_res {
-                    if connections.get(&replica).is_none() {
-                        panic!("Attempted to run agent with unconnected replica. Home: {}. Replica: {}", $home, &replica);
-                    }
-
-                    remotes.insert(replica);
-                } else {
-                    break;
+            let connections = (0..)
+            .map(|i| format!("AGENT_REPLICA_{}_NAME", i))
+            .take_while(|s| std::env::var(&s).is_ok())
+            .map(|replica| {
+                let replica = std::env::var(&replica).expect("checked by take_while");
+                if !connections.contains(&replica) {
+                    panic!("Attempted to run agent with unconnected replica. Home: {}. Replica: {}", $home, &replica);
                 }
-            }
-
-            remotes
+                replica
+            })
+            .collect::<std::collections::HashSet<_>>();
+            tracing::info!(
+                count = connections.len(),
+                "Remotes configured by env",
+            );
+            connections
         }
     }};
 }
