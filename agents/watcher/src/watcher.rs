@@ -12,7 +12,7 @@ use tokio::{
     task::JoinHandle,
     time::sleep,
 };
-use tracing::{error, info, info_span, instrument::Instrumented, Instrument};
+use tracing::{error, info, info_span, instrument::Instrumented, warn, Instrument};
 
 use nomad_base::{
     cancel_task, AgentCore, BaseError, CachingHome, ConnectionManagers, NomadAgent, NomadDB,
@@ -231,7 +231,26 @@ impl UpdateHandler {
             .expect("!db_get")
         {
             Some(existing) => {
-                if existing.update.new_root != new_root {
+                let existing_signer = existing.recover();
+                let new_signer = update.recover();
+                // if a signature verification failed. We consider this not a
+                // double update
+                if existing_signer.is_err() || new_signer.is_err() {
+                    warn!(
+                        existing = %existing,
+                        new = %update,
+                        existing_signer = ?existing_signer,
+                        new_signer = ? new_signer,
+                        "Signature verification on update failed"
+                    );
+                    return Ok(());
+                }
+
+                // ensure both new roots are different, and the signer is the
+                // same
+                if existing.update.new_root != new_root
+                    && existing_signer.unwrap() == new_signer.unwrap()
+                {
                     error!(
                         "UpdateHandler detected double update! Existing: {:?}. Double: {:?}.",
                         &existing, &update
