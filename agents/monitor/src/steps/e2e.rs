@@ -157,7 +157,7 @@ impl E2ELatency {
             .is_some()
         {
             trace!(elapsed = 0.0, "dispatch preceded by process");
-            self.timer(&network, &destination).observe(0 as f64);
+            self.timer(&network, &destination).observe(0.0);
         } else {
             self.start_dispatch_timer(&network, &destination, message_hash);
 
