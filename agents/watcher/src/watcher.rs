@@ -299,7 +299,7 @@ impl UpdateHandler {
                 // this is
                 ensure!(
                     update.verify(self.updater).is_ok(),
-                    "Handling update signed by another updater. This agent is misconfigured"
+                    "Handling update signed by another updater. Hint: This agent may misconfigured, or the updater may have rotated while this agent was running"
                 );
 
                 if old_root == self.home.committed_root().await? {
