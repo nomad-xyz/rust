@@ -225,7 +225,7 @@ impl Replica {
         Ok(Flow::Advance)
     }
 
-    #[instrument(err, level = "info", skip(self), fields(self = %self, domain = message.message.destination, nonce = message.message.nonce, leaf_index = message.leaf_index, leaf = ?message.message.to_leaf()))]
+    #[instrument(err, level = "info", skip(self, message), fields(self = %self, domain = message.message.destination, nonce = message.message.nonce, leaf_index = message.leaf_index, leaf = ?message.message.to_leaf()))]
     /// Dispatch a message for processing. If the message is already proven, process only.
     async fn process(&self, message: CommittedMessage, proof: NomadProof) -> Result<()> {
         use nomad_core::Replica;
