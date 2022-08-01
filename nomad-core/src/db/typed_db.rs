@@ -54,22 +54,32 @@ impl TypedDB {
     }
 
     /// Store encodable kv pair
-    pub fn store_keyed_encodable<K: Encode, V: Encode>(
+    pub fn store_keyed_encodable<P, K, V>(
         &self,
-        prefix: impl AsRef<[u8]>,
+        prefix: P,
         key: &K,
         value: &V,
-    ) -> Result<(), DbError> {
+    ) -> Result<(), DbError>
+    where
+        P: AsRef<[u8]>,
+        K: Encode,
+        V: Encode,
+    {
         self.db
             .store_keyed_encodable(self.full_prefix(prefix), key, value)
     }
 
     /// Retrieve decodable value given encodable key
-    pub fn retrieve_keyed_decodable<K: Encode, V: Decode>(
+    pub fn retrieve_keyed_decodable<P, K, V>(
         &self,
-        prefix: impl AsRef<[u8]>,
+        prefix: P,
         key: &K,
-    ) -> Result<Option<V>, DbError> {
+    ) -> Result<Option<V>, DbError>
+    where
+        P: AsRef<[u8]>,
+        K: Encode,
+        V: Decode,
+    {
         self.db
             .retrieve_keyed_decodable(self.full_prefix(prefix), key)
     }

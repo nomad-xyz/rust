@@ -9,7 +9,7 @@ pub use macros::*;
 use color_eyre::{eyre::bail, Report, Result};
 use ethers::prelude::{Address, H160, H256};
 use serde::{de, Deserializer};
-use std::{fmt, ops::DerefMut, str::FromStr};
+use std::{fmt, hash::Hash, ops::DerefMut, str::FromStr};
 
 /// A Hex String of length `N` representing bytes of length `N / 2`
 #[derive(Debug, Clone, PartialEq)]
@@ -223,9 +223,11 @@ pub struct NomadLocator {
 }
 
 /// An EVM beacon proxy
-#[derive(
-    Default, Debug, Clone, Copy, serde::Serialize, serde::Deserialize, Eq, PartialEq, Hash,
-)]
+///
+/// NOTE: the proxy does NOT include the implementation in its `Hash`,
+/// `PartialEq` or `Eq` implementations. This is done so that a proxy will be
+/// equal to itself, regardless of the current implementation
+#[derive(Default, Debug, Clone, Copy, serde::Serialize, serde::Deserialize, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct Proxy {
     /// Implementation address
@@ -234,6 +236,18 @@ pub struct Proxy {
     pub proxy: NomadIdentifier,
     /// Beacon address
     pub beacon: NomadIdentifier,
+}
+
+impl PartialEq for Proxy {
+    fn eq(&self, other: &Self) -> bool {
+        self.proxy == other.proxy && self.beacon == other.beacon
+    }
+}
+impl Hash for Proxy {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.proxy.hash(state);
+        self.beacon.hash(state);
+    }
 }
 
 #[cfg(test)]

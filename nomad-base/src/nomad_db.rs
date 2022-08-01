@@ -1,10 +1,15 @@
-use color_eyre::Result;
+use color_eyre::{
+    eyre::{ensure, WrapErr},
+    Result,
+};
 use ethers::core::types::H256;
 use nomad_core::db::{DbError, TypedDB, DB};
 use nomad_core::{
     accumulator::NomadProof, utils, CommittedMessage, Decode, NomadMessage, RawCommittedMessage,
     SignedUpdate, SignedUpdateWithMeta, UpdateMeta,
 };
+use nomad_xyz_configuration::contracts::CoreContracts;
+use nomad_xyz_configuration::NomadConfig;
 use tokio::time::sleep;
 use tracing::{debug, info};
 
@@ -26,11 +31,19 @@ const UPDATER_PRODUCED_UPDATE: &str = "updater_produced_update_";
 const PROVER_LATEST_COMMITTED: &str = "prover_latest_committed_";
 const PROCESSOR_ATTEMPTED: &str = "processor_attempted_";
 
+const CORE_INTEGRITY: &str = "core_ingerity_";
+
 /// DB handle for storing data tied to a specific home.
 ///
 /// Key structure: ```<entity>_<additional_prefix(es)>_<key>```
 #[derive(Debug, Clone)]
 pub struct NomadDB(TypedDB);
+
+impl From<TypedDB> for NomadDB {
+    fn from(db: TypedDB) -> Self {
+        NomadDB(db)
+    }
+}
 
 impl std::ops::Deref for NomadDB {
     type Target = TypedDB;
@@ -388,6 +401,43 @@ impl NomadDB {
             Some(inner) => Ok(inner),
             None => Ok(false),
         }
+    }
+
+    /// Stores a core in the DB for later integrity checks
+    pub fn store_core(&self, name: &str, core: &CoreContracts) -> Result<()> {
+        let serialized = serde_json::to_string(core)?;
+        Ok(self.store_keyed_encodable(CORE_INTEGRITY, &name.to_owned(), &serialized)?)
+    }
+
+    /// Retrieves a core from the DB
+    pub fn retrieve_core(&self, name: &str) -> Result<Option<CoreContracts>> {
+        if let Some(core_json) =
+            self.retrieve_keyed_decodable::<_, _, String>(CORE_INTEGRITY, &name.to_owned())?
+        {
+            return Ok(serde_json::from_str(&core_json)?);
+        }
+        Ok(None)
+    }
+
+    /// Check a core's integrity against the DB. If there is no persisted
+    /// object for that core, store it for later integrity checks
+    pub fn check_core_integrity(&self, name: &str, core: &CoreContracts) -> Result<()> {
+        if let Some(integrity) = self.retrieve_core(name)? {
+            ensure!(integrity == *core, "integrity check failed");
+        } else {
+            self.store_core(name, core)?;
+        }
+        Ok(())
+    }
+
+    /// Checks the integrity of core contract addresses. Error if the DB
+    /// contains differing addresses
+    pub fn check_integrity(&self, config: &NomadConfig) -> Result<()> {
+        for (name, core) in config.core().iter() {
+            self.check_core_integrity(name, core)
+                .wrap_err_with(|| format!("Error checking core for {}", name))?;
+        }
+        Ok(())
     }
 }
 
