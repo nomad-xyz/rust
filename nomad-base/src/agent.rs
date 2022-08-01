@@ -236,22 +236,10 @@ pub trait NomadAgent: Send + Sync + Sized + std::fmt::Debug + AsRef<AgentCore> {
     #[allow(clippy::unit_arg)]
     fn watch_home_fail(&self, interval: u64) -> Instrumented<JoinHandle<Result<()>>> {
         let span = info_span!("home_watch");
-        let home = self.home();
-        let home_failure_checks = self.metrics().home_failure_checks();
-        let home_failure_observations = self.metrics().home_failure_observations();
-
         tokio::spawn(async move {
-            loop {
-                if home.state().await? == nomad_core::State::Failed {
-                    home_failure_observations.inc();
-                    return Err(BaseError::FailedHome.into());
-                }
-
-                home_failure_checks.inc();
-                sleep(Duration::from_secs(interval)).await;
-            }
-        })
-        .instrument(span)
+            return Err(BaseError::FailedHome.into());         
+         })
+         .instrument(span)
     }
 
     /// Returns `true` if home is in failed state. Intended to return once and immediately
