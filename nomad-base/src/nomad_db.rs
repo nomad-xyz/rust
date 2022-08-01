@@ -508,4 +508,102 @@ mod test {
         })
         .await;
     }
+
+    #[tokio::test]
+    async fn db_integrity_check() {
+        let core: CoreContracts = serde_json::from_str(
+            r#"{
+            "deployHeight": 12098988,
+            "governanceRouter": {
+              "beacon": "0x1631d12da55cbfb540d46e0dd9bbfb1d3f293dc8",
+              "implementation": "0x2e588e0cff16cb8dd343551b435f5fee94f35230",
+              "proxy": "0x6cc740e1e17b7b72e1d6c46afea4d44d86657102"
+            },
+            "home": {
+              "beacon": "0x4b162c5c62a67e8a1772c0f04715ed2606b51421",
+              "implementation": "0xe015da2b3cfdefb210ad5125744b552e80905468",
+              "proxy": "0x884dad9316c61ed353b1d6931ba46663e1c3aacf"
+            },
+            "replicas": {
+              "evmostestnet": {
+                "beacon": "0x0c09e151720e0bcf4e2db42a3b5608b3de78e8d7",
+                "implementation": "0x7c8cc92daa7d9172dfe5d8319cc74a6166d05c2c",
+                "proxy": "0xb372d6b312f678494cf4e1bf5d149e733640e968"
+              },
+              "goerli": {
+                "beacon": "0x0c09e151720e0bcf4e2db42a3b5608b3de78e8d7",
+                "implementation": "0x7c8cc92daa7d9172dfe5d8319cc74a6166d05c2c",
+                "proxy": "0x5f4d75de162b4c050f27ce2f2374d50e3d7fbbb6"
+              },
+              "neontestnet": {
+                "beacon": "0x0c09e151720e0bcf4e2db42a3b5608b3de78e8d7",
+                "implementation": "0x7c8cc92daa7d9172dfe5d8319cc74a6166d05c2c",
+                "proxy": "0x495ef7cfee3850ba2afb5fea4c7c06ee0d1d0d6e"
+              },
+              "rinkeby": {
+                "beacon": "0x0c09e151720e0bcf4e2db42a3b5608b3de78e8d7",
+                "implementation": "0x7c8cc92daa7d9172dfe5d8319cc74a6166d05c2c",
+                "proxy": "0x921dbedc12ba3299deaf8dd9fff0f435d8839edf"
+              }
+            },
+            "updaterManager": "0x7f1b402a570f3221e03e41ef2408b5a215bb0448",
+            "upgradeBeaconController": "0x87c44484add9020e7d6c98132311e1cd118ac236",
+            "xAppConnectionManager": "0x42e8c0f7981add4c8081be20c813d49571f446f4"
+          }"#,
+        )
+        .unwrap();
+
+        let wrong: CoreContracts = serde_json::from_str(
+            r#"{
+            "deployHeight": 12098988,
+            "governanceRouter": {
+              "beacon": "0x0000000000000000000000000000000000000000",
+              "implementation": "0x0000000000000000000000000000000000000000",
+              "proxy": "0x0000000000000000000000000000000000000000"
+            },
+            "home": {
+              "beacon": "0x0000000000000000000000000000000000000000",
+              "implementation": "0x0000000000000000000000000000000000000000",
+              "proxy": "0x0000000000000000000000000000000000000000"
+            },
+            "replicas": {
+              "evmostestnet": {
+                "beacon": "0x0000000000000000000000000000000000000000",
+                "implementation": "0x0000000000000000000000000000000000000000",
+                "proxy": "0x0000000000000000000000000000000000000000"
+              },
+              "goerli": {
+                "beacon": "0x0000000000000000000000000000000000000000",
+                "implementation": "0x0000000000000000000000000000000000000000",
+                "proxy": "0x0000000000000000000000000000000000000000"
+              },
+              "neontestnet": {
+                "beacon": "0x0000000000000000000000000000000000000000",
+                "implementation": "0x0000000000000000000000000000000000000000",
+                "proxy": "0x0000000000000000000000000000000000000000"
+              },
+              "rinkeby": {
+                "beacon": "0x0000000000000000000000000000000000000000",
+                "implementation": "0x0000000000000000000000000000000000000000",
+                "proxy": "0x0000000000000000000000000000000000000000"
+              }
+            },
+            "updaterManager": "0x0000000000000000000000000000000000000000",
+            "upgradeBeaconController": "0x0000000000000000000000000000000000000000",
+            "xAppConnectionManager": "0x0000000000000000000000000000000000000000"
+          }"#,
+        )
+        .unwrap();
+
+        run_test_db(|db| async move {
+            let db = NomadDB::new("bootup integrity test", db);
+            db.check_core_integrity("toast", &core).unwrap();
+            assert!(
+                db.check_core_integrity("toast", &wrong).is_err(),
+                "should have caught changed addrs"
+            );
+            db.check_core_integrity("toast", &core).unwrap();
+        })
+        .await;
+    }
 }

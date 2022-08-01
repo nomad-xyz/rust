@@ -198,8 +198,9 @@ impl Decode for String {
         R: std::io::Read,
         Self: Sized,
     {
-        let length = u32::read_from(reader)?;
-        let mut buf = Vec::with_capacity(length as usize);
+        let length = u32::read_from(reader)? as usize;
+        let mut buf = vec![0u8; length];
+
         reader.read_exact(buf.as_mut())?;
 
         Ok(String::from_utf8(buf)?)
