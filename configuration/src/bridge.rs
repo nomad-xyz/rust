@@ -1,6 +1,7 @@
 //! Nomad-bridge related configuration structs
 
 use std::collections::HashSet;
+use std::hash::Hash;
 
 use nomad_types::deser_nomad_u64;
 use nomad_types::{NomadIdentifier, NomadLocator, Proxy};
@@ -8,7 +9,7 @@ use nomad_types::{NomadIdentifier, NomadLocator, Proxy};
 use crate::network::CustomTokenSpecifier;
 
 /// Deploy-time custom tokens
-#[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize, Eq, PartialEq, Hash)]
+#[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct DeployedCustomToken {
     /// Token domain and ID

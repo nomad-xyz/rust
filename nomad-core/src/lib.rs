@@ -8,6 +8,8 @@
 #![forbid(unsafe_code)]
 #![forbid(where_clauses_object_safety)]
 
+use std::string::FromUtf8Error;
+
 pub use accumulator;
 
 /// AWS global state and init
@@ -87,4 +89,7 @@ pub enum NomadError {
     /// IO error from Read/Write usage
     #[error(transparent)]
     IoError(#[from] std::io::Error),
+    /// decoding error
+    #[error(transparent)]
+    DecodingError(#[from] FromUtf8Error),
 }

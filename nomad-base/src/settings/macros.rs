@@ -110,10 +110,20 @@ macro_rules! decl_settings {
                     let base = nomad_base::Settings::from_config_and_secrets(&agent, &home, &remote_networks, &config, &secrets);
                     base.validate_against_config_and_secrets(&agent, &home, &remote_networks, &config, &secrets)?;
 
+
+                    // perform integrity checks
+                    let db: nomad_base::NomadDB =
+                    nomad_core::db::TypedDB::new(
+                        "integrity_check".into(),
+                        nomad_core::db::DB::from_path(&base.db)?
+                    ).into();
+                    db.check_integrity(&config)?;
+
                     let mut agent = config.agent().get(&home).expect("agent config").[<$name:lower>].clone();
 
                     // Override with environment vars, if present
                     agent.load_env_overrides();
+
 
                     Ok(Self {
                         base,

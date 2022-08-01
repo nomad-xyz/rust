@@ -2,6 +2,9 @@
 
 ### Unreleased
 
+- feature: add core integrity check to agent bootup process
+- feature: add core integrity check store/retrieve to DB
+- feature: add `integrity_check` to `NomadAgent` trait
 - un-nest, simplify & add event to setup code for determining which replicas to
   run
 - un-nest, simplify & add event to setup code for config source discovery

@@ -2,6 +2,7 @@
 
 ### Unreleased
 
+- feature: `CoreContracts` and related types derive `PartialEq`
 - feature: add more explicit Processor Config TS declaration
 - refactor: make Processor config keys optional, and prevent trivial ser.
 - fix: update TS AgentConfig to match rust

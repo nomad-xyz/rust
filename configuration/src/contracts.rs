@@ -6,7 +6,7 @@ use nomad_types::deser_nomad_u32;
 use nomad_types::{NomadIdentifier, Proxy};
 
 /// Evm Core Contracts
-#[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct EvmCoreContracts {
     /// Contract Deploy Height
@@ -28,7 +28,7 @@ pub struct EvmCoreContracts {
 }
 
 /// Core Contract abstract
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(untagged)]
 pub enum CoreContracts {
     /// EVM Core

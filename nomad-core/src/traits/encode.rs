@@ -178,3 +178,31 @@ impl Decode for bool {
         }
     }
 }
+
+impl Encode for String {
+    fn write_to<W>(&self, writer: &mut W) -> std::io::Result<usize>
+    where
+        W: std::io::Write,
+    {
+        let buf = self.as_bytes();
+        let len = buf.len() as u32;
+        len.write_to(writer)?;
+        writer.write_all(buf)?;
+        Ok(buf.len() + 4)
+    }
+}
+
+impl Decode for String {
+    fn read_from<R>(reader: &mut R) -> Result<Self, NomadError>
+    where
+        R: std::io::Read,
+        Self: Sized,
+    {
+        let length = u32::read_from(reader)? as usize;
+        let mut buf = vec![0u8; length];
+
+        reader.read_exact(buf.as_mut())?;
+
+        Ok(String::from_utf8(buf)?)
+    }
+}
