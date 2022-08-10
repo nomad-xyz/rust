@@ -3,7 +3,7 @@ use std::{collections::HashMap, fmt::Display};
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 use tracing::{info_span, Instrument};
 
-use crate::{unwrap_channel_item_unrecoverable, utils::nexts, ProcessStep, Restartable};
+use agent_utils::{unwrap_channel_item_unrecoverable, utils::nexts, ProcessStep, Restartable};
 
 #[derive(Debug)]
 #[must_use = "Tasks do nothing unless you call .spawn() or .run_until_panic()"]

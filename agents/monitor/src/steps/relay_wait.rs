@@ -1,15 +1,15 @@
 use std::time::Duration;
 
+use agent_utils::Restartable;
 use ethers::prelude::U64;
 use prometheus::Histogram;
 use tokio::time::Instant;
 
 use tracing::{debug, info_span, trace, Instrument};
 
-use crate::{
-    pipe::{ProcessPipe, RelayPipe},
-    unwrap_pipe_item_unrecoverable, ProcessStep,
-};
+use agent_utils::{unwrap_pipe_item_unrecoverable, ProcessStep};
+
+use crate::{ProcessPipe, RelayPipe};
 
 #[derive(Debug)]
 pub(crate) struct RelayWaitMetrics {
@@ -67,7 +67,7 @@ impl std::fmt::Display for RelayWait {
 }
 
 impl ProcessStep for RelayWait {
-    fn spawn(mut self) -> crate::Restartable<Self>
+    fn spawn(mut self) -> Restartable<Self>
     where
         Self: 'static + Send + Sync + Sized,
     {

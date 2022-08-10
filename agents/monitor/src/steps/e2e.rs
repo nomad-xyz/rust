@@ -10,9 +10,10 @@ use tokio::{
 use ethers::prelude::H256;
 use tracing::{debug, debug_span, info_span, trace, Instrument};
 
-use crate::{
-    annotate::WithMeta, send_unrecoverable, unwrap_channel_item_unrecoverable, DispatchFaucet,
-    DispatchSink, ProcessFaucet, ProcessSink, ProcessStep,
+use crate::{annotate::WithMeta, DispatchFaucet, DispatchSink, ProcessFaucet, ProcessSink};
+
+use agent_utils::{
+    send_unrecoverable, unwrap_channel_item_unrecoverable, ProcessStep, Restartable,
 };
 
 use super::combine::CombineChannels;
@@ -198,7 +199,7 @@ impl E2ELatency {
 }
 
 impl ProcessStep for E2ELatency {
-    fn spawn(mut self) -> crate::Restartable<Self>
+    fn spawn(mut self) -> Restartable<Self>
     where
         Self: 'static + Send + Sync + Sized,
     {

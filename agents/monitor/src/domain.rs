@@ -1,5 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
+use agent_utils::ProcessStep;
 use nomad_ethereum::bindings::{home::Home, replica::Replica};
 use nomad_xyz_configuration::{contracts::CoreContracts, NomadConfig};
 use tokio::sync::mpsc::unbounded_channel;
@@ -15,7 +16,7 @@ use crate::{
         relay_wait::RelayWait,
         update_wait::UpdateWait,
     },
-    DispatchFaucet, ProcessFaucet, ProcessStep, Provider, RelayFaucet, UpdateFaucet,
+    DispatchFaucet, ProcessFaucet, Provider, RelayFaucet, UpdateFaucet,
 };
 
 #[derive(Debug)]

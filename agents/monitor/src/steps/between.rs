@@ -1,6 +1,7 @@
+use agent_utils::{pipe::Pipe, ProcessStep, Restartable};
 use tracing::{debug, info_span, Instrument};
 
-use crate::{annotate::WithMeta, pipe::Pipe, ProcessStep, Restartable};
+use crate::annotate::WithMeta;
 
 pub(crate) struct BetweenMetrics {
     pub(crate) count: prometheus::IntCounter,

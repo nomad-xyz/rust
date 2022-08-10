@@ -1,7 +1,7 @@
 use tokio::sync::mpsc::UnboundedReceiver;
 use tracing::{debug_span, Instrument};
 
-use crate::{steps::TaskResult, ProcessStep, Restartable};
+use agent_utils::{ProcessStep, Restartable, TaskResult};
 
 #[derive(Debug)]
 #[must_use = "Tasks do nothing unless you call .spawn() or .run_until_panic()"]

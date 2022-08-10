@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
+use agent_utils::{pipe::Pipe, HomeReplicaMap, NetworkMap};
 use tokio::sync::mpsc::unbounded_channel;
 
 use crate::{
-    pipe::{DispatchPipe, Pipe, ProcessPipe, RelayPipe, UpdatePipe},
-    DispatchFaucet, DispatchSink, HomeReplicaMap, NetworkMap, ProcessFaucet, ProcessSink,
-    RelayFaucet, UpdateFaucet,
+    DispatchFaucet, DispatchPipe, DispatchSink, ProcessFaucet, ProcessPipe, ProcessSink,
+    RelayFaucet, RelayPipe, UpdateFaucet, UpdatePipe,
 };
 
 pub(crate) struct Faucets<'a> {

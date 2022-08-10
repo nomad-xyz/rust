@@ -6,10 +6,13 @@ use tracing::{debug, info_span, trace, Instrument};
 
 use nomad_ethereum::bindings::replica::UpdateFilter as RelayFilter;
 
+use agent_utils::{
+    send_unrecoverable, unwrap_channel_item_unrecoverable, unwrap_pipe_item_unrecoverable,
+    ProcessStep, Restartable,
+};
+
 use crate::{
-    annotate::WithMeta, pipe::UpdatePipe, send_unrecoverable, steps::combine::CombineChannels,
-    unwrap_channel_item_unrecoverable, unwrap_pipe_item_unrecoverable, ProcessStep, RelayFaucet,
-    RelaySink,
+    annotate::WithMeta, steps::combine::CombineChannels, RelayFaucet, RelaySink, UpdatePipe,
 };
 
 #[derive(Debug)]
@@ -162,7 +165,7 @@ impl UpdateWait {
 }
 
 impl ProcessStep for UpdateWait {
-    fn spawn(mut self) -> crate::Restartable<Self>
+    fn spawn(mut self) -> Restartable<Self>
     where
         Self: 'static + Send + Sync + Sized,
     {

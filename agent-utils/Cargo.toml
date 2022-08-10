@@ -1,9 +1,9 @@
 [package]
-name = "monitor"
+name = "agent-utils"
 version = "0.1.0"
 edition = "2021"
 authors = ["James Prestwich <james@nomad.xyz>"]
-description = "Network metrics for Nomad"
+description = "Utils for building better agents"
 repository = "https://github.com/nomad-xyz/rust"
 license = "MIT OR Apache-2.0"
 keywords = ["Ethereum", "Nomad"]
@@ -12,15 +12,8 @@ keywords = ["Ethereum", "Nomad"]
 
 [dependencies]
 tokio = { version = "1.0.1", features = ["rt", "macros"] }
-prometheus = "0.13.1"
 tracing = "0.1.35"
-
 ethers = { git = "https://github.com/gakonst/ethers-rs", branch = "master", default-features = false }
-
-nomad-core = { path = "../../nomad-core", default-features = false }
-agent-utils = { path = "../../agent-utils" }
-nomad-xyz-configuration = { version = "0.1.0-rc.25", path = "../../configuration" }
-nomad-ethereum = { version = "0.1.0", path = "../../chains/nomad-ethereum" }
 
 tracing-subscriber = "0.2.15"
 eyre = "0.6.8"
@@ -28,3 +21,6 @@ warp = "0.3.2"
 async-trait = "0.1.56"
 futures-util = "0.3.21"
 tracing-test = "0.2.3"
+
+nomad-core = { path = "../nomad-core", default-features = false }
+nomad-xyz-configuration = { version = "0.1.0-rc.25", path = "../configuration" }

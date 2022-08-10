@@ -7,7 +7,7 @@ macro_rules! bail_task_if {
     ($cond:expr, $self:ident, $err:expr) => {
         if $cond {
             let err = eyre::eyre!($err);
-            return $crate::steps::TaskResult::Recoverable { task: $self, err };
+            return $crate::TaskResult::Recoverable { task: $self, err };
         }
     };
 }
@@ -22,7 +22,7 @@ macro_rules! unwrap_channel_item_unrecoverable {
             tracing::debug!(
                 task = %$self, "inbound channel broke"
             );
-            return $crate::steps::TaskResult::Unrecoverable{err: eyre::eyre!("inbound channel broke"), worth_logging: false}
+            return $crate::TaskResult::Unrecoverable{err: eyre::eyre!("inbound channel broke"), worth_logging: false}
         }
         $channel_item.unwrap()
     }};
@@ -38,7 +38,7 @@ macro_rules! unwrap_pipe_item_unrecoverable {
             tracing::debug!(
                 task = %$self, "inbound pipe broke"
             );
-            return $crate::steps::TaskResult::Unrecoverable{err: eyre::eyre!("inbound pipe broke"), worth_logging: false}
+            return $crate::TaskResult::Unrecoverable{err: eyre::eyre!("inbound pipe broke"), worth_logging: false}
         }
         $pipe_item.unwrap()
     }};
@@ -59,7 +59,7 @@ macro_rules! unwrap_result_recoverable {
 macro_rules! send_unrecoverable {
     ($tx:expr, $item:expr, $self:ident) => {
         if $tx.send($item).is_err() {
-            return $crate::steps::TaskResult::Unrecoverable {
+            return $crate::TaskResult::Unrecoverable {
                 err: eyre::eyre!("outbound channel broke"),
                 worth_logging: false,
             };

@@ -6,10 +6,12 @@ use nomad_ethereum::bindings::{
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{info_span, trace, Instrument};
 
-use crate::{
-    annotate::WithMeta, bail_task_if, send_unrecoverable, steps::noisy_sleep,
-    unwrap_result_recoverable, DispatchSink, ProcessStep, Restartable,
+use agent_utils::{
+    bail_task_if, send_unrecoverable, unwrap_result_recoverable, utils::noisy_sleep, ProcessStep,
+    Restartable,
 };
+
+use crate::{annotate::WithMeta, DispatchSink};
 
 pub const POLLING_INTERVAL_MILLIS: u64 = 5000;
 pub const BEHIND_TIP: u64 = 5;

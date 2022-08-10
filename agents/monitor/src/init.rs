@@ -5,60 +5,21 @@ use ethers::{
     prelude::{Http, Provider as EthersProvider},
 };
 
-use nomad_xyz_configuration::{get_builtin, NomadConfig};
+use nomad_xyz_configuration::NomadConfig;
 use tokio::task::JoinHandle;
-use tracing::Level;
-use tracing_subscriber::EnvFilter;
+
+use agent_utils::{
+    init::{config, networks_from_env, rpc_from_env},
+    HomeReplicaMap, ProcessStep,
+};
 
 use crate::{
     domain::Domain,
     faucets::Faucets,
     metrics::Metrics,
     steps::{e2e::E2ELatency, terminal::Terminal},
-    ArcProvider, DispatchFaucet, HomeReplicaMap, ProcessFaucet, ProcessStep, RelayFaucet,
-    UpdateFaucet,
+    ArcProvider, DispatchFaucet, ProcessFaucet, RelayFaucet, UpdateFaucet,
 };
-
-pub(crate) fn config_from_file() -> Option<NomadConfig> {
-    std::env::var("CONFIG_PATH")
-        .ok()
-        .and_then(|path| NomadConfig::from_file(path).ok())
-}
-
-pub(crate) fn config_from_env() -> Option<NomadConfig> {
-    std::env::var("RUN_ENV")
-        .ok()
-        .and_then(|env| get_builtin(&env))
-        .map(ToOwned::to_owned)
-}
-
-pub(crate) fn config() -> eyre::Result<NomadConfig> {
-    config_from_file()
-        .or_else(config_from_env)
-        .ok_or_else(|| eyre::eyre!("Unable to load config from file or env"))
-}
-
-pub(crate) fn init_tracing() {
-    let builder = tracing_subscriber::FmtSubscriber::builder()
-        .with_max_level(Level::INFO)
-        .with_env_filter(EnvFilter::from_default_env())
-        .with_level(true);
-    if std::env::var("MONITOR_PRETTY").is_ok() {
-        builder.pretty().init()
-    } else {
-        builder.json().init()
-    }
-}
-
-pub(crate) fn networks_from_env() -> Option<Vec<String>> {
-    std::env::var("MONITOR_NETWORKS")
-        .ok()
-        .map(|s| s.split(',').map(ToOwned::to_owned).collect())
-}
-
-pub(crate) fn rpc_from_env(network: &str) -> Option<String> {
-    std::env::var(format!("{}_CONNECTION_URL", network.to_uppercase())).ok()
-}
 
 pub(crate) fn provider_for(config: &NomadConfig, network: &str) -> eyre::Result<ArcProvider> {
     tracing::info!(network, "Instantiating provider");

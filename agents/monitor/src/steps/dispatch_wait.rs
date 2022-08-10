@@ -3,10 +3,9 @@ use prometheus::{Histogram, HistogramTimer, IntGauge};
 use tokio::select;
 use tracing::{debug, info_span, trace, Instrument};
 
-use crate::{
-    pipe::{DispatchPipe, UpdatePipe},
-    unwrap_pipe_item_unrecoverable, ProcessStep, Restartable,
-};
+use agent_utils::{unwrap_pipe_item_unrecoverable, ProcessStep, Restartable};
+
+use crate::{DispatchPipe, UpdatePipe};
 
 #[derive(Debug)]
 pub(crate) struct DispatchWaitMetrics {
