@@ -10,6 +10,7 @@ members = [
     "nomad-base",
     "nomad-test",
     "chains/nomad-ethereum",
+    "chains/nomad-substrate",
     "configuration",
     "agents/kathy",
     "agents/updater",
