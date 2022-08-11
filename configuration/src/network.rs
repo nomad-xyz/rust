@@ -147,4 +147,9 @@ impl NetworkInfo {
     pub fn networks(&self) -> HashSet<String> {
         self.networks.keys().map(ToOwned::to_owned).collect()
     }
+
+    /// resolve a name to a number
+    pub fn resolve_name_to_domain(&self, name: &str) -> Option<u32> {
+        self.networks.get(name).map(|net| net.domain)
+    }
 }

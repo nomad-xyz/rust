@@ -5,6 +5,7 @@ resolver = "2"
 
 members = [
     "accumulator",
+    "agent-utils",
     "nomad-types",
     "nomad-core",
     "nomad-base",
@@ -15,6 +16,7 @@ members = [
     "agents/relayer",
     "agents/watcher",
     "agents/processor",
+    "agents/monitor",
     "tools/kms-cli",
     "tools/nomad-cli",
     "tools/balance-exporter",

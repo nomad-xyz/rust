@@ -100,18 +100,18 @@ async fn main() -> eyre::Result<()> {
         "cargo:rerun-if-changed={}",
         concat!(env!("CARGO_MANIFEST_DIR"), "/data/types.rs")
     );
-    println!(
-        "cargo:rerun-if-changed={}",
-        concat!(env!("CARGO_MANIFEST_DIR"), "/configs/production.json")
-    );
-    println!(
-        "cargo:rerun-if-changed={}",
-        concat!(env!("CARGO_MANIFEST_DIR"), "/configs/development.json")
-    );
-    println!(
-        "cargo:rerun-if-changed={}",
-        concat!(env!("CARGO_MANIFEST_DIR"), "/configs/staging.json")
-    );
+    // println!(
+    //     "cargo:rerun-if-changed={}",
+    //     concat!(env!("CARGO_MANIFEST_DIR"), "/configs/production.json")
+    // );
+    // println!(
+    //     "cargo:rerun-if-changed={}",
+    //     concat!(env!("CARGO_MANIFEST_DIR"), "/configs/development.json")
+    // );
+    // println!(
+    //     "cargo:rerun-if-changed={}",
+    //     concat!(env!("CARGO_MANIFEST_DIR"), "/configs/staging.json")
+    // );
     gen_wasm_bindgen()?;
 
     // don't re-fetch configs if programmer disables build
