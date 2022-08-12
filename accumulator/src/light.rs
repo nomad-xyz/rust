@@ -11,6 +11,13 @@ pub struct LightMerkle<const N: usize> {
     count: usize,
 }
 
+impl<const N: usize> LightMerkle<N> {
+    /// Instantiate new LightMerkle from branch and count
+    pub fn new(branch: [H256; N], count: usize) -> Self {
+        Self { branch, count }
+    }
+}
+
 impl<const N: usize> Default for LightMerkle<N> {
     fn default() -> Self {
         let mut branch: [H256; N] = [Default::default(); N];

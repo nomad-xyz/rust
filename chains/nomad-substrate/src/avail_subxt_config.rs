@@ -22,8 +22,17 @@ use subxt::{
     Config,
 };
 
+use self::avail::runtime_types::merkle::light::LightMerkle;
+
 #[subxt::subxt(runtime_metadata_path = "metadata/avail.metadata.scale")]
 pub mod avail {}
+
+impl From<LightMerkle> for nomad_core::accumulator::NomadLightMerkle {
+    fn from(avail_merkle: LightMerkle) -> Self {
+        // avail merkle had to be u32 because of scale encoding limitations
+        Self::new(avail_merkle.branch, avail_merkle.count as usize)
+    }
+}
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct AvailConfig;
