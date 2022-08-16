@@ -21,6 +21,3 @@ members = [
     "tools/nomad-cli",
     "tools/balance-exporter",
 ]
-
-[patch.crates-io]
-primitive-types = { git = "https://github.com/paritytech/parity-common.git", tag = "parity-util-mem-v0.10.1" }

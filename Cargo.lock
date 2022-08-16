@@ -6824,8 +6824,3 @@ dependencies = [
  "cc",
  "libc",
 ]
-
-[[patch.unused]]
-name = "primitive-types"
-version = "0.10.1"
-source = "git+https://github.com/paritytech/parity-common.git?tag=parity-util-mem-v0.10.1#3030a6dd28352a4a12169340d22f130f331e0d12"
