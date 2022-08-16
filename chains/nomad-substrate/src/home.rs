@@ -1,8 +1,10 @@
-use crate::avail_subxt_config::*;
+use crate::avail_subxt_config::{avail::runtime_types::nomad_core::state::NomadState, *};
 use anyhow::Result;
 use async_trait::async_trait;
 use avail::RuntimeApi;
-use subxt::{sp_core::H256, AvailExtra, ClientBuilder};
+use ethers_core::types::H256;
+use std::sync::Arc;
+use subxt::{AvailExtra, ClientBuilder, PairSigner, Signer};
 
 use nomad_core::{
     ChainCommunicationError, Common, CommonIndexer, ContractLocator, DoubleUpdate, Home,
@@ -14,6 +16,7 @@ use crate::home::avail::runtime_types::nomad_base::NomadBase;
 
 pub struct SubstrateHome {
     api: RuntimeApi<AvailConfig, AvailExtra<AvailConfig>>,
+    signer: Arc<PairSigner<AvailConfig, AvailExtra<AvailConfig>, sp_core::ecdsa::Pair>>,
     domain: u32,
     name: String,
 }
@@ -26,15 +29,15 @@ impl std::ops::Deref for SubstrateHome {
 }
 
 impl SubstrateHome {
-    pub async fn new(url: &str, domain: u32, name: &str) -> Result<Self> {
-        let api = ClientBuilder::new()
-            .set_url(url)
-            .build()
-            .await?
-            .to_runtime_api::<avail::RuntimeApi<AvailConfig, AvailExtra<AvailConfig>>>();
-
+    pub async fn new(
+        api: RuntimeApi<AvailConfig, AvailExtra<AvailConfig>>,
+        signer: Arc<PairSigner<AvailConfig, AvailExtra<AvailConfig>, sp_core::ecdsa::Pair>>,
+        domain: u32,
+        name: &str,
+    ) -> Result<Self> {
         Ok(Self {
             api,
+            signer,
             domain,
             name: name.to_owned(),
         })
@@ -87,20 +90,62 @@ impl std::fmt::Display for SubstrateHome {
     }
 }
 
-// #[async_trait]
-// impl Common for SubstrateHome {
-//     fn name(&self) ->  &str {
-//         &self.name
-//     }
+#[async_trait]
+impl Common for SubstrateHome {
+    fn name(&self) -> &str {
+        &self.name
+    }
 
-//     #[tracing::instrument(err, skip(self))]
-//     async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
-//         unimplemented!("Have not implemented _status_ for substrate home")
-//     }
+    #[tracing::instrument(err, skip(self))]
+    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+        unimplemented!("Have not implemented _status_ for substrate home")
+    }
 
-//     #[tracing::instrument(err, skip(self))]
-//     async fn updater(&self) -> Result<H256, ChainCommunicationError> {
-//         let base = self.base().await?;
-//         Ok(base.updater.into())
-//     }
-// }
+    #[tracing::instrument(err, skip(self))]
+    async fn updater(&self) -> Result<H256, ChainCommunicationError> {
+        let base = self.base().await.unwrap();
+        let updater = base.updater;
+        Ok(updater.into()) // H256 is primitive-types 0.11.1 not 0.10.1
+    }
+
+    #[tracing::instrument(err, skip(self))]
+    async fn state(&self) -> Result<State, ChainCommunicationError> {
+        let base = self.base().await.unwrap();
+        match base.state {
+            NomadState::Active => Ok(nomad_core::State::Active),
+            NomadState::Failed => Ok(nomad_core::State::Failed),
+        }
+    }
+
+    #[tracing::instrument(err, skip(self))]
+    async fn committed_root(&self) -> Result<H256, ChainCommunicationError> {
+        let base = self.base().await.unwrap();
+        Ok(base.committed_root)
+    }
+
+    #[tracing::instrument(err, skip(self, update), fields(update = %update))]
+    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+        let res = self
+            .tx()
+            .home()
+            .update((*update).into())
+            .sign_and_submit_then_watch(&self.signer)
+            .await
+            .unwrap()
+            .wait_for_finalized_success()
+            .await
+            .unwrap();
+
+        Ok(TxOutcome {
+            txid: res.extrinsic_hash(),
+        })
+    }
+
+    #[tracing::instrument(err, skip(self, double), fields(double = %double))]
+    async fn double_update(
+        &self,
+        double: &DoubleUpdate,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
+        unimplemented!("Double update deprecated for Substrate implementations")
+    }
+}

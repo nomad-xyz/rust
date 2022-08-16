@@ -22,15 +22,44 @@ use subxt::{
     Config,
 };
 
-use self::avail::runtime_types::merkle::light::LightMerkle;
+use self::avail::runtime_types::{
+    merkle::light::LightMerkle, primitive_types::U256, signature::signature::Signature,
+};
+use crate::avail_subxt_config::avail::runtime_types::nomad_core::update::{SignedUpdate, Update};
 
-#[subxt::subxt(runtime_metadata_path = "metadata/avail.metadata.scale")]
+#[subxt::subxt(runtime_metadata_path = "metadata/avail.metadata.08.15.22.scale")]
 pub mod avail {}
 
 impl From<LightMerkle> for nomad_core::accumulator::NomadLightMerkle {
     fn from(avail_merkle: LightMerkle) -> Self {
         // avail merkle had to be u32 because of scale encoding limitations
         Self::new(avail_merkle.branch, avail_merkle.count as usize)
+    }
+}
+
+impl From<nomad_core::Update> for Update {
+    fn from(nomad_update: nomad_core::Update) -> Self {
+        Update {
+            home_domain: nomad_update.home_domain,
+            previous_root: nomad_update.previous_root,
+            new_root: nomad_update.new_root,
+        }
+    }
+}
+
+impl From<ethers_core::types::Signature> for Signature {
+    fn from(ethers_signature: ethers_core::types::Signature) -> Self {
+        // Signature { r: ethers_signature.r, s: ethers_signature.s, v: ethers_signature.v }
+        unimplemented!("TODO: U256 conversions failing")
+    }
+}
+
+impl From<nomad_core::SignedUpdate> for SignedUpdate {
+    fn from(nomad_signed_update: nomad_core::SignedUpdate) -> Self {
+        SignedUpdate {
+            update: nomad_signed_update.update.into(),
+            signature: nomad_signed_update.signature.into(),
+        }
     }
 }
 

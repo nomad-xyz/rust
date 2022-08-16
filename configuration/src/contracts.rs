@@ -33,7 +33,7 @@ pub struct EvmCoreContracts {
 pub enum CoreContracts {
     /// EVM Core
     Evm(EvmCoreContracts),
-    // leaving open future things here
+    // Substrate (empty)
 }
 
 impl CoreContracts {
