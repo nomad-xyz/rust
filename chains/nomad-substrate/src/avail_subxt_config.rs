@@ -23,12 +23,31 @@ use subxt::{
 };
 
 use self::avail::runtime_types::{
-    merkle::light::LightMerkle, primitive_types::U256, signature::signature::Signature,
+    merkle::light::LightMerkle,
+    primitive_types::{H160, U256},
+    signature::signature::Signature,
 };
 use crate::avail_subxt_config::avail::runtime_types::nomad_core::update::{SignedUpdate, Update};
 
 #[subxt::subxt(runtime_metadata_path = "metadata/avail.metadata.08.15.22.scale")]
 pub mod avail {}
+
+// Kludge: implement manual conversions between subxt codegen types and ethers
+// primitive_types
+impl From<H160> for ethers_core::types::H256 {
+    fn from(avail_h160: H160) -> Self {
+        let h160_bytes = avail_h160.0;
+        let pt_h160: ethers_core::types::H160 = h160_bytes.into();
+        pt_h160.into()
+    }
+}
+
+impl From<ethers_core::types::U256> for U256 {
+    fn from(pt_u256: ethers_core::types::U256) -> Self {
+        let pt_u256_bytes = pt_u256.0;
+        U256(pt_u256_bytes)
+    }
+}
 
 impl From<LightMerkle> for nomad_core::accumulator::NomadLightMerkle {
     fn from(avail_merkle: LightMerkle) -> Self {
@@ -49,8 +68,12 @@ impl From<nomad_core::Update> for Update {
 
 impl From<ethers_core::types::Signature> for Signature {
     fn from(ethers_signature: ethers_core::types::Signature) -> Self {
-        // Signature { r: ethers_signature.r, s: ethers_signature.s, v: ethers_signature.v }
-        unimplemented!("TODO: U256 conversions failing")
+        Signature {
+            r: ethers_signature.r.into(),
+            s: ethers_signature.s.into(),
+            v: ethers_signature.v,
+        }
+        // unimplemented!("TODO: U256 conversions failing")
     }
 }
 

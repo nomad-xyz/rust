@@ -3,7 +3,6 @@ use anyhow::Result;
 use async_trait::async_trait;
 use avail::RuntimeApi;
 use ethers_core::types::H256;
-use std::sync::Arc;
 use subxt::{AvailExtra, ClientBuilder, PairSigner, Signer};
 
 use nomad_core::{
@@ -16,7 +15,7 @@ use crate::home::avail::runtime_types::nomad_base::NomadBase;
 
 pub struct SubstrateHome {
     api: RuntimeApi<AvailConfig, AvailExtra<AvailConfig>>,
-    signer: Arc<PairSigner<AvailConfig, AvailExtra<AvailConfig>, sp_core::ecdsa::Pair>>,
+    signer: PairSigner<AvailConfig, AvailExtra<AvailConfig>, sp_core::ecdsa::Pair>,
     domain: u32,
     name: String,
 }
@@ -31,7 +30,7 @@ impl std::ops::Deref for SubstrateHome {
 impl SubstrateHome {
     pub async fn new(
         api: RuntimeApi<AvailConfig, AvailExtra<AvailConfig>>,
-        signer: Arc<PairSigner<AvailConfig, AvailExtra<AvailConfig>, sp_core::ecdsa::Pair>>,
+        signer: PairSigner<AvailConfig, AvailExtra<AvailConfig>, sp_core::ecdsa::Pair>,
         domain: u32,
         name: &str,
     ) -> Result<Self> {
@@ -97,7 +96,7 @@ impl Common for SubstrateHome {
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+    async fn status(&self, _txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
         unimplemented!("Have not implemented _status_ for substrate home")
     }
 
@@ -128,7 +127,7 @@ impl Common for SubstrateHome {
         let res = self
             .tx()
             .home()
-            .update((*update).into())
+            .update(update.clone().into())
             .sign_and_submit_then_watch(&self.signer)
             .await
             .unwrap()
@@ -141,10 +140,10 @@ impl Common for SubstrateHome {
         })
     }
 
-    #[tracing::instrument(err, skip(self, double), fields(double = %double))]
+    #[tracing::instrument(err, skip(self))]
     async fn double_update(
         &self,
-        double: &DoubleUpdate,
+        _double: &DoubleUpdate,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         unimplemented!("Double update deprecated for Substrate implementations")
     }
