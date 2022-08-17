@@ -80,6 +80,9 @@ pub enum ChainCommunicationError {
     /// Middleware error
     #[error("{0}")]
     MiddlewareError(Box<dyn StdError + Send + Sync>),
+    /// Base provider error
+    #[error("{0}")]
+    BaseProviderError(Box<dyn StdError + Send + Sync>),
     /// Provider Error
     #[error("{0}")]
     ProviderError(#[from] ProviderError),
