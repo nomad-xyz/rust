@@ -1,8 +1,12 @@
-use crate::avail_subxt_config::{avail::runtime_types::nomad_core::state::NomadState, *};
-use anyhow::Result;
+use crate::avail_subxt_config::{
+    avail::home, avail::runtime_types::nomad_core::state::NomadState, *,
+};
 use async_trait::async_trait;
 use avail::RuntimeApi;
+use color_eyre::Result;
+use ethers_core::types::Signature;
 use ethers_core::types::H256;
+use futures::{stream::FuturesOrdered, StreamExt};
 use subxt::{AvailExtra, ClientBuilder, PairSigner, Signer};
 
 use nomad_core::{
@@ -86,6 +90,79 @@ impl std::fmt::Display for SubstrateHome {
             "SubstrateHome {{ domain: {}, name: {} }}",
             self.domain, self.name,
         )
+    }
+}
+
+#[async_trait]
+impl CommonIndexer for SubstrateHome {
+    #[tracing::instrument(err, skip(self))]
+    async fn get_block_number(&self) -> Result<u32> {
+        let header = self.api.client.rpc().header(None).await?.unwrap();
+        Ok(header.number)
+    }
+
+    #[tracing::instrument(err, skip(self))]
+    async fn fetch_sorted_updates(&self, from: u32, to: u32) -> Result<Vec<SignedUpdateWithMeta>> {
+        // Create future for fetching block hashes for range
+        let numbers_and_hash_futs: FuturesOrdered<_> = (from..to)
+            .map(|n| async move { (n, self.api.client.rpc().block_hash(Some(n.into())).await) })
+            .collect();
+
+        // Await and block hash requests
+        let numbers_and_hashes: Vec<_> = numbers_and_hash_futs
+            .collect::<Vec<_>>()
+            .await
+            .into_iter()
+            .map(|r| (r.0, r.1.unwrap().unwrap())) // TODO: is this safe to unwrap  (log RPC err)?
+            .collect();
+
+        // Get futures for events for each block's hash
+        let numbers_and_event_futs: FuturesOrdered<_> = numbers_and_hashes
+            .into_iter()
+            .map(|(n, h)| async move {
+                let events_api = self.api.events();
+                (n, events_api.at(h).await)
+            })
+            .collect();
+
+        // Await event requests and filter only update events
+        let numbers_and_update_events: Vec<_> = numbers_and_event_futs
+            .collect::<Vec<_>>()
+            .await
+            .into_iter()
+            .map(|(n, r)| {
+                let events_for_block = r.unwrap();
+                events_for_block
+                    .find::<home::events::Update>()
+                    .map(|r| (n, r.unwrap())) // TODO: is this safe to unwrap (log RPC err)?
+                    .collect::<Vec<_>>()
+            })
+            .flatten()
+            .collect();
+
+        // Map update events into SignedUpdates with meta
+        Ok(numbers_and_update_events
+            .into_iter()
+            .map(|(n, e)| {
+                let signature = Signature::try_from(e.signature.as_ref())
+                    .expect("chain accepted invalid signature");
+
+                nomad_core::SignedUpdateWithMeta {
+                    signed_update: nomad_core::SignedUpdate {
+                        update: nomad_core::Update {
+                            home_domain: e.home_domain,
+                            previous_root: e.previous_root,
+                            new_root: e.new_root,
+                        },
+                        signature,
+                    },
+                    metadata: nomad_core::UpdateMeta {
+                        block_number: n as u64,
+                        timestamp: None,
+                    },
+                }
+            })
+            .collect())
     }
 }
 

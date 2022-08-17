@@ -9,6 +9,7 @@ use avail::runtime_types::{
     pallet_transaction_payment,
 };
 use codec::{Codec, Compact, Decode, Encode, EncodeLike, Error as DecodeError, Input};
+use nomad_core::ChainCommunicationError;
 use parity_util_mem::MallocSizeOf;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Deserializer, Serialize};
@@ -19,7 +20,7 @@ use subxt::{
         traits::{BlakeTwo256, Extrinsic, Hash},
         AccountId32, Digest, MultiAddress, MultiSignature,
     },
-    Config,
+    BasicError, Config, GenericError,
 };
 
 use self::avail::runtime_types::{

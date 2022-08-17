@@ -3281,6 +3281,7 @@ dependencies = [
  "anyhow",
  "async-std",
  "async-trait",
+ "color-eyre",
  "env_logger",
  "ethers-core",
  "futures",
@@ -5663,7 +5664,7 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 [[package]]
 name = "subxt"
 version = "0.19.0"
-source = "git+https://github.com/maticnetwork/subxt.git?branch=luka/avail-standalone-example#61abee8a3fcfc5221aa42ae8f610231f18627aa1"
+source = "git+https://github.com/maticnetwork/subxt.git?branch=main#68df5d9f5503e07dfcb5d92a63d6371a1da027b5"
 dependencies = [
  "async-trait",
  "bitvec 1.0.0",
@@ -5687,7 +5688,7 @@ dependencies = [
 [[package]]
 name = "subxt-codegen"
 version = "0.19.0"
-source = "git+https://github.com/maticnetwork/subxt.git?branch=luka/avail-standalone-example#61abee8a3fcfc5221aa42ae8f610231f18627aa1"
+source = "git+https://github.com/maticnetwork/subxt.git?branch=main#68df5d9f5503e07dfcb5d92a63d6371a1da027b5"
 dependencies = [
  "async-trait",
  "darling",
@@ -5705,7 +5706,7 @@ dependencies = [
 [[package]]
 name = "subxt-macro"
 version = "0.19.0"
-source = "git+https://github.com/maticnetwork/subxt.git?branch=luka/avail-standalone-example#61abee8a3fcfc5221aa42ae8f610231f18627aa1"
+source = "git+https://github.com/maticnetwork/subxt.git?branch=main#68df5d9f5503e07dfcb5d92a63d6371a1da027b5"
 dependencies = [
  "async-trait",
  "darling",
@@ -6236,8 +6237,8 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 0.1.10",
- "rand 0.7.3",
+ "cfg-if 1.0.0",
+ "rand 0.8.5",
  "static_assertions",
 ]
 
