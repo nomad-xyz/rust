@@ -9,18 +9,18 @@ use avail::runtime_types::{
     pallet_transaction_payment,
 };
 use codec::{Codec, Compact, Decode, Encode, EncodeLike, Error as DecodeError, Input};
-use nomad_core::ChainCommunicationError;
 use parity_util_mem::MallocSizeOf;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::fmt::Debug;
 use subxt::{
-    sp_core::{self, H256},
-    sp_runtime::{
+    ext::sp_core::{self, H256},
+    ext::sp_runtime::{
         traits::{BlakeTwo256, Extrinsic, Hash},
         AccountId32, Digest, MultiAddress, MultiSignature,
     },
-    BasicError, Config, GenericError,
+    tx::SubstrateExtrinsicParams,
+    Config,
 };
 
 use self::avail::runtime_types::{
@@ -100,6 +100,7 @@ impl Config for AvailConfig {
     type Header = DaHeader;
     type Signature = MultiSignature;
     type Extrinsic = AvailExtrinsic;
+    type ExtrinsicParams = SubstrateExtrinsicParams<Self>; // TODO: remove default
 }
 // Needed because we want default deserialization for extrinsics coming from Light client
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -294,7 +295,7 @@ impl MallocSizeOf for DaHeader {
     }
 }
 
-impl subxt::sp_runtime::traits::Header for DaHeader {
+impl subxt::ext::sp_runtime::traits::Header for DaHeader {
     type Number = u32;
 
     type Hash = H256;
