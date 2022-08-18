@@ -15,64 +15,24 @@ use nomad_core::{
     RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, Update, UpdateMeta,
 };
 
-pub struct SubstrateHome<T: Config> {
-    api: OnlineClient<T>,
-    signer: Arc<SubstrateSigner<T>>,
-    domain: u32,
-    name: String,
-}
+#[derive(Clone)]
+pub struct SubstrateHomeIndexer<T: Config>(OnlineClient<T>);
 
-impl<T: Config> std::ops::Deref for SubstrateHome<T> {
+impl<T: Config> std::ops::Deref for SubstrateHomeIndexer<T> {
     type Target = OnlineClient<T>;
     fn deref(&self) -> &Self::Target {
-        &self.api
+        &self.0
     }
 }
 
-impl<T: Config> SubstrateHome<T> {
-    pub async fn new(
-        api: OnlineClient<T>,
-        signer: Arc<SubstrateSigner<T>>,
-        domain: u32,
-        name: &str,
-    ) -> Result<Self> {
-        Ok(Self {
-            api,
-            signer,
-            domain,
-            name: name.to_owned(),
-        })
-    }
-
-    pub async fn base(&self) -> Result<NomadBase> {
-        let base_address = subxt::dynamic::storage_root("Home", "Base");
-        let base_value = self.storage().fetch(&base_address, None).await?.unwrap();
-        Ok(scale_value::serde::from_value(base_value)?)
-    }
-}
-
-impl<T: Config> std::fmt::Debug for SubstrateHome<T> {
+impl<T: Config> std::fmt::Debug for SubstrateHomeIndexer<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "SubstrateHome {{ domain: {}, name: {} }}",
-            self.domain, self.name,
-        )
-    }
-}
-
-impl<T: Config> std::fmt::Display for SubstrateHome<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "SubstrateHome {{ domain: {}, name: {} }}",
-            self.domain, self.name,
-        )
+        write!(f, "SubstrateHomeIndexer",)
     }
 }
 
 #[async_trait]
-impl<T: Config + Send + Sync> CommonIndexer for SubstrateHome<T>
+impl<T: Config + Send + Sync> CommonIndexer for SubstrateHomeIndexer<T>
 where
     T::BlockNumber: std::convert::TryInto<u32> + Send + Sync,
 {
@@ -150,6 +110,63 @@ where
                 }
             })
             .collect())
+    }
+}
+
+#[derive(Clone)]
+pub struct SubstrateHome<T: Config> {
+    api: OnlineClient<T>,
+    signer: Arc<SubstrateSigner<T>>,
+    domain: u32,
+    name: String,
+}
+
+impl<T: Config> std::ops::Deref for SubstrateHome<T> {
+    type Target = OnlineClient<T>;
+    fn deref(&self) -> &Self::Target {
+        &self.api
+    }
+}
+
+impl<T: Config> SubstrateHome<T> {
+    pub async fn new(
+        api: OnlineClient<T>,
+        signer: Arc<SubstrateSigner<T>>,
+        domain: u32,
+        name: &str,
+    ) -> Result<Self> {
+        Ok(Self {
+            api,
+            signer,
+            domain,
+            name: name.to_owned(),
+        })
+    }
+
+    pub async fn base(&self) -> Result<NomadBase> {
+        let base_address = subxt::dynamic::storage_root("Home", "Base");
+        let base_value = self.storage().fetch(&base_address, None).await?.unwrap();
+        Ok(scale_value::serde::from_value(base_value)?)
+    }
+}
+
+impl<T: Config> std::fmt::Debug for SubstrateHome<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "SubstrateHome {{ domain: {}, name: {} }}",
+            self.domain, self.name,
+        )
+    }
+}
+
+impl<T: Config> std::fmt::Display for SubstrateHome<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "SubstrateHome {{ domain: {}, name: {} }}",
+            self.domain, self.name,
+        )
     }
 }
 
