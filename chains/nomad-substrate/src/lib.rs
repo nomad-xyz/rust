@@ -9,6 +9,10 @@ pub use crate::nomad_core::*;
 mod nomad_base;
 pub use nomad_base::*;
 
+#[macro_use]
+mod macros;
+pub use macros::*;
+
 use ::nomad_core::ChainCommunicationError;
 
 pub type SubstrateSigner<T> = dyn subxt::tx::Signer<T> + Send + Sync;
