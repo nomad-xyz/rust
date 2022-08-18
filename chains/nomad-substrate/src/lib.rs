@@ -3,9 +3,12 @@ pub use avail_subxt_config::{avail, AvailConfig};
 
 pub mod home;
 
-// #[macro_use]
-// pub mod macros;
+mod nomad_core;
+pub use crate::nomad_core::*;
 
-pub type SubstrateSigner<T: subxt::Config> = dyn subxt::tx::Signer<T> + Send + Sync;
+mod nomad_base;
+pub use nomad_base::*;
 
-// codegen_home!(Avail, avail, AvailConfig);
+use ::nomad_core::ChainCommunicationError;
+
+pub type SubstrateSigner<T> = dyn subxt::tx::Signer<T> + Send + Sync;

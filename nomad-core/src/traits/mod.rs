@@ -80,12 +80,12 @@ pub enum ChainCommunicationError {
     /// Middleware error
     #[error("{0}")]
     MiddlewareError(Box<dyn StdError + Send + Sync>),
-    /// Base provider error
+    /// Ethereum provider error
     #[error("{0}")]
-    BaseProviderError(Box<dyn StdError + Send + Sync>),
-    /// Provider Error
+    EthereumProviderError(#[from] ProviderError),
+    /// Substrate provider error
     #[error("{0}")]
-    ProviderError(#[from] ProviderError),
+    SubstrateProviderError(#[from] subxt::Error),
     /// A transaction was dropped from the mempool
     #[error("Transaction dropped from mempool {0:?}")]
     DroppedError(H256),
