@@ -3,7 +3,7 @@ use crate::avail_subxt_config::{
 };
 use crate::SubstrateSigner;
 use async_trait::async_trait;
-use color_eyre::Result;
+use color_eyre::{eyre::eyre, Result};
 use ethers_core::types::Signature;
 use ethers_core::types::H256;
 use futures::{stream::FuturesOrdered, StreamExt};
@@ -20,24 +20,24 @@ use nomad_core::{
 
 use crate::home::avail::runtime_types::nomad_base::NomadBase;
 
-pub struct SubstrateHome {
-    api: OnlineClient<AvailConfig>,
-    signer: Arc<SubstrateSigner<AvailConfig>>,
+pub struct SubstrateHome<T: Config> {
+    api: OnlineClient<T>,
+    signer: Arc<SubstrateSigner<T>>,
     domain: u32,
     name: String,
 }
 
-impl std::ops::Deref for SubstrateHome {
-    type Target = OnlineClient<AvailConfig>;
+impl<T: Config> std::ops::Deref for SubstrateHome<T> {
+    type Target = OnlineClient<T>;
     fn deref(&self) -> &Self::Target {
         &self.api
     }
 }
 
-impl SubstrateHome {
+impl<T: Config> SubstrateHome<T> {
     pub async fn new(
-        api: OnlineClient<AvailConfig>,
-        signer: Arc<SubstrateSigner<AvailConfig>>,
+        api: OnlineClient<T>,
+        signer: Arc<SubstrateSigner<T>>,
         domain: u32,
         name: &str,
     ) -> Result<Self> {
@@ -50,14 +50,14 @@ impl SubstrateHome {
     }
 
     pub async fn base(&self) -> Result<NomadBase> {
-        // let base_address = avail::storage().home().base();
-        // let base = self.storage().fetch(&base_address, None).await?.unwrap();
-
+        let base_address = subxt::dynamic::storage_root("Home", "Base");
+        let base = self.storage().fetch(&base_address, None).await?.unwrap();
+        
         unimplemented!("")
     }
 }
 
-impl std::fmt::Debug for SubstrateHome {
+impl<T: Config> std::fmt::Debug for SubstrateHome<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -67,7 +67,7 @@ impl std::fmt::Debug for SubstrateHome {
     }
 }
 
-impl std::fmt::Display for SubstrateHome {
+impl<T: Config> std::fmt::Display for SubstrateHome<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -78,11 +78,20 @@ impl std::fmt::Display for SubstrateHome {
 }
 
 #[async_trait]
-impl CommonIndexer for SubstrateHome {
+impl<T: Config + Send + Sync> CommonIndexer for SubstrateHome<T> 
+where
+    T::BlockNumber: std::convert::TryInto<u32> + Send + Sync,
+{
     #[tracing::instrument(err, skip(self))]
     async fn get_block_number(&self) -> Result<u32> {
         let header = self.rpc().header(None).await?.unwrap();
-        Ok(*header.number())
+        let u32_header = (*header.number()).try_into();
+
+        if let Ok(h) = u32_header {
+            Ok(h)
+        } else {
+            Err(eyre!("Failed to convert block number to u32"))
+        }
     }
 
     #[tracing::instrument(err, skip(self))]
