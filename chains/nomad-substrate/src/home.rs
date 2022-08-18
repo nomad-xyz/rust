@@ -1,6 +1,4 @@
-use crate::avail_subxt_config::{
-    avail::home, avail::runtime_types::nomad_core::state::NomadState, *,
-};
+use crate::avail_subxt_config::avail::home;
 use crate::SubstrateSigner;
 use async_trait::async_trait;
 use color_eyre::{eyre::eyre, Result};
@@ -8,17 +6,16 @@ use ethers_core::types::Signature;
 use ethers_core::types::H256;
 use futures::{stream::FuturesOrdered, StreamExt};
 use std::sync::Arc;
-use subxt::ext::scale_value::At;
+use subxt::ext::scale_value::{self, Primitive, Value};
 use subxt::Config;
-use subxt::{ext::sp_runtime::traits::Header, tx::Signer, OnlineClient};
+use subxt::{ext::sp_runtime::traits::Header, tx::ExtrinsicParams, OnlineClient};
+use tracing::info;
 
+use crate::{NomadBase, NomadState};
 use nomad_core::{
-    ChainCommunicationError, Common, CommonIndexer, ContractLocator, DoubleUpdate, Home,
-    HomeIndexer, Message, RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State,
-    TxOutcome, Update, UpdateMeta,
+    ChainCommunicationError, Common, CommonIndexer, DoubleUpdate, Home, HomeIndexer, Message,
+    RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, Update, UpdateMeta,
 };
-
-use crate::home::avail::runtime_types::nomad_base::NomadBase;
 
 pub struct SubstrateHome<T: Config> {
     api: OnlineClient<T>,
@@ -51,9 +48,8 @@ impl<T: Config> SubstrateHome<T> {
 
     pub async fn base(&self) -> Result<NomadBase> {
         let base_address = subxt::dynamic::storage_root("Home", "Base");
-        let base = self.storage().fetch(&base_address, None).await?.unwrap();
-
-        unimplemented!("")
+        let base_value = self.storage().fetch(&base_address, None).await?.unwrap();
+        Ok(scale_value::serde::from_value(base_value)?)
     }
 }
 
@@ -126,7 +122,7 @@ where
             .map(|(n, r)| {
                 let events_for_block = r.unwrap();
                 events_for_block
-                    .find::<home::events::Update>()
+                    .find::<home::events::Update>() // TODO: remove dep on avail metadata
                     .map(|r| (n, r.unwrap())) // TODO: is this safe to unwrap (log RPC err)?
                     .collect::<Vec<_>>()
             })
@@ -159,62 +155,110 @@ where
     }
 }
 
-// #[async_trait]
-// impl Common for SubstrateHome {
-//     fn name(&self) -> &str {
-//         &self.name
-//     }
+#[async_trait]
+impl<T: Config + Send + Sync> Common for SubstrateHome<T>
+where
+    <<T as Config>::ExtrinsicParams as ExtrinsicParams<
+        <T as Config>::Index,
+        <T as Config>::Hash,
+    >>::OtherParams: std::default::Default + Send + Sync,
+    <T as Config>::Extrinsic: Send + Sync,
+    <T as Config>::Hash: Into<H256>,
+{
+    fn name(&self) -> &str {
+        &self.name
+    }
 
-//     #[tracing::instrument(err, skip(self))]
-//     async fn status(&self, _txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
-//         unimplemented!("Have not implemented _status_ for substrate home")
-//     }
+    #[tracing::instrument(err, skip(self))]
+    async fn status(&self, _txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+        unimplemented!("Have not implemented _status_ for substrate home")
+    }
 
-//     #[tracing::instrument(err, skip(self))]
-//     async fn updater(&self) -> Result<H256, ChainCommunicationError> {
-//         let base = self.base().await.unwrap();
-//         let updater = base.updater;
-//         Ok(updater.into()) // H256 is primitive-types 0.11.1 not 0.10.1
-//     }
+    #[tracing::instrument(err, skip(self))]
+    async fn updater(&self) -> Result<H256, ChainCommunicationError> {
+        let base = self.base().await.unwrap();
+        let updater = base.updater;
+        Ok(updater.into()) // H256 is primitive-types 0.11.1 not 0.10.1
+    }
 
-//     #[tracing::instrument(err, skip(self))]
-//     async fn state(&self) -> Result<State, ChainCommunicationError> {
-//         let base = self.base().await.unwrap();
-//         match base.state {
-//             NomadState::Active => Ok(nomad_core::State::Active),
-//             NomadState::Failed => Ok(nomad_core::State::Failed),
-//         }
-//     }
+    #[tracing::instrument(err, skip(self))]
+    async fn state(&self) -> Result<State, ChainCommunicationError> {
+        let base = self.base().await.unwrap();
+        match base.state {
+            NomadState::Active => Ok(nomad_core::State::Active),
+            NomadState::Failed => Ok(nomad_core::State::Failed),
+        }
+    }
 
-//     #[tracing::instrument(err, skip(self))]
-//     async fn committed_root(&self) -> Result<H256, ChainCommunicationError> {
-//         let base = self.base().await.unwrap();
-//         Ok(base.committed_root)
-//     }
+    #[tracing::instrument(err, skip(self))]
+    async fn committed_root(&self) -> Result<H256, ChainCommunicationError> {
+        let base = self.base().await.unwrap();
+        Ok(base.committed_root)
+    }
 
-//     #[tracing::instrument(err, skip(self, update), fields(update = %update))]
-//     async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
-//         let res = self
-//             .tx()
-//             .home()
-//             .update(update.clone().into())
-//             .sign_and_submit_then_watch(&self.signer)
-//             .await
-//             .unwrap()
-//             .wait_for_finalized_success()
-//             .await
-//             .unwrap();
+    #[tracing::instrument(err, skip(self, update), fields(update = %update))]
+    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+        let SignedUpdate { update, signature } = update;
 
-//         Ok(TxOutcome {
-//             txid: res.extrinsic_hash(),
-//         })
-//     }
+        let update_value = Value::named_composite([
+            (
+                "update",
+                Value::named_composite([
+                    ("home_domain", Value::u128(update.home_domain as u128)),
+                    ("previous_root", Value::from_bytes(&update.previous_root)),
+                    ("new_root", Value::from_bytes(&update.new_root)),
+                ]),
+            ),
+            (
+                "signature",
+                Value::named_composite([
+                    ("r", Value::primitive(Primitive::U256(signature.r.into()))),
+                    ("s", Value::primitive(Primitive::U256(signature.s.into()))),
+                    ("v", Value::u128(signature.v as u128)),
+                ]),
+            ),
+        ]);
 
-//     #[tracing::instrument(err, skip(self))]
-//     async fn double_update(
-//         &self,
-//         _double: &DoubleUpdate,
-//     ) -> Result<TxOutcome, ChainCommunicationError> {
-//         unimplemented!("Double update deprecated for Substrate implementations")
-//     }
-// }
+        let tx_payload = subxt::dynamic::tx("Home", "update", vec![update_value]);
+
+        let pending_tx = self
+            .tx()
+            .sign_and_submit_then_watch_default(&tx_payload, self.signer.as_ref())
+            .await?;
+
+        info!(
+            pallet = "Home",
+            call = "update",
+            update = ?update,
+            tx_hash = ?pending_tx.extrinsic_hash(),
+            "Dispatched update tx, waiting for inclusion."
+        );
+
+        let successful_tx = pending_tx
+            .wait_for_in_block()
+            .await?
+            .wait_for_success()
+            .await?;
+
+        info!(
+            pallet = "Home",
+            call = "update",
+            update = ?update,
+            tx_hash = ?successful_tx.extrinsic_hash(),
+            block_hash = ?successful_tx.block_hash(),
+            "Confirmed update tx success."
+        );
+
+        Ok(TxOutcome {
+            txid: successful_tx.extrinsic_hash().into(),
+        })
+    }
+
+    #[tracing::instrument(err, skip(self))]
+    async fn double_update(
+        &self,
+        _double: &DoubleUpdate,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
+        unimplemented!("Double update deprecated for Substrate implementations")
+    }
+}
