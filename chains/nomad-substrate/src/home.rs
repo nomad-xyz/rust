@@ -52,7 +52,7 @@ impl<T: Config> SubstrateHome<T> {
     pub async fn base(&self) -> Result<NomadBase> {
         let base_address = subxt::dynamic::storage_root("Home", "Base");
         let base = self.storage().fetch(&base_address, None).await?.unwrap();
-        
+
         unimplemented!("")
     }
 }
@@ -78,7 +78,7 @@ impl<T: Config> std::fmt::Display for SubstrateHome<T> {
 }
 
 #[async_trait]
-impl<T: Config + Send + Sync> CommonIndexer for SubstrateHome<T> 
+impl<T: Config + Send + Sync> CommonIndexer for SubstrateHome<T>
 where
     T::BlockNumber: std::convert::TryInto<u32> + Send + Sync,
 {
