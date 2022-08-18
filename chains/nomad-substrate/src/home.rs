@@ -1,5 +1,4 @@
-use crate::avail_subxt_config::avail::home;
-use crate::SubstrateSigner;
+use crate::{avail_subxt_config::avail::home, report_tx, NomadBase, NomadState, SubstrateSigner};
 use async_trait::async_trait;
 use color_eyre::{eyre::eyre, Result};
 use ethers_core::types::Signature;
@@ -11,7 +10,6 @@ use subxt::Config;
 use subxt::{ext::sp_runtime::traits::Header, tx::ExtrinsicParams, OnlineClient};
 use tracing::info;
 
-use crate::{NomadBase, NomadState};
 use nomad_core::{
     ChainCommunicationError, Common, CommonIndexer, DoubleUpdate, Home, HomeIndexer, Message,
     RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, Update, UpdateMeta,
@@ -221,37 +219,8 @@ where
 
         let tx_payload = subxt::dynamic::tx("Home", "update", vec![update_value]);
 
-        let pending_tx = self
-            .tx()
-            .sign_and_submit_then_watch_default(&tx_payload, self.signer.as_ref())
-            .await?;
-
-        info!(
-            pallet = "Home",
-            call = "update",
-            update = ?update,
-            tx_hash = ?pending_tx.extrinsic_hash(),
-            "Dispatched update tx, waiting for inclusion."
-        );
-
-        let successful_tx = pending_tx
-            .wait_for_in_block()
-            .await?
-            .wait_for_success()
-            .await?;
-
-        info!(
-            pallet = "Home",
-            call = "update",
-            update = ?update,
-            tx_hash = ?successful_tx.extrinsic_hash(),
-            block_hash = ?successful_tx.block_hash(),
-            "Confirmed update tx success."
-        );
-
-        Ok(TxOutcome {
-            txid: successful_tx.extrinsic_hash().into(),
-        })
+        info!(update = ?update, "Submitting update to chain.");
+        report_tx!("update", self.api, self.signer, tx_payload)
     }
 
     #[tracing::instrument(err, skip(self))]
