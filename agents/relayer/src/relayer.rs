@@ -262,7 +262,7 @@ mod test {
                     .expect__committed_root()
                     .times(..)
                     .returning(|| {
-                        Err(ChainCommunicationError::ProviderError(
+                        Err(ChainCommunicationError::EthereumProviderError(
                             ProviderError::CustomError(
                                 "I am replica and I always throw the error".to_string(),
                             ),

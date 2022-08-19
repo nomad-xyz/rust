@@ -18,22 +18,39 @@ use nomad_core::{
 #[derive(Clone)]
 pub struct SubstrateHomeIndexer<T: Config>(OnlineClient<T>);
 
-impl<T: Config> std::ops::Deref for SubstrateHomeIndexer<T> {
+impl<T> SubstrateHomeIndexer<T>
+where
+    T: Config,
+{
+    /// Instantiate a new SubstrateHomeIndexer object
+    pub fn new(client: OnlineClient<T>) -> Self {
+        Self(client)
+    }
+}
+
+impl<T> std::ops::Deref for SubstrateHomeIndexer<T>
+where
+    T: Config,
+{
     type Target = OnlineClient<T>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl<T: Config> std::fmt::Debug for SubstrateHomeIndexer<T> {
+impl<T> std::fmt::Debug for SubstrateHomeIndexer<T>
+where
+    T: Config,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "SubstrateHomeIndexer",)
     }
 }
 
 #[async_trait]
-impl<T: Config + Send + Sync> CommonIndexer for SubstrateHomeIndexer<T>
+impl<T> CommonIndexer for SubstrateHomeIndexer<T>
 where
+    T: Config + Send + Sync,
     T::BlockNumber: std::convert::TryInto<u32> + Send + Sync,
 {
     #[tracing::instrument(err, skip(self))]
@@ -66,10 +83,7 @@ where
         // Get futures for events for each block's hash
         let numbers_and_event_futs: FuturesOrdered<_> = numbers_and_hashes
             .into_iter()
-            .map(|(n, h)| async move {
-                let events_api = self.events();
-                (n, events_api.at(Some(h)).await)
-            })
+            .map(|(n, h)| async move { (n, self.events().at(Some(h)).await) })
             .collect();
 
         // Await event requests and filter only update events
@@ -80,12 +94,14 @@ where
             .map(|(n, r)| {
                 let events_for_block = r.unwrap();
                 events_for_block
-                    .find::<home::events::Update>() // TODO: remove dep on avail metadata
+                    .find::<home::events::Update>() // TODO: remove dep on avail metadata and break into custom struct that impls Decode and StaticEvent
                     .map(|r| (n, r.unwrap())) // TODO: is this safe to unwrap (log RPC err)?
                     .collect::<Vec<_>>()
             })
             .flatten()
             .collect();
+
+        // TODO: sort events
 
         // Map update events into SignedUpdates with meta
         Ok(numbers_and_update_events
@@ -113,6 +129,62 @@ where
     }
 }
 
+#[async_trait]
+impl<T> HomeIndexer for SubstrateHomeIndexer<T>
+where
+    T: Config + Send + Sync,
+    T::BlockNumber: std::convert::TryInto<u32> + Send + Sync,
+{
+    #[tracing::instrument(err, skip(self))]
+    async fn fetch_sorted_messages(&self, from: u32, to: u32) -> Result<Vec<RawCommittedMessage>> {
+        // Create future for fetching block hashes for range
+        let hash_futs: FuturesOrdered<_> = (from..to)
+            .map(|n| self.rpc().block_hash(Some(n.into())))
+            .collect();
+
+        // Await and block hash requests
+        let hashes: Vec<_> = hash_futs
+            .collect::<Vec<_>>()
+            .await
+            .into_iter()
+            .map(|r| r.unwrap().unwrap()) // TODO: is this safe to unwrap  (log RPC err)?
+            .collect();
+
+        // Get futures for events for each block's hash
+        let event_futs: FuturesOrdered<_> = hashes
+            .into_iter()
+            .map(|h| self.events().at(Some(h)))
+            .collect();
+
+        // Await event requests and filter only dispatch events
+        let dispatch_events: Vec<_> = event_futs
+            .collect::<Vec<_>>()
+            .await
+            .into_iter()
+            .map(|r| {
+                let events_for_block = r.unwrap();
+                events_for_block
+                    .find::<home::events::Dispatch>() // TODO: remove dep on avail metadata and break into custom struct that impls Decode and StaticEvent
+                    .map(|r| r.unwrap()) // TODO: is this safe to unwrap (log RPC err)?
+                    .collect::<Vec<_>>()
+            })
+            .flatten()
+            .collect();
+
+        // TODO: sort events
+
+        // Map update events into SignedUpdates with meta
+        Ok(dispatch_events
+            .into_iter()
+            .map(|e| RawCommittedMessage {
+                leaf_index: e.leaf_index,
+                committed_root: e.committed_root,
+                message: e.message,
+            })
+            .collect())
+    }
+}
+
 #[derive(Clone)]
 pub struct SubstrateHome<T: Config> {
     api: OnlineClient<T>,
@@ -121,28 +193,26 @@ pub struct SubstrateHome<T: Config> {
     name: String,
 }
 
-impl<T: Config> std::ops::Deref for SubstrateHome<T> {
-    type Target = OnlineClient<T>;
-    fn deref(&self) -> &Self::Target {
-        &self.api
-    }
-}
-
-impl<T: Config> SubstrateHome<T> {
-    pub async fn new(
+impl<T> SubstrateHome<T>
+where
+    T: Config,
+{
+    /// Instantiate a new SubstrateHome object
+    pub fn new(
         api: OnlineClient<T>,
         signer: Arc<SubstrateSigner<T>>,
         domain: u32,
         name: &str,
-    ) -> Result<Self> {
-        Ok(Self {
+    ) -> Self {
+        Self {
             api,
             signer,
             domain,
             name: name.to_owned(),
-        })
+        }
     }
 
+    /// Retrieve the home's base object from chain storage
     pub async fn base(&self) -> Result<NomadBase> {
         let base_address = subxt::dynamic::storage_root("Home", "Base");
         let base_value = self.storage().fetch(&base_address, None).await?.unwrap();
@@ -150,7 +220,20 @@ impl<T: Config> SubstrateHome<T> {
     }
 }
 
-impl<T: Config> std::fmt::Debug for SubstrateHome<T> {
+impl<T> std::ops::Deref for SubstrateHome<T>
+where
+    T: Config,
+{
+    type Target = OnlineClient<T>;
+    fn deref(&self) -> &Self::Target {
+        &self.api
+    }
+}
+
+impl<T> std::fmt::Debug for SubstrateHome<T>
+where
+    T: Config,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -160,7 +243,10 @@ impl<T: Config> std::fmt::Debug for SubstrateHome<T> {
     }
 }
 
-impl<T: Config> std::fmt::Display for SubstrateHome<T> {
+impl<T> std::fmt::Display for SubstrateHome<T>
+where
+    T: Config,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -171,8 +257,9 @@ impl<T: Config> std::fmt::Display for SubstrateHome<T> {
 }
 
 #[async_trait]
-impl<T: Config + Send + Sync> Common for SubstrateHome<T>
+impl<T> Common for SubstrateHome<T>
 where
+    T: Config + Send + Sync,
     <<T as Config>::ExtrinsicParams as ExtrinsicParams<
         <T as Config>::Index,
         <T as Config>::Hash,
