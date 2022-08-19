@@ -3290,6 +3290,7 @@ dependencies = [
  "serde_json",
  "sp-keyring",
  "subxt",
+ "thiserror",
  "tokio",
  "tracing",
  "tracing-futures",

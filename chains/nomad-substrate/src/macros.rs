@@ -1,3 +1,4 @@
+/// Dispatches an extrinsic, waits for inclusion, and logs details
 #[macro_export]
 macro_rules! report_tx {
     ($method:expr, $client:expr, $signer:expr, $tx:expr) => {{
