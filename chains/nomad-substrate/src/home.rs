@@ -1,20 +1,24 @@
-use crate::{avail_subxt_config::avail::home, report_tx, NomadBase, NomadState, SubstrateSigner};
+use crate::{
+    avail_subxt_config::avail::home, report_tx, utils, NomadBase, NomadState, SubstrateSigner,
+};
 use async_trait::async_trait;
 use color_eyre::{eyre::eyre, Result};
 use ethers_core::types::Signature;
 use ethers_core::types::{H256, U256};
 use futures::{stream::FuturesOrdered, StreamExt};
 use std::sync::Arc;
-use subxt::ext::scale_value::{self, Primitive, Value};
+use subxt::ext::scale_value::{self, Value};
 use subxt::Config;
 use subxt::{ext::sp_runtime::traits::Header, tx::ExtrinsicParams, OnlineClient};
 use tracing::info;
 
 use nomad_core::{
+    accumulator::{Merkle, NomadLightMerkle},
     ChainCommunicationError, Common, CommonIndexer, DoubleUpdate, Home, HomeIndexer, Message,
     RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, Update, UpdateMeta,
 };
 
+/// Substrate home indexer
 #[derive(Clone)]
 pub struct SubstrateHomeIndexer<T: Config>(OnlineClient<T>);
 
@@ -110,8 +114,8 @@ where
                 let signature = Signature::try_from(e.signature.as_ref())
                     .expect("chain accepted invalid signature");
 
-                nomad_core::SignedUpdateWithMeta {
-                    signed_update: nomad_core::SignedUpdate {
+                SignedUpdateWithMeta {
+                    signed_update: SignedUpdate {
                         update: nomad_core::Update {
                             home_domain: e.home_domain,
                             previous_root: e.previous_root,
@@ -119,7 +123,7 @@ where
                         },
                         signature,
                     },
-                    metadata: nomad_core::UpdateMeta {
+                    metadata: UpdateMeta {
                         block_number: n as u64,
                         timestamp: None,
                     },
@@ -185,6 +189,7 @@ where
     }
 }
 
+/// Substrate home
 #[derive(Clone)]
 pub struct SubstrateHome<T: Config> {
     api: OnlineClient<T>,
@@ -300,28 +305,8 @@ where
 
     #[tracing::instrument(err, skip(self, update), fields(update = %update))]
     async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
-        let SignedUpdate { update, signature } = update;
-
-        let update_value = Value::named_composite([
-            (
-                "update",
-                Value::named_composite([
-                    ("home_domain", Value::u128(update.home_domain as u128)),
-                    ("previous_root", Value::from_bytes(&update.previous_root)),
-                    ("new_root", Value::from_bytes(&update.new_root)),
-                ]),
-            ),
-            (
-                "signature",
-                Value::named_composite([
-                    ("r", Value::primitive(Primitive::U256(signature.r.into()))),
-                    ("s", Value::primitive(Primitive::U256(signature.s.into()))),
-                    ("v", Value::u128(signature.v as u128)),
-                ]),
-            ),
-        ]);
-
-        let tx_payload = subxt::dynamic::tx("Home", "update", vec![update_value]);
+        let signed_update_value = utils::format_signed_update_value(update);
+        let tx_payload = subxt::dynamic::tx("Home", "update", vec![signed_update_value]);
 
         info!(update = ?update, "Submitting update to chain.");
         report_tx!("update", self.api, self.signer, tx_payload)
@@ -362,15 +347,35 @@ where
 
     #[tracing::instrument(err, skip(self))]
     async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
-        unimplemented!("")
+        let Message {
+            destination,
+            recipient,
+            body,
+        } = message;
+
+        let destination_value = Value::u128(*destination as u128);
+        let recipient_value = Value::from_bytes(recipient);
+        let body_value = Value::from_bytes(body);
+
+        let tx_payload = subxt::dynamic::tx(
+            "Home",
+            "dispatch",
+            vec![destination_value, recipient_value, body_value],
+        );
+
+        info!(message = ?message, "Dispatching message to chain.");
+        report_tx!("dispatch", self.api, self.signer, tx_payload)
     }
 
     async fn queue_length(&self) -> Result<U256, ChainCommunicationError> {
-        unimplemented!("")
+        unimplemented!("Queue deprecated for Substrate implementations")
     }
 
     async fn queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError> {
-        unimplemented!("")
+        let index_address =
+            subxt::dynamic::storage("Home", "RootToIndex", vec![Value::from_bytes(&root)]);
+        let index_value = self.storage().fetch(&index_address, None).await?;
+        Ok(index_value.is_some())
     }
 
     #[tracing::instrument(err, skip(self), fields(hex_signature = %format!("0x{}", hex::encode(update.signature.to_vec()))))]
@@ -378,11 +383,36 @@ where
         &self,
         update: &SignedUpdate,
     ) -> Result<TxOutcome, ChainCommunicationError> {
-        unimplemented!("")
+        let signed_update_value = utils::format_signed_update_value(update);
+        let tx_payload = subxt::dynamic::tx("Home", "improper_update", vec![signed_update_value]);
+
+        info!(update = ?update, "Dispatching improper update call to chain.");
+        report_tx!("improper_update", self.api, self.signer, tx_payload)
     }
 
     #[tracing::instrument(err, skip(self))]
     async fn produce_update(&self) -> Result<Option<Update>, ChainCommunicationError> {
-        unimplemented!("")
+        let committed_root = self.base().await.unwrap().committed_root;
+
+        let tree_address = subxt::dynamic::storage_root("Home", "Tree");
+        let tree_value = self.storage().fetch(&tree_address, None).await?.unwrap();
+        let tree: NomadLightMerkle = scale_value::serde::from_value(tree_value).unwrap();
+
+        let num_elements = tree.count();
+        let root_address = subxt::dynamic::storage(
+            "Home",
+            "IndexToRoot",
+            vec![Value::u128(num_elements as u128)],
+        );
+        let root_value = self.storage().fetch(&root_address, None).await?;
+
+        Ok(root_value.map(|r| {
+            let root: H256 = scale_value::serde::from_value(r).unwrap();
+            Update {
+                home_domain: self.domain,
+                previous_root: committed_root,
+                new_root: root,
+            }
+        }))
     }
 }

@@ -21,6 +21,9 @@ pub use nomad_base::*;
 mod macros;
 pub use macros::*;
 
+mod utils;
+pub use utils::*;
+
 use subxt::ext::scale_value;
 
 /// Substrate signer
