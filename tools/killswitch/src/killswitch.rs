@@ -1,4 +1,4 @@
-use crate::settings::KillSwitchSettings;
+use crate::{settings::KillSwitchSettings, Args};
 use color_eyre::Result;
 
 #[derive(Debug)]
@@ -11,7 +11,7 @@ impl KillSwitch {
         return Ok(Self {});
     }
 
-    pub(crate) async fn run(&self) -> Result<()> {
+    pub(crate) async fn run(&self, args: Args) -> Result<()> {
         //
 
         return Ok(());
