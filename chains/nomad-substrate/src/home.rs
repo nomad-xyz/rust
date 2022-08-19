@@ -2,7 +2,7 @@ use crate::{avail_subxt_config::avail::home, report_tx, NomadBase, NomadState, S
 use async_trait::async_trait;
 use color_eyre::{eyre::eyre, Result};
 use ethers_core::types::Signature;
-use ethers_core::types::H256;
+use ethers_core::types::{H256, U256};
 use futures::{stream::FuturesOrdered, StreamExt};
 use std::sync::Arc;
 use subxt::ext::scale_value::{self, Primitive, Value};
@@ -333,5 +333,56 @@ where
         _double: &DoubleUpdate,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         unimplemented!("Double update deprecated for Substrate implementations")
+    }
+}
+
+#[async_trait]
+impl<T> Home for SubstrateHome<T>
+where
+    T: Config + Send + Sync,
+    <<T as Config>::ExtrinsicParams as ExtrinsicParams<
+        <T as Config>::Index,
+        <T as Config>::Hash,
+    >>::OtherParams: std::default::Default + Send + Sync,
+    <T as Config>::Extrinsic: Send + Sync,
+    <T as Config>::Hash: Into<H256>,
+{
+    fn local_domain(&self) -> u32 {
+        self.domain
+    }
+
+    #[tracing::instrument(err, skip(self))]
+    async fn nonces(&self, destination: u32) -> Result<u32, ChainCommunicationError> {
+        let nonce_address =
+            subxt::dynamic::storage("Home", "Nonces", vec![Value::u128(destination as u128)]);
+        let nonce_value = self.storage().fetch(&nonce_address, None).await?.unwrap();
+        Ok(scale_value::serde::from_value(nonce_value)
+            .expect("failed to decode nonce from home::nonces call"))
+    }
+
+    #[tracing::instrument(err, skip(self))]
+    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
+        unimplemented!("")
+    }
+
+    async fn queue_length(&self) -> Result<U256, ChainCommunicationError> {
+        unimplemented!("")
+    }
+
+    async fn queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError> {
+        unimplemented!("")
+    }
+
+    #[tracing::instrument(err, skip(self), fields(hex_signature = %format!("0x{}", hex::encode(update.signature.to_vec()))))]
+    async fn improper_update(
+        &self,
+        update: &SignedUpdate,
+    ) -> Result<TxOutcome, ChainCommunicationError> {
+        unimplemented!("")
+    }
+
+    #[tracing::instrument(err, skip(self))]
+    async fn produce_update(&self) -> Result<Option<Update>, ChainCommunicationError> {
+        unimplemented!("")
     }
 }

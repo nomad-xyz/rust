@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use anyhow::Result;
 use avail::runtime_types::{
     da_control::extensions::check_app_id::CheckAppId,
@@ -74,7 +76,6 @@ impl From<ethers_core::types::Signature> for Signature {
             s: ethers_signature.s.into(),
             v: ethers_signature.v,
         }
-        // unimplemented!("TODO: U256 conversions failing")
     }
 }
 

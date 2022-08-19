@@ -50,6 +50,14 @@ mod gas;
 #[cfg(not(doctest))]
 pub use crate::{home::*, replica::*, xapp::*};
 
+/// Ethereum-specific error wrapper
+#[derive(Debug, thiserror::Error)]
+pub enum EthereumError {
+    /// Ethers provider error
+    #[error("{0}")]
+    ProviderError(ethers_providers::ProviderError),
+}
+
 #[allow(dead_code)]
 /// A live connection to an ethereum-compatible chain.
 pub struct Chain {
