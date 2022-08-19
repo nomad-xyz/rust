@@ -13,6 +13,4 @@ pub use nomad_base::*;
 mod macros;
 pub use macros::*;
 
-use ::nomad_core::ChainCommunicationError;
-
 pub type SubstrateSigner<T> = dyn subxt::tx::Signer<T> + Send + Sync;
