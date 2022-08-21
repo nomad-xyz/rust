@@ -1,8 +1,8 @@
-use std::convert::TryFrom;
+use std::{convert::TryFrom, error::Error as StdError};
 
 use crate::{
     db::DbError,
-    traits::{ChainCommunicationError, Common, TxOutcome},
+    traits::{Common, TxOutcome},
     utils::home_domain_hash,
     Decode, Encode, Message, NomadError, NomadMessage, SignedUpdate, Update,
 };
@@ -119,28 +119,28 @@ pub trait Home: Common + Send + Sync + std::fmt::Debug {
     }
 
     /// Fetch the nonce
-    async fn nonces(&self, destination: u32) -> Result<u32, ChainCommunicationError>;
+    async fn nonces(&self, destination: u32) -> Result<u32, <Self as Common>::Error>;
 
     /// Dispatch a message.
-    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError>;
+    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, <Self as Common>::Error>;
 
     /// Return length of queue.
-    async fn queue_length(&self) -> Result<U256, ChainCommunicationError>;
+    async fn queue_length(&self) -> Result<U256, <Self as Common>::Error>;
 
     /// Check if queue contains root.
-    async fn queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError>;
+    async fn queue_contains(&self, root: H256) -> Result<bool, <Self as Common>::Error>;
 
     /// Submit an improper update for slashing
     async fn improper_update(
         &self,
         update: &SignedUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError>;
+    ) -> Result<TxOutcome, <Self as Common>::Error>;
 
     /// Create a valid update based on the chain's current state.
     /// This merely suggests an update. It does NOT ensure that no other valid
     /// update has been produced. The updater MUST take measures to prevent
     /// double-updating. If no messages are queued, this must produce Ok(None).
-    async fn produce_update(&self) -> Result<Option<Update>, ChainCommunicationError>;
+    async fn produce_update(&self) -> Result<Option<Update>, <Self as Common>::Error>;
 }
 
 /// Interface for retrieving event data emitted specifically by the home

@@ -1,4 +1,4 @@
-use crate::SingleChainGelatoClient;
+use crate::{EthereumError, SingleChainGelatoClient};
 use color_eyre::Result;
 use ethers::prelude::*;
 use ethers::types::transaction::eip2718::TypedTransaction;
@@ -49,7 +49,7 @@ where
         domain: u32,
         contract_address: Address,
         tx: impl Into<TypedTransaction>,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<TxOutcome, EthereumError> {
         let tx: TypedTransaction = tx.into();
 
         match &self.client {

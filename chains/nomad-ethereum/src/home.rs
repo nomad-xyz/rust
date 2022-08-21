@@ -9,15 +9,14 @@ use ethers::{
 };
 use futures_util::future::join_all;
 use nomad_core::{
-    ChainCommunicationError, Common, CommonIndexer, ContractLocator, DoubleUpdate, Home,
-    HomeIndexer, Message, RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State,
-    TxOutcome, Update, UpdateMeta,
+    Common, CommonIndexer, ContractLocator, DoubleUpdate, Home, HomeIndexer, Message,
+    RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, Update, UpdateMeta,
 };
 use nomad_xyz_configuration::HomeGasLimits;
 use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
 use tracing::instrument;
 
-use crate::{bindings::home::Home as EthereumHomeInternal, TxSubmitter};
+use crate::{bindings::home::Home as EthereumHomeInternal, EthereumError, TxSubmitter};
 
 impl<M> std::fmt::Display for EthereumHomeInternal<M>
 where
@@ -232,28 +231,30 @@ where
     W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
+    type Error = EthereumError;
+
     fn name(&self) -> &str {
         &self.name
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, Self::Error> {
         self.contract
             .client()
             .get_transaction_receipt(txid)
             .await
-            .map_err(|e| Box::new(e) as Box<dyn StdError + Send + Sync>)?
-            .map(|receipt| receipt.try_into())
+            .map_err(|e| EthereumError::MiddlewareError(e.into()))?
+            .map(|receipt| Ok(receipt.try_into()?))
             .transpose()
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn updater(&self) -> Result<H256, ChainCommunicationError> {
+    async fn updater(&self) -> Result<H256, Self::Error> {
         Ok(self.contract.updater().call().await?.into())
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn state(&self) -> Result<State, ChainCommunicationError> {
+    async fn state(&self) -> Result<State, Self::Error> {
         let state = self.contract.state().call().await?;
         match state {
             0 => Ok(State::Uninitialized),
@@ -264,12 +265,12 @@ where
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn committed_root(&self) -> Result<H256, ChainCommunicationError> {
+    async fn committed_root(&self) -> Result<H256, Self::Error> {
         Ok(self.contract.committed_root().call().await?.into())
     }
 
     #[tracing::instrument(err, skip(self, update), fields(update = %update))]
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, Self::Error> {
         let mut tx = self.contract.update(
             update.update.previous_root.to_fixed_bytes(),
             update.update.new_root.to_fixed_bytes(),
@@ -284,16 +285,14 @@ where
             );
         }
 
-        self.submitter
-            .submit(self.domain, self.contract.address(), tx.tx)
-            .await
+        unimplemented!("Implementing Self::Error for Common next")
+        // self.submitter
+        //     .submit(self.domain, self.contract.address(), tx.tx)
+        //     .await
     }
 
     #[tracing::instrument(err, skip(self, double), fields(double = %double))]
-    async fn double_update(
-        &self,
-        double: &DoubleUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn double_update(&self, double: &DoubleUpdate) -> Result<TxOutcome, Self::Error> {
         let mut tx = self.contract.double_update(
             double.0.update.previous_root.to_fixed_bytes(),
             [
@@ -325,12 +324,12 @@ where
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn nonces(&self, destination: u32) -> Result<u32, ChainCommunicationError> {
+    async fn nonces(&self, destination: u32) -> Result<u32, <Self as Common>::Error> {
         Ok(self.contract.nonces(destination).call().await?)
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, <Self as Common>::Error> {
         let tx = self.contract.dispatch(
             message.destination,
             message.recipient.to_fixed_bytes(),
@@ -342,11 +341,11 @@ where
             .await
     }
 
-    async fn queue_length(&self) -> Result<U256, ChainCommunicationError> {
+    async fn queue_length(&self) -> Result<U256, <Self as Common>::Error> {
         Ok(self.contract.queue_length().call().await?)
     }
 
-    async fn queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError> {
+    async fn queue_contains(&self, root: H256) -> Result<bool, <Self as Common>::Error> {
         Ok(self.contract.queue_contains(root.into()).call().await?)
     }
 
@@ -354,7 +353,7 @@ where
     async fn improper_update(
         &self,
         update: &SignedUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<TxOutcome, <Self as Common>::Error> {
         let mut tx = self.contract.improper_update(
             update.update.previous_root.to_fixed_bytes(),
             update.update.new_root.to_fixed_bytes(),
@@ -375,7 +374,7 @@ where
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn produce_update(&self) -> Result<Option<Update>, ChainCommunicationError> {
+    async fn produce_update(&self) -> Result<Option<Update>, <Self as Common>::Error> {
         let (a, b) = self.contract.suggest_update().call().await?;
 
         let previous_root: H256 = a.into();

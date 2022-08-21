@@ -11,7 +11,7 @@ use nomad_xyz_configuration::{
     Connection, ConnectionManagerGasLimits, HomeGasLimits, ReplicaGasLimits,
 };
 use num::Num;
-use std::sync::Arc;
+use std::{error::Error as StdError, sync::Arc};
 
 #[macro_use]
 mod macros;
@@ -55,7 +55,34 @@ pub use crate::{home::*, replica::*, xapp::*};
 pub enum EthereumError {
     /// Ethers provider error
     #[error("{0}")]
-    ProviderError(ethers_providers::ProviderError),
+    ProviderError(#[from] ethers_providers::ProviderError),
+    /// Ethers contract error
+    #[error("{0}")]
+    ContractError(Box<dyn StdError + Send + Sync>),
+    /// Middleware error
+    #[error("{0}")]
+    MiddlewareError(Box<dyn StdError + Send + Sync>),
+    /// Gelato client error
+    #[error("{0}")]
+    GelatoError(#[from] GelatoError),
+    /// A transaction was dropped from the mempool
+    #[error("Transaction dropped from mempool {0:?}")]
+    DroppedError(H256),
+    /// A transaction was not executed successfully
+    #[error("Transaction was not executed successfully {0:?}")]
+    NotExecuted(H256),
+    /// Any other error
+    #[error("{0}")]
+    CustomError(#[from] Box<dyn StdError + Send + Sync>),
+}
+
+impl<M> From<ContractError<M>> for EthereumError
+where
+    M: Middleware + 'static,
+{
+    fn from(e: ContractError<M>) -> Self {
+        Self::ContractError(e.into())
+    }
 }
 
 #[allow(dead_code)]

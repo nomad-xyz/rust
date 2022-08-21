@@ -189,7 +189,7 @@ where
     }
 }
 
-/// Substrate home
+/// Substrate
 #[derive(Clone)]
 pub struct SubstrateHome<T: Config> {
     api: OnlineClient<T>,
