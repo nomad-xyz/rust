@@ -27,6 +27,7 @@ nomad-xyz-configuration = { path = "../configuration" }
 nomad-types = { path = "../nomad-types" }
 nomad-core = { path = "../nomad-core" }
 nomad-ethereum = { path = "../chains/nomad-ethereum"}
+nomad-substrate = { path = "../chains/nomad-substrate"}
 nomad-test = { path = "../nomad-test" }
 affix = "0.1.2"
 

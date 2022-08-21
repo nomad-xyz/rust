@@ -14,11 +14,23 @@ macro_rules! report_tx {
             $method,
         );
 
-        let successful_tx = pending_tx
+        // TODO: can a tx deterministically revert here?
+        let tx_in_block = pending_tx
             .wait_for_in_block()
-            .await?
-            .wait_for_success()
             .await?;
+
+        // Try to detect reverting txs that were submitted to chain
+        let successful_tx = tx_in_block.wait_for_success().await.map_err(|err| {
+            if let subxt::Error::Runtime(ref err) = err {
+                if let subxt::error::DispatchError::Module(_) = err {
+                    return SubstrateError::TxNotExecuted(
+                        tx_in_block.extrinsic_hash().into()
+                    );
+                }
+            }
+
+            SubstrateError::ProviderError(err)
+        })?;
 
         info!(
             tx_hash = ?successful_tx.extrinsic_hash(),
@@ -27,8 +39,6 @@ macro_rules! report_tx {
             $method,
         );
 
-        Ok(TxOutcome {
-            txid: successful_tx.extrinsic_hash().into(),
-        })
+        Ok(TxOutcome { txid: successful_tx.extrinsic_hash().into() })
     }}
 }

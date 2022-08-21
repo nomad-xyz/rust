@@ -21,7 +21,7 @@ macro_rules! report_tx {
         let escalator = dispatch_fut
             .await
             .map_err(Box::new)
-            .map_err(|e| ChainCommunicationError::CustomError(e))?
+            .map_err(|e| crate::EthereumError::CustomError(e))?
             .with_broadcast_interval(std::time::Duration::from_secs(60));
 
         let result = escalator
@@ -42,19 +42,19 @@ macro_rules! report_tx {
         let dispatched = $provider
             .send_transaction($tx, None)
             .await
-            .map_err(|e| ChainCommunicationError::TxSubmissionError(e.into()))?;
+            .map_err(|e| crate::EthereumError::MiddlewareError(e.into()))?;
 
         let tx_hash: ethers::core::types::H256 = *dispatched;
         let result = dispatched
             .await?
-            .ok_or_else(|| nomad_core::ChainCommunicationError::DroppedError(tx_hash))?;
+            .ok_or_else(|| crate::EthereumError::DroppedError(tx_hash))?;
 
         tracing::info!(
             tx_hash = ?tx_hash,
             "Confirmed transaction",
         );
 
-        result
+        crate::utils::try_transaction_receipt_to_tx_outcome(result)
     }};
 }
 
@@ -215,7 +215,7 @@ macro_rules! boxed_contract {
         let provider = http_provider!($url);
         boxed_contract!(@submitter provider, $($tail)*)
     }};
-    ($name:ident, $abi:ident, $trait:ident, $($n:ident:$t:ty),*)  => {
+    ($name:ident, $abi:ident, $trait:path, $($n:ident:$t:ty),*)  => {
         #[doc = "Cast a contract locator to a live contract handle"]
         pub async fn $name(conn: nomad_xyz_configuration::Connection, locator: &ContractLocator, submitter_conf: Option<nomad_xyz_configuration::ethereum::TxSubmitterConf>, timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
             let b: Box<dyn $trait> = match conn {

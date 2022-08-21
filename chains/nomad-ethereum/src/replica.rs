@@ -6,15 +6,17 @@ use color_eyre::Result;
 use ethers::core::types::{Signature, H256, U256};
 use futures_util::future::join_all;
 use nomad_core::{
-    accumulator::NomadProof, ChainCommunicationError, Common, CommonIndexer, ContractLocator,
-    DoubleUpdate, Encode, MessageStatus, NomadMessage, Replica, SignedUpdate, SignedUpdateWithMeta,
-    State, TxOutcome, Update, UpdateMeta,
+    accumulator::NomadProof, Common, CommonIndexer, ContractLocator, DoubleUpdate, Encode,
+    MessageStatus, NomadMessage, Replica, SignedUpdate, SignedUpdateWithMeta, State, TxOutcome,
+    Update, UpdateMeta,
 };
 use nomad_xyz_configuration::ReplicaGasLimits;
-use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
+use std::{convert::TryFrom, sync::Arc};
 use tracing::instrument;
 
-use crate::{bindings::replica::Replica as EthereumReplicaInternal, TxSubmitter};
+use crate::{
+    bindings::replica::Replica as EthereumReplicaInternal, utils, EthereumError, TxSubmitter,
+};
 
 #[derive(Debug)]
 /// Struct that retrieves indexes event data for Ethereum replica
@@ -191,28 +193,30 @@ where
     W: ethers::providers::Middleware + 'static,
     R: ethers::providers::Middleware + 'static,
 {
+    type Error = EthereumError;
+
     fn name(&self) -> &str {
         &self.name
     }
 
     #[tracing::instrument(err)]
-    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+    async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, Self::Error> {
         self.contract
             .client()
             .get_transaction_receipt(txid)
             .await
-            .map_err(|e| Box::new(e) as Box<dyn StdError + Send + Sync>)?
-            .map(|receipt| receipt.try_into())
+            .map_err(|e| EthereumError::MiddlewareError(e.into()))?
+            .map(utils::try_transaction_receipt_to_tx_outcome)
             .transpose()
     }
 
     #[tracing::instrument(err)]
-    async fn updater(&self) -> Result<H256, ChainCommunicationError> {
+    async fn updater(&self) -> Result<H256, Self::Error> {
         Ok(self.contract.updater().call().await?.into())
     }
 
     #[tracing::instrument(err)]
-    async fn state(&self) -> Result<State, ChainCommunicationError> {
+    async fn state(&self) -> Result<State, Self::Error> {
         let state = self.contract.state().call().await?;
         match state {
             0 => Ok(State::Uninitialized),
@@ -223,12 +227,12 @@ where
     }
 
     #[tracing::instrument(err)]
-    async fn committed_root(&self) -> Result<H256, ChainCommunicationError> {
+    async fn committed_root(&self) -> Result<H256, Self::Error> {
         Ok(self.contract.committed_root().call().await?.into())
     }
 
     #[tracing::instrument(err)]
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, Self::Error> {
         let mut tx = self.contract.update(
             update.update.previous_root.to_fixed_bytes(),
             update.update.new_root.to_fixed_bytes(),
@@ -245,7 +249,7 @@ where
     }
 
     #[tracing::instrument(err)]
-    async fn double_update(&self, _: &DoubleUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn double_update(&self, _: &DoubleUpdate) -> Result<TxOutcome, Self::Error> {
         tracing::warn!("double-update submission has been deprecated");
         Ok(TxOutcome {
             txid: Default::default(),
@@ -263,12 +267,12 @@ where
         self.domain
     }
 
-    async fn remote_domain(&self) -> Result<u32, ChainCommunicationError> {
+    async fn remote_domain(&self) -> Result<u32, <Self as Common>::Error> {
         Ok(self.contract.remote_domain().call().await?)
     }
 
     #[tracing::instrument(err)]
-    async fn prove(&self, proof: &NomadProof) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn prove(&self, proof: &NomadProof) -> Result<TxOutcome, <Self as Common>::Error> {
         let mut sol_proof: [[u8; 32]; 32] = Default::default();
         sol_proof
             .iter_mut()
@@ -289,7 +293,7 @@ where
     }
 
     #[tracing::instrument(err)]
-    async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, <Self as Common>::Error> {
         let mut tx = self.contract.process(message.to_vec().into());
 
         if let Some(limits) = &self.gas {
@@ -306,7 +310,7 @@ where
         &self,
         message: &NomadMessage,
         proof: &NomadProof,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<TxOutcome, <Self as Common>::Error> {
         let mut sol_proof: [[u8; 32]; 32] = Default::default();
         sol_proof
             .iter_mut()
@@ -328,11 +332,11 @@ where
     }
 
     #[tracing::instrument(err)]
-    async fn message_status(&self, leaf: H256) -> Result<MessageStatus, ChainCommunicationError> {
+    async fn message_status(&self, leaf: H256) -> Result<MessageStatus, <Self as Common>::Error> {
         Ok(self.contract.messages(leaf.into()).call().await?.into())
     }
 
-    async fn acceptable_root(&self, root: H256) -> Result<bool, ChainCommunicationError> {
+    async fn acceptable_root(&self, root: H256) -> Result<bool, <Self as Common>::Error> {
         Ok(self.contract.acceptable_root(root.into()).call().await?)
     }
 }

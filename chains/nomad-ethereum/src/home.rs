@@ -13,10 +13,10 @@ use nomad_core::{
     RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, Update, UpdateMeta,
 };
 use nomad_xyz_configuration::HomeGasLimits;
-use std::{convert::TryFrom, error::Error as StdError, sync::Arc};
+use std::{convert::TryFrom, sync::Arc};
 use tracing::instrument;
 
-use crate::{bindings::home::Home as EthereumHomeInternal, EthereumError, TxSubmitter};
+use crate::{bindings::home::Home as EthereumHomeInternal, utils, EthereumError, TxSubmitter};
 
 impl<M> std::fmt::Display for EthereumHomeInternal<M>
 where
@@ -244,7 +244,7 @@ where
             .get_transaction_receipt(txid)
             .await
             .map_err(|e| EthereumError::MiddlewareError(e.into()))?
-            .map(|receipt| Ok(receipt.try_into()?))
+            .map(utils::try_transaction_receipt_to_tx_outcome)
             .transpose()
     }
 
@@ -285,10 +285,9 @@ where
             );
         }
 
-        unimplemented!("Implementing Self::Error for Common next")
-        // self.submitter
-        //     .submit(self.domain, self.contract.address(), tx.tx)
-        //     .await
+        self.submitter
+            .submit(self.domain, self.contract.address(), tx.tx)
+            .await
     }
 
     #[tracing::instrument(err, skip(self, double), fields(double = %double))]

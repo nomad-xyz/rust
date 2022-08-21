@@ -24,18 +24,8 @@ pub use macros::*;
 mod utils;
 pub use utils::*;
 
-use subxt::ext::scale_value;
+mod error;
+pub use error::*;
 
 /// Substrate signer
 pub type SubstrateSigner<T> = dyn subxt::tx::Signer<T> + Send + Sync;
-
-/// Substrate-specific error wrapper
-#[derive(Debug, thiserror::Error)]
-pub enum SubstrateError {
-    /// Substrate provider error
-    #[error("{0}")]
-    ProviderError(#[from] subxt::Error),
-    /// Scale value deserialization error
-    #[error("{0}")]
-    DeserializationError(#[from] scale_value::serde::DeserializerError),
-}
