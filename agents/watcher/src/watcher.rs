@@ -15,11 +15,12 @@ use tokio::{
 use tracing::{error, info, info_span, instrument::Instrumented, Instrument};
 
 use nomad_base::{
-    cancel_task, AgentCore, BaseError, CachingHome, ConnectionManagers, NomadAgent, NomadDB,
+    cancel_task, AgentCore, BaseError, CachingHome, ChainCommunicationError, ConnectionManagers,
+    NomadAgent, NomadDB,
 };
 use nomad_core::{
-    ChainCommunicationError, Common, CommonEvents, ConnectionManager, DoubleUpdate,
-    FailureNotification, Home, SignedFailureNotification, SignedUpdate, Signers, TxOutcome,
+    Common, CommonEvents, ConnectionManager, DoubleUpdate, FailureNotification, Home,
+    SignedFailureNotification, SignedUpdate, Signers, TxOutcome,
 };
 
 use crate::settings::WatcherSettings as Settings;

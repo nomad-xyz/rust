@@ -1,6 +1,51 @@
 use ethers::prelude::H256;
-use nomad_core::{db::DbError, ChainCommunicationError, NomadError, Update};
+use nomad_core::{db::DbError, NomadError, Update};
+use nomad_ethereum::EthereumError;
+use nomad_substrate::SubstrateError;
 use nomad_types::NomadTypeError;
+
+/// ChainCommunicationError contains errors returned when attempting to
+/// call a chain or dispatch a transaction
+#[derive(thiserror::Error, Debug)]
+pub enum ChainCommunicationError {
+    /// Nomad Error
+    #[error("{0}")]
+    NomadError(#[from] NomadError),
+    /// Transaction was not executed successfully
+    #[error("Transaction was not executed successfully {0:?}")]
+    TxNotExecuted(H256),
+    /// Ethereum-specific error
+    #[error("{0}")]
+    EthereumError(EthereumError),
+    /// Substrate-specific error
+    #[error("{0}")]
+    SubstrateError(SubstrateError),
+    /// Mock error
+    #[error("{0}")]
+    MockError(#[from] nomad_test::mocks::MockError),
+}
+
+// Catch ethereum-specific reverts
+impl From<EthereumError> for ChainCommunicationError {
+    fn from(e: EthereumError) -> Self {
+        if let EthereumError::TxNotExecuted(txid) = e {
+            ChainCommunicationError::TxNotExecuted(txid)
+        } else {
+            ChainCommunicationError::EthereumError(e)
+        }
+    }
+}
+
+// Catch substrate-specific reverts
+impl From<SubstrateError> for ChainCommunicationError {
+    fn from(e: SubstrateError) -> Self {
+        if let SubstrateError::TxNotExecuted(txid) = e {
+            ChainCommunicationError::TxNotExecuted(txid)
+        } else {
+            ChainCommunicationError::SubstrateError(e)
+        }
+    }
+}
 
 /// DB Error type
 #[derive(thiserror::Error, Debug)]

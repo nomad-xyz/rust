@@ -3164,6 +3164,7 @@ dependencies = [
  "mockall 0.10.2",
  "nomad-core",
  "nomad-ethereum",
+ "nomad-substrate",
  "nomad-test",
  "nomad-types",
  "nomad-xyz-configuration",

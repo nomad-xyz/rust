@@ -8,7 +8,7 @@ use gelato_sdk::{
     rpc::{RelayResponse, TaskState, TransactionStatus},
     FeeToken, ForwardRequestBuilder, GelatoClient,
 };
-use std::sync::Arc;
+use std::{error::Error as StdError, sync::Arc};
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
 use tracing::info;
@@ -22,6 +22,7 @@ pub(crate) const ACCEPTABLE_STATES: [TaskState; 4] = [
     TaskState::WaitingForConfirmation,
 ];
 
+/// Gelato-specific errors
 #[derive(Debug, thiserror::Error)]
 pub enum GelatoError {
     /// Gelato client error
@@ -37,7 +38,7 @@ pub enum GelatoError {
     },
     /// Custom error
     #[error("{0}")]
-    CustomError(Box<dyn std::error::Error + Send + Sync>),
+    CustomError(#[from] Box<dyn StdError + Send + Sync>),
 }
 
 /// Gelato client for submitting txs to single chain

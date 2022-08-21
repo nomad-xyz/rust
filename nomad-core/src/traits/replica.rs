@@ -4,7 +4,7 @@ use ethers::core::types::H256;
 
 use crate::{
     accumulator::NomadProof,
-    traits::{ChainCommunicationError, Common, TxOutcome},
+    traits::{Common, TxOutcome},
     NomadMessage,
 };
 
@@ -43,28 +43,28 @@ pub trait Replica: Common + Send + Sync + std::fmt::Debug {
     fn local_domain(&self) -> u32;
 
     /// Return the domain of the replica's linked home
-    async fn remote_domain(&self) -> Result<u32, ChainCommunicationError>;
+    async fn remote_domain(&self) -> Result<u32, <Self as Common>::Error>;
 
     /// Dispatch a transaction to prove inclusion of some leaf in the replica.
-    async fn prove(&self, proof: &NomadProof) -> Result<TxOutcome, ChainCommunicationError>;
+    async fn prove(&self, proof: &NomadProof) -> Result<TxOutcome, <Self as Common>::Error>;
 
     /// Trigger processing of a message
-    async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError>;
+    async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, <Self as Common>::Error>;
 
     /// Prove a leaf in the replica and then process its message
     async fn prove_and_process(
         &self,
         message: &NomadMessage,
         proof: &NomadProof,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<TxOutcome, <Self as Common>::Error> {
         self.prove(proof).await?;
 
         Ok(self.process(message).await?)
     }
 
     /// Fetch the status of a message
-    async fn message_status(&self, leaf: H256) -> Result<MessageStatus, ChainCommunicationError>;
+    async fn message_status(&self, leaf: H256) -> Result<MessageStatus, <Self as Common>::Error>;
 
     /// Fetch the confirmation time for a specific root
-    async fn acceptable_root(&self, root: H256) -> Result<bool, ChainCommunicationError>;
+    async fn acceptable_root(&self, root: H256) -> Result<bool, <Self as Common>::Error>;
 }

@@ -1,3 +1,4 @@
+use crate::SubstrateError;
 use crate::{
     avail_subxt_config::avail::home, report_tx, utils, NomadBase, NomadState, SubstrateSigner,
 };
@@ -14,8 +15,8 @@ use tracing::info;
 
 use nomad_core::{
     accumulator::{Merkle, NomadLightMerkle},
-    ChainCommunicationError, Common, CommonIndexer, DoubleUpdate, Home, HomeIndexer, Message,
-    RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, Update, UpdateMeta,
+    Common, CommonIndexer, DoubleUpdate, Home, HomeIndexer, Message, RawCommittedMessage,
+    SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, Update, UpdateMeta,
 };
 
 /// Substrate home indexer
@@ -272,24 +273,26 @@ where
     <T as Config>::Extrinsic: Send + Sync,
     <T as Config>::Hash: Into<H256>,
 {
+    type Error = SubstrateError;
+
     fn name(&self) -> &str {
         &self.name
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn status(&self, _txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
+    async fn status(&self, _txid: H256) -> Result<Option<TxOutcome>, Self::Error> {
         unimplemented!("Have not implemented _status_ for substrate home")
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn updater(&self) -> Result<H256, ChainCommunicationError> {
+    async fn updater(&self) -> Result<H256, Self::Error> {
         let base = self.base().await.unwrap();
         let updater = base.updater;
         Ok(updater.into()) // H256 is primitive-types 0.11.1 not 0.10.1
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn state(&self) -> Result<State, ChainCommunicationError> {
+    async fn state(&self) -> Result<State, Self::Error> {
         let base = self.base().await.unwrap();
         match base.state {
             NomadState::Active => Ok(nomad_core::State::Active),
@@ -298,13 +301,13 @@ where
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn committed_root(&self) -> Result<H256, ChainCommunicationError> {
+    async fn committed_root(&self) -> Result<H256, Self::Error> {
         let base = self.base().await.unwrap();
         Ok(base.committed_root)
     }
 
     #[tracing::instrument(err, skip(self, update), fields(update = %update))]
-    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, Self::Error> {
         let signed_update_value = utils::format_signed_update_value(update);
         let tx_payload = subxt::dynamic::tx("Home", "update", vec![signed_update_value]);
 
@@ -313,10 +316,7 @@ where
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn double_update(
-        &self,
-        _double: &DoubleUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn double_update(&self, _double: &DoubleUpdate) -> Result<TxOutcome, Self::Error> {
         unimplemented!("Double update deprecated for Substrate implementations")
     }
 }
@@ -337,7 +337,7 @@ where
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn nonces(&self, destination: u32) -> Result<u32, ChainCommunicationError> {
+    async fn nonces(&self, destination: u32) -> Result<u32, <Self as Common>::Error> {
         let nonce_address =
             subxt::dynamic::storage("Home", "Nonces", vec![Value::u128(destination as u128)]);
         let nonce_value = self.storage().fetch(&nonce_address, None).await?.unwrap();
@@ -346,7 +346,7 @@ where
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
+    async fn dispatch(&self, message: &Message) -> Result<TxOutcome, <Self as Common>::Error> {
         let Message {
             destination,
             recipient,
@@ -367,11 +367,11 @@ where
         report_tx!("dispatch", self.api, self.signer, tx_payload)
     }
 
-    async fn queue_length(&self) -> Result<U256, ChainCommunicationError> {
+    async fn queue_length(&self) -> Result<U256, <Self as Common>::Error> {
         unimplemented!("Queue deprecated for Substrate implementations")
     }
 
-    async fn queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError> {
+    async fn queue_contains(&self, root: H256) -> Result<bool, <Self as Common>::Error> {
         let index_address =
             subxt::dynamic::storage("Home", "RootToIndex", vec![Value::from_bytes(&root)]);
         let index_value = self.storage().fetch(&index_address, None).await?;
@@ -382,7 +382,7 @@ where
     async fn improper_update(
         &self,
         update: &SignedUpdate,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<TxOutcome, <Self as Common>::Error> {
         let signed_update_value = utils::format_signed_update_value(update);
         let tx_payload = subxt::dynamic::tx("Home", "improper_update", vec![signed_update_value]);
 
@@ -391,7 +391,7 @@ where
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn produce_update(&self) -> Result<Option<Update>, ChainCommunicationError> {
+    async fn produce_update(&self) -> Result<Option<Update>, <Self as Common>::Error> {
         let committed_root = self.base().await.unwrap().committed_root;
 
         let tree_address = subxt::dynamic::storage_root("Home", "Tree");

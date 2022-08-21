@@ -1,5 +1,3 @@
-use std::{convert::TryFrom, error::Error as StdError};
-
 use crate::{
     db::DbError,
     traits::{Common, TxOutcome},
@@ -12,6 +10,7 @@ use ethers::{
     core::types::{H256, U256},
     utils::keccak256,
 };
+use std::convert::TryFrom;
 
 /// A Stamped message that has been committed at some leaf index
 #[derive(Debug, Default, Clone, PartialEq)]
