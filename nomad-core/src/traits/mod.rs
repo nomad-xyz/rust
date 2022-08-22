@@ -100,33 +100,3 @@ pub trait CommonEvents: Common + Send + Sync + std::fmt::Debug {
         new_root: H256,
     ) -> Result<Option<SignedUpdate>, DbError>;
 }
-
-// #[cfg(test)]
-// mod test {
-//     use ethers::prelude::{TransactionReceipt, U64};
-
-//     use super::*;
-
-//     #[tokio::test]
-//     async fn turning_transaction_receipt_into_tx_outcome() {
-//         let receipt = TransactionReceipt {
-//             status: Some(U64::from(0)),
-//             ..Default::default()
-//         };
-//         let tx_outcome: Result<TxOutcome, BoxStdError> = receipt.try_into();
-//         assert!(
-//             tx_outcome.is_err(),
-//             "Turning failed transaction receipt into errored tx outcome not succeeded"
-//         );
-
-//         let receipt = TransactionReceipt {
-//             status: Some(U64::from(1)),
-//             ..Default::default()
-//         };
-//         let tx_outcome: Result<TxOutcome, BoxStdError> = receipt.try_into();
-//         assert!(
-//             tx_outcome.is_ok(),
-//             "Turning succeeded transaction receipt into successful tx outcome not succeeded"
-//         );
-//     }
-// }
