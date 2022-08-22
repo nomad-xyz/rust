@@ -8,6 +8,14 @@
 pub mod home;
 pub use home::*;
 
+/// Substrate replica
+pub mod replica;
+pub use replica::*;
+
+/// Substrate xapp connection manager
+pub mod xapp;
+pub use xapp::*;
+
 mod avail_subxt_config;
 pub use avail_subxt_config::{avail, AvailConfig};
 

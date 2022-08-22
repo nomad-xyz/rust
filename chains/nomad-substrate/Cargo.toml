@@ -28,5 +28,6 @@ tracing-futures = "0.2.5"
 thiserror = "1.0.30"
 
 nomad-core = { path = "../../nomad-core" }
+nomad-types = { path = "../../nomad-types" }
 
 ethers-core = { git = "https://github.com/gakonst/ethers-rs", branch = "master" }
