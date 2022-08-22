@@ -9,10 +9,6 @@ edition = "2021"
 clap = { version = "3.1.6", features = ["derive"] }
 tokio = { version = "1.0.1", features = ["rt", "macros"] }
 color-eyre = "0.6.0"
-
-#affix = "0.1.2"
-#serde = "1.0.120"
-#tracing = "0.1.35"
-#nomad-base = { path = "../../nomad-base" }
+ethers = { git = "https://github.com/gakonst/ethers-rs", branch = "master" }
 nomad-core = { path = "../../nomad-core" }
 nomad-xyz-configuration = { path = "../../configuration" }
