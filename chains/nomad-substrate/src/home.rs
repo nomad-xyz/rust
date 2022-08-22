@@ -1,34 +1,34 @@
 use crate::SubstrateError;
 use crate::{
-    avail_subxt_config::avail::home, report_tx, utils, NomadBase, NomadState, SubstrateSigner,
+    avail_subxt_config::avail::home, report_tx, utils, NomadBase, NomadOnlineClient, NomadState,
+    SubstrateSigner,
 };
 use async_trait::async_trait;
 use color_eyre::{eyre::eyre, Result};
-use ethers_core::types::Signature;
 use ethers_core::types::{H256, U256};
 use futures::{stream::FuturesOrdered, StreamExt};
 use std::sync::Arc;
 use subxt::ext::scale_value::{self, Value};
-use subxt::Config;
-use subxt::{ext::sp_runtime::traits::Header, tx::ExtrinsicParams, OnlineClient};
+use subxt::{ext::sp_runtime::traits::Header, tx::ExtrinsicParams};
+use subxt::{Config, OnlineClient};
 use tracing::info;
 
 use nomad_core::{
     accumulator::{Merkle, NomadLightMerkle},
     Common, CommonIndexer, DoubleUpdate, Home, HomeIndexer, Message, RawCommittedMessage,
-    SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, Update, UpdateMeta,
+    SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, Update,
 };
 
 /// Substrate home indexer
 #[derive(Clone)]
-pub struct SubstrateHomeIndexer<T: Config>(OnlineClient<T>);
+pub struct SubstrateHomeIndexer<T: Config>(NomadOnlineClient<T>);
 
 impl<T> SubstrateHomeIndexer<T>
 where
     T: Config,
 {
     /// Instantiate a new SubstrateHomeIndexer object
-    pub fn new(client: OnlineClient<T>) -> Self {
+    pub fn new(client: NomadOnlineClient<T>) -> Self {
         Self(client)
     }
 }
@@ -39,7 +39,7 @@ where
 {
     type Target = OnlineClient<T>;
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.0.deref()
     }
 }
 
@@ -72,64 +72,20 @@ where
 
     #[tracing::instrument(err, skip(self))]
     async fn fetch_sorted_updates(&self, from: u32, to: u32) -> Result<Vec<SignedUpdateWithMeta>> {
-        // Create future for fetching block hashes for range
-        let numbers_and_hash_futs: FuturesOrdered<_> = (from..to)
-            .map(|n| async move { (n, self.rpc().block_hash(Some(n.into())).await) })
-            .collect();
+        let mut futs = FuturesOrdered::new();
+        for block_number in from..to {
+            futs.push(self.0.fetch_sorted_updates_for_block(block_number))
+        }
 
-        // Await and block hash requests
-        let numbers_and_hashes: Vec<_> = numbers_and_hash_futs
+        // Flatten all Future<Output = Result<Vec<SignedUpdateWithMeta>>> into
+        // single Vec<SignedUpdateWithMeta>
+        Ok(futs
             .collect::<Vec<_>>()
             .await
             .into_iter()
-            .map(|r| (r.0, r.1.unwrap().unwrap())) // TODO: is this safe to unwrap  (log RPC err)?
-            .collect();
-
-        // Get futures for events for each block's hash
-        let numbers_and_event_futs: FuturesOrdered<_> = numbers_and_hashes
+            .collect::<Result<Vec<_>, _>>()?
             .into_iter()
-            .map(|(n, h)| async move { (n, self.events().at(Some(h)).await) })
-            .collect();
-
-        // Await event requests and filter only update events
-        let numbers_and_update_events: Vec<_> = numbers_and_event_futs
-            .collect::<Vec<_>>()
-            .await
-            .into_iter()
-            .map(|(n, r)| {
-                let events_for_block = r.unwrap();
-                events_for_block
-                    .find::<home::events::Update>() // TODO: remove dep on avail metadata and break into custom struct that impls Decode and StaticEvent
-                    .map(|r| (n, r.unwrap())) // TODO: is this safe to unwrap (log RPC err)?
-                    .collect::<Vec<_>>()
-            })
             .flatten()
-            .collect();
-
-        // TODO: sort events
-
-        // Map update events into SignedUpdates with meta
-        Ok(numbers_and_update_events
-            .into_iter()
-            .map(|(n, e)| {
-                let signature = Signature::try_from(e.signature.as_ref())
-                    .expect("chain accepted invalid signature");
-
-                SignedUpdateWithMeta {
-                    signed_update: SignedUpdate {
-                        update: nomad_core::Update {
-                            home_domain: e.home_domain,
-                            previous_root: e.previous_root,
-                            new_root: e.new_root,
-                        },
-                        signature,
-                    },
-                    metadata: UpdateMeta {
-                        block_number: n as u64,
-                        timestamp: None,
-                    },
-                }
-            })
             .collect())
     }
 }
@@ -193,7 +149,7 @@ where
 /// Substrate
 #[derive(Clone)]
 pub struct SubstrateHome<T: Config> {
-    api: OnlineClient<T>,
+    api: NomadOnlineClient<T>,
     signer: Arc<SubstrateSigner<T>>,
     domain: u32,
     name: String,
@@ -205,7 +161,7 @@ where
 {
     /// Instantiate a new SubstrateHome object
     pub fn new(
-        api: OnlineClient<T>,
+        api: NomadOnlineClient<T>,
         signer: Arc<SubstrateSigner<T>>,
         domain: u32,
         name: &str,
@@ -232,7 +188,7 @@ where
 {
     type Target = OnlineClient<T>;
     fn deref(&self) -> &Self::Target {
-        &self.api
+        self.api.deref()
     }
 }
 

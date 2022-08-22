@@ -3275,7 +3275,6 @@ name = "nomad-substrate"
 version = "0.1.0"
 dependencies = [
  "affix",
- "anyhow",
  "async-std",
  "async-trait",
  "color-eyre",

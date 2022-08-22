@@ -17,6 +17,9 @@ pub use crate::nomad_core::*;
 mod nomad_base;
 pub use nomad_base::*;
 
+mod client;
+pub use client::*;
+
 #[macro_use]
 mod macros;
 pub use macros::*;
