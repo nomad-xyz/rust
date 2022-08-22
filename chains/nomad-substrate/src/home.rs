@@ -1,8 +1,5 @@
 use crate::SubstrateError;
-use crate::{
-    avail_subxt_config::avail::home, report_tx, utils, NomadBase, NomadOnlineClient, NomadState,
-    SubstrateSigner,
-};
+use crate::{report_tx, utils, NomadBase, NomadOnlineClient, NomadState, SubstrateSigner};
 use async_trait::async_trait;
 use color_eyre::{eyre::eyre, Result};
 use ethers_core::types::{H256, U256};
@@ -98,50 +95,20 @@ where
 {
     #[tracing::instrument(err, skip(self))]
     async fn fetch_sorted_messages(&self, from: u32, to: u32) -> Result<Vec<RawCommittedMessage>> {
-        // Create future for fetching block hashes for range
-        let hash_futs: FuturesOrdered<_> = (from..to)
-            .map(|n| self.rpc().block_hash(Some(n.into())))
-            .collect();
+        let mut futs = FuturesOrdered::new();
+        for block_number in from..to {
+            futs.push(self.0.fetch_sorted_messages_for_block(block_number))
+        }
 
-        // Await and block hash requests
-        let hashes: Vec<_> = hash_futs
+        // Flatten all Future<Output = Result<Vec<RawCommittedMessage>>> into
+        // single Vec<RawCommittedMessage>
+        Ok(futs
             .collect::<Vec<_>>()
             .await
             .into_iter()
-            .map(|r| r.unwrap().unwrap()) // TODO: is this safe to unwrap  (log RPC err)?
-            .collect();
-
-        // Get futures for events for each block's hash
-        let event_futs: FuturesOrdered<_> = hashes
+            .collect::<Result<Vec<_>, _>>()?
             .into_iter()
-            .map(|h| self.events().at(Some(h)))
-            .collect();
-
-        // Await event requests and filter only dispatch events
-        let dispatch_events: Vec<_> = event_futs
-            .collect::<Vec<_>>()
-            .await
-            .into_iter()
-            .map(|r| {
-                let events_for_block = r.unwrap();
-                events_for_block
-                    .find::<home::events::Dispatch>() // TODO: remove dep on avail metadata and break into custom struct that impls Decode and StaticEvent
-                    .map(|r| r.unwrap()) // TODO: is this safe to unwrap (log RPC err)?
-                    .collect::<Vec<_>>()
-            })
             .flatten()
-            .collect();
-
-        // TODO: sort events
-
-        // Map update events into SignedUpdates with meta
-        Ok(dispatch_events
-            .into_iter()
-            .map(|e| RawCommittedMessage {
-                leaf_index: e.leaf_index,
-                committed_root: e.committed_root,
-                message: e.message,
-            })
             .collect())
     }
 }
@@ -175,7 +142,7 @@ where
     }
 
     /// Retrieve the home's base object from chain storage
-    pub async fn base(&self) -> Result<NomadBase> {
+    pub async fn base(&self) -> Result<NomadBase, SubstrateError> {
         let base_address = subxt::dynamic::storage_root("Home", "Base");
         let base_value = self.storage().fetch(&base_address, None).await?.unwrap();
         Ok(scale_value::serde::from_value(base_value)?)
@@ -242,14 +209,14 @@ where
 
     #[tracing::instrument(err, skip(self))]
     async fn updater(&self) -> Result<H256, Self::Error> {
-        let base = self.base().await.unwrap();
+        let base = self.base().await?;
         let updater = base.updater;
         Ok(updater.into()) // H256 is primitive-types 0.11.1 not 0.10.1
     }
 
     #[tracing::instrument(err, skip(self))]
     async fn state(&self) -> Result<State, Self::Error> {
-        let base = self.base().await.unwrap();
+        let base = self.base().await?;
         match base.state {
             NomadState::Active => Ok(nomad_core::State::Active),
             NomadState::Failed => Ok(nomad_core::State::Failed),
@@ -258,7 +225,7 @@ where
 
     #[tracing::instrument(err, skip(self))]
     async fn committed_root(&self) -> Result<H256, Self::Error> {
-        let base = self.base().await.unwrap();
+        let base = self.base().await?;
         Ok(base.committed_root)
     }
 
@@ -296,9 +263,12 @@ where
     async fn nonces(&self, destination: u32) -> Result<u32, <Self as Common>::Error> {
         let nonce_address =
             subxt::dynamic::storage("Home", "Nonces", vec![Value::u128(destination as u128)]);
-        let nonce_value = self.storage().fetch(&nonce_address, None).await?.unwrap();
-        Ok(scale_value::serde::from_value(nonce_value)
-            .expect("failed to decode nonce from home::nonces call"))
+        let nonce_value = self
+            .storage()
+            .fetch(&nonce_address, None)
+            .await?
+            .expect(&format!("No nonce for destination {}", destination));
+        Ok(scale_value::serde::from_value(nonce_value)?)
     }
 
     #[tracing::instrument(err, skip(self))]
@@ -348,11 +318,11 @@ where
 
     #[tracing::instrument(err, skip(self))]
     async fn produce_update(&self) -> Result<Option<Update>, <Self as Common>::Error> {
-        let committed_root = self.base().await.unwrap().committed_root;
+        let committed_root = self.base().await?.committed_root;
 
         let tree_address = subxt::dynamic::storage_root("Home", "Tree");
         let tree_value = self.storage().fetch(&tree_address, None).await?.unwrap();
-        let tree: NomadLightMerkle = scale_value::serde::from_value(tree_value).unwrap();
+        let tree: NomadLightMerkle = scale_value::serde::from_value(tree_value)?;
 
         let num_elements = tree.count();
         let root_address = subxt::dynamic::storage(
@@ -362,13 +332,15 @@ where
         );
         let root_value = self.storage().fetch(&root_address, None).await?;
 
-        Ok(root_value.map(|r| {
-            let root: H256 = scale_value::serde::from_value(r).unwrap();
-            Update {
-                home_domain: self.domain,
-                previous_root: committed_root,
-                new_root: root,
-            }
-        }))
+        root_value
+            .map(|r| {
+                let root: H256 = scale_value::serde::from_value(r)?;
+                Ok(Update {
+                    home_domain: self.domain,
+                    previous_root: committed_root,
+                    new_root: root,
+                })
+            })
+            .transpose()
     }
 }

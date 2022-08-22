@@ -1,4 +1,5 @@
 use ethers_core::types::H256;
+use std::error::Error as StdError;
 use subxt::{ext::scale_value, Error as SubxtError};
 
 /// Substrate-specific error wrapper
@@ -13,4 +14,7 @@ pub enum SubstrateError {
     /// Scale value deserialization error
     #[error("{0}")]
     DeserializationError(#[from] scale_value::serde::DeserializerError),
+    /// Any other error
+    #[error("{0}")]
+    CustomError(#[from] Box<dyn StdError + Send + Sync>),
 }
