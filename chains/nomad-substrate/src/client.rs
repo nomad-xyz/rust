@@ -1,7 +1,7 @@
 use crate::avail_subxt_config::avail::home;
 use color_eyre::Result;
 use ethers_core::types::Signature;
-use nomad_core::{SignedUpdate, SignedUpdateWithMeta, Update, UpdateMeta};
+use nomad_core::{RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, Update, UpdateMeta};
 use subxt::{Config, OnlineClient};
 
 /// Nomad wrapper around `subxt::OnlineClient`
@@ -22,14 +22,14 @@ impl<T: Config> NomadOnlineClient<T> {
         &self,
         block_number: u32,
     ) -> Result<Vec<SignedUpdateWithMeta>> {
-        // Create future for fetching block hashes for range
+        // Get hash for block number
         let hash = self
             .rpc()
             .block_hash(Some(block_number.into()))
             .await?
             .unwrap();
 
-        // Get futures for events for each block's hash
+        // Get updates from block
         let update_events_res: Result<Vec<_>, _> = self
             .events()
             .at(Some(hash))
@@ -63,6 +63,42 @@ impl<T: Config> NomadOnlineClient<T> {
                         timestamp: None,
                     },
                 }
+            })
+            .collect())
+    }
+
+    /// Fetch ordered signed updates from the specific `block_number`
+    pub async fn fetch_sorted_messages_for_block(
+        &self,
+        block_number: u32,
+    ) -> Result<Vec<RawCommittedMessage>> {
+        // Get hash for block number
+        let hash = self
+            .rpc()
+            .block_hash(Some(block_number.into()))
+            .await?
+            .unwrap();
+
+        // Get dispatch events from block
+        let dispatch_events_res: Result<Vec<_>, _> = self
+            .events()
+            .at(Some(hash))
+            .await?
+            .find::<home::events::Dispatch>() // TODO: remove dependency on avail metadata
+            .into_iter()
+            .collect();
+
+        let dispatch_events = dispatch_events_res?;
+
+        // TODO: sort events
+
+        // Map dispatches into raw committed messages
+        Ok(dispatch_events
+            .into_iter()
+            .map(|ev| RawCommittedMessage {
+                leaf_index: ev.leaf_index,
+                committed_root: ev.committed_root,
+                message: ev.message,
             })
             .collect())
     }
