@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- Add new `ChainCommunicationError` to wrap `nomad_ethereum::EthereumError` and `nomad_substrate::SubstrateError`
+- Add implementations for converting chain-specific error enums into `ChainCommunicationError` to catch reverts
 - un-nest, simplify & add event to setup code for determining which replicas to
   run
 - un-nest, simplify & add event to setup code for config source discovery
