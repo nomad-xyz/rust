@@ -274,7 +274,7 @@ where
             .storage()
             .fetch(&nonce_address, None)
             .await?
-            .expect(&format!("No nonce for destination {}", destination));
+            .unwrap_or_else(|| panic!("No nonce for destination {}", destination));
         Ok(scale_value::serde::from_value(nonce_value)?)
     }
 
