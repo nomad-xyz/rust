@@ -20,7 +20,7 @@ macro_rules! report_tx {
             .await?;
 
         // Try to detect reverting txs that were submitted to chain
-        let successful_tx = crate::utils::try_tx_in_block_to_successful_tx_events(tx_in_block).await?;
+        let successful_tx = utils::try_tx_in_block_to_successful_tx_events(tx_in_block).await?;
 
         info!(
             tx_hash = ?successful_tx.extrinsic_hash(),

@@ -51,6 +51,7 @@ pub struct AvailExtrinsicLight {
     pub data: Vec<u8>,
 }
 
+#[allow(clippy::from_over_into)]
 impl Into<AvailExtrinsic> for AvailExtrinsicLight {
     fn into(self) -> AvailExtrinsic {
         AvailExtrinsic {

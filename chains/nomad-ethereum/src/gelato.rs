@@ -5,7 +5,7 @@ use ethers::{
 };
 use gelato_sdk::{
     get_forwarder,
-    rpc::{RelayResponse, TaskState, TransactionStatus},
+    rpc::{CheckOrDate, RelayResponse, TaskState},
     FeeToken, ForwardRequestBuilder, GelatoClient,
 };
 use std::{error::Error as StdError, sync::Arc};
@@ -29,12 +29,12 @@ pub enum GelatoError {
     #[error("{0}")]
     ClientError(#[from] gelato_sdk::ClientError),
     /// Failed task error
-    #[error("Gelato task failed. Id: {task_id}. Status: {status:?}.")]
+    #[error("Gelato task failed. Id: {task_id}. Check info: {check_info:?}.")]
     FailedTaskError {
         /// Task id
         task_id: H256,
         /// Status
-        status: TransactionStatus,
+        check_info: Option<CheckOrDate>,
     },
     /// Custom error
     #[error("{0}")]
@@ -135,9 +135,8 @@ where
             "Dispatching tx to Gelato relay."
         );
 
-        Ok(self
-            .send_forward_request(contract_address, data, gas_limit)
-            .await?)
+        self.send_forward_request(contract_address, data, gas_limit)
+            .await
     }
 
     /// Poll task id and return tx hash of transaction if successful, error if
@@ -150,7 +149,10 @@ where
                 let status = gelato.get_task_status(task_id).await?;
 
                 if !ACCEPTABLE_STATES.contains(&status.task_state) {
-                    return Err(GelatoError::FailedTaskError { task_id, status });
+                    return Err(GelatoError::FailedTaskError {
+                        task_id,
+                        check_info: status.last_check,
+                    });
                 }
 
                 if let Some(execution) = &status.execution {

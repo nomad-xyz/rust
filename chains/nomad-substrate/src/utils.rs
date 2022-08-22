@@ -20,15 +20,13 @@ where
     <T as Config>::Hash: Into<H256>,
 {
     // Try to detect reverting txs that were submitted to chain
-    Ok(tx_in_block.wait_for_success().await.map_err(|err| {
-        if let subxt::Error::Runtime(ref err) = err {
-            if let subxt::error::DispatchError::Module(_) = err {
-                return SubstrateError::TxNotExecuted(tx_in_block.extrinsic_hash().into());
-            }
+    tx_in_block.wait_for_success().await.map_err(|err| {
+        if let subxt::Error::Runtime(subxt::error::DispatchError::Module(_)) = err {
+            return SubstrateError::TxNotExecuted(tx_in_block.extrinsic_hash().into());
         }
 
         SubstrateError::ProviderError(err)
-    })?)
+    })
 }
 
 /// Format signed update into scale value format
