@@ -1,6 +1,5 @@
 #![allow(missing_docs)]
 
-use anyhow::Result;
 use avail::runtime_types::{
     da_control::extensions::check_app_id::CheckAppId,
     frame_system::extensions::{
@@ -11,6 +10,7 @@ use avail::runtime_types::{
     pallet_transaction_payment,
 };
 use codec::{Codec, Compact, Decode, Encode, EncodeLike, Error as DecodeError, Input};
+use color_eyre::Result;
 use parity_util_mem::MallocSizeOf;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Deserializer, Serialize};
@@ -25,68 +25,8 @@ use subxt::{
     Config,
 };
 
-use self::avail::runtime_types::{
-    merkle::light::LightMerkle,
-    primitive_types::{H160, U256},
-    signature::signature::Signature,
-};
-use crate::avail_subxt_config::avail::runtime_types::nomad_core::update::{SignedUpdate, Update};
-
-#[subxt::subxt(runtime_metadata_path = "metadata/avail.metadata.08.15.22.scale")]
+#[subxt::subxt(runtime_metadata_path = "metadata/avail.metadata.08.16.22.scale")]
 pub mod avail {}
-
-// Kludge: implement manual conversions between subxt codegen types and ethers
-// primitive_types
-impl From<H160> for ethers_core::types::H256 {
-    fn from(avail_h160: H160) -> Self {
-        let h160_bytes = avail_h160.0;
-        let pt_h160: ethers_core::types::H160 = h160_bytes.into();
-        pt_h160.into()
-    }
-}
-
-impl From<ethers_core::types::U256> for U256 {
-    fn from(pt_u256: ethers_core::types::U256) -> Self {
-        let pt_u256_bytes = pt_u256.0;
-        U256(pt_u256_bytes)
-    }
-}
-
-impl From<LightMerkle> for nomad_core::accumulator::NomadLightMerkle {
-    fn from(avail_merkle: LightMerkle) -> Self {
-        // avail merkle had to be u32 because of scale encoding limitations
-        Self::new(avail_merkle.branch, avail_merkle.count as usize)
-    }
-}
-
-impl From<nomad_core::Update> for Update {
-    fn from(nomad_update: nomad_core::Update) -> Self {
-        Update {
-            home_domain: nomad_update.home_domain,
-            previous_root: nomad_update.previous_root,
-            new_root: nomad_update.new_root,
-        }
-    }
-}
-
-impl From<ethers_core::types::Signature> for Signature {
-    fn from(ethers_signature: ethers_core::types::Signature) -> Self {
-        Signature {
-            r: ethers_signature.r.into(),
-            s: ethers_signature.s.into(),
-            v: ethers_signature.v,
-        }
-    }
-}
-
-impl From<nomad_core::SignedUpdate> for SignedUpdate {
-    fn from(nomad_signed_update: nomad_core::SignedUpdate) -> Self {
-        SignedUpdate {
-            update: nomad_signed_update.update.into(),
-            signature: nomad_signed_update.signature.into(),
-        }
-    }
-}
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct AvailConfig;
