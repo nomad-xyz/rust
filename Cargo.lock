@@ -3283,6 +3283,7 @@ dependencies = [
  "futures",
  "hex",
  "nomad-core",
+ "nomad-types",
  "parity-scale-codec",
  "parity-util-mem",
  "scale-info",
