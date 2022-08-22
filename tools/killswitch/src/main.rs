@@ -1,3 +1,4 @@
+mod channel;
 mod killswitch;
 mod settings;
 
