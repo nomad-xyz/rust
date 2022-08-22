@@ -147,6 +147,13 @@ where
         let base_value = self.storage().fetch(&base_address, None).await?.unwrap();
         Ok(scale_value::serde::from_value(base_value)?)
     }
+
+    /// Retrieve the home's base object from chain storage
+    pub async fn tree(&self) -> Result<NomadLightMerkle, SubstrateError> {
+        let tree_address = subxt::dynamic::storage_root("Home", "Tree");
+        let tree_value = self.storage().fetch(&tree_address, None).await?.unwrap();
+        Ok(scale_value::serde::from_value(tree_value)?)
+    }
 }
 
 impl<T> std::ops::Deref for SubstrateHome<T>
@@ -320,9 +327,7 @@ where
     async fn produce_update(&self) -> Result<Option<Update>, <Self as Common>::Error> {
         let committed_root = self.base().await?.committed_root;
 
-        let tree_address = subxt::dynamic::storage_root("Home", "Tree");
-        let tree_value = self.storage().fetch(&tree_address, None).await?.unwrap();
-        let tree: NomadLightMerkle = scale_value::serde::from_value(tree_value)?;
+        let tree = self.tree().await?;
 
         let num_elements = tree.count();
         let root_address = subxt::dynamic::storage(
