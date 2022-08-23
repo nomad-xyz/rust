@@ -14,9 +14,9 @@ use ethers::{
 };
 use nomad_xyz_configuration::agent::SignerConf;
 
-/// Error types for Signers
+/// Error types for EthereumSigners
 #[derive(Debug, thiserror::Error)]
-pub enum SignersError {
+pub enum EthereumSignersError {
     /// AWS Signer Error
     #[error("{0}")]
     AwsSignerError(#[from] AwsSignerError),
@@ -25,7 +25,7 @@ pub enum SignersError {
     WalletError(#[from] WalletError),
 }
 
-impl From<Infallible> for SignersError {
+impl From<Infallible> for EthereumSignersError {
     fn from(_error: Infallible) -> Self {
         panic!("infallible")
     }
@@ -33,26 +33,26 @@ impl From<Infallible> for SignersError {
 
 /// Ethereum-supported signer types
 #[derive(Debug, Clone)]
-pub enum Signers {
+pub enum EthereumSigners {
     /// A wallet instantiated with a locally stored private key
     Local(LocalWallet),
     /// A signer using a key stored in aws kms
     Aws(AwsSigner<'static>),
 }
 
-impl From<LocalWallet> for Signers {
+impl From<LocalWallet> for EthereumSigners {
     fn from(s: LocalWallet) -> Self {
-        Signers::Local(s)
+        EthereumSigners::Local(s)
     }
 }
 
-impl From<AwsSigner<'static>> for Signers {
+impl From<AwsSigner<'static>> for EthereumSigners {
     fn from(s: AwsSigner<'static>) -> Self {
-        Signers::Aws(s)
+        EthereumSigners::Aws(s)
     }
 }
 
-impl Signers {
+impl EthereumSigners {
     /// Try to build Signer from SignerConf object
     pub async fn try_from_signer_conf(conf: &SignerConf) -> Result<Self> {
         match conf {
@@ -68,13 +68,13 @@ impl Signers {
 }
 
 #[async_trait]
-impl Signer for Signers {
-    type Error = SignersError;
+impl Signer for EthereumSigners {
+    type Error = EthereumSignersError;
 
     fn with_chain_id<T: Into<u64>>(self, chain_id: T) -> Self {
         match self {
-            Signers::Local(signer) => signer.with_chain_id(chain_id).into(),
-            Signers::Aws(signer) => signer.with_chain_id(chain_id).into(),
+            EthereumSigners::Local(signer) => signer.with_chain_id(chain_id).into(),
+            EthereumSigners::Aws(signer) => signer.with_chain_id(chain_id).into(),
         }
     }
 
@@ -83,30 +83,30 @@ impl Signer for Signers {
         message: S,
     ) -> Result<Signature, Self::Error> {
         match self {
-            Signers::Local(signer) => Ok(signer.sign_message(message).await?),
-            Signers::Aws(signer) => Ok(signer.sign_message(message).await?),
+            EthereumSigners::Local(signer) => Ok(signer.sign_message(message).await?),
+            EthereumSigners::Aws(signer) => Ok(signer.sign_message(message).await?),
         }
     }
 
     async fn sign_transaction(&self, message: &TypedTransaction) -> Result<Signature, Self::Error> {
         match self {
-            Signers::Local(signer) => Ok(signer.sign_transaction(message).await?),
+            EthereumSigners::Local(signer) => Ok(signer.sign_transaction(message).await?),
 
-            Signers::Aws(signer) => Ok(signer.sign_transaction(message).await?),
+            EthereumSigners::Aws(signer) => Ok(signer.sign_transaction(message).await?),
         }
     }
 
     fn address(&self) -> EthAddress {
         match self {
-            Signers::Local(signer) => signer.address(),
-            Signers::Aws(signer) => signer.address(),
+            EthereumSigners::Local(signer) => signer.address(),
+            EthereumSigners::Aws(signer) => signer.address(),
         }
     }
 
     fn chain_id(&self) -> u64 {
         match self {
-            Signers::Local(signer) => signer.chain_id(),
-            Signers::Aws(signer) => signer.chain_id(),
+            EthereumSigners::Local(signer) => signer.chain_id(),
+            EthereumSigners::Aws(signer) => signer.chain_id(),
         }
     }
 
@@ -115,27 +115,11 @@ impl Signer for Signers {
         payload: &T,
     ) -> Result<Signature, Self::Error> {
         match self {
-            Signers::Local(signer) => Ok(signer.sign_typed_data(payload).await?),
-            Signers::Aws(signer) => Ok(signer.sign_typed_data(payload).await?),
+            EthereumSigners::Local(signer) => Ok(signer.sign_typed_data(payload).await?),
+            EthereumSigners::Aws(signer) => Ok(signer.sign_typed_data(payload).await?),
         }
     }
 }
-
-/// Extension of ethers signer trait
-#[async_trait]
-pub trait SignerExt: Signer {
-    /// Sign message without eip 155
-    async fn sign_message_without_eip_155<S: Send + Sync + AsRef<[u8]>>(
-        &self,
-        message: S,
-    ) -> Result<Signature, <Self as Signer>::Error> {
-        let mut signature = self.sign_message(message).await?;
-        signature.v = 28 - (signature.v % 2);
-        Ok(signature)
-    }
-}
-
-impl<T> SignerExt for T where T: Signer {}
 
 #[cfg(test)]
 mod test {

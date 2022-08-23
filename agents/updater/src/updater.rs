@@ -11,13 +11,13 @@ use tracing::{info, instrument::Instrumented, Instrument};
 use crate::{
     produce::UpdateProducer, settings::UpdaterSettings as Settings, submit::UpdateSubmitter,
 };
-use nomad_base::{AgentCore, CachingHome, NomadAgent, NomadDB};
-use nomad_core::{Common, Signers};
+use nomad_base::{AgentCore, AttestationSigner, CachingHome, NomadAgent, NomadDB};
+use nomad_core::Common;
 
 /// An updater agent
 #[derive(Debug)]
 pub struct Updater {
-    signer: Arc<Signers>,
+    signer: Arc<AttestationSigner>,
     interval_seconds: u64,
     finalization_seconds: u64,
     pub(crate) core: AgentCore,
@@ -34,7 +34,7 @@ impl AsRef<AgentCore> for Updater {
 impl Updater {
     /// Instantiate a new updater
     pub fn new(
-        signer: Signers,
+        signer: AttestationSigner,
         interval_seconds: u64,
         finalization_seconds: u64,
         core: AgentCore,
@@ -91,7 +91,7 @@ impl From<&Updater> for UpdaterChannel {
 pub struct UpdaterChannel {
     home: Arc<CachingHome>,
     db: NomadDB,
-    signer: Arc<Signers>,
+    signer: Arc<AttestationSigner>,
     signed_attestation_count: IntCounter,
     submitted_update_count: IntCounter,
     finalization_seconds: u64,
@@ -113,7 +113,7 @@ impl NomadAgent for Updater {
     where
         Self: Sized,
     {
-        let signer = Signers::try_from_signer_conf(
+        let signer = AttestationSigner::try_from_signer_conf(
             settings
                 .as_ref()
                 .attestation_signer

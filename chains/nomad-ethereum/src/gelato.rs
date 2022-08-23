@@ -1,3 +1,4 @@
+use crate::EthereumSigners;
 use ethers::{
     prelude::{Address, Bytes, H256, U64},
     providers::Middleware,
@@ -8,12 +9,11 @@ use gelato_sdk::{
     rpc::{CheckOrDate, RelayResponse, TaskState},
     FeeToken, ForwardRequestBuilder, GelatoClient,
 };
+use nomad_core::TxOutcome;
 use std::{error::Error as StdError, sync::Arc};
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
 use tracing::info;
-
-use nomad_core::{Signers, TxOutcome};
 
 pub(crate) const ACCEPTABLE_STATES: [TaskState; 4] = [
     TaskState::CheckPending,
@@ -49,7 +49,7 @@ pub struct SingleChainGelatoClient<M> {
     /// Ethers client (for estimating gas)
     pub eth_client: Arc<M>,
     /// Sponsor signer
-    pub sponsor: Signers,
+    pub sponsor: EthereumSigners,
     /// Gelato relay forwarder address
     pub forwarder: Address,
     /// Chain id
@@ -72,7 +72,7 @@ where
     /// Instantiate single chain client with default Gelato url
     pub fn with_default_url(
         eth_client: Arc<M>,
-        sponsor: Signers,
+        sponsor: EthereumSigners,
         chain_id: u64,
         fee_token: impl Into<FeeToken>,
         is_high_priority: bool,

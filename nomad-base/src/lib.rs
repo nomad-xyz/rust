@@ -53,3 +53,9 @@ pub use indexer::*;
 
 mod submitter;
 pub use submitter::*;
+
+/// Re-export signer trait for attestation signer.
+pub use ethers::signers::Signer;
+
+/// Attestation signer. Always uses Ethereum-style signing.
+pub type AttestationSigner = nomad_ethereum::EthereumSigners;

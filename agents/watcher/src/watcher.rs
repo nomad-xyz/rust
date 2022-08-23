@@ -15,12 +15,12 @@ use tokio::{
 use tracing::{error, info, info_span, instrument::Instrumented, Instrument};
 
 use nomad_base::{
-    cancel_task, AgentCore, BaseError, CachingHome, ChainCommunicationError, ConnectionManagers,
-    NomadAgent, NomadDB,
+    cancel_task, AgentCore, AttestationSigner, BaseError, CachingHome, ChainCommunicationError,
+    ConnectionManagers, NomadAgent, NomadDB,
 };
 use nomad_core::{
     Common, CommonEvents, ConnectionManager, DoubleUpdate, FailureNotification, Home,
-    SignedFailureNotification, SignedUpdate, Signers, TxOutcome,
+    SignedFailureNotification, SignedUpdate, TxOutcome,
 };
 
 use crate::settings::WatcherSettings as Settings;
@@ -286,7 +286,7 @@ type TaskMap = Arc<RwLock<HashMap<String, Instrumented<JoinHandle<Result<()>>>>>
 
 #[derive(Debug)]
 pub struct Watcher {
-    signer: Arc<Signers>,
+    signer: Arc<AttestationSigner>,
     interval_seconds: u64,
     sync_tasks: TaskMap,
     watch_tasks: TaskMap,
@@ -306,7 +306,7 @@ impl AsRef<AgentCore> for Watcher {
 impl Watcher {
     /// Instantiate a new watcher.
     pub fn new(
-        signer: Signers,
+        signer: AttestationSigner,
         interval_seconds: u64,
         connection_managers: Vec<Arc<ConnectionManagers>>,
         core: AgentCore,
@@ -560,9 +560,10 @@ impl NomadAgent for Watcher {
 
         let core = settings.as_ref().try_into_core("watcher").await?;
 
-        let signer =
-            Signers::try_from_signer_conf(&settings.base.attestation_signer.expect("signer"))
-                .await?;
+        let signer = AttestationSigner::try_from_signer_conf(
+            &settings.base.attestation_signer.expect("signer"),
+        )
+        .await?;
 
         Ok(Self::new(
             signer,

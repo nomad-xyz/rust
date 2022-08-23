@@ -2,6 +2,7 @@ mod encode;
 mod home;
 mod indexer;
 mod replica;
+mod signer;
 mod xapp;
 
 use async_trait::async_trait;
@@ -15,6 +16,7 @@ pub use encode::*;
 pub use home::*;
 pub use indexer::*;
 pub use replica::*;
+pub use signer::*;
 pub use xapp::*;
 
 /// Box std error with send + sync

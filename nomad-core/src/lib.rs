@@ -31,9 +31,6 @@ pub mod models {
 mod traits;
 pub use traits::*;
 
-mod signer;
-pub use signer::*;
-
 /// Utilities to match contract values
 pub mod utils;
 

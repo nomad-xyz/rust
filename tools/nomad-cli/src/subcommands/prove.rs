@@ -5,11 +5,10 @@ use crate::{replicas, rpc};
 
 use nomad_core::{
     accumulator::NomadProof, db::DB, ContractLocator, Decode, MessageStatus, NomadMessage, Replica,
-    Signers,
 };
 
 use nomad_base::NomadDB;
-use nomad_ethereum::{EthereumReplica, TxSubmitter};
+use nomad_ethereum::{EthereumReplica, EthereumSigners, TxSubmitter};
 
 use ethers::{
     prelude::{Http, Middleware, Provider, SignerMiddleware, H160},
@@ -26,8 +25,8 @@ use rusoto_kms::KmsClient;
 static KMS_CLIENT: OnceCell<KmsClient> = OnceCell::new();
 
 type ConcreteReplica = EthereumReplica<
-    SignerMiddleware<Provider<Http>, Signers>,
-    SignerMiddleware<Provider<Http>, Signers>,
+    SignerMiddleware<Provider<Http>, EthereumSigners>,
+    SignerMiddleware<Provider<Http>, EthereumSigners>,
 >;
 
 #[derive(StructOpt, Debug)]
@@ -90,9 +89,9 @@ impl ProveCommand {
     }
 
     // mostly copied from nomad-base settings
-    async fn signer(&self) -> Result<Signers> {
+    async fn signer(&self) -> Result<EthereumSigners> {
         if let Some(key) = &self.key {
-            Ok(Signers::Local(key.parse()?))
+            Ok(EthereumSigners::Local(key.parse()?))
         } else {
             match (&self.key_id, &self.aws_region) {
                 (Some(id), Some(region)) => {
@@ -106,7 +105,7 @@ impl ProveCommand {
                         )
                     });
                     let signer = AwsSigner::new(client, id, 0).await?;
-                    Ok(Signers::Aws(signer))
+                    Ok(EthereumSigners::Aws(signer))
                 }
 
                 _ => bail!("missing signer information"),

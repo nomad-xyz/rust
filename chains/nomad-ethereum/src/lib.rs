@@ -32,6 +32,10 @@ pub use gelato::*;
 mod submitter;
 pub use submitter::*;
 
+/// EthereumSigners
+mod signer;
+pub use signer::*;
+
 /// Contract binding
 #[cfg(not(doctest))]
 pub(crate) mod bindings;
