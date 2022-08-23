@@ -146,6 +146,15 @@ mod test {
                 }))
             );
             assert_eq!(
+                *secrets.tx_submitters.get("polkadotRelay").unwrap(),
+                TxSubmitterConf::Substrate(substrate::TxSubmitterConf::Local(SignerConf::HexKey(
+                    "0x1111111111111111111111111111111111111111111111111111111111111111"
+                        .parse()
+                        .unwrap()
+                )))
+            );
+
+            assert_eq!(
                 *secrets.rpcs.get("moonbeam").unwrap(),
                 ChainConf::Ethereum(Connection::Http("https://rpc.api.moonbeam.network".into()))
             );
@@ -158,6 +167,10 @@ mod test {
             assert_eq!(
                 *secrets.rpcs.get("evmos").unwrap(),
                 ChainConf::Ethereum(Connection::Http("https://eth.bd.evmos.org:8545".into()))
+            );
+            assert_eq!(
+                *secrets.rpcs.get("polkadotRelay").unwrap(),
+                ChainConf::Substrate(Connection::Http("https://rpc.polkadot.io".into()))
             );
         });
     }
