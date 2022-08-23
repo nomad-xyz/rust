@@ -1,5 +1,6 @@
 use color_eyre::{eyre::bail, Result};
 use ethers_signers::WalletError;
+use nomad_core::FromSignerConf;
 pub use nomad_types::NomadIdentifier;
 use std::convert::Infallible;
 
@@ -52,9 +53,9 @@ impl From<AwsSigner<'static>> for EthereumSigners {
     }
 }
 
-impl EthereumSigners {
-    /// Try to build Signer from SignerConf object
-    pub async fn try_from_signer_conf(conf: &SignerConf) -> Result<Self> {
+#[async_trait]
+impl FromSignerConf for EthereumSigners {
+    async fn try_from_signer_conf(conf: &SignerConf) -> Result<Self> {
         match conf {
             SignerConf::HexKey(key) => Ok(Self::Local(key.as_ref().parse()?)),
             SignerConf::Aws { id } => {

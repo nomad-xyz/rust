@@ -1,5 +1,7 @@
 use async_trait::async_trait;
+use color_eyre::Result;
 use ethers::prelude::{Signature, Signer};
+use nomad_xyz_configuration::agent::SignerConf;
 
 /// Extension of ethers signer trait
 #[async_trait]
@@ -16,3 +18,11 @@ pub trait SignerExt: Signer {
 }
 
 impl<T> SignerExt for T where T: Signer {}
+
+/// Interface for instantiating a chain-specific signer from a `SignerConf`
+/// object.
+#[async_trait]
+pub trait FromSignerConf: Sized {
+    /// Instantiate `Self` from a `SignerConf` object
+    async fn try_from_signer_conf(conf: &SignerConf) -> Result<Self>;
+}

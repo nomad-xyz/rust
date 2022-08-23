@@ -19,8 +19,8 @@ use nomad_base::{
     ConnectionManagers, NomadAgent, NomadDB,
 };
 use nomad_core::{
-    Common, CommonEvents, ConnectionManager, DoubleUpdate, FailureNotification, Home,
-    SignedFailureNotification, SignedUpdate, TxOutcome,
+    Common, CommonEvents, ConnectionManager, DoubleUpdate, FailureNotification, FromSignerConf,
+    Home, SignedFailureNotification, SignedUpdate, TxOutcome,
 };
 
 use crate::settings::WatcherSettings as Settings;

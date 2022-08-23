@@ -27,6 +27,7 @@ tracing = "0.1.35"
 tracing-futures = "0.2.5"
 thiserror = "1.0.30"
 
+nomad-xyz-configuration = { path = "../../configuration" }
 nomad-core = { path = "../../nomad-core" }
 nomad-types = { path = "../../nomad-types" }
 

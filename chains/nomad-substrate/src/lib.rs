@@ -28,6 +28,9 @@ pub use nomad_base::*;
 mod client;
 pub use client::*;
 
+mod signer;
+pub use signer::*;
+
 #[macro_use]
 mod macros;
 pub use macros::*;

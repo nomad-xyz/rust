@@ -1,18 +1,17 @@
 use std::sync::Arc;
 
+use crate::{
+    produce::UpdateProducer, settings::UpdaterSettings as Settings, submit::UpdateSubmitter,
+};
 use async_trait::async_trait;
 use color_eyre::{eyre::ensure, Result};
 use ethers::{signers::Signer, types::Address};
 use futures_util::future::select_all;
+use nomad_base::{AgentCore, AttestationSigner, CachingHome, NomadAgent, NomadDB};
+use nomad_core::{Common, FromSignerConf};
 use prometheus::IntCounter;
 use tokio::task::JoinHandle;
 use tracing::{info, instrument::Instrumented, Instrument};
-
-use crate::{
-    produce::UpdateProducer, settings::UpdaterSettings as Settings, submit::UpdateSubmitter,
-};
-use nomad_base::{AgentCore, AttestationSigner, CachingHome, NomadAgent, NomadDB};
-use nomad_core::Common;
 
 /// An updater agent
 #[derive(Debug)]

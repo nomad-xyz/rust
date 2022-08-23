@@ -3284,6 +3284,7 @@ dependencies = [
  "hex",
  "nomad-core",
  "nomad-types",
+ "nomad-xyz-configuration",
  "parity-scale-codec",
  "parity-util-mem",
  "scale-info",

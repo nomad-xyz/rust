@@ -1,4 +1,5 @@
 use nomad_base::{AttestationSigner, Signer};
+use nomad_core::FromSignerConf;
 use nomad_xyz_configuration::agent::SignerConf;
 
 #[tokio::test]
