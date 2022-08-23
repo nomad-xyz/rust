@@ -16,6 +16,12 @@ impl<T: Config> std::ops::Deref for NomadOnlineClient<T> {
     }
 }
 
+impl<T: Config> From<OnlineClient<T>> for NomadOnlineClient<T> {
+    fn from(client: OnlineClient<T>) -> Self {
+        Self(client)
+    }
+}
+
 impl<T: Config> NomadOnlineClient<T> {
     /// Fetch ordered signed updates from the specific `block_number`
     pub async fn fetch_sorted_updates_for_block(

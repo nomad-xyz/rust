@@ -32,3 +32,44 @@ macro_rules! report_tx {
         Ok(TxOutcome { txid: successful_tx.extrinsic_hash().into() })
     }}
 }
+
+/// Generate function that creates boxed connected object (home, replica,
+/// connection manager)
+macro_rules! boxed_object {
+    ($fn_name:ident, $chain_name:ident, $abi:ident, $trait:path, $($n:ident:$t:ty),*)  => {
+        use subxt::ext::sp_core;
+        use nomad_xyz_configuration::*;
+        use ::nomad_core::FromSignerConf;
+        use std::sync::Arc;
+
+        affix::paste! {
+            #[doc = "Cast a connection into a connected trait object"]
+            pub(crate) async fn $fn_name(conn: Connection, name: &str, domain: u32, submitter_conf: Option<substrate::TxSubmitterConf>, _timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
+                let api = match conn {
+                    Connection::Http(url) =>
+                        subxt::OnlineClient::<[<$chain_name Config>]>::from_url(url).await?,
+                    Connection::Ws(url) =>
+                        subxt::OnlineClient::<[<$chain_name Config>]>::from_url(url).await?,
+                };
+
+                let signer = if let Some(conf) = submitter_conf {
+                    match conf {
+                        substrate::TxSubmitterConf::Local(signer_conf) => {
+                            SubstrateSigners::<[<$chain_name Config>], sp_core::ecdsa::Pair>::try_from_signer_conf(&signer_conf)
+                                .await?
+                        }
+                    }
+                } else {
+                    panic!("Not supporting connected objects without tx submission")
+                };
+
+                Ok(Box::new(SubstrateHome::<[<$chain_name Config>]>::new(
+                    api.into(),
+                    Arc::new(signer),
+                    domain,
+                    name,
+                )))
+            }
+        }
+    }
+}
