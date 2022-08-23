@@ -75,7 +75,10 @@ mod test {
                 let config_manager_core = config.core().get(remote_network).unwrap();
                 match config_manager_core {
                     CoreDeploymentInfo::Ethereum(core) => {
-                        assert_eq!(manager_setup.address, core.x_app_connection_manager,);
+                        assert_eq!(
+                            manager_setup.address.unwrap(),
+                            core.x_app_connection_manager,
+                        );
                         assert_eq!(manager_setup.page_settings.from, core.deploy_height);
                     }
                     CoreDeploymentInfo::Substrate(_) => {

@@ -132,10 +132,10 @@ impl HomeIndexer for HomeIndexers {
 pub enum HomeIndexerVariants {
     /// Ethereum contract indexer
     Ethereum(Box<dyn HomeIndexer>),
+    /// Substrate contract indexer
+    Substrate(Box<dyn HomeIndexer>),
     /// Mock indexer
     Mock(Box<dyn HomeIndexer>),
-    /// Other indexer variant
-    Other(Box<dyn HomeIndexer>),
 }
 
 #[async_trait]
@@ -143,16 +143,16 @@ impl CommonIndexer for HomeIndexerVariants {
     async fn get_block_number(&self) -> Result<u32> {
         match self {
             HomeIndexerVariants::Ethereum(indexer) => indexer.get_block_number().await,
+            HomeIndexerVariants::Substrate(indexer) => indexer.get_block_number().await,
             HomeIndexerVariants::Mock(indexer) => indexer.get_block_number().await,
-            HomeIndexerVariants::Other(indexer) => indexer.get_block_number().await,
         }
     }
 
     async fn fetch_sorted_updates(&self, from: u32, to: u32) -> Result<Vec<SignedUpdateWithMeta>> {
         match self {
             HomeIndexerVariants::Ethereum(indexer) => indexer.fetch_sorted_updates(from, to).await,
+            HomeIndexerVariants::Substrate(indexer) => indexer.fetch_sorted_updates(from, to).await,
             HomeIndexerVariants::Mock(indexer) => indexer.fetch_sorted_updates(from, to).await,
-            HomeIndexerVariants::Other(indexer) => indexer.fetch_sorted_updates(from, to).await,
         }
     }
 }
@@ -162,8 +162,10 @@ impl HomeIndexer for HomeIndexerVariants {
     async fn fetch_sorted_messages(&self, from: u32, to: u32) -> Result<Vec<RawCommittedMessage>> {
         match self {
             HomeIndexerVariants::Ethereum(indexer) => indexer.fetch_sorted_messages(from, to).await,
+            HomeIndexerVariants::Substrate(indexer) => {
+                indexer.fetch_sorted_messages(from, to).await
+            }
             HomeIndexerVariants::Mock(indexer) => indexer.fetch_sorted_messages(from, to).await,
-            HomeIndexerVariants::Other(indexer) => indexer.fetch_sorted_messages(from, to).await,
         }
     }
 }

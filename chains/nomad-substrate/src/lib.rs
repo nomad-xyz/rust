@@ -16,8 +16,8 @@ pub use replica::*;
 pub mod xapp;
 pub use xapp::*;
 
-mod avail_subxt_config;
-pub use avail_subxt_config::{avail, AvailConfig};
+mod configs;
+pub use configs::*;
 
 mod nomad_core;
 pub use crate::nomad_core::*;
@@ -41,9 +41,22 @@ pub use utils::*;
 mod error;
 pub use error::*;
 
-use ::nomad_core::Home;
+use ::nomad_core::{Home, HomeIndexer};
 use std::str::FromStr;
-use subxt::Config;
+
+boxed_signing_object!(
+    make_avail_home,
+    Avail,
+    SubstrateHome,
+    Home<Error = SubstrateError>,
+);
+
+boxed_indexer!(
+    make_avail_home_indexer,
+    Avail,
+    SubstrateHomeIndexer,
+    HomeIndexer,
+);
 
 #[derive(Debug, Clone)]
 pub(crate) enum SubstrateChains {
@@ -64,15 +77,8 @@ impl FromStr for SubstrateChains {
 /// Substrate signer
 pub type SubstrateSigner<T> = dyn subxt::tx::Signer<T> + Send + Sync;
 
-boxed_object!(
-    make_avail_home,
-    Avail,
-    SubstrateHome,
-    Home<Error = SubstrateError>,
-);
-
 /// Make substrate home object
-pub async fn make_home<T: Config>(
+pub async fn make_home(
     conn: nomad_xyz_configuration::Connection,
     name: &str,
     domain: u32,
@@ -87,5 +93,20 @@ pub async fn make_home<T: Config>(
         SubstrateChains::Avail => {
             make_avail_home(conn, name, domain, submitter_conf, timelag).await
         }
+    }
+}
+
+/// Make substrate home object
+pub async fn make_home_indexer(
+    conn: nomad_xyz_configuration::Connection,
+    name: &str,
+    timelag: Option<u8>,
+) -> color_eyre::Result<Box<dyn HomeIndexer>> {
+    let chain: SubstrateChains = name
+        .parse()
+        .unwrap_or_else(|_| panic!("Unrecognized chain name: {}", name));
+
+    match chain {
+        SubstrateChains::Avail => make_avail_home_indexer(conn, timelag).await,
     }
 }

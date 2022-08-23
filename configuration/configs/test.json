@@ -17,7 +17,7 @@
       "ethereum": {
         "name": "ethereum",
         "domain": 6648936,
-        "connections": ["moonbeam", "evmos", "polkadotRelay"],
+        "connections": ["moonbeam", "evmos"],
         "specs": {
           "chainId": 1,
           "blockTime": 15,
@@ -43,7 +43,7 @@
       "moonbeam": {
         "name": "moonbeam",
         "domain": 1650811245,
-        "connections": ["ethereum", "evmos", "polkadotRelay"],
+        "connections": ["ethereum", "evmos"],
         "specs": {
           "chainId": 1284,
           "finalizationBlocks": 20,
@@ -73,7 +73,7 @@
       "evmos": {
         "name": "evmos",
         "domain": 1702260083,
-        "connections": ["ethereum", "moonbeam", "polkadotRelay"],
+        "connections": ["ethereum", "moonbeam"],
         "configuration": {
           "optimisticSeconds": 1800,
           "updater": "0xc8e344d4698b6462187c88b9bb58f26ca3b5ed31",
@@ -164,9 +164,9 @@
           "beacon": "0x0876dfe4acae0e1c0a43302716483f5752298b71"
         },
         "polkadotRelay": {
-          "implementation": "0x7f58bb8311db968ab110889f2dfa04ab7e8e831b",
+          "implementation": "0x67833a48b3f509d4252ac2c19cd604556ed6c981",
           "proxy": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-          "beacon": "0x0876dfe4acae0e1c0a43302716483f5752298b71"
+          "beacon": "0x3009c99d370b780304d2098196f1ebf779a4777a"
         }
       }
     },

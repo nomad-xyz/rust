@@ -1,6 +1,6 @@
 use color_eyre::Result;
 use nomad_core::ContractLocator;
-use nomad_ethereum::{make_conn_manager, make_home, make_replica};
+use nomad_ethereum::{make_conn_manager, make_replica};
 use nomad_types::NomadIdentifier;
 use nomad_xyz_configuration::{
     core::CoreDeploymentInfo, AgentSecrets, ChainConf, ConnectionManagerGasLimits, HomeGasLimits,
@@ -52,7 +52,7 @@ pub struct ChainSetup {
     /// Chain domain identifier
     pub domain: u32,
     /// Address of contract on the chain
-    pub address: NomadIdentifier,
+    pub address: Option<NomadIdentifier>,
     /// Paging settings
     pub page_settings: PageSettings,
     /// Network specific finality in blocks
@@ -107,10 +107,15 @@ impl ChainSetup {
                     page_size: domain.specs.index_page_size,
                 };
 
-                (address, page_settings)
+                (Some(address), page_settings)
             }
-            CoreDeploymentInfo::Substrate(_) => {
-                unimplemented!("Substrate configuration not yet supported")
+            CoreDeploymentInfo::Substrate(core) => {
+                let page_settings = PageSettings {
+                    from: core.deploy_height,
+                    page_size: domain.specs.index_page_size,
+                };
+
+                (None, page_settings)
             }
         };
 
@@ -140,16 +145,16 @@ impl ChainSetup {
         gas: Option<HomeGasLimits>,
     ) -> Result<Homes> {
         match &self.chain {
-            ChainConf::Ethereum(conf) => {
+            ChainConf::Ethereum(conn) => {
                 let submitter_conf = submitter_conf.map(std::convert::Into::into);
 
                 Ok(HomeVariants::Ethereum(
-                    make_home(
-                        conf.clone(),
+                    nomad_ethereum::make_home(
+                        conn.clone(),
                         &ContractLocator {
                             name: self.name.clone(),
                             domain: self.domain,
-                            address: self.address,
+                            address: self.address.expect("must have address"),
                         },
                         submitter_conf,
                         timelag,
@@ -159,7 +164,21 @@ impl ChainSetup {
                 )
                 .into())
             }
-            ChainConf::Substrate(_) => unimplemented!("Substrate configuration not yet supported"),
+            ChainConf::Substrate(conn) => {
+                let submitter_conf = submitter_conf.map(std::convert::Into::into);
+
+                Ok(HomeVariants::Substrate(
+                    nomad_substrate::make_home(
+                        conn.clone(),
+                        &self.name,
+                        self.domain,
+                        submitter_conf,
+                        timelag,
+                    )
+                    .await?,
+                )
+                .into())
+            }
         }
     }
 
@@ -170,16 +189,16 @@ impl ChainSetup {
         gas: Option<ReplicaGasLimits>,
     ) -> Result<Replicas> {
         match &self.chain {
-            ChainConf::Ethereum(conf) => {
+            ChainConf::Ethereum(conn) => {
                 let submitter_conf = submitter_conf.map(std::convert::Into::into);
 
                 Ok(ReplicaVariants::Ethereum(
                     make_replica(
-                        conf.clone(),
+                        conn.clone(),
                         &ContractLocator {
                             name: self.name.clone(),
                             domain: self.domain,
-                            address: self.address,
+                            address: self.address.expect("must have address"),
                         },
                         submitter_conf,
                         None, // never need timelag for replica
@@ -202,13 +221,13 @@ impl ChainSetup {
         let submitter_conf = submitter_conf.map(std::convert::Into::into);
 
         match &self.chain {
-            ChainConf::Ethereum(conf) => Ok(ConnectionManagers::Ethereum(
+            ChainConf::Ethereum(conn) => Ok(ConnectionManagers::Ethereum(
                 make_conn_manager(
-                    conf.clone(),
+                    conn.clone(),
                     &ContractLocator {
                         name: self.name.clone(),
                         domain: self.domain,
-                        address: self.address,
+                        address: self.address.expect("must have address"),
                     },
                     submitter_conf,
                     None, // Never need timelag for xapp connection manager

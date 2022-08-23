@@ -33,29 +33,45 @@ macro_rules! report_tx {
     }}
 }
 
-/// Generate function that creates boxed connected object (home, replica,
-/// connection manager)
-macro_rules! boxed_object {
+/// Generate function that creates boxed non_signing object (i.e. an indexer)
+macro_rules! boxed_indexer {
     ($fn_name:ident, $chain_name:ident, $abi:ident, $trait:path, $($n:ident:$t:ty),*)  => {
-        use subxt::ext::sp_core;
-        use nomad_xyz_configuration::*;
-        use ::nomad_core::FromSignerConf;
-        use std::sync::Arc;
-
         affix::paste! {
-            #[doc = "Cast a connection into a connected trait object"]
-            pub(crate) async fn $fn_name(conn: Connection, name: &str, domain: u32, submitter_conf: Option<substrate::TxSubmitterConf>, _timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
+            #[doc = "Cast a connection into a non-signing trait object"]
+            pub(crate) async fn $fn_name(conn: nomad_xyz_configuration::Connection, _timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
                 let api = match conn {
-                    Connection::Http(url) =>
+                    nomad_xyz_configuration::Connection::Http(url) =>
                         subxt::OnlineClient::<[<$chain_name Config>]>::from_url(url).await?,
-                    Connection::Ws(url) =>
+                    nomad_xyz_configuration::Connection::Ws(url) =>
+                        subxt::OnlineClient::<[<$chain_name Config>]>::from_url(url).await?,
+                };
+
+                Ok(Box::new($abi::<[<$chain_name Config>]>::new(api.into())))
+            }
+        }
+    }
+}
+
+/// Generate function that creates boxed signing object (home, replica,
+/// connection manager)
+macro_rules! boxed_signing_object {
+    ($fn_name:ident, $chain_name:ident, $abi:ident, $trait:path, $($n:ident:$t:ty),*)  => {
+        affix::paste! {
+            #[doc = "Cast a connection into a signing trait object"]
+            pub(crate) async fn $fn_name(conn: nomad_xyz_configuration::Connection, name: &str, domain: u32, submitter_conf: Option<nomad_xyz_configuration::substrate::TxSubmitterConf>, _timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
+                let api = match conn {
+                    nomad_xyz_configuration::Connection::Http(url) =>
+                        subxt::OnlineClient::<[<$chain_name Config>]>::from_url(url).await?,
+                    nomad_xyz_configuration::Connection::Ws(url) =>
                         subxt::OnlineClient::<[<$chain_name Config>]>::from_url(url).await?,
                 };
 
                 let signer = if let Some(conf) = submitter_conf {
+                    use ::nomad_core::FromSignerConf;
+
                     match conf {
-                        substrate::TxSubmitterConf::Local(signer_conf) => {
-                            SubstrateSigners::<[<$chain_name Config>], sp_core::ecdsa::Pair>::try_from_signer_conf(&signer_conf)
+                        nomad_xyz_configuration::substrate::TxSubmitterConf::Local(signer_conf) => {
+                            SubstrateSigners::<[<$chain_name Config>], subxt::ext::sp_core::ecdsa::Pair>::try_from_signer_conf(&signer_conf)
                                 .await?
                         }
                     }
@@ -63,9 +79,9 @@ macro_rules! boxed_object {
                     panic!("Not supporting connected objects without tx submission")
                 };
 
-                Ok(Box::new(SubstrateHome::<[<$chain_name Config>]>::new(
+                Ok(Box::new($abi::<[<$chain_name Config>]>::new(
                     api.into(),
-                    Arc::new(signer),
+                    std::sync::Arc::new(signer),
                     domain,
                     name,
                 )))

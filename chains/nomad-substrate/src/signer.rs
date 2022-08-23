@@ -26,7 +26,8 @@ where
     async fn try_from_signer_conf(conf: &SignerConf) -> Result<Self> {
         match conf {
             SignerConf::HexKey(key) => {
-                let pair = P::from_string(key.as_ref(), None).unwrap(); // TODO: remove unwrap
+                let formatted_key = format!("0x{}", key.as_ref());
+                let pair = P::from_string(&formatted_key, None).unwrap(); // TODO: remove unwrap
                 Ok(Self::Local(PairSigner::<T, _>::new(pair)))
             }
             SignerConf::Aws { .. } => bail!("No AWS signer support"),

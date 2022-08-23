@@ -232,6 +232,8 @@ impl std::ops::DerefMut for Homes {
 pub enum HomeVariants {
     /// Ethereum home contract
     Ethereum(Box<dyn Home<Error = nomad_ethereum::EthereumError>>),
+    /// Substrate home object
+    Substrate(Box<dyn Home<Error = nomad_substrate::SubstrateError>>),
     /// Mock home contract
     Mock(Box<MockHomeContract>),
 }
@@ -240,6 +242,14 @@ impl std::fmt::Display for HomeVariants {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             HomeVariants::Ethereum(inner) => {
+                write!(
+                    f,
+                    "{{ Home for {} {} }}",
+                    inner.local_domain(),
+                    inner.name()
+                )
+            }
+            HomeVariants::Substrate(inner) => {
                 write!(
                     f,
                     "{{ Home for {} {} }}",
@@ -286,6 +296,7 @@ impl Home for HomeVariants {
     fn local_domain(&self) -> u32 {
         match self {
             HomeVariants::Ethereum(home) => home.local_domain(),
+            HomeVariants::Substrate(home) => home.local_domain(),
             HomeVariants::Mock(mock_home) => mock_home.local_domain(),
         }
     }
@@ -293,6 +304,7 @@ impl Home for HomeVariants {
     fn home_domain_hash(&self) -> H256 {
         match self {
             HomeVariants::Ethereum(home) => home.home_domain_hash(),
+            HomeVariants::Substrate(home) => home.home_domain_hash(),
             HomeVariants::Mock(mock_home) => mock_home.home_domain_hash(),
         }
     }
@@ -301,6 +313,7 @@ impl Home for HomeVariants {
     async fn nonces(&self, destination: u32) -> Result<u32, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => Ok(home.nonces(destination).await?),
+            HomeVariants::Substrate(home) => Ok(home.nonces(destination).await?),
             HomeVariants::Mock(mock_home) => Ok(mock_home.nonces(destination).await?),
         }
     }
@@ -309,6 +322,7 @@ impl Home for HomeVariants {
     async fn dispatch(&self, message: &Message) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => Ok(home.dispatch(message).await?),
+            HomeVariants::Substrate(home) => Ok(home.dispatch(message).await?),
             HomeVariants::Mock(mock_home) => Ok(mock_home.dispatch(message).await?),
         }
     }
@@ -317,6 +331,7 @@ impl Home for HomeVariants {
     async fn queue_length(&self) -> Result<U256, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => Ok(home.queue_length().await?),
+            HomeVariants::Substrate(home) => Ok(home.queue_length().await?),
             HomeVariants::Mock(mock_home) => Ok(mock_home.queue_length().await?),
         }
     }
@@ -324,6 +339,7 @@ impl Home for HomeVariants {
     async fn queue_contains(&self, root: H256) -> Result<bool, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => Ok(home.queue_contains(root).await?),
+            HomeVariants::Substrate(home) => Ok(home.queue_contains(root).await?),
             HomeVariants::Mock(mock_home) => Ok(mock_home.queue_contains(root).await?),
         }
     }
@@ -334,6 +350,7 @@ impl Home for HomeVariants {
     ) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => Ok(home.improper_update(update).await?),
+            HomeVariants::Substrate(home) => Ok(home.improper_update(update).await?),
             HomeVariants::Mock(mock_home) => Ok(mock_home.improper_update(update).await?),
         }
     }
@@ -342,6 +359,7 @@ impl Home for HomeVariants {
     async fn produce_update(&self) -> Result<Option<Update>, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => Ok(home.produce_update().await?),
+            HomeVariants::Substrate(home) => Ok(home.produce_update().await?),
             HomeVariants::Mock(mock_home) => Ok(mock_home.produce_update().await?),
         }
     }
@@ -354,6 +372,7 @@ impl Common for HomeVariants {
     fn name(&self) -> &str {
         match self {
             HomeVariants::Ethereum(home) => home.name(),
+            HomeVariants::Substrate(home) => home.name(),
             HomeVariants::Mock(mock_home) => mock_home.name(),
         }
     }
@@ -361,6 +380,7 @@ impl Common for HomeVariants {
     async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => Ok(home.status(txid).await?),
+            HomeVariants::Substrate(home) => Ok(home.status(txid).await?),
             HomeVariants::Mock(mock_home) => Ok(mock_home.status(txid).await?),
         }
     }
@@ -368,6 +388,7 @@ impl Common for HomeVariants {
     async fn updater(&self) -> Result<H256, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => Ok(home.updater().await?),
+            HomeVariants::Substrate(home) => Ok(home.updater().await?),
             HomeVariants::Mock(mock_home) => Ok(mock_home.updater().await?),
         }
     }
@@ -375,6 +396,7 @@ impl Common for HomeVariants {
     async fn state(&self) -> Result<State, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => Ok(home.state().await?),
+            HomeVariants::Substrate(home) => Ok(home.state().await?),
             HomeVariants::Mock(mock_home) => Ok(mock_home.state().await?),
         }
     }
@@ -382,6 +404,7 @@ impl Common for HomeVariants {
     async fn committed_root(&self) -> Result<H256, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => Ok(home.committed_root().await?),
+            HomeVariants::Substrate(home) => Ok(home.committed_root().await?),
             HomeVariants::Mock(mock_home) => Ok(mock_home.committed_root().await?),
         }
     }
@@ -389,6 +412,7 @@ impl Common for HomeVariants {
     async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => Ok(home.update(update).await?),
+            HomeVariants::Substrate(home) => Ok(home.update(update).await?),
             HomeVariants::Mock(mock_home) => Ok(mock_home.update(update).await?),
         }
     }
@@ -399,6 +423,7 @@ impl Common for HomeVariants {
     ) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
             HomeVariants::Ethereum(home) => Ok(home.double_update(double).await?),
+            HomeVariants::Substrate(home) => Ok(home.double_update(double).await?),
             HomeVariants::Mock(mock_home) => Ok(mock_home.double_update(double).await?),
         }
     }

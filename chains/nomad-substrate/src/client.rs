@@ -1,4 +1,4 @@
-use crate::avail_subxt_config::avail::home;
+use crate::configs::avail::home;
 use color_eyre::Result;
 use ethers_core::types::Signature;
 use nomad_core::{RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, Update, UpdateMeta};
