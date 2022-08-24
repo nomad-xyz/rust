@@ -1,11 +1,8 @@
 use color_eyre::{eyre, Result};
-use nomad_core::Signers;
 use nomad_xyz_configuration::{agent::SignerConf, ChainConf, NomadConfig, TxSubmitterConf};
-use std::{
-    collections::{HashMap, HashSet},
-    env,
-};
+use std::{collections::HashMap, env};
 
+/// KillSwitchSettings contains all available configuration for all networks in config
 #[derive(Debug)]
 pub(crate) struct KillSwitchSettings {
     /// RPC endpoint configs
@@ -17,6 +14,7 @@ pub(crate) struct KillSwitchSettings {
 }
 
 impl KillSwitchSettings {
+    /// Build new KillSwitchSettings from env and config file
     pub(crate) async fn new() -> Result<Self> {
         // Get config
         let config = if let Some(config_url) = env::var("CONFIG_URL").ok() {
