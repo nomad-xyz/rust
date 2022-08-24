@@ -31,7 +31,6 @@ impl KillSwitchSettings {
                 "No configuration found. Set CONFIG_URL or CONFIG_PATH environment variable"
             )
         };
-        config.validate()?;
 
         // Load secrets manually instead of using `AgentSecrets::from_env` so we can load them
         // best effort instead of bailing on first error
