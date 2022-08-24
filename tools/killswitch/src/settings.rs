@@ -1,12 +1,19 @@
 use color_eyre::{eyre, Result};
 use nomad_core::Signers;
-use nomad_xyz_configuration::{AgentSecrets, NomadConfig};
-use std::{collections::HashMap, env};
+use nomad_xyz_configuration::{agent::SignerConf, ChainConf, NomadConfig, TxSubmitterConf};
+use std::{
+    collections::{HashMap, HashSet},
+    env,
+};
 
 #[derive(Debug)]
 pub(crate) struct KillSwitchSettings {
-    secrets: HashMap<String, AgentSecrets>,
-    signers: HashMap<String, Signers>,
+    /// RPC endpoint configs
+    pub rpcs: HashMap<String, Option<ChainConf>>,
+    /// Transaction submission configs
+    pub tx_submitters: HashMap<String, Option<TxSubmitterConf>>,
+    /// Attestation signer configs
+    pub attestation_signers: HashMap<String, Option<SignerConf>>,
 }
 
 impl KillSwitchSettings {
@@ -26,11 +33,35 @@ impl KillSwitchSettings {
         };
         config.validate()?;
 
-        //
+        // Load secrets manually instead of using `AgentSecrets::from_env` so we can load them
+        // best effort instead of bailing on first error
+        let networks = config.networks.clone();
+
+        let rpcs = networks
+            .iter()
+            .map(|n| (n.clone(), ChainConf::from_env(&n.to_uppercase())))
+            .collect::<HashMap<_, _>>();
+
+        let tx_submitters = networks
+            .iter()
+            .map(|n| (n.clone(), TxSubmitterConf::from_env(&n.to_uppercase())))
+            .collect::<HashMap<_, _>>();
+
+        // Load attestation signers for all networks explicitly using the form `<NETWORK>_ATTESTATION_SIGNER_ID`
+        let attestation_signers = networks
+            .iter()
+            .map(|n| {
+                (
+                    n.clone(),
+                    SignerConf::from_env(Some("ATTESTATION_SIGNER"), Some(&n.to_uppercase())),
+                )
+            })
+            .collect::<HashMap<_, _>>();
 
         return Ok(Self {
-            secrets: HashMap::new(),
-            signers: HashMap::new(),
+            rpcs,
+            tx_submitters,
+            attestation_signers,
         });
     }
 }
