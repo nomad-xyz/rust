@@ -16,8 +16,15 @@ macro_rules! report_tx {
 
         // TODO: can a tx deterministically revert here?
         let tx_in_block = pending_tx
-            .wait_for_in_block()
+            .wait_for_finalized()
             .await?;
+
+        info!(
+            method = $method,
+            tx_hash = ?tx_in_block.extrinsic_hash(),
+            "Tx included in finalized block {} tx, waiting for success.",
+            $method,
+        );
 
         // Try to detect reverting txs that were submitted to chain
         let successful_tx = utils::try_tx_in_block_to_successful_tx_events(tx_in_block).await?;

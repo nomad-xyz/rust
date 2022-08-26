@@ -1,3 +1,4 @@
+use crate::avail::avail;
 use crate::SubstrateError;
 use crate::{report_tx, utils, NomadBase, NomadOnlineClient, NomadState, SubstrateSigner};
 use async_trait::async_trait;
@@ -289,14 +290,29 @@ where
             body,
         } = message;
 
+        // // DISPATCH
         // let destination_value = Value::u128(*destination as u128);
-        let recipient_value = Value::primitive(Primitive::U256(recipient.clone().into()));
-        let body_value = Value::from_bytes(body);
+        // let recipient_value = Value::primitive(Primitive::U256(recipient.clone().into()));
+        // let body_value = Value::from_bytes(body);
 
-        let tx_payload = subxt::dynamic::tx("Home", "dispatch", vec![recipient_value, body_value]);
+        // let tx_payload = subxt::dynamic::tx("Home", "dispatch", vec![destination_value, recipient_value, body_value]);
 
-        info!(message = ?message, "Dispatching message to chain.");
-        report_tx!("dispatch", self.api, self.signer, tx_payload)
+        // info!(message = ?message, "Dispatching message to chain.");
+        // report_tx!("dispatch", self.api, self.signer, tx_payload)
+
+        // BALANCES DYNAMIC
+        // let tx_payload = subxt::dynamic::tx("Balances", "transfer", vec![
+        //     Value::unnamed_variant("Id", [Value::from_bytes(&recipient)]),
+        //     Value::u128(50000 as u128),
+        // ],);
+
+        // info!(message = ?message, "Dispatching message to chain.");
+        // report_tx!("dynamic transfer", self.api, self.signer, tx_payload)
+
+        // BALANCES STATIC
+        let alice = sp_keyring::AccountKeyring::Alice.to_account_id();
+        let tx_payload = avail::tx().balances().transfer(alice.into(), 50000 as u128);
+        report_tx!("static transfer", self.api, self.signer, tx_payload)
     }
 
     async fn queue_length(&self) -> Result<U256, <Self as Common>::Error> {
