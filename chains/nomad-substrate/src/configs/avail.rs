@@ -1,31 +1,26 @@
 #![allow(missing_docs)]
 
-use avail::runtime_types::{
-    da_control::extensions::check_app_id::CheckAppId,
-    frame_system::extensions::{
-        check_genesis::CheckGenesis, check_mortality::CheckMortality, check_nonce::CheckNonce,
-        check_spec_version::CheckSpecVersion, check_tx_version::CheckTxVersion,
-        check_weight::CheckWeight,
-    },
-    pallet_transaction_payment,
-};
-use codec::{Codec, Compact, Decode, Encode, EncodeLike, Error as DecodeError, Input};
-use color_eyre::Result;
+use avail::runtime_types::da_control::extensions::check_app_id::CheckAppId;
+use avail::runtime_types::frame_system::extensions::check_genesis::CheckGenesis;
+use avail::runtime_types::frame_system::extensions::check_mortality::CheckMortality;
+use avail::runtime_types::frame_system::extensions::check_nonce::CheckNonce;
+use avail::runtime_types::frame_system::extensions::check_spec_version::CheckSpecVersion;
+use avail::runtime_types::frame_system::extensions::check_tx_version::CheckTxVersion;
+use avail::runtime_types::frame_system::extensions::check_weight::CheckWeight;
+use avail::runtime_types::pallet_transaction_payment;
+use codec::Error as DecodeError;
+use codec::{Codec, Compact, Decode, Encode, EncodeLike, Input};
 use parity_util_mem::MallocSizeOf;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::fmt::Debug;
-use subxt::{
-    ext::sp_core::{self, H256},
-    ext::sp_runtime::{
-        traits::{BlakeTwo256, Extrinsic, Hash},
-        AccountId32, Digest, MultiAddress, MultiSignature,
-    },
-    tx::SubstrateExtrinsicParams,
-    Config,
-};
+use subxt::ext::sp_core::H256;
+use subxt::ext::sp_runtime::traits::{BlakeTwo256, Extrinsic, Hash, Header};
+use subxt::ext::sp_runtime::{AccountId32, Digest, MultiAddress, MultiSignature};
+use subxt::tx::{Era, ExtrinsicParams, PlainTip};
+use subxt::Config;
 
-#[subxt::subxt(runtime_metadata_path = "metadata/avail.metadata.08.16.22.scale")]
+#[subxt::subxt(runtime_metadata_path = "metadata/avail.metadata.scale")]
 pub mod avail {}
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -41,32 +36,19 @@ impl Config for AvailConfig {
     type Header = DaHeader;
     type Signature = MultiSignature;
     type Extrinsic = AvailExtrinsic;
-    type ExtrinsicParams = SubstrateExtrinsicParams<Self>; // TODO: remove default
-}
-// Needed because we want default deserialization for extrinsics coming from Light client
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct AvailExtrinsicLight {
-    pub app_id: u32,
-    pub signature: Option<MultiSignature>,
-    pub data: Vec<u8>,
+    type ExtrinsicParams = AvailExtrinsicParams;
 }
 
-#[allow(clippy::from_over_into)]
-impl Into<AvailExtrinsic> for AvailExtrinsicLight {
-    fn into(self) -> AvailExtrinsic {
-        AvailExtrinsic {
-            app_id: self.app_id,
-            signature: self.signature,
-            data: self.data,
-        }
-    }
-}
-
-#[derive(Serialize, Debug, Clone, PartialEq, Eq, Default, Encode, TypeInfo)]
-pub struct AvailExtrinsic {
-    pub app_id: u32,
-    pub signature: Option<MultiSignature>,
-    pub data: Vec<u8>,
+#[derive(Serialize, Debug, Clone, PartialEq, Eq, Encode, TypeInfo)]
+pub enum AvailExtrinsic {
+    AvailDataExtrinsic {
+        app_id: u32,
+        signature: MultiSignature,
+        data: Vec<u8>,
+    },
+    RawExtrinsic {
+        encoded_data: Vec<u8>,
+    },
 }
 
 pub type SignedExtra = (
@@ -101,28 +83,23 @@ impl Decode for AvailExtrinsic {
             let sig = MultiSignature::decode(input)?;
             let extra = <SignedExtra>::decode(input)?;
             let app_id = extra.7 .0;
-            (app_id, Some(sig))
+            (app_id, sig)
         } else {
-            (0, None)
+            return Err("NOTE: Not signed".into());
         };
 
         let section: u8 = Decode::decode(input)?;
         let method: u8 = Decode::decode(input)?;
 
         let data: Vec<u8> = match (section, method) {
-            // TODO: Define these pairs as enums or better yet - make a dependency on substrate enums if possible
             (29, 1) => Decode::decode(input)?,
-            (3, 0) => {
-                println!("Timestamp: {:?}", <Compact<u64>>::decode(input)?);
-                vec![]
-            }
             (a, b) => {
                 println!("section, method: ({},{})", a, b);
-                vec![]
+                return Err("NOTE: Not Avail Data extrinsic".into());
             }
         };
 
-        Ok(Self {
+        Ok(Self::AvailDataExtrinsic {
             app_id,
             signature,
             data,
@@ -135,9 +112,17 @@ impl<'a> Deserialize<'a> for AvailExtrinsic {
     where
         D: Deserializer<'a>,
     {
-        let r = sp_core::bytes::deserialize(deserializer)?;
-        Decode::decode(&mut &r[..])
-            .map_err(|e| serde::de::Error::custom(format!("Decode error: {}", e)))
+        let r = subxt::ext::sp_core::bytes::deserialize(deserializer)?;
+        match Decode::decode(&mut &r[..]) {
+            Ok(xt) => Ok(xt),
+            Err(e) => {
+                if e.to_string().contains("NOTE") {
+                    Ok(AvailExtrinsic::RawExtrinsic { encoded_data: r })
+                } else {
+                    Err(serde::de::Error::custom(format!("Decode error: {}", e)))
+                }
+            }
+        }
     }
 }
 
@@ -146,7 +131,16 @@ impl Extrinsic for AvailExtrinsic {
     type SignaturePayload = ();
 
     fn is_signed(&self) -> Option<bool> {
-        Some(self.signature.is_some())
+        if let Self::AvailDataExtrinsic {
+            app_id: _,
+            signature: _,
+            data: _,
+        } = self
+        {
+            Some(true)
+        } else {
+            None
+        }
     }
 
     fn new(_call: Self::Call, _signed_data: Option<Self::SignaturePayload>) -> Option<Self> {
@@ -182,16 +176,6 @@ impl MallocSizeOf for KateCommitment {
             + self.cols.size_of(ops)
     }
 }
-
-// impl<'de> Deserialize<'de> for KateCommitment {
-//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-//     where
-//         D: Deserializer<'de>,
-//     {
-//         let encoded = sp_core::bytes::deserialize(deserializer)?;
-//         Decode::decode(&mut &encoded[..]).map_err(|e| serde::de::Error::custom(e.to_string()))
-//     }
-// }
 
 pub type AppId = u32;
 
@@ -237,7 +221,7 @@ impl MallocSizeOf for DaHeader {
     }
 }
 
-impl subxt::ext::sp_runtime::traits::Header for DaHeader {
+impl Header for DaHeader {
     type Number = u32;
 
     type Hash = H256;
@@ -314,12 +298,65 @@ impl subxt::ext::sp_runtime::traits::Header for DaHeader {
     }
 }
 
-// mod test{
-//     use super::AvailExtrinsic;
+#[derive(Debug, Clone, Default)]
+pub struct AvailExtrinsicParams {
+    spec_version: u32,
+    tx_version: u32,
+    nonce: u32,
+    genesis_hash: H256,
+    tip: PlainTip,
+    app_id: u32,
+}
 
-//     #[test]
-//     fn test_decode_xt() {
-//         let xt= serde_json::to_string("0xb1040404000492624a4e287a523d93742df2713c7e7e27781fec205405129b9dc60579765f772172ff27e5569aa97dd9219a906e3e263e61027349e98bd9754ecc6918e4c6bd672deb5b4a8d39e1b0d1d428053eaed04adde199bc4391b5f972c8426583b396adc6810189de3e3b5517dea5a8c36755082ec7b7b6649a4e40ca8c42675653cd7acf0bf708916752ae68410af4cb66295322d14589de3e3b5517dea5a8c36755082ec7b7b6649a4e40ca8c42675653cd7acf0bf708916752ae68410af4cb66295322d145010004000806424142453402010000002a30eb040000000005424142450101de248dfabd539a67697acc6a53b4eb8ff62cc8afc5dce5c5bf3eab4fc945293dff23930c1f98adc60693a91dab91a80739cea6dfc80817c3f435f08d69eb87890100000000").unwrap();
-//         let x: AvailExtrinsic = serde_json::from_str(&xt).unwrap();
-//     }
-// }
+impl ExtrinsicParams<u32, H256> for AvailExtrinsicParams {
+    type OtherParams = AvailExtrinsicParams;
+
+    fn new(
+        spec_version: u32,
+        tx_version: u32,
+        nonce: u32,
+        genesis_hash: H256,
+        other_params: Self::OtherParams,
+    ) -> Self {
+        Self {
+            spec_version,
+            tx_version,
+            nonce,
+            genesis_hash,
+            tip: other_params.tip,
+            app_id: other_params.app_id,
+        }
+    }
+
+    fn encode_extra_to(&self, v: &mut Vec<u8>) {
+        (Era::Immortal, Compact(self.nonce), self.tip, self.app_id).encode_to(v);
+    }
+
+    fn encode_additional_to(&self, v: &mut Vec<u8>) {
+        (
+            self.spec_version,
+            self.tx_version,
+            self.genesis_hash,
+            self.genesis_hash,
+        )
+            .encode_to(v);
+    }
+}
+
+impl AvailExtrinsicParams {
+    /// Create params with the addition of tip and app_id
+    pub fn new_with_tip_and_app_id(tip: u128, app_id: u32) -> Self {
+        Self {
+            tip: PlainTip::new(tip),
+            app_id,
+            ..Default::default()
+        }
+    }
+    /// Create params with the addition of app_id
+    pub fn new_with_app_id(app_id: u32) -> Self {
+        Self {
+            app_id,
+            ..Default::default()
+        }
+    }
+}

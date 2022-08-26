@@ -1,12 +1,12 @@
 {
   "version": 0,
   "environment": "test",
-  "networks": ["ethereum", "moonbeam", "evmos", "polkadotRelay"],
+  "networks": ["ethereum", "moonbeam", "evmos", "avail"],
   "rpcs": {
     "moonbeam": ["https://rpc.api.moonbeam.network"],
     "ethereum": ["https://main-light.eth.linkpool.io/"],
     "evmos": ["https://eth.bd.evmos.org:8545"],
-    "polkadotRelay": ["https://rpc.polkadot.io"]
+    "avail": ["https://rpc.polkadot.io"]
   },
   "protocol": {
     "governor": {
@@ -107,10 +107,10 @@
           ]
         }
       },
-      "polkadotRelay": {
-        "name": "polkadotRelay",
+      "avail": {
+        "name": "avail",
         "domain": 1702260083,
-        "connections": ["ethereum", "moonbeam", "evmos"],
+        "connections": ["ethereum"],
         "configuration": {
           "optimisticSeconds": 1800,
           "updater": "0x0000000000000000000000000000000000000000",
@@ -163,7 +163,7 @@
           "proxy": "0x5bae47bf29f4e9b1e275c0b427b84c4daa30033a",
           "beacon": "0x0876dfe4acae0e1c0a43302716483f5752298b71"
         },
-        "polkadotRelay": {
+        "avail": {
           "implementation": "0x67833a48b3f509d4252ac2c19cd604556ed6c981",
           "proxy": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
           "beacon": "0x3009c99d370b780304d2098196f1ebf779a4777a"
@@ -195,11 +195,6 @@
           "implementation": "0x67833a48b3f509d4252ac2c19cd604556ed6c981",
           "proxy": "0xc1fae48ae1225fce8698503d5bb1378db5ce14f6",
           "beacon": "0x3009c99d370b780304d2098196f1ebf779a4777a"
-        },
-        "polkadotRelay": {
-          "implementation": "0x67833a48b3f509d4252ac2c19cd604556ed6c981",
-          "proxy": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-          "beacon": "0x3009c99d370b780304d2098196f1ebf779a4777a"
         }
       }
     },
@@ -228,16 +223,11 @@
           "implementation": "0x0876dfe4acae0e1c0a43302716483f5752298b71",
           "proxy": "0x969d515486ba6133400ac9c73298586426a090f5",
           "beacon": "0x049b51e531fd8f90da6d92ea83dc4125002f20ef"
-        },
-        "polkadotRelay": {
-          "implementation": "0x0876dfe4acae0e1c0a43302716483f5752298b71",
-          "proxy": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-          "beacon": "0x049b51e531fd8f90da6d92ea83dc4125002f20ef"
         }
       }
     },
-    "polkadotRelay": {
-      "deployHeight": 1000000
+    "avail": {
+      "deployHeight": 0
     }
   },
   "bridge": {
@@ -315,8 +305,8 @@
         }
       ]
     },
-    "polkadotRelay": {
-      "deployHeight": 1000000
+    "avail": {
+      "deployHeight": 0
     }
   },
   "agent": {
@@ -407,9 +397,9 @@
         "interval": 100
       }
     },
-    "polkadotRelay": {
+    "avail": {
       "rpcStyle": "substrate",
-      "db": "/usr/share/nomad",
+      "db": "db",
       "metrics": 9090,
       "logging": {
         "level": "info",

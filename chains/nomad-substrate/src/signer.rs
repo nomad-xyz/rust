@@ -21,14 +21,26 @@ where
     T: Config,
     T::Signature: From<P::Signature>,
     <T::Signature as Verify>::Signer: From<P::Public> + IdentifyAccount<AccountId = T::AccountId>,
+    <T as Config>::AccountId: Into<<T as Config>::Address>,
+    <T as Config>::Address: std::fmt::Display,
+    <T as Config>::AccountId: std::fmt::Display,
     P: Pair,
+    P::Public: std::fmt::Display,
 {
     async fn try_from_signer_conf(conf: &SignerConf) -> Result<Self> {
         match conf {
             SignerConf::HexKey(key) => {
                 let formatted_key = format!("0x{}", key.as_ref());
                 let pair = P::from_string(&formatted_key, None).unwrap(); // TODO: remove unwrap
-                Ok(Self::Local(PairSigner::<T, _>::new(pair)))
+                tracing::info!("Instantiated tx signer with pubkey: {}", pair.public());
+
+                let pair_signer = PairSigner::<T, _>::new(pair);
+                tracing::info!("Tx signer address: {}", pair_signer.address());
+
+                let account_id = pair_signer.account_id();
+                tracing::info!("Tx signer account id: {}", account_id);
+
+                Ok(Self::Local(pair_signer))
             }
             SignerConf::Aws { .. } => bail!("No AWS signer support"),
             SignerConf::Node => bail!("No node signer support"),

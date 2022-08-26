@@ -146,7 +146,7 @@ mod test {
                 }))
             );
             assert_eq!(
-                *secrets.tx_submitters.get("polkadotRelay").unwrap(),
+                *secrets.tx_submitters.get("avail").unwrap(),
                 TxSubmitterConf::Substrate(substrate::TxSubmitterConf::Local(SignerConf::HexKey(
                     "0x1111111111111111111111111111111111111111111111111111111111111111"
                         .parse()
@@ -169,7 +169,7 @@ mod test {
                 ChainConf::Ethereum(Connection::Http("https://eth.bd.evmos.org:8545".into()))
             );
             assert_eq!(
-                *secrets.rpcs.get("polkadotRelay").unwrap(),
+                *secrets.rpcs.get("avail").unwrap(),
                 ChainConf::Substrate(Connection::Http("https://rpc.polkadot.io".into()))
             );
         });

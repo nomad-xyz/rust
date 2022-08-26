@@ -68,8 +68,8 @@ impl FromStr for SubstrateChains {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_ref() {
-            "a" => Ok(Self::Avail),
-            _ => panic!("Unknown substrate chain"),
+            "avail" => Ok(Self::Avail),
+            _ => panic!("Unknown substrate chain: {}", s),
         }
     }
 }

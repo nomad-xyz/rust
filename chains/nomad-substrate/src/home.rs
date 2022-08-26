@@ -5,7 +5,7 @@ use color_eyre::{eyre::eyre, Result};
 use ethers_core::types::{H256, U256};
 use futures::{stream::FuturesOrdered, StreamExt};
 use std::sync::Arc;
-use subxt::ext::scale_value::{self, Value};
+use subxt::ext::scale_value::{self, Primitive, Value};
 use subxt::{ext::sp_runtime::traits::Header, tx::ExtrinsicParams};
 use subxt::{Config, OnlineClient};
 use tracing::info;
@@ -144,7 +144,10 @@ where
     /// Retrieve the home's base object from chain storage
     pub async fn base(&self) -> Result<NomadBase, SubstrateError> {
         let base_address = subxt::dynamic::storage_root("Home", "Base");
+        info!("Fetching base object...");
         let base_value = self.storage().fetch(&base_address, None).await?.unwrap();
+
+        info!("Decoding base object: {:?}", base_value);
         Ok(scale_value::serde::from_value(base_value)?)
     }
 
@@ -286,15 +289,11 @@ where
             body,
         } = message;
 
-        let destination_value = Value::u128(*destination as u128);
-        let recipient_value = Value::from_bytes(recipient);
+        // let destination_value = Value::u128(*destination as u128);
+        let recipient_value = Value::primitive(Primitive::U256(recipient.clone().into()));
         let body_value = Value::from_bytes(body);
 
-        let tx_payload = subxt::dynamic::tx(
-            "Home",
-            "dispatch",
-            vec![destination_value, recipient_value, body_value],
-        );
+        let tx_payload = subxt::dynamic::tx("Home", "dispatch", vec![recipient_value, body_value]);
 
         info!(message = ?message, "Dispatching message to chain.");
         report_tx!("dispatch", self.api, self.signer, tx_payload)

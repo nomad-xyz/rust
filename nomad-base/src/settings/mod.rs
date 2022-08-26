@@ -546,8 +546,9 @@ impl Settings {
                 assert_eq!(self.home.address.unwrap(), core.home.proxy);
                 assert_eq!(self.home.page_settings.from, core.deploy_height);
             }
-            CoreDeploymentInfo::Substrate(_) => {
-                unimplemented!("Substrate configuration not yet supported")
+            CoreDeploymentInfo::Substrate(core) => {
+                assert_eq!(self.home.address, None);
+                assert_eq!(self.home.page_settings.from, core.deploy_height);
             }
         }
 

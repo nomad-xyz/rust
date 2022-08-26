@@ -1,2 +1,3 @@
-mod avail_subxt_config;
-pub use avail_subxt_config::*;
+/// Avail
+pub mod avail;
+pub use avail::*;
