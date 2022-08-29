@@ -1,10 +1,13 @@
 use color_eyre::{eyre, Result};
+use ethers::abi::Token;
 use nomad_xyz_configuration::{agent::SignerConf, ChainConf, NomadConfig, TxSubmitterConf};
 use std::{collections::HashMap, env};
 
 /// KillSwitchSettings contains all available configuration for all networks in config
 #[derive(Debug)]
 pub(crate) struct KillSwitchSettings {
+    /// NomadConfig
+    pub config: NomadConfig,
     /// RPC endpoint configs
     pub rpcs: HashMap<String, Option<ChainConf>>,
     /// Transaction submission configs
@@ -56,6 +59,7 @@ impl KillSwitchSettings {
             .collect::<HashMap<_, _>>();
 
         return Ok(Self {
+            config,
             rpcs,
             tx_submitters,
             attestation_signers,

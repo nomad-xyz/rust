@@ -2,7 +2,7 @@ mod channel;
 mod killswitch;
 mod settings;
 
-use clap::{Parser, ValueEnum};
+use clap::{ArgGroup, Parser, ValueEnum};
 use color_eyre::Result;
 use killswitch::KillSwitch;
 use settings::KillSwitchSettings as Settings;
@@ -13,9 +13,21 @@ enum App {
 }
 
 #[derive(Parser, Debug)]
+#[clap(group(
+    ArgGroup::new("which_networks")
+    .required(true)
+    .multiple(false)
+    .args(&["all", "all-inbound"])
+))]
 struct Args {
-    #[clap(short, long, arg_enum)]
+    #[clap(long, arg_enum)]
     app: App,
+
+    #[clap(long)]
+    all: bool,
+
+    #[clap(long, value_name = "HOME")]
+    all_inbound: Option<String>,
 }
 
 #[tokio::main(flavor = "current_thread")]
