@@ -114,7 +114,7 @@ impl AgentSecrets {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::ethereum::GelatoConf;
+    use crate::{ethereum::GelatoConf, NomadConfig};
     use nomad_test::test_utils;
 
     #[test]
@@ -214,7 +214,7 @@ mod test {
 
     #[test]
     #[serial_test::serial]
-    fn it_builds_from_env() {
+    fn it_builds_test_config_from_env() {
         test_utils::run_test_with_env_sync("../fixtures/env.test", move || {
             let networks = &crate::get_builtin("test").unwrap().networks;
             let secrets =
@@ -226,12 +226,39 @@ mod test {
     }
 
     #[test]
-    fn it_builds_from_file() {
+    fn it_builds_test_config_from_file() {
         let networks = &crate::get_builtin("test").unwrap().networks;
         let secrets = AgentSecrets::from_file("../fixtures/test_secrets.json")
             .expect("Failed to load secrets from file");
         secrets
             .validate("", networks)
+            .expect("Failed to validate secrets");
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn it_builds_multi_vm_config_from_env() {
+        test_utils::run_test_with_env_sync("../fixtures/env.test-multi-vm", move || {
+            let networks = NomadConfig::from_file("configs/testMultiVm.json")
+                .unwrap()
+                .networks;
+            let secrets =
+                AgentSecrets::from_env(&networks).expect("Failed to load secrets from env");
+            secrets
+                .validate("", &networks)
+                .expect("Failed to validate secrets");
+        });
+    }
+
+    #[test]
+    fn it_builds_multi_vm_config_from_file() {
+        let networks = NomadConfig::from_file("configs/testMultiVm.json")
+            .unwrap()
+            .networks;
+        let secrets = AgentSecrets::from_file("../fixtures/test_multi_vm_secrets.json")
+            .expect("Failed to load secrets from file");
+        secrets
+            .validate("", &networks)
             .expect("Failed to validate secrets");
     }
 }
