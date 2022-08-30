@@ -1,4 +1,4 @@
-//! Nomad Configuration crate with wa&sm bindings
+//! Nomad Configuration crate with wasm bindings
 
 #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
