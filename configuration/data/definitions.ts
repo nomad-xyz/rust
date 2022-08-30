@@ -48,7 +48,7 @@ export interface Proxy {
   beacon: NomadIdentifier;
 }
 
-export interface EvmCoreContracts {
+export interface EthereumCoreDeploymentInfo {
   deployHeight: number;
   upgradeBeaconController: NomadIdentifier;
   xAppConnectionManager: NomadIdentifier;
@@ -58,7 +58,13 @@ export interface EvmCoreContracts {
   replicas: Record<string, Proxy>;
 }
 
-export type DeploymentInfo = EvmCoreContracts;
+export interface SubstrateCoreDeploymentInfo {
+  deployHeight: number;
+}
+
+export type CoreDeploymentInfo =
+  | EthereumCoreDeploymentInfo
+  | SubstrateCoreDeploymentInfo;
 
 export interface DeployedCustomToken {
   token: NomadLocator;
@@ -69,7 +75,7 @@ export interface DeployedCustomToken {
   addresses: Proxy;
 }
 
-export interface EvmBridgeContracts {
+export interface EthereumBridgeDeploymentInfo {
   deployHeight: number;
   bridgeRouter: Proxy;
   tokenRegistry: Proxy;
@@ -78,7 +84,13 @@ export interface EvmBridgeContracts {
   customs?: Array<DeployedCustomToken>;
 }
 
-export type BridgeContracts = EvmBridgeContracts;
+export interface SubstrateBridgeDeploymentInfo {
+  deployHeight: number;
+}
+
+export type BridgeDeploymentInfo =
+  | EthereumBridgeDeploymentInfo
+  | SubstrateBridgeDeploymentInfo;
 
 export interface Governance {
   governor?: NomadLocator;
@@ -189,8 +201,8 @@ export interface NomadConfig {
   networks: Array<string>;
   rpcs: Record<string, Array<string>>;
   protocol: NetworkInfo;
-  core: Record<string, DeploymentInfo>;
-  bridge: Record<string, BridgeContracts>;
+  core: Record<string, CoreDeploymentInfo>;
+  bridge: Record<string, BridgeDeploymentInfo>;
   agent: Record<string, AgentConfig>;
   gas: Record<string, NomadGasConfig>;
   bridgeGui: Record<string, AppConfig>;

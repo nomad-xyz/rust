@@ -24,6 +24,9 @@ extern "C" {
     #[wasm_bindgen(typescript_type = "EthereumCoreDeploymentInfo")]
     pub type EthereumCoreDeploymentInfo;
 
+    #[wasm_bindgen(typescript_type = "SubstrateCoreDeploymentInfo")]
+    pub type SubstrateCoreDeploymentInfo;
+
     #[wasm_bindgen(typescript_type = "CoreDeploymentInfo")]
     pub type CoreDeploymentInfo;
 
@@ -32,6 +35,9 @@ extern "C" {
 
     #[wasm_bindgen(typescript_type = "EthereumBridgeDeploymentInfo")]
     pub type EthereumBridgeDeploymentInfo;
+
+    #[wasm_bindgen(typescript_type = "SubstrateBridgeDeploymentInfo")]
+    pub type SubstrateBridgeDeploymentInfo;
 
     #[wasm_bindgen(typescript_type = "BridgeDeploymentInfo")]
     pub type BridgeDeploymentInfo;

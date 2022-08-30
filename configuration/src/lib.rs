@@ -394,15 +394,28 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_loads_the_sample_config() {
+    fn it_loads_and_validates_the_sample_config() {
         let path: PathBuf = env!("CARGO_MANIFEST_DIR")
             .parse::<PathBuf>()
             .unwrap()
             .join("configs/test.json");
 
-        let _config: NomadConfig =
+        let config: NomadConfig =
             serde_json::from_reader(std::fs::File::open(path).unwrap()).unwrap();
-        dbg!(&_config);
+        config.validate().expect("Failed to validate config");
+        dbg!(&config);
+    }
+
+    #[test]
+    fn it_loads_and_validates_the_multi_vm_config() {
+        let path: PathBuf = env!("CARGO_MANIFEST_DIR")
+            .parse::<PathBuf>()
+            .unwrap()
+            .join("configs/testMultiVm.json");
+
+        let config: NomadConfig =
+            serde_json::from_reader(std::fs::File::open(path).unwrap()).unwrap();
+        config.validate().expect("Failed to validate config");
     }
 
     #[test]
