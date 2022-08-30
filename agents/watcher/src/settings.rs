@@ -10,7 +10,7 @@ mod test {
     use super::*;
     use nomad_base::{get_remotes_from_env, NomadAgent};
     use nomad_test::test_utils;
-    use nomad_xyz_configuration::{contracts::CoreContracts, AgentSecrets};
+    use nomad_xyz_configuration::{core::CoreDeploymentInfo, AgentSecrets};
 
     #[tokio::test]
     #[serial_test::serial]
@@ -74,9 +74,12 @@ mod test {
 
                 let config_manager_core = config.core().get(remote_network).unwrap();
                 match config_manager_core {
-                    CoreContracts::Evm(core) => {
+                    CoreDeploymentInfo::Ethereum(core) => {
                         assert_eq!(manager_setup.address, core.x_app_connection_manager,);
                         assert_eq!(manager_setup.page_settings.from, core.deploy_height);
+                    }
+                    CoreDeploymentInfo::Substrate(_) => {
+                        unimplemented!("Substrate configuration not yet supported")
                     }
                 }
 

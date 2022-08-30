@@ -3,6 +3,7 @@
 #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]
+#![allow(clippy::large_enum_variant)]
 
 use nomad_types::{NameOrDomain, NomadIdentifier};
 use std::collections::{HashMap, HashSet};
@@ -10,7 +11,7 @@ use std::{fs::File, path::Path};
 
 pub mod agent;
 pub mod bridge;
-pub mod contracts;
+pub mod core;
 pub mod network;
 
 mod traits;
@@ -41,9 +42,9 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 #[cfg(not(target_arch = "wasm32"))]
 const CONFIG_BASE_URI: &str = "https://nomad-xyz.github.io/config";
 
+use crate::core::CoreDeploymentInfo;
 use agent::AgentConfig;
-use bridge::{AppConfig, BridgeContracts};
-use contracts::CoreContracts;
+use bridge::{AppConfig, BridgeDeploymentInfo};
 use network::{Domain, NetworkInfo};
 
 /// S3 Configuration
@@ -71,9 +72,9 @@ pub struct NomadConfig {
     /// Protocol information (e.g. deploy-time)
     protocol: NetworkInfo,
     /// Core deploy information
-    core: HashMap<String, CoreContracts>,
+    core: HashMap<String, CoreDeploymentInfo>,
     /// Bridge contracts for each network
-    bridge: HashMap<String, BridgeContracts>,
+    bridge: HashMap<String, BridgeDeploymentInfo>,
     /// Agent configuration
     agent: HashMap<String, AgentConfig>,
     /// Optional per-chain gas configurations
@@ -135,44 +136,60 @@ impl NomadConfig {
                 network
             );
 
+            // Ensure every remote network the current `network` is connected to
+            // has a core and the core has a replica for `network`.
             for connection in domain.connections.iter() {
-                // Check that IF a core contracts exists, it has al configured
-                // replicas
-                if let Some(contracts) = self.core.get(network) {
-                    eyre::ensure!(
-                        contracts.has_replica(connection),
-                        "Replica named '{}' not present on core named '{}' despite being listed in core connections",
-                        connection,
-                        network,
-                    );
-                }
+                let deploy_info = self.core.get(connection);
+                eyre::ensure!(
+                    deploy_info.is_some(),
+                    "Missing core for {}, which is connected to {}.",
+                    connection,
+                    network,
+                );
+
+                eyre::ensure!(
+                    deploy_info.unwrap().has_replica(network),
+                    "Replica named '{}' not present on core named '{}' despite being listed in core connections",
+                    network,
+                    connection,
+                );
             }
         }
 
         // Check each core contains replicas ONLY for its listed connections
-        for (name, network) in self.core.iter() {
-            eyre::ensure!(
-                self.networks.contains(name),
-                "Core named '{}' not present in configured networks",
-                name,
-            );
-
-            // Check each replica
-            for replica in network.replicas() {
-                // Check that the network is known
+        // I.e. that a core does not have a replica for a remote who has NOT
+        // listed that core as a connection)
+        for (name, deploy_info) in self.core.iter() {
+            if let CoreDeploymentInfo::Substrate(_) = deploy_info {
+                // No such thing as replicas ON substrate chain currently
+                continue;
+            } else {
                 eyre::ensure!(
                     self.networks.contains(name),
-                    "Replica named '{}' on core named '{}' not present in base config's configured networks",
-                    replica,
+                    "Core named '{}' not present in configured networks",
                     name,
                 );
-                // Check for replicas found, but not configured
-                eyre::ensure!(
-                    self.protocol.networks.get(name).unwrap().connections.contains(replica),
-                    "Replica named '{}' on core named '{}' not present in core's configured connections",
-                    replica,
-                    name
-                );
+
+                // Check each replica
+                for replica in deploy_info.replicas() {
+                    // Check that the network is known
+                    eyre::ensure!(
+                        self.networks.contains(replica),
+                        "Replica named '{}' on core named '{}' not present in base config's configured networks",
+                        replica,
+                        name,
+                    );
+
+                    // Check that if the core has replica for X, that X has
+                    // listed the core as a connection
+                    eyre::ensure!(
+                        self.protocol.networks.get(replica).unwrap().connections.contains(name),
+                        "Replica named '{}' is present on core '{}' but NOT present in '{}' configured connections",
+                        replica,
+                        name,
+                        replica,
+                    );
+                }
             }
         }
 
@@ -240,8 +257,8 @@ impl NomadConfig {
     pub fn add_core(
         &mut self,
         name: impl AsRef<str>,
-        core: CoreContracts,
-    ) -> eyre::Result<Option<CoreContracts>> {
+        core: CoreDeploymentInfo,
+    ) -> eyre::Result<Option<CoreDeploymentInfo>> {
         let name = name.as_ref();
         eyre::ensure!(
             self.networks.contains(name),
@@ -269,8 +286,8 @@ impl NomadConfig {
     pub fn add_bridge(
         &mut self,
         name: impl AsRef<str>,
-        bridge: BridgeContracts,
-    ) -> eyre::Result<Option<BridgeContracts>> {
+        bridge: BridgeDeploymentInfo,
+    ) -> eyre::Result<Option<BridgeDeploymentInfo>> {
         let name = name.as_ref();
         eyre::ensure!(
             self.networks.contains(name),
@@ -332,12 +349,12 @@ impl NomadConfig {
     }
 
     /// Get a reference to the nomad config's core map.
-    pub fn core(&self) -> &HashMap<String, CoreContracts> {
+    pub fn core(&self) -> &HashMap<String, CoreDeploymentInfo> {
         &self.core
     }
 
     /// Get a reference to the nomad config's bridge map.
-    pub fn bridge(&self) -> &HashMap<String, BridgeContracts> {
+    pub fn bridge(&self) -> &HashMap<String, BridgeDeploymentInfo> {
         &self.bridge
     }
 

@@ -3,7 +3,7 @@ use nomad_core::ContractLocator;
 use nomad_ethereum::{make_conn_manager, make_home, make_replica};
 use nomad_types::NomadIdentifier;
 use nomad_xyz_configuration::{
-    contracts::CoreContracts, AgentSecrets, ChainConf, ConnectionManagerGasLimits, HomeGasLimits,
+    core::CoreDeploymentInfo, AgentSecrets, ChainConf, ConnectionManagerGasLimits, HomeGasLimits,
     NomadConfig, ReplicaGasLimits, TxSubmitterConf,
 };
 use serde::Deserialize;
@@ -90,7 +90,7 @@ impl ChainSetup {
         let block_time = domain.specs.block_time;
         let core = config.core().get(&resident_network).expect("!core");
         let (address, page_settings) = match core {
-            CoreContracts::Evm(core) => {
+            CoreDeploymentInfo::Ethereum(core) => {
                 let address = match &setup_type {
                     ChainSetupType::Home { .. } => core.home.proxy,
                     ChainSetupType::Replica { home_network, .. } => {
@@ -108,6 +108,9 @@ impl ChainSetup {
                 };
 
                 (address, page_settings)
+            }
+            CoreDeploymentInfo::Substrate(_) => {
+                unimplemented!("Substrate configuration not yet supported")
             }
         };
 
@@ -156,6 +159,7 @@ impl ChainSetup {
                 )
                 .into())
             }
+            ChainConf::Substrate(_) => unimplemented!("Substrate configuration not yet supported"),
         }
     }
 
@@ -185,6 +189,7 @@ impl ChainSetup {
                 )
                 .into())
             }
+            ChainConf::Substrate(_) => unimplemented!("Substrate configuration not yet supported"),
         }
     }
 
@@ -211,6 +216,7 @@ impl ChainSetup {
                 )
                 .await?,
             )),
+            ChainConf::Substrate(_) => unimplemented!("Substrate configuration not yet supported"),
         }
     }
 }

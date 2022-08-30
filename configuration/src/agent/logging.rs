@@ -6,12 +6,15 @@
 pub enum RpcStyles {
     /// Ethereum
     Ethereum,
+    /// Substrate
+    Substrate,
 }
 
 impl std::fmt::Display for RpcStyles {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let style = match self {
             RpcStyles::Ethereum => "ethereum",
+            RpcStyles::Substrate => "substrate",
         };
 
         write!(f, "{}", style)

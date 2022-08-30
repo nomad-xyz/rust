@@ -3,7 +3,11 @@
 //! This struct built from environment variables. It is used alongside a
 //! NomadConfig to build an agents `Settings` block (see settings/mod.rs).
 
-use crate::{agent::SignerConf, chains::ethereum, ChainConf, TxSubmitterConf};
+use crate::{
+    agent::SignerConf,
+    chains::{ethereum, substrate},
+    ChainConf, Connection, TxSubmitterConf,
+};
 use eyre::Result;
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
@@ -68,15 +72,18 @@ impl AgentSecrets {
                 .rpcs
                 .get(network)
                 .unwrap_or_else(|| panic!("no chainconf for {}", network));
-            match chain_conf {
-                ChainConf::Ethereum(conn) => match conn {
-                    ethereum::Connection::Http(url) => {
-                        eyre::ensure!(!url.is_empty(), "Http url for {} empty!", network,);
-                    }
-                    ethereum::Connection::Ws(url) => {
-                        eyre::ensure!(!url.is_empty(), "Ws url for {} empty!", network,);
-                    }
-                },
+
+            let conn = match chain_conf {
+                ChainConf::Ethereum(conn) => conn,
+                ChainConf::Substrate(conn) => conn,
+            };
+            match conn {
+                Connection::Http(url) => {
+                    eyre::ensure!(!url.is_empty(), "Http url for {} empty!", network,);
+                }
+                Connection::Ws(url) => {
+                    eyre::ensure!(!url.is_empty(), "Ws url for {} empty!", network,);
+                }
             }
 
             let submitter_conf = self
@@ -92,6 +99,11 @@ impl AgentSecrets {
                         gelato_conf.sponsor.validate(network)?
                     }
                 },
+                TxSubmitterConf::Substrate(conf) => match conf {
+                    substrate::TxSubmitterConf::Local(signer_conf) => {
+                        signer_conf.validate(network)?
+                    }
+                },
             };
         }
 
@@ -102,7 +114,7 @@ impl AgentSecrets {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::ethereum::{Connection, GelatoConf};
+    use crate::ethereum::GelatoConf;
     use nomad_test::test_utils;
 
     #[test]
@@ -160,15 +172,17 @@ mod test {
                 let secrets =
                     AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
 
-                let default_config =
-                    TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Local(SignerConf::Aws {
-                        id: "default_id".into(),
-                    }));
+                let default_config_ethereum = ethereum::TxSubmitterConf::Local(SignerConf::Aws {
+                    id: "default_id".into(),
+                });
                 for config in secrets.tx_submitters.values() {
-                    assert_eq!(*config, default_config);
-                }
-                for config in secrets.rpcs.values() {
-                    assert!(matches!(*config, ChainConf::Ethereum { .. }));
+                    match config {
+                        TxSubmitterConf::Ethereum(conf) => {
+                            assert_eq!(*conf, default_config_ethereum)
+                        }
+                        // Default set to ethereum, not checking substrate variant
+                        TxSubmitterConf::Substrate(_) => continue,
+                    }
                 }
             },
         );
@@ -182,18 +196,18 @@ mod test {
             let secrets =
                 AgentSecrets::from_env(networks).expect("Failed to load secrets from env");
 
-            let default_config =
-                TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Gelato(GelatoConf {
-                    sponsor: SignerConf::Aws {
-                        id: "default_id".into(),
-                    },
-                    fee_token: "0x1234".to_owned(),
-                }));
+            let default_config_ethereum = ethereum::TxSubmitterConf::Gelato(GelatoConf {
+                sponsor: SignerConf::Aws {
+                    id: "default_id".into(),
+                },
+                fee_token: "0x1234".to_owned(),
+            });
             for config in secrets.tx_submitters.values() {
-                assert_eq!(*config, default_config);
-            }
-            for config in secrets.rpcs.values() {
-                assert!(matches!(*config, ChainConf::Ethereum { .. }));
+                match config {
+                    TxSubmitterConf::Ethereum(conf) => assert_eq!(*conf, default_config_ethereum),
+                    // Default set to ethereum, not checking substrate variant
+                    TxSubmitterConf::Substrate(_) => continue,
+                }
             }
         });
     }

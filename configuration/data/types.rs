@@ -21,20 +21,20 @@ extern "C" {
     #[wasm_bindgen(typescript_type = "Proxy")]
     pub type Proxy;
 
-    #[wasm_bindgen(typescript_type = "EvmCoreContracts")]
-    pub type EvmCoreContracts;
+    #[wasm_bindgen(typescript_type = "EthereumCoreDeploymentInfo")]
+    pub type EthereumCoreDeploymentInfo;
 
-    #[wasm_bindgen(typescript_type = "CoreContracts")]
-    pub type CoreContracts;
+    #[wasm_bindgen(typescript_type = "CoreDeploymentInfo")]
+    pub type CoreDeploymentInfo;
 
     #[wasm_bindgen(typescript_type = "DeployedCustomToken")]
     pub type DeployedCustomToken;
 
-    #[wasm_bindgen(typescript_type = "EvmBridgeContracts")]
-    pub type EvmBridgeContracts;
+    #[wasm_bindgen(typescript_type = "EthereumBridgeDeploymentInfo")]
+    pub type EthereumBridgeDeploymentInfo;
 
-    #[wasm_bindgen(typescript_type = "BridgeContracts")]
-    pub type BridgeContracts;
+    #[wasm_bindgen(typescript_type = "BridgeDeploymentInfo")]
+    pub type BridgeDeploymentInfo;
 
     #[wasm_bindgen(typescript_type = "Governance")]
     pub type Governance;

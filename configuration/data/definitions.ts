@@ -58,7 +58,7 @@ export interface EvmCoreContracts {
   replicas: Record<string, Proxy>;
 }
 
-export type CoreContracts = EvmCoreContracts;
+export type DeploymentInfo = EvmCoreContracts;
 
 export interface DeployedCustomToken {
   token: NomadLocator;
@@ -189,7 +189,7 @@ export interface NomadConfig {
   networks: Array<string>;
   rpcs: Record<string, Array<string>>;
   protocol: NetworkInfo;
-  core: Record<string, CoreContracts>;
+  core: Record<string, DeploymentInfo>;
   bridge: Record<string, BridgeContracts>;
   agent: Record<string, AgentConfig>;
   gas: Record<string, NomadGasConfig>;
