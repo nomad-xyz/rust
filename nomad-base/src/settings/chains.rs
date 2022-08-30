@@ -154,7 +154,7 @@ impl ChainSetup {
                         &ContractLocator {
                             name: self.name.clone(),
                             domain: self.domain,
-                            address: self.address.expect("must have address"),
+                            address: self.address.expect("eth ChainSetup missing address"),
                         },
                         submitter_conf,
                         timelag,
@@ -198,7 +198,7 @@ impl ChainSetup {
                         &ContractLocator {
                             name: self.name.clone(),
                             domain: self.domain,
-                            address: self.address.expect("must have address"),
+                            address: self.address.expect("eth ChainSetup missing address"),
                         },
                         submitter_conf,
                         None, // never need timelag for replica
@@ -208,7 +208,7 @@ impl ChainSetup {
                 )
                 .into())
             }
-            ChainConf::Substrate(_) => unimplemented!("Substrate configuration not yet supported"),
+            ChainConf::Substrate(_) => unimplemented!("Substrate replica not yet implemented"),
         }
     }
 
@@ -227,7 +227,7 @@ impl ChainSetup {
                     &ContractLocator {
                         name: self.name.clone(),
                         domain: self.domain,
-                        address: self.address.expect("must have address"),
+                        address: self.address.expect("eth ChainSetup missing address"),
                     },
                     submitter_conf,
                     None, // Never need timelag for xapp connection manager
@@ -235,7 +235,9 @@ impl ChainSetup {
                 )
                 .await?,
             )),
-            ChainConf::Substrate(_) => unimplemented!("Substrate configuration not yet supported"),
+            ChainConf::Substrate(_) => {
+                unimplemented!("Substrate connection manager not yet implemented")
+            }
         }
     }
 }

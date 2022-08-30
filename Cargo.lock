@@ -3285,6 +3285,7 @@ dependencies = [
  "nomad-core",
  "nomad-types",
  "nomad-xyz-configuration",
+ "once_cell",
  "parity-scale-codec",
  "parity-util-mem",
  "scale-info",

@@ -369,7 +369,7 @@ impl Settings {
                     &ContractLocator {
                         name: self.home.name.clone(),
                         domain: self.home.domain,
-                        address: self.home.address.expect("must have address"),
+                        address: self.home.address.expect("eth ChainSetup missing address"),
                     },
                     timelag,
                 )
@@ -394,7 +394,7 @@ impl Settings {
                     &ContractLocator {
                         name: setup.name.clone(),
                         domain: setup.domain,
-                        address: setup.address.expect("must have address"),
+                        address: setup.address.expect("eth ChainSetup missing address"),
                     },
                     None, // Will never need timelag for replica data/events
                 )

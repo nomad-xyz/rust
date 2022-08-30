@@ -99,6 +99,9 @@ mod test {
         let signer = SubstrateSigners::<AvailConfig, ecdsa::Pair>::try_from_signer_conf(&conf)
             .await
             .unwrap();
-        let _sig = signer.sign("message".as_bytes());
+
+        let msg = &b"message"[..];
+        let sig = signer.sign(msg);
+        assert!(sig.verify(msg, signer.account_id()));
     }
 }

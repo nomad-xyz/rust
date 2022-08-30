@@ -561,7 +561,10 @@ impl NomadAgent for Watcher {
         let core = settings.as_ref().try_into_core("watcher").await?;
 
         let signer = AttestationSigner::try_from_signer_conf(
-            &settings.base.attestation_signer.expect("signer"),
+            &settings
+                .base
+                .attestation_signer
+                .expect("missing attestation signer"),
         )
         .await?;
 

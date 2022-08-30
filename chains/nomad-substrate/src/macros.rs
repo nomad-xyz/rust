@@ -78,7 +78,7 @@ macro_rules! boxed_signing_object {
 
                     match conf {
                         nomad_xyz_configuration::substrate::TxSubmitterConf::Local(signer_conf) => {
-                            SubstrateSigners::<[<$chain_name Config>], subxt::ext::sp_core::ecdsa::Pair>::try_from_signer_conf(&signer_conf)
+                            crate::SubstrateSigners::<[<$chain_name Config>], subxt::ext::sp_core::ecdsa::Pair>::try_from_signer_conf(&signer_conf)
                                 .await?
                         }
                     }
