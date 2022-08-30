@@ -49,7 +49,7 @@ pub struct EthereumBridgeDeploymentInfo {
 /// Empty Substrate contracts
 #[derive(Default, Debug, Copy, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SubstrateBridgeDeployInfo {
+pub struct SubstrateBridgeDeploymentInfo {
     /// Contract Deploy Height
     #[serde(default, deserialize_with = "deser_nomad_u32")]
     pub deploy_height: u32,
@@ -62,7 +62,7 @@ pub enum BridgeDeploymentInfo {
     /// EVM Bridge Contracts
     Ethereum(EthereumBridgeDeploymentInfo),
     /// Substrate bridge
-    Substrate(SubstrateBridgeDeployInfo),
+    Substrate(SubstrateBridgeDeploymentInfo),
 }
 
 impl Default for BridgeDeploymentInfo {

@@ -30,7 +30,7 @@ pub struct EthereumCoreDeploymentInfo {
 /// Empty Substrate contracts
 #[derive(Default, Copy, Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SubstrateCoreDeployInfo {
+pub struct SubstrateCoreDeploymentInfo {
     /// Contract Deploy Height
     #[serde(default, deserialize_with = "deser_nomad_u32")]
     pub deploy_height: u32,
@@ -44,7 +44,7 @@ pub enum CoreDeploymentInfo {
     /// EVM Core
     Ethereum(EthereumCoreDeploymentInfo),
     /// Substrate core
-    Substrate(SubstrateCoreDeployInfo),
+    Substrate(SubstrateCoreDeploymentInfo),
 }
 
 impl CoreDeploymentInfo {
