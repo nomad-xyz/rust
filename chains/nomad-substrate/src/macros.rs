@@ -10,7 +10,7 @@ macro_rules! report_tx {
         info!(
             method = $method,
             tx_hash = ?pending_tx.extrinsic_hash(),
-            "Dispatched {} tx, waiting for inclusion.",
+            "Dispatched '{}' tx, waiting for inclusion.",
             $method,
         );
 

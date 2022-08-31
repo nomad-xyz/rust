@@ -1,66 +1,91 @@
 #![allow(missing_docs)]
 
-use avail::runtime_types::da_control::extensions::check_app_id::CheckAppId;
-use avail::runtime_types::frame_system::extensions::check_genesis::CheckGenesis;
-use avail::runtime_types::frame_system::extensions::check_mortality::CheckMortality;
-use avail::runtime_types::frame_system::extensions::check_nonce::CheckNonce;
-use avail::runtime_types::frame_system::extensions::check_spec_version::CheckSpecVersion;
-use avail::runtime_types::frame_system::extensions::check_tx_version::CheckTxVersion;
-use avail::runtime_types::frame_system::extensions::check_weight::CheckWeight;
-use avail::runtime_types::pallet_transaction_payment;
-use codec::Error as DecodeError;
-use codec::{Codec, Compact, Decode, Encode, EncodeLike, Input};
+use codec::{Codec, Compact, Decode, Encode, EncodeLike, Error as DecodeError, Input};
 use parity_util_mem::MallocSizeOf;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::fmt::Debug;
-use subxt::ext::sp_core::H256;
-use subxt::ext::sp_runtime::traits::{BlakeTwo256, Extrinsic, Hash, Header};
-use subxt::ext::sp_runtime::{AccountId32, Digest, MultiAddress, MultiSignature};
-use subxt::tx::{Era, ExtrinsicParams, PlainTip};
-use subxt::Config;
+use subxt::{
+    ext::{
+        sp_core::H256,
+        sp_runtime::{
+            traits::{BlakeTwo256, Extrinsic, Hash, Header},
+            AccountId32, Digest, MultiAddress, MultiSignature,
+        },
+    },
+    tx::{Era, ExtrinsicParams, PlainTip},
+    Config,
+};
 
 #[subxt::subxt(runtime_metadata_path = "metadata/avail.metadata.scale")]
 pub mod avail {}
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub struct AvailConfig;
 
 impl Config for AvailConfig {
-    type Index = u32;
-    type BlockNumber = u32;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
     type AccountId = AccountId32;
     type Address = MultiAddress<Self::AccountId, u32>;
-    type Header = DaHeader;
-    type Signature = MultiSignature;
+    type BlockNumber = u32;
     type Extrinsic = AvailExtrinsic;
     type ExtrinsicParams = AvailExtrinsicParams;
+    type Hash = H256;
+    type Hashing = BlakeTwo256;
+    type Header = DaHeader;
+    type Index = u32;
+    type Signature = MultiSignature;
 }
 
-#[derive(Serialize, Debug, Clone, PartialEq, Eq, Encode, TypeInfo)]
+#[derive(Serialize, Debug, Clone)]
 pub enum AvailExtrinsic {
     AvailDataExtrinsic {
-        app_id: u32,
         signature: MultiSignature,
         data: Vec<u8>,
+        #[serde(skip_serializing)]
+        address: MultiAddress<AccountId32, u32>,
+        #[serde(skip_serializing)]
+        extra_params: AvailExtrinsicParams,
     },
     RawExtrinsic {
         encoded_data: Vec<u8>,
     },
 }
+impl Eq for AvailExtrinsic {}
 
-pub type SignedExtra = (
-    CheckSpecVersion,
-    CheckTxVersion,
-    CheckGenesis,
-    CheckMortality,
-    CheckNonce,
-    CheckWeight,
-    pallet_transaction_payment::ChargeTransactionPayment,
-    CheckAppId,
-);
+impl PartialEq for AvailExtrinsic {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (
+                Self::AvailDataExtrinsic {
+                    signature: l_signature,
+                    data: l_data,
+                    address: l_address,
+                    extra_params: l_extra_params,
+                },
+                Self::AvailDataExtrinsic {
+                    signature: r_signature,
+                    data: r_data,
+                    address: r_address,
+                    extra_params: r_extra_params,
+                },
+            ) => {
+                l_signature == r_signature
+                    && l_data == r_data
+                    && l_address == r_address
+                    && l_extra_params.app_id == r_extra_params.app_id
+            }
+            (
+                Self::RawExtrinsic {
+                    encoded_data: l_encoded_data,
+                },
+                Self::RawExtrinsic {
+                    encoded_data: r_encoded_data,
+                },
+            ) => l_encoded_data == r_encoded_data,
+            _ => false,
+        }
+    }
+}
 
 const EXTRINSIC_VERSION: u8 = 4;
 impl Decode for AvailExtrinsic {
@@ -78,12 +103,19 @@ impl Decode for AvailExtrinsic {
         if version != EXTRINSIC_VERSION {
             return Err("Invalid transaction version".into());
         }
-        let (app_id, signature) = if is_signed {
-            let _address = <MultiAddress<AccountId32, u32>>::decode(input)?;
+        let (signature, address, extra) = if is_signed {
+            let address = <MultiAddress<AccountId32, u32>>::decode(input)?;
             let sig = MultiSignature::decode(input)?;
-            let extra = <SignedExtra>::decode(input)?;
-            let app_id = extra.7 .0;
-            (app_id, sig)
+            let (mortality, nonce, tip, app_id) =
+                <(Era, Compact<u32>, Compact<u128>, u32)>::decode(input)?;
+            let extra = AvailExtrinsicParams {
+                nonce: nonce.0,
+                tip: PlainTip::new(tip.0),
+                app_id,
+                mortality,
+                ..Default::default()
+            };
+            (sig, address, extra)
         } else {
             return Err("NOTE: Not signed".into());
         };
@@ -93,19 +125,49 @@ impl Decode for AvailExtrinsic {
 
         let data: Vec<u8> = match (section, method) {
             (29, 1) => Decode::decode(input)?,
-            (a, b) => {
-                println!("section, method: ({},{})", a, b);
+            (_a, _b) => {
                 return Err("NOTE: Not Avail Data extrinsic".into());
             }
         };
 
         Ok(Self::AvailDataExtrinsic {
-            app_id,
             signature,
             data,
+            address,
+            extra_params: extra,
         })
     }
 }
+
+impl Encode for AvailExtrinsic {
+    fn encode(&self) -> Vec<u8> {
+        match self {
+            AvailExtrinsic::AvailDataExtrinsic {
+                signature,
+                data,
+                address,
+                extra_params,
+            } => {
+                let mut tmp = Vec::new();
+
+                tmp.push(EXTRINSIC_VERSION | 0b1000_0000);
+                address.encode_to(&mut tmp);
+                signature.encode_to(&mut tmp);
+                extra_params.encode_extra_to(&mut tmp);
+                (29u8, 1u8).encode_to(&mut tmp);
+                data.encode_to(&mut tmp);
+                let compact_len = codec::Compact::<u32>(tmp.len() as u32);
+                let mut output = Vec::with_capacity(compact_len.size_hint() + tmp.len());
+                compact_len.encode_to(&mut output);
+                output.extend(tmp);
+                output
+            }
+            AvailExtrinsic::RawExtrinsic { encoded_data } => encoded_data.clone(),
+        }
+    }
+}
+
+impl EncodeLike for AvailExtrinsic {}
 
 impl<'a> Deserialize<'a> for AvailExtrinsic {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -132,9 +194,10 @@ impl Extrinsic for AvailExtrinsic {
 
     fn is_signed(&self) -> Option<bool> {
         if let Self::AvailDataExtrinsic {
-            app_id: _,
             signature: _,
             data: _,
+            address: _,
+            extra_params: _,
         } = self
         {
             Some(true)
@@ -222,11 +285,9 @@ impl MallocSizeOf for DaHeader {
 }
 
 impl Header for DaHeader {
-    type Number = u32;
-
     type Hash = H256;
-
     type Hashing = BlakeTwo256;
+    type Number = u32;
 
     fn new(
         number: Self::Number,
@@ -297,15 +358,15 @@ impl Header for DaHeader {
         <Self::Hashing as Hash>::hash_of(self)
     }
 }
-
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct AvailExtrinsicParams {
-    spec_version: u32,
-    tx_version: u32,
-    nonce: u32,
-    genesis_hash: H256,
-    tip: PlainTip,
-    app_id: u32,
+    pub spec_version: u32,
+    pub tx_version: u32,
+    pub nonce: u32,
+    pub mortality: Era,
+    pub genesis_hash: H256,
+    pub tip: PlainTip,
+    pub app_id: u32,
 }
 
 impl ExtrinsicParams<u32, H256> for AvailExtrinsicParams {
@@ -322,6 +383,7 @@ impl ExtrinsicParams<u32, H256> for AvailExtrinsicParams {
             spec_version,
             tx_version,
             nonce,
+            mortality: other_params.mortality,
             genesis_hash,
             tip: other_params.tip,
             app_id: other_params.app_id,
@@ -329,7 +391,7 @@ impl ExtrinsicParams<u32, H256> for AvailExtrinsicParams {
     }
 
     fn encode_extra_to(&self, v: &mut Vec<u8>) {
-        (Era::Immortal, Compact(self.nonce), self.tip, self.app_id).encode_to(v);
+        (self.mortality, Compact(self.nonce), self.tip, self.app_id).encode_to(v);
     }
 
     fn encode_additional_to(&self, v: &mut Vec<u8>) {
@@ -343,6 +405,19 @@ impl ExtrinsicParams<u32, H256> for AvailExtrinsicParams {
     }
 }
 
+impl Default for AvailExtrinsicParams {
+    fn default() -> Self {
+        Self {
+            spec_version: Default::default(),
+            tx_version: Default::default(),
+            nonce: Default::default(),
+            mortality: Era::Immortal,
+            genesis_hash: Default::default(),
+            tip: Default::default(),
+            app_id: Default::default(),
+        }
+    }
+}
 impl AvailExtrinsicParams {
     /// Create params with the addition of tip and app_id
     pub fn new_with_tip_and_app_id(tip: u128, app_id: u32) -> Self {
@@ -352,6 +427,7 @@ impl AvailExtrinsicParams {
             ..Default::default()
         }
     }
+
     /// Create params with the addition of app_id
     pub fn new_with_app_id(app_id: u32) -> Self {
         Self {

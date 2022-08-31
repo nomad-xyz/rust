@@ -81,7 +81,9 @@ mod test {
                         );
                         assert_eq!(manager_setup.page_settings.from, core.deploy_height);
                     }
-                    CoreDeploymentInfo::Substrate(_) => unimplemented!("Substrate connection manager not yet implemented"),
+                    CoreDeploymentInfo::Substrate(_) => {
+                        unimplemented!("Substrate connection manager not yet implemented")
+                    }
                 }
 
                 let manager_chain_conf = secrets.rpcs.get(remote_network).unwrap();
