@@ -1,19 +1,14 @@
-//! Ethereum tx submitter types
+//! Substrate tx submitter types
 
 use crate::agent::SignerConf;
 use crate::TxSubmitterConf as BaseTxSubmitterConf;
 use std::str::FromStr;
 
-mod gelato;
-pub use gelato::*;
-
-/// Ethereum submitter type
+/// Substrate submitter type
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum SubmitterType {
     /// Local sign/submit
     Local,
-    /// Gelato
-    Gelato,
 }
 
 impl FromStr for SubmitterType {
@@ -22,7 +17,6 @@ impl FromStr for SubmitterType {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_ref() {
             "local" => Ok(Self::Local),
-            "gelato" => Ok(Self::Gelato),
             _ => panic!("Unknown SubmitterType"),
         }
     }
@@ -34,21 +28,19 @@ impl FromStr for SubmitterType {
 pub enum TxSubmitterConf {
     /// Signer configuration for local signer
     Local(SignerConf),
-    /// Gelato configuration for Gelato relay
-    Gelato(GelatoConf),
 }
 
 impl From<BaseTxSubmitterConf> for TxSubmitterConf {
     fn from(conf: BaseTxSubmitterConf) -> Self {
         match conf {
-            BaseTxSubmitterConf::Ethereum(conf) => conf,
+            BaseTxSubmitterConf::Substrate(conf) => conf,
             _ => panic!("Should never compile"),
         }
     }
 }
 
 impl TxSubmitterConf {
-    /// Build ethereum TxSubmitterConf from env. Looks for default submitter
+    /// Build Substrate TxSubmitterConf from env. Looks for default submitter
     /// type if network-specific not defined.
     pub fn from_env(network: &str) -> Option<Self> {
         let submitter_type = crate::utils::network_or_default_from_env(network, "SUBMITTER_TYPE")?;
@@ -57,10 +49,6 @@ impl TxSubmitterConf {
             SubmitterType::Local => {
                 let signer_conf = SignerConf::from_env(Some("TXSIGNER"), Some(network))?;
                 Some(Self::Local(signer_conf))
-            }
-            SubmitterType::Gelato => {
-                let gelato_conf = GelatoConf::from_env(network)?;
-                Some(Self::Gelato(gelato_conf))
             }
         }
     }

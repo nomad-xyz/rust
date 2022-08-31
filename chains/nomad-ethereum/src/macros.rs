@@ -95,12 +95,12 @@ macro_rules! boxed_indexer {
     }};
     ($name:ident, $abi:ident, $trait:ident, $($n:ident:$t:ty),*)  => {
         #[doc = "Cast a contract locator to a live contract handle"]
-        pub async fn $name(conn: nomad_xyz_configuration::chains::ethereum::Connection, locator: &ContractLocator, timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
+        pub async fn $name(conn: nomad_xyz_configuration::Connection, locator: &ContractLocator, timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
             let b: Box<dyn $trait> = match conn {
-                nomad_xyz_configuration::chains::ethereum::Connection::Http (url) => {
+                nomad_xyz_configuration::Connection::Http (url) => {
                     boxed_indexer!(@http url, $abi, timelag, locator, $($n),*)
                 }
-                nomad_xyz_configuration::chains::ethereum::Connection::Ws (url) => {
+                nomad_xyz_configuration::Connection::Ws (url) => {
                     boxed_indexer!(@ws url, $abi, timelag, locator, $($n),*)
                 }
             };
@@ -217,12 +217,12 @@ macro_rules! boxed_contract {
     }};
     ($name:ident, $abi:ident, $trait:ident, $($n:ident:$t:ty),*)  => {
         #[doc = "Cast a contract locator to a live contract handle"]
-        pub async fn $name(conn: nomad_xyz_configuration::ethereum::Connection, locator: &ContractLocator, submitter_conf: Option<nomad_xyz_configuration::ethereum::TxSubmitterConf>, timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
+        pub async fn $name(conn: nomad_xyz_configuration::Connection, locator: &ContractLocator, submitter_conf: Option<nomad_xyz_configuration::ethereum::TxSubmitterConf>, timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
             let b: Box<dyn $trait> = match conn {
-                nomad_xyz_configuration::chains::ethereum::Connection::Http (url) => {
+                nomad_xyz_configuration::Connection::Http (url) => {
                     boxed_contract!(@http url, submitter_conf, $abi, timelag, locator, $($n),*)
                 }
-                nomad_xyz_configuration::chains::ethereum::Connection::Ws (url) => {
+                nomad_xyz_configuration::Connection::Ws (url) => {
                     boxed_contract!(@ws url, submitter_conf, $abi, timelag, locator, $($n),*)
                 }
             };

@@ -54,7 +54,7 @@ export interface Proxy {
   beacon: NomadIdentifier;
 }
 
-export interface EvmCoreContracts {
+export interface EthereumCoreDeploymentInfo {
   deployHeight: number;
   upgradeBeaconController: NomadIdentifier;
   xAppConnectionManager: NomadIdentifier;
@@ -64,7 +64,13 @@ export interface EvmCoreContracts {
   replicas: Record<string, Proxy>;
 }
 
-export type CoreContracts = EvmCoreContracts;
+export interface SubstrateCoreDeploymentInfo {
+  deployHeight: number;
+}
+
+export type CoreDeploymentInfo =
+  | EthereumCoreDeploymentInfo
+  | SubstrateCoreDeploymentInfo;
 
 export interface DeployedCustomToken {
   token: NomadLocator;
@@ -75,7 +81,7 @@ export interface DeployedCustomToken {
   addresses: Proxy;
 }
 
-export interface EvmBridgeContracts {
+export interface EthereumBridgeDeploymentInfo {
   deployHeight: number;
   bridgeRouter: Proxy;
   tokenRegistry: Proxy;
@@ -84,7 +90,13 @@ export interface EvmBridgeContracts {
   customs?: Array<DeployedCustomToken>;
 }
 
-export type BridgeContracts = EvmBridgeContracts;
+export interface SubstrateBridgeDeploymentInfo {
+  deployHeight: number;
+}
+
+export type BridgeDeploymentInfo =
+  | EthereumBridgeDeploymentInfo
+  | SubstrateBridgeDeploymentInfo;
 
 export interface Governance {
   governor?: NomadLocator;
@@ -195,8 +207,8 @@ export interface NomadConfig {
   networks: Array<string>;
   rpcs: Record<string, Array<string>>;
   protocol: NetworkInfo;
-  core: Record<string, CoreContracts>;
-  bridge: Record<string, BridgeContracts>;
+  core: Record<string, CoreDeploymentInfo>;
+  bridge: Record<string, BridgeDeploymentInfo>;
   agent: Record<string, AgentConfig>;
   gas: Record<string, NomadGasConfig>;
   bridgeGui: Record<string, AppConfig>;
@@ -227,20 +239,26 @@ extern "C" {
     #[wasm_bindgen(typescript_type = "Proxy")]
     pub type Proxy;
 
-    #[wasm_bindgen(typescript_type = "EvmCoreContracts")]
-    pub type EvmCoreContracts;
+    #[wasm_bindgen(typescript_type = "EthereumCoreDeploymentInfo")]
+    pub type EthereumCoreDeploymentInfo;
 
-    #[wasm_bindgen(typescript_type = "CoreContracts")]
-    pub type CoreContracts;
+    #[wasm_bindgen(typescript_type = "SubstrateCoreDeploymentInfo")]
+    pub type SubstrateCoreDeploymentInfo;
+
+    #[wasm_bindgen(typescript_type = "CoreDeploymentInfo")]
+    pub type CoreDeploymentInfo;
 
     #[wasm_bindgen(typescript_type = "DeployedCustomToken")]
     pub type DeployedCustomToken;
 
-    #[wasm_bindgen(typescript_type = "EvmBridgeContracts")]
-    pub type EvmBridgeContracts;
+    #[wasm_bindgen(typescript_type = "EthereumBridgeDeploymentInfo")]
+    pub type EthereumBridgeDeploymentInfo;
 
-    #[wasm_bindgen(typescript_type = "BridgeContracts")]
-    pub type BridgeContracts;
+    #[wasm_bindgen(typescript_type = "SubstrateBridgeDeploymentInfo")]
+    pub type SubstrateBridgeDeploymentInfo;
+
+    #[wasm_bindgen(typescript_type = "BridgeDeploymentInfo")]
+    pub type BridgeDeploymentInfo;
 
     #[wasm_bindgen(typescript_type = "Governance")]
     pub type Governance;

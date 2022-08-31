@@ -18,7 +18,7 @@ use color_eyre::{eyre::bail, Result};
 use nomad_core::{db::DB, Common, ContractLocator};
 use nomad_ethereum::{make_home_indexer, make_replica_indexer};
 use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets, TxSubmitterConf};
-use nomad_xyz_configuration::{contracts::CoreContracts, ChainConf, NomadConfig, NomadGasConfig};
+use nomad_xyz_configuration::{core::CoreDeploymentInfo, ChainConf, NomadConfig, NomadGasConfig};
 use serde::Deserialize;
 use std::collections::HashSet;
 use std::{collections::HashMap, sync::Arc};
@@ -377,6 +377,7 @@ impl Settings {
                 .await?,
             )
             .into()),
+            ChainConf::Substrate(_) => unimplemented!("Substrate configuration not yet supported"),
         }
     }
 
@@ -398,6 +399,7 @@ impl Settings {
                 .await?,
             )
             .into()),
+            ChainConf::Substrate(_) => unimplemented!("Substrate configuration not yet supported"),
         }
     }
 
@@ -538,9 +540,12 @@ impl Settings {
 
         let config_home_core = config.core().get(home_network).unwrap();
         match config_home_core {
-            CoreContracts::Evm(core) => {
+            CoreDeploymentInfo::Ethereum(core) => {
                 assert_eq!(self.home.address, core.home.proxy);
                 assert_eq!(self.home.page_settings.from, core.deploy_height);
+            }
+            CoreDeploymentInfo::Substrate(_) => {
+                unimplemented!("Substrate configuration not yet supported")
             }
         }
 
@@ -567,12 +572,15 @@ impl Settings {
 
             let config_replica_core = config.core().get(remote_network).unwrap();
             match config_replica_core {
-                CoreContracts::Evm(core) => {
+                CoreDeploymentInfo::Ethereum(core) => {
                     assert_eq!(
                         replica_setup.address,
                         core.replicas.get(home_network).unwrap().proxy
                     );
                     assert_eq!(replica_setup.page_settings.from, core.deploy_height);
+                }
+                CoreDeploymentInfo::Substrate(_) => {
+                    unimplemented!("Substrate configuration not yet supported")
                 }
             }
 

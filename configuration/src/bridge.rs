@@ -2,7 +2,7 @@
 
 use std::collections::HashSet;
 
-use nomad_types::deser_nomad_u64;
+use nomad_types::deser_nomad_u32;
 use nomad_types::{NomadIdentifier, NomadLocator, Proxy};
 
 use crate::network::CustomTokenSpecifier;
@@ -28,10 +28,10 @@ pub struct DeployedCustomToken {
 /// EVM Bridge Contracts
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct EvmBridgeContracts {
+pub struct EthereumBridgeDeploymentInfo {
     /// Contract Deploy Height
-    #[serde(default, deserialize_with = "deser_nomad_u64")]
-    pub deploy_height: u64,
+    #[serde(default, deserialize_with = "deser_nomad_u32")]
+    pub deploy_height: u32,
     /// Bridge Route proxy
     pub bridge_router: Proxy,
     /// Token Registry proxy
@@ -46,18 +46,28 @@ pub struct EvmBridgeContracts {
     pub customs: Option<HashSet<DeployedCustomToken>>,
 }
 
+/// Empty Substrate contracts
+#[derive(Default, Debug, Copy, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SubstrateBridgeDeploymentInfo {
+    /// Contract Deploy Height
+    #[serde(default, deserialize_with = "deser_nomad_u32")]
+    pub deploy_height: u32,
+}
+
 /// Bridge contract abstraction
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
-pub enum BridgeContracts {
+pub enum BridgeDeploymentInfo {
     /// EVM Bridge Contracts
-    Evm(EvmBridgeContracts),
-    // leaving open future things here
+    Ethereum(EthereumBridgeDeploymentInfo),
+    /// Substrate bridge
+    Substrate(SubstrateBridgeDeploymentInfo),
 }
 
-impl Default for BridgeContracts {
+impl Default for BridgeDeploymentInfo {
     fn default() -> Self {
-        BridgeContracts::Evm(Default::default())
+        BridgeDeploymentInfo::Ethereum(Default::default())
     }
 }
 

@@ -91,9 +91,13 @@ pub fn add_domain(config: &NomadConfig, domain: &Domain) -> JsResult<NomadConfig
 
 /// Add a network to the config
 #[wasm_bindgen(js_name = addCore)]
-pub fn add_core(config: &NomadConfig, name: &str, core: &CoreContracts) -> JsResult<NomadConfig> {
+pub fn add_core(
+    config: &NomadConfig,
+    name: &str,
+    core: &CoreDeploymentInfo,
+) -> JsResult<NomadConfig> {
     let mut config = deser_config!(config);
-    let core = deser!(core, crate::contracts::CoreContracts);
+    let core = deser!(core, crate::core::CoreDeploymentInfo);
     config.add_core(name, core).map_err(format_errs)?;
     ret_config!(config)
 }
@@ -103,10 +107,10 @@ pub fn add_core(config: &NomadConfig, name: &str, core: &CoreContracts) -> JsRes
 pub fn add_bridge(
     config: &NomadConfig,
     name: &str,
-    bridge: &BridgeContracts,
+    bridge: &BridgeDeploymentInfo,
 ) -> JsResult<NomadConfig> {
     let mut config = deser_config!(config);
-    let bridge = deser!(bridge, crate::bridge::BridgeContracts);
+    let bridge = deser!(bridge, crate::bridge::BridgeDeploymentInfo);
     config.add_bridge(name, bridge).map_err(format_errs)?;
     ret_config!(config)
 }
