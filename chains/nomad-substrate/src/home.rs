@@ -2,7 +2,7 @@ use crate::SubstrateError;
 use crate::{report_tx, utils, NomadBase, NomadOnlineClient, NomadState, SubstrateSigner};
 use async_trait::async_trait;
 use color_eyre::{eyre::eyre, Result};
-use ethers_core::types::{H256, U256};
+use ethers_core::types::{H160, H256, U256};
 use futures::{stream::FuturesOrdered, StreamExt};
 use std::sync::Arc;
 use subxt::ext::scale_value::{self, Primitive, Value};
@@ -142,12 +142,9 @@ where
     }
 
     /// Retrieve the home's base object from chain storage
-    pub async fn base(&self) -> Result<NomadBase, SubstrateError> {
+    pub(crate) async fn base(&self) -> Result<NomadBase, SubstrateError> {
         let base_address = subxt::dynamic::storage_root("Home", "Base");
-        info!("Fetching base object...");
         let base_value = self.storage().fetch(&base_address, None).await?.unwrap();
-
-        info!("Decoding base object: {:?}", base_value);
         Ok(scale_value::serde::from_value(base_value)?)
     }
 
@@ -220,7 +217,7 @@ where
     #[tracing::instrument(err, skip(self))]
     async fn updater(&self) -> Result<H256, Self::Error> {
         let base = self.base().await?;
-        let updater = base.updater;
+        let updater: H160 = base.updater.0.into();
         Ok(updater.into()) // H256 is primitive-types 0.11.1 not 0.10.1
     }
 
@@ -236,7 +233,7 @@ where
     #[tracing::instrument(err, skip(self))]
     async fn committed_root(&self) -> Result<H256, Self::Error> {
         let base = self.base().await?;
-        Ok(base.committed_root)
+        Ok(base.committed_root.0.into())
     }
 
     #[tracing::instrument(err, skip(self, update), fields(update = %update))]
@@ -345,7 +342,7 @@ where
                 let root: H256 = scale_value::serde::from_value(r)?;
                 Ok(Update {
                     home_domain: self.domain,
-                    previous_root: committed_root,
+                    previous_root: committed_root.0.into(),
                     new_root: root,
                 })
             })
