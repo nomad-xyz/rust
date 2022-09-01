@@ -1,5 +1,6 @@
+use crate::decodings::{H256Wrapper, NomadBase, NomadLightMerkleWrapper, NomadState};
 use crate::SubstrateError;
-use crate::{report_tx, utils, NomadBase, NomadOnlineClient, NomadState, SubstrateSigner};
+use crate::{report_tx, utils, NomadOnlineClient, SubstrateSigner};
 use async_trait::async_trait;
 use color_eyre::{eyre::eyre, Result};
 use ethers_core::types::{H160, H256, U256};
@@ -152,7 +153,8 @@ where
     pub async fn tree(&self) -> Result<NomadLightMerkle, SubstrateError> {
         let tree_address = subxt::dynamic::storage_root("Home", "Tree");
         let tree_value = self.storage().fetch(&tree_address, None).await?.unwrap();
-        Ok(scale_value::serde::from_value(tree_value)?)
+        let merkle_wrapper: NomadLightMerkleWrapper = scale_value::serde::from_value(tree_value)?;
+        Ok(merkle_wrapper.into())
     }
 }
 
@@ -217,7 +219,7 @@ where
     #[tracing::instrument(err, skip(self))]
     async fn updater(&self) -> Result<H256, Self::Error> {
         let base = self.base().await?;
-        let updater: H160 = base.updater.0.into();
+        let updater: H160 = base.updater.into();
         Ok(updater.into()) // H256 is primitive-types 0.11.1 not 0.10.1
     }
 
@@ -233,7 +235,7 @@ where
     #[tracing::instrument(err, skip(self))]
     async fn committed_root(&self) -> Result<H256, Self::Error> {
         let base = self.base().await?;
-        Ok(base.committed_root.0.into())
+        Ok(base.committed_root.into())
     }
 
     #[tracing::instrument(err, skip(self, update), fields(update = %update))]
@@ -339,11 +341,11 @@ where
 
         root_value
             .map(|r| {
-                let root: H256 = scale_value::serde::from_value(r)?;
+                let root: H256Wrapper = scale_value::serde::from_value(r)?;
                 Ok(Update {
                     home_domain: self.domain,
-                    previous_root: committed_root.0.into(),
-                    new_root: root,
+                    previous_root: committed_root.into(),
+                    new_root: root.into(),
                 })
             })
             .transpose()

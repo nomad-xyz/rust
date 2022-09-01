@@ -19,11 +19,8 @@ pub use xapp::*;
 mod configs;
 pub use configs::*;
 
-mod nomad_core;
-pub use crate::nomad_core::*;
-
-mod nomad_base;
-pub(crate) use nomad_base::*;
+/// Intermediate representations needed to decode data from substrate chain
+mod decodings;
 
 mod client;
 pub use client::*;

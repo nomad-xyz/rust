@@ -115,7 +115,8 @@ impl<const N: usize> LightMerkle<N> {
     }
 }
 
-mod arrays {
+/// Const generic array deserialization
+pub mod arrays {
     use std::{convert::TryInto, marker::PhantomData};
 
     use serde::{
@@ -123,6 +124,8 @@ mod arrays {
         ser::SerializeTuple,
         Deserialize, Deserializer, Serialize, Serializer,
     };
+
+    /// Serialize a const generic array
     pub fn serialize<S: Serializer, T: Serialize, const N: usize>(
         data: &[T; N],
         ser: S,
@@ -165,6 +168,8 @@ mod arrays {
             }
         }
     }
+
+    /// Deserialize a const generic array
     pub fn deserialize<'de, D, T, const N: usize>(deserializer: D) -> Result<[T; N], D::Error>
     where
         D: Deserializer<'de>,
