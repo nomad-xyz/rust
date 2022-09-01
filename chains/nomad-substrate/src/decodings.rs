@@ -2,7 +2,7 @@ use nomad_core::accumulator::{self, arrays, TREE_DEPTH};
 use primitive_types::{H160, H256};
 use serde::{Deserialize, Serialize};
 
-/// Substrate-specific Nomad states
+/// Substrate-specific Nomad states. Does not include an uninitialized state.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum NomadState {
     /// Contract is active
@@ -16,6 +16,9 @@ impl Default for NomadState {
         Self::Active
     }
 }
+
+/// Wrapper for accomodating oddities of scale-value encoding of H256 primitives.
+/// Need wrapper type to match the shape of the scale encoded value.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub(crate) struct H256Wrapper([H256; 1]);
 
@@ -32,6 +35,8 @@ impl From<H256Wrapper> for ethers_core::types::H256 {
     }
 }
 
+/// Wrapper for accomodating oddities of scale-value encoding of H160 primitives.
+/// Need wrapper type to match the shape of the scale encoded value.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub(crate) struct H160Wrapper([H160; 1]);
 
@@ -61,7 +66,8 @@ pub(crate) struct NomadBase {
     pub updater: H160Wrapper,
 }
 
-/// An incremental merkle tree, modeled on the eth2 deposit contract
+/// An incremental merkle tree wrapper that uses the H256Wrapper type.
+/// Accomodates oddities of the scale value encoding of H256.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct NomadLightMerkleWrapper {
     #[serde(with = "arrays")]
