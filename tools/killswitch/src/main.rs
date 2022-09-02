@@ -11,7 +11,7 @@ use std::{
     process::exit,
 };
 
-/// Result returning `KillSwitchError`
+/// Result returning KillSwitch `Error`
 pub(crate) type Result<T> = std::result::Result<T, Error>;
 
 /// What we're killing, currently only `TokenBridge`
