@@ -30,13 +30,16 @@ enum App {
     .args(&["all", "all-inbound"])
 ))]
 struct Args {
+    /// Which app to kill
     #[clap(long, arg_enum)]
     app: App,
 
+    /// Kill all available networks
     #[clap(long)]
     all: bool,
 
-    #[clap(long, value_name = "HOME")]
+    /// Kill all replicas on network
+    #[clap(long, value_name = "NETWORK")]
     all_inbound: Option<String>,
 
     // The most common form of streaming JSON is line delimited
