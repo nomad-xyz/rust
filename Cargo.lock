@@ -2634,11 +2634,13 @@ name = "killswitch"
 version = "0.1.0"
 dependencies = [
  "clap 3.2.17",
- "color-eyre",
  "ethers",
  "nomad-base",
  "nomad-core",
  "nomad-xyz-configuration",
+ "serde 1.0.137",
+ "serde_json",
+ "thiserror",
  "tokio",
 ]
 
