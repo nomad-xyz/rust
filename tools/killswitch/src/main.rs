@@ -1,17 +1,27 @@
-mod channel;
+mod errors;
 mod killswitch;
+mod output;
 mod settings;
 
+use crate::{errors::Error, output::Output, settings::Settings};
 use clap::{ArgGroup, Parser, ValueEnum};
-use color_eyre::Result;
-use killswitch::KillSwitch;
-use settings::KillSwitchSettings as Settings;
+use std::{
+    env,
+    io::{self, Write},
+    process::exit,
+};
 
+/// Result returning `KillSwitchError`
+pub(crate) type Result<T> = std::result::Result<T, Error>;
+
+/// What we're killing, currently only `TokenBridge`
 #[derive(ValueEnum, Clone, Debug)]
 enum App {
+    /// The token bridge
     TokenBridge,
 }
 
+/// Command line args
 #[derive(Parser, Debug)]
 #[clap(group(
     ArgGroup::new("which_networks")
@@ -30,17 +40,36 @@ struct Args {
     all_inbound: Option<String>,
 }
 
+/// Exit codes as found in <sysexits.h>
+enum ExitCodes {
+    Ok = 0,
+    BadConfig = 78,
+}
+
+/// KillSwitch entry point
 #[tokio::main(flavor = "current_thread")]
-async fn main() -> Result<()> {
-    color_eyre::install()?;
+async fn main() {
+    let mut stdout = io::stdout().lock();
+    let cmd = env::args().collect::<Vec<_>>().join(" ");
+    let _args = Args::parse();
 
-    let args = Args::parse();
+    let settings = Settings::new().await;
 
-    let settings = Settings::new().await?;
+    if let Err(error) = settings {
+        let output = Output {
+            command: cmd,
+            message: error.into(),
+        };
+        let json = serde_json::to_string_pretty(&output)
+            .expect("Serialization error. Should never happen");
+        stdout
+            .write_all(&json.into_bytes())
+            .expect("Write to stdout error. Should never happen");
+        exit(ExitCodes::BadConfig as i32)
+    }
 
-    let killswitch = KillSwitch::new(args, settings).await?;
+    // setup killswitch
+    // run killswitch
 
-    killswitch.run().await?;
-
-    Ok(())
+    exit(ExitCodes::Ok as i32)
 }

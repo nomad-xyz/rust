@@ -1,37 +1,40 @@
-use color_eyre::{eyre, Result};
-use ethers::abi::Token;
-use nomad_xyz_configuration::{agent::SignerConf, ChainConf, NomadConfig, TxSubmitterConf};
-use std::{collections::HashMap, env};
+#![allow(dead_code)] // TODO: Remove me
 
-/// KillSwitchSettings contains all available configuration for all networks in config
+use crate::errors::Error;
+use nomad_xyz_configuration::{agent::SignerConf, ChainConf, NomadConfig, TxSubmitterConf};
+use std::{collections::HashMap, env, result::Result};
+
+/// KillSwitch `Settings` contains all available configuration for all networks present
 #[derive(Debug)]
-pub(crate) struct KillSwitchSettings {
+pub(crate) struct Settings {
     /// NomadConfig
     pub config: NomadConfig,
     /// RPC endpoint configs
-    pub rpcs: HashMap<String, Option<ChainConf>>,
+    pub rpcs: HashMap<String, ChainConf>,
     /// Transaction submission configs
-    pub tx_submitters: HashMap<String, Option<TxSubmitterConf>>,
+    pub tx_submitters: HashMap<String, TxSubmitterConf>,
     /// Attestation signer configs
-    pub attestation_signers: HashMap<String, Option<SignerConf>>,
+    pub attestation_signers: HashMap<String, SignerConf>,
 }
 
-impl KillSwitchSettings {
-    /// Build new KillSwitchSettings from env and config file
-    pub(crate) async fn new() -> Result<Self> {
+impl Settings {
+    /// Build new `Settings` from env and config file
+    pub(crate) async fn new() -> Result<Self, Error> {
         // Get config
-        let config = if let Some(config_url) = env::var("CONFIG_URL").ok() {
-            NomadConfig::fetch(&config_url)
-                .await
-                .expect(&format!("Unable to load config from {}", config_url))
-        } else if let Some(config_path) = env::var("CONFIG_PATH").ok() {
-            NomadConfig::from_file(&config_path)
-                .expect(&format!("Unable to load config from {}", config_path))
+        let config = if let Ok(config_url) = env::var("CONFIG_URL") {
+            NomadConfig::fetch(&config_url).await.map_err(|_| {
+                Error::MissingConfig(format!("Unable to load config from url {}", config_url))
+            })
+        } else if let Ok(config_path) = env::var("CONFIG_PATH") {
+            NomadConfig::from_file(&config_path).map_err(|_| {
+                Error::MissingConfig(format!("Unable to load config from path {}", config_path))
+            })
         } else {
-            eyre::bail!(
-                "No configuration found. Set CONFIG_URL or CONFIG_PATH environment variable"
-            )
+            Err(Error::MissingConfig(
+                "No configuration found. Set CONFIG_URL or CONFIG_PATH environment variable".into(),
+            ))
         };
+        let config = config?;
 
         // Load secrets manually instead of using `AgentSecrets::from_env` so we can load them
         // best effort instead of bailing on first error
@@ -39,30 +42,30 @@ impl KillSwitchSettings {
 
         let rpcs = networks
             .iter()
-            .map(|n| (n.clone(), ChainConf::from_env(&n.to_uppercase())))
+            .filter_map(|n| ChainConf::from_env(&n.to_uppercase()).map(|conf| (n.clone(), conf)))
             .collect::<HashMap<_, _>>();
 
         let tx_submitters = networks
             .iter()
-            .map(|n| (n.clone(), TxSubmitterConf::from_env(&n.to_uppercase())))
+            .filter_map(|n| {
+                TxSubmitterConf::from_env(&n.to_uppercase()).map(|conf| (n.clone(), conf))
+            })
             .collect::<HashMap<_, _>>();
 
         // Load attestation signers for all networks explicitly using the form `<NETWORK>_ATTESTATION_SIGNER_ID`
         let attestation_signers = networks
             .iter()
-            .map(|n| {
-                (
-                    n.clone(),
-                    SignerConf::from_env(Some("ATTESTATION_SIGNER"), Some(&n.to_uppercase())),
-                )
+            .filter_map(|n| {
+                SignerConf::from_env(Some("ATTESTATION_SIGNER"), Some(&n.to_uppercase()))
+                    .map(|conf| (n.clone(), conf))
             })
             .collect::<HashMap<_, _>>();
 
-        return Ok(Self {
+        Ok(Self {
             config,
             rpcs,
             tx_submitters,
             attestation_signers,
-        });
+        })
     }
 }

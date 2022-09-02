@@ -1,18 +1,49 @@
-use crate::{channel::Channel, settings::KillSwitchSettings, Args};
-use color_eyre::Result;
-use ethers::core::types::Signature;
-use nomad_base::{ChainSetup, ChainSetupType};
-use nomad_core::{FailureNotification, SignedFailureNotification};
-use nomad_xyz_configuration::{AgentSecrets, ChainConf, NomadConfig, TxSubmitterConf};
+#![allow(dead_code)] // TODO: Remove me
+
+use crate::{errors::Error, settings::Settings, Args, Result};
+use nomad_core::SignedFailureNotification;
 use std::collections::{HashMap, HashSet};
 
+/// Main `KillSwitch` struct
 #[derive(Debug)]
 pub(crate) struct KillSwitch {
-    channels: Vec<Channel>,
+    /// List of homes we're disconnecting replicas for
+    homes: Vec<String>,
+    /// Set of replicas we're disconnection or errors
+    /// encountered attempting to configure replicas
+    replicas: HashMap<String, Result<HashSet<String>>>,
 }
 
 impl KillSwitch {
-    pub(crate) async fn new(args: Args, settings: KillSwitchSettings) -> Result<Self> {
+    /// Get replicas for home, returning errors for missing a home or an empty replica set
+    fn get_replicas(home: &String, settings: &Settings) -> Result<HashSet<String>> {
+        let connections = settings
+            .config
+            .protocol()
+            .networks
+            .get(home)
+            .ok_or_else(|| {
+                Error::MissingHome(format!("Home {} was not found in protocol.networks", home))
+            })?
+            .connections
+            .clone();
+        if connections.is_empty() {
+            Err(Error::MissingReplicas(format!(
+                "No replicas found for {} in protocol.networks.connections",
+                home
+            )))
+        } else {
+            Ok(connections)
+        }
+    }
+
+    /// Create a `SignedFailureNotification`
+    async fn create_signed_failure(&self) -> Result<SignedFailureNotification> {
+        unimplemented!()
+    }
+
+    /// Build a new `KillSwitch`, configuring best effort and storing, not returning errors
+    pub(crate) async fn new(args: Args, settings: Settings) -> Self {
         let homes = if args.all {
             settings
                 .config
@@ -26,57 +57,29 @@ impl KillSwitch {
                 .expect("Should not happen. Clap requires this to be present")]
         };
 
-        let chain_setups = homes
+        let replicas = homes
             .iter()
-            .map(|home| {
-                let replicas = settings
-                    .config
-                    .protocol()
-                    .networks
-                    .get(home)
-                    .map(|n| n.connections.clone())
-                    .unwrap_or(HashSet::new());
+            .map(|home| (home.clone(), Self::get_replicas(home, &settings)))
+            .collect::<HashMap<String, Result<HashSet<String>>>>();
 
-                let chain_setups = replicas
-                    .iter()
-                    .map(|replica| {
-                        let rpc = settings.rpcs.get(replica).map(|rpc| rpc.clone()).flatten();
-
-                        let chain_setup = rpc.map(|chain_conf| {
-                            let secrets = AgentSecrets {
-                                rpcs: HashMap::from([(replica.clone(), chain_conf)]),
-                                tx_submitters: Default::default(),
-                                attestation_signer: None,
-                            };
-                            ChainSetup::from_config_and_secrets(
-                                ChainSetupType::ConnectionManager {
-                                    remote_network: replica,
-                                },
-                                &settings.config,
-                                &secrets,
-                            )
-                        });
-                        ((home.clone(), replica.clone()), chain_setup)
-                    })
-                    .collect::<HashMap<_, _>>();
-                (home.clone(), chain_setups)
+        let _chain_setups = replicas
+            .iter()
+            .filter_map(|(home, replicas)| {
+                if let Ok(replicas) = replicas {
+                    Some((home.clone(), replicas.clone()))
+                } else {
+                    None
+                }
             })
-            .collect::<HashMap<_, _>>();
+            .map(|(_home, _replicas)| unimplemented!());
 
-        
+        // ...
 
-        return Ok(Self {
-            channels: Vec::new(),
-        });
+        unimplemented!()
     }
 
-    pub(crate) async fn run(&self) -> Result<()> {
-        //
-
-        return Ok(());
-    }
-
-    async fn create_signed_failure(&self) -> SignedFailureNotification {
+    /// Run `KillSwitch` against configuration
+    pub(crate) async fn run(&self) {
         unimplemented!()
     }
 }
