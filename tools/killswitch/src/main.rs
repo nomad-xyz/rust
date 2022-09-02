@@ -38,6 +38,11 @@ struct Args {
 
     #[clap(long, value_name = "HOME")]
     all_inbound: Option<String>,
+
+    // The most common form of streaming JSON is line delimited
+    // hide this behind a (hidden) flag so it's not abused
+    #[clap(long, hide = true)]
+    pretty: bool,
 }
 
 /// Exit codes as found in <sysexits.h>
@@ -51,7 +56,12 @@ enum ExitCodes {
 async fn main() {
     let mut stdout = io::stdout().lock();
     let cmd = env::args().collect::<Vec<_>>().join(" ");
-    let _args = Args::parse();
+    let args = Args::parse();
+    let jsonify = if args.pretty {
+        serde_json::to_string_pretty
+    } else {
+        serde_json::to_string
+    };
 
     let settings = Settings::new().await;
 
@@ -60,10 +70,9 @@ async fn main() {
             command: cmd,
             message: error.into(),
         };
-        let json = serde_json::to_string_pretty(&output)
-            .expect("Serialization error. Should never happen");
+        let json = jsonify(&output).expect("Serialization error. Should never happen");
         stdout
-            .write_all(&json.into_bytes())
+            .write_all(&format!("{}\n", json).into_bytes())
             .expect("Write to stdout error. Should never happen");
         exit(ExitCodes::BadConfig as i32)
     }
