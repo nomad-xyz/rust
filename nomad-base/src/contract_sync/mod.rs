@@ -158,12 +158,14 @@ where
                 info!(
                     start = start,
                     end = end,
-                    "[Updates]: indexing block heights {}...{}",
+                    "[Updates]: BLAH indexing block heights {}...{}",
                     start,
                     end,
                 );
 
                 let sorted_updates = indexer.fetch_sorted_updates(start, end).await?;
+
+                info!("Indexed block heights");
 
                 // If no updates found, update last seen block and next height
                 // and continue

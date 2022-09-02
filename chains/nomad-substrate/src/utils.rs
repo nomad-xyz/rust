@@ -33,20 +33,45 @@ where
 pub fn format_signed_update_value(signed_update: &SignedUpdate) -> Value {
     let SignedUpdate { update, signature } = signed_update;
 
+    let r_bytes = signature.r.0;
+    let s_bytes = signature.s.0;
+
     Value::named_composite([
         (
             "update",
             Value::named_composite([
                 ("home_domain", Value::u128(update.home_domain as u128)),
-                ("previous_root", Value::from_bytes(&update.previous_root)),
-                ("new_root", Value::from_bytes(&update.new_root)),
+                (
+                    "previous_root",
+                    Value::primitive(Primitive::U256(update.previous_root.into())),
+                ),
+                (
+                    "new_root",
+                    Value::primitive(Primitive::U256(update.new_root.into())),
+                ),
             ]),
         ),
         (
             "signature",
             Value::named_composite([
-                ("r", Value::primitive(Primitive::U256(signature.r.into()))),
-                ("s", Value::primitive(Primitive::U256(signature.s.into()))),
+                (
+                    "r",
+                    Value::unnamed_composite([
+                        Value::u128(r_bytes[0] as u128),
+                        Value::u128(r_bytes[1] as u128),
+                        Value::u128(r_bytes[2] as u128),
+                        Value::u128(r_bytes[3] as u128),
+                    ]),
+                ),
+                (
+                    "s",
+                    Value::unnamed_composite([
+                        Value::u128(s_bytes[0] as u128),
+                        Value::u128(s_bytes[1] as u128),
+                        Value::u128(s_bytes[2] as u128),
+                        Value::u128(s_bytes[3] as u128),
+                    ]),
+                ),
                 ("v", Value::u128(signature.v as u128)),
             ]),
         ),

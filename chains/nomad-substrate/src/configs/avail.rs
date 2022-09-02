@@ -148,7 +148,7 @@ impl Encode for AvailExtrinsic {
                 address,
                 extra_params,
             } => {
-                let mut tmp = Vec::new();
+                let mut tmp = vec![];
 
                 tmp.push(EXTRINSIC_VERSION | 0b1000_0000);
                 address.encode_to(&mut tmp);

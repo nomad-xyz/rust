@@ -1,4 +1,4 @@
-use crate::decodings::{H256Wrapper, NomadBase, NomadLightMerkleWrapper, NomadState};
+use crate::decodings::{NomadBase, NomadLightMerkleWrapper, NomadState};
 use crate::SubstrateError;
 use crate::{report_tx, utils, NomadOnlineClient, SubstrateSigner};
 use async_trait::async_trait;
@@ -220,7 +220,7 @@ where
     async fn updater(&self) -> Result<H256, Self::Error> {
         let base = self.base().await?;
         let updater: H160 = base.updater.into();
-        Ok(updater.into()) // H256 is primitive-types 0.11.1 not 0.10.1
+        Ok(updater.into())
     }
 
     #[tracing::instrument(err, skip(self))]
@@ -289,7 +289,7 @@ where
         } = message;
 
         let destination_value = Value::u128(*destination as u128);
-        let recipient_value = Value::primitive(Primitive::U256(recipient.clone().into()));
+        let recipient_value = Value::primitive(Primitive::U256((*recipient).into()));
         let body_value = Value::from_bytes(body);
 
         let tx_payload = subxt::dynamic::tx(
@@ -327,27 +327,17 @@ where
 
     #[tracing::instrument(err, skip(self))]
     async fn produce_update(&self) -> Result<Option<Update>, <Self as Common>::Error> {
-        let committed_root = self.base().await?.committed_root;
+        let committed_root: H256 = self.base().await?.committed_root.into();
+        let new_root = self.tree().await?.root();
 
-        let tree = self.tree().await?;
-
-        let num_elements = tree.count();
-        let root_address = subxt::dynamic::storage(
-            "Home",
-            "IndexToRoot",
-            vec![Value::u128(num_elements as u128)],
-        );
-        let root_value = self.storage().fetch(&root_address, None).await?;
-
-        root_value
-            .map(|r| {
-                let root: H256Wrapper = scale_value::serde::from_value(r)?;
-                Ok(Update {
-                    home_domain: self.domain,
-                    previous_root: committed_root.into(),
-                    new_root: root.into(),
-                })
+        Ok(if committed_root == new_root {
+            None
+        } else {
+            Some(Update {
+                home_domain: self.domain,
+                previous_root: committed_root,
+                new_root,
             })
-            .transpose()
+        })
     }
 }

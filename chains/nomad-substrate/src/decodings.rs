@@ -31,7 +31,8 @@ impl std::ops::Deref for H256Wrapper {
 
 impl From<H256Wrapper> for ethers_core::types::H256 {
     fn from(wrapper: H256Wrapper) -> Self {
-        wrapper.into()
+        let bytes = *wrapper;
+        bytes.into()
     }
 }
 
@@ -49,7 +50,8 @@ impl std::ops::Deref for H160Wrapper {
 
 impl From<H160Wrapper> for ethers_core::types::H160 {
     fn from(wrapper: H160Wrapper) -> Self {
-        wrapper.into()
+        let bytes = *wrapper;
+        bytes.into()
     }
 }
 
