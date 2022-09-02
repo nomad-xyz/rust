@@ -51,7 +51,6 @@ impl KillSwitch {
                 .expect("Should not happen. Clap requires this to be present")]
         };
 
-        // From here on, we're not stopping on errors, just storing them
         let replicas = networks
             .iter()
             .map(|network| (network.clone(), Self::get_replicas(network, &settings)))
