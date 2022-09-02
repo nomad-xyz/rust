@@ -6,8 +6,8 @@ use std::fmt::Display;
 pub enum Error {
     /// No configuration found
     MissingConfig(String),
-    /// Required home not found
-    MissingHome(String),
+    /// Required network not found
+    MissingNetwork(String),
     /// Required replica not found
     MissingReplicas(String),
     /// RPC config missing
@@ -26,7 +26,7 @@ impl Display for Error {
         use Error::*;
         match self {
             MissingConfig(msg) => write!(f, "MissingConfig: {}", msg),
-            MissingHome(msg) => write!(f, "MissingHome: {}", msg),
+            MissingNetwork(msg) => write!(f, "MissingNetwork: {}", msg),
             MissingReplicas(msg) => write!(f, "MissingReplicas: {}", msg),
             _ => unimplemented!(),
         }

@@ -3,11 +3,12 @@ mod killswitch;
 mod output;
 mod settings;
 
+use crate::killswitch::KillSwitch;
 use crate::{errors::Error, output::Output, settings::Settings};
 use clap::{ArgGroup, Parser, ValueEnum};
 use std::{
     env,
-    io::{self, Write},
+    io::{stdout, Write},
     process::exit,
 };
 
@@ -57,7 +58,6 @@ enum ExitCodes {
 /// KillSwitch entry point
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
-    let mut stdout = io::stdout().lock();
     let cmd = env::args().collect::<Vec<_>>().join(" ");
     let args = Args::parse();
     let jsonify = if args.pretty {
@@ -74,11 +74,14 @@ async fn main() {
             message: error.into(),
         };
         let json = jsonify(&output).expect("Serialization error. Should never happen");
-        stdout
+        stdout()
+            .lock()
             .write_all(&format!("{}\n", json).into_bytes())
             .expect("Write to stdout error. Should never happen");
         exit(ExitCodes::BadConfig as i32)
     }
+
+    let _killswitch = KillSwitch::new(args, settings.unwrap()).await;
 
     // setup killswitch
     // run killswitch
