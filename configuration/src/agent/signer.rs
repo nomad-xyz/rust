@@ -1,3 +1,4 @@
+use std::fmt::{Debug, Display, Formatter};
 use std::str::FromStr;
 
 use crate::full_prefix;
@@ -32,7 +33,7 @@ use nomad_types::HexString;
 /// "asdjf"
 /// 38
 /// ```
-#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
+#[derive(Clone, PartialEq, serde::Deserialize)]
 #[serde(untagged, rename_all = "camelCase")]
 pub enum SignerConf {
     /// A local hex key, hex string of private key, with or without 0x prefix
@@ -56,6 +57,23 @@ pub enum SignerConf {
 impl Default for SignerConf {
     fn default() -> Self {
         Self::Node
+    }
+}
+
+impl Display for SignerConf {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        use SignerConf::*;
+        match self {
+            HexKey(_) => write!(f, "SignerConf: HexKey(...)"),
+            Aws { id: _ } => write!(f, "SignerConf: Aws {{...}}"),
+            Node => write!(f, "SignerConf: Node"),
+        }
+    }
+}
+
+impl Debug for SignerConf {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        <Self as Display>::fmt(self, f)
     }
 }
 
@@ -128,6 +146,7 @@ mod test {
         let signer_conf: SignerConf = serde_json::from_value(value).unwrap();
         assert_eq!(signer_conf, SignerConf::Node);
     }
+
     #[test]
     fn it_deserializes_aws_signer_confs() {
         let value = json!({
@@ -135,5 +154,30 @@ mod test {
         });
         let signer_conf: SignerConf = serde_json::from_value(value).unwrap();
         assert_eq!(signer_conf, SignerConf::Aws { id: "".to_owned() });
+    }
+
+    #[test]
+    fn it_does_not_display_or_debug_secrets() {
+        let value = json! { "0xBADBADBAD0000000000000000000000000000000000000000000000000000000" };
+        let signer_conf: SignerConf = serde_json::from_value(value).unwrap();
+
+        assert_eq!("SignerConf: HexKey(...)", format!("{}", signer_conf));
+        assert_eq!("SignerConf: HexKey(...)", format!("{:?}", signer_conf));
+        assert!(!format!("{:?}", signer_conf).contains("BADBADBAD"));
+
+        let value = json!({
+            "id": "0xBADBADBAD0000000000000000000000000000000000000000000000000000000",
+        });
+        let signer_conf: SignerConf = serde_json::from_value(value).unwrap();
+
+        assert_eq!("SignerConf: Aws {...}", format!("{}", signer_conf));
+        assert_eq!("SignerConf: Aws {...}", format!("{:?}", signer_conf));
+        assert!(!format!("{:?}", signer_conf).contains("BADBADBAD"));
+
+        let value = Value::Null;
+        let signer_conf: SignerConf = serde_json::from_value(value).unwrap();
+
+        assert_eq!("SignerConf: Node", format!("{}", signer_conf));
+        assert_eq!("SignerConf: Node", format!("{:?}", signer_conf));
     }
 }
