@@ -14,7 +14,8 @@
     "networks": {
       "ethereum": {
         "name": "ethereum",
-        "domain": 6648936,
+      "rpcStyle": "ethereum",
+      "domain": 6648936,
         "connections": ["polygon"],
         "specs": {
           "chainId": 1,
@@ -45,7 +46,8 @@
       },
       "polygon": {
         "name": "polygon",
-        "domain": 1650811245,
+      "rpcStyle": "ethereum",
+      "domain": 1650811245,
         "connections": ["ethereum"],
         "specs": {
           "chainId": 1284,
@@ -170,7 +172,6 @@
   },
   "agent": {
     "ethereum": {
-      "rpcStyle": "ethereum",
       "db": "/usr/share/nomad",
       "metrics": 9090,
       "logging": {
@@ -195,7 +196,6 @@
       }
     },
     "polygon": {
-      "rpcStyle": "ethereum",
       "db": "/usr/share/nomad",
       "metrics": 9090,
       "logging": {

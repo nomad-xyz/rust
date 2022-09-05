@@ -28,8 +28,6 @@ use self::{
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AgentConfig {
-    /// RPC specifier
-    pub rpc_style: RpcStyles,
     /// Path to the DB
     pub db: PathBuf,
     /// Metrics port

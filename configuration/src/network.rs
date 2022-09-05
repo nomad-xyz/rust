@@ -1,6 +1,6 @@
 //! Core deploy information
 
-use crate::bridge::BridgeConfiguration;
+use crate::{bridge::BridgeConfiguration, RpcStyle};
 use nomad_types::{
     deser_nomad_u32, deser_nomad_u64, deser_nomad_u8, NameOrDomain, NomadIdentifier, NomadLocator,
 };
@@ -83,38 +83,16 @@ pub struct Domain {
     /// Network domain identifier
     #[serde(deserialize_with = "deser_nomad_u32")]
     pub domain: u32,
+    /// dwfgkewopgk
+    pub rpc_style: RpcStyle,
     /// List of connections to other networks
     pub connections: HashSet<String>,
-    /// Nomad and network specific information depending on network type
-    pub network_specs: NetworkType,
-}
-
-/// Evm network based configuration
-#[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct EvmNetworkSpecs {
     /// Nomad protocol configuration options
     pub configuration: ContractConfig,
     /// Network specifications
     pub specs: NetworkSpecs,
     /// Bridge contract configuration options
     pub bridge_configuration: BridgeConfiguration,
-}
-
-/// Nomad and network specific information depending on network type
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", tag = "type")]
-pub enum NetworkType {
-    /// EVM Core
-    Ethereum(EvmNetworkSpecs),
-    /// Substrate core
-    Substrate,
-}
-
-impl Default for NetworkType {
-    fn default() -> Self {
-        NetworkType::Ethereum(EvmNetworkSpecs::default())
-    }
 }
 
 /// Core deployment info

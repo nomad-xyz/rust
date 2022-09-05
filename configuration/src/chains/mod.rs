@@ -6,11 +6,14 @@ pub mod substrate;
 
 use std::str::FromStr;
 
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 /// Rpc style of chain
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Serialize, Deserialize, Eq)]
+#[serde(rename_all = "camelCase")]
 pub enum RpcStyle {
+    #[default]
     /// Ethereum
     Ethereum,
     /// Substrate
@@ -26,6 +29,17 @@ impl FromStr for RpcStyle {
             "substrate" => Ok(Self::Substrate),
             _ => panic!("Unknown RpcStyle"),
         }
+    }
+}
+
+impl std::fmt::Display for RpcStyle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let style = match self {
+            RpcStyle::Ethereum => "ethereum",
+            RpcStyle::Substrate => "substrate",
+        };
+
+        write!(f, "{}", style)
     }
 }
 

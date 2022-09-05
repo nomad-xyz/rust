@@ -1,3 +1,4 @@
+use nomad_types::NameOrDomain;
 use serde_json::json;
 use std::{fs::OpenOptions, io::Write};
 
@@ -16,7 +17,12 @@ fn main() {
     });
 
     for network in config.networks.iter() {
-        let rpc_style = config.agent().get(network).expect("!agent").rpc_style;
+        let networks = config.protocol();
+        let rpc_style = networks
+            .networks
+            .get(network.as_str())
+            .expect("!no domain")
+            .rpc_style;
         template["rpcs"].as_object_mut().unwrap().insert(
             network.to_owned(),
             json!({

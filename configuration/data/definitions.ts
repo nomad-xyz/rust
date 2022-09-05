@@ -31,7 +31,6 @@ export type ProcessorConfig = BaseAgentConfig & {
 };
 
 export interface AgentConfig {
-  rpcStyle: string;
   db: string;
   metrics: number;
   logging: LogConfig;
@@ -130,6 +129,7 @@ export interface BridgeConfiguration {
 export interface Domain {
   name: string;
   domain: number;
+  rpcStyle: string;
   connections: Array<string>;
   configuration: ContractConfig;
   specs: NetworkSpecs;
