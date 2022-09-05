@@ -1,32 +1,5 @@
 //! Agent configuration types
 
-/// Rpc Styles
-#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, Eq, PartialEq)]
-#[serde(rename_all = "lowercase")]
-pub enum RpcStyles {
-    /// Ethereum
-    Ethereum,
-    /// Substrate
-    Substrate,
-}
-
-impl std::fmt::Display for RpcStyles {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let style = match self {
-            RpcStyles::Ethereum => "ethereum",
-            RpcStyles::Substrate => "substrate",
-        };
-
-        write!(f, "{}", style)
-    }
-}
-
-impl Default for RpcStyles {
-    fn default() -> Self {
-        RpcStyles::Ethereum
-    }
-}
-
 /// Basic tracing configuration
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -96,11 +69,11 @@ impl Default for LogConfig {
 mod test {
     use serde_json::json;
 
-    use super::RpcStyles;
+    use crate::RpcStyle;
 
     #[test]
     fn it_deserializes_rpc_styles() {
-        let serialized = serde_json::to_value(&RpcStyles::Ethereum).unwrap();
+        let serialized = serde_json::to_value(&RpcStyle::Ethereum).unwrap();
 
         let val = json! { "ethereum" };
         assert_eq!(val, serialized);

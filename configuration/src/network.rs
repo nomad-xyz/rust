@@ -1,6 +1,6 @@
 //! Core deploy information
 
-use crate::bridge::BridgeConfiguration;
+use crate::{bridge::BridgeConfiguration, RpcStyle};
 use nomad_types::{
     deser_nomad_u32, deser_nomad_u64, deser_nomad_u8, NameOrDomain, NomadIdentifier, NomadLocator,
 };
@@ -83,6 +83,8 @@ pub struct Domain {
     /// Network domain identifier
     #[serde(deserialize_with = "deser_nomad_u32")]
     pub domain: u32,
+    /// dwfgkewopgk
+    pub rpc_style: RpcStyle,
     /// List of connections to other networks
     pub connections: HashSet<String>,
     /// Nomad protocol configuration options

@@ -16,7 +16,8 @@
     "networks": {
       "ethereum": {
         "name": "ethereum",
-        "domain": 6648936,
+      "rpcStyle": "ethereum",
+      "domain": 6648936,
         "connections": ["moonbeam", "evmos"],
         "specs": {
           "chainId": 1,
@@ -42,7 +43,8 @@
       },
       "moonbeam": {
         "name": "moonbeam",
-        "domain": 1650811245,
+      "rpcStyle": "ethereum",
+      "domain": 1650811245,
         "connections": ["ethereum", "evmos"],
         "specs": {
           "chainId": 1284,
@@ -72,7 +74,8 @@
       },
       "evmos": {
         "name": "evmos",
-        "domain": 1702260083,
+      "rpcStyle": "ethereum",
+      "domain": 1702260083,
         "connections": ["ethereum", "moonbeam"],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -109,7 +112,8 @@
       },
       "avail": {
         "name": "avail",
-        "domain": 1702260083,
+      "rpcStyle": "substrate",
+      "domain": 1702260083,
         "connections": ["ethereum"],
         "configuration": {
           "optimisticSeconds": 1800,
@@ -311,7 +315,6 @@
   },
   "agent": {
     "ethereum": {
-      "rpcStyle": "ethereum",
       "db": "db",
       "metrics": 9090,
       "logging": {
@@ -340,7 +343,6 @@
       }
     },
     "moonbeam": {
-      "rpcStyle": "ethereum",
       "db": "db",
       "metrics": 9090,
       "logging": {
@@ -369,7 +371,6 @@
       }
     },
     "evmos": {
-      "rpcStyle": "ethereum",
       "db": "db",
       "metrics": 9090,
       "logging": {
