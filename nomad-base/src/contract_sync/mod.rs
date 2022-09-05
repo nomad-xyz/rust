@@ -158,7 +158,7 @@ where
                 info!(
                     start = start,
                     end = end,
-                    "[Updates]: BLAH indexing block heights {}...{}",
+                    "[Updates]: indexing block heights {}...{}",
                     start,
                     end,
                 );

@@ -140,6 +140,7 @@ impl Decode for AvailExtrinsic {
 }
 
 impl Encode for AvailExtrinsic {
+    #[allow(clippy::vec_init_then_push)]
     fn encode(&self) -> Vec<u8> {
         match self {
             AvailExtrinsic::AvailDataExtrinsic {
