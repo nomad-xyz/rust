@@ -2,6 +2,7 @@
 
 ### Unreleased
 
+- Have both Home/Replica and Home/Replica indexers return `Self::Error`
 - Add `Home` and `HomeIndexer` support for Substrate variants as well as allowing configuration of Substrate objects
 - Add `AttestationSigner` type alias that wraps `EthereumSigner`
 - Add new `ChainCommunicationError` to wrap `nomad_ethereum::EthereumError` and `nomad_substrate::SubstrateError`
