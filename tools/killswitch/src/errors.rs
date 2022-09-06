@@ -14,6 +14,8 @@ pub enum Error {
     MissingRPC(String),
     /// Tx submitter config missing
     MissingTxSubmitter(String),
+    /// Connection manager bad init
+    ConnectionManagerInit(String),
     /// Signer failed to sign
     SignerFailed(String),
     /// `ChainCommunicationError` from tx submission

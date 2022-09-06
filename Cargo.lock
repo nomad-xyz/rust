@@ -2635,6 +2635,7 @@ version = "0.1.0"
 dependencies = [
  "clap 3.2.17",
  "ethers",
+ "futures-util",
  "nomad-base",
  "nomad-core",
  "nomad-xyz-configuration",
