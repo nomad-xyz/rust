@@ -3,11 +3,26 @@ use color_eyre::{eyre::bail, Result};
 use nomad_core::FromSignerConf;
 use nomad_xyz_configuration::agent::SignerConf;
 use subxt::{
+    error::SecretStringError,
     ext::sp_core::Pair,
     ext::sp_runtime::traits::{IdentifyAccount, Verify},
     tx::{PairSigner, Signer},
     Config,
 };
+
+/// Error types for EthereumSigners
+#[derive(Debug, thiserror::Error)]
+pub enum SubstrateSignersError {
+    /// Local signer configuration error
+    #[error("Failed to configure local signer from secret: {0:?}")]
+    LocalSignerConfiguration(SecretStringError),
+}
+
+impl From<SecretStringError> for SubstrateSignersError {
+    fn from(err: SecretStringError) -> Self {
+        SubstrateSignersError::LocalSignerConfiguration(err)
+    }
+}
 
 /// Substrate signer variants
 pub enum SubstrateSigners<T: Config, P: Pair> {
@@ -31,14 +46,12 @@ where
         match conf {
             SignerConf::HexKey(key) => {
                 let formatted_key = format!("0x{}", key.as_ref());
-                let pair = P::from_string(&formatted_key, None).unwrap(); // TODO: remove unwrap
-                tracing::info!("Instantiated tx signer with pubkey: {}", pair.public());
+                let pair = P::from_string(&formatted_key, None)
+                    .map_err(Into::<SubstrateSignersError>::into)?;
 
                 let pair_signer = PairSigner::<T, _>::new(pair);
-                tracing::info!("Tx signer address: {}", pair_signer.address());
-
                 let account_id = pair_signer.account_id();
-                tracing::info!("Tx signer account id: {}", account_id);
+                tracing::info!("Tx signer AccountId: {}", account_id);
 
                 Ok(Self::Local(pair_signer))
             }
