@@ -45,15 +45,16 @@ macro_rules! boxed_indexer {
     ($fn_name:ident, $chain_name:ident, $abi:ident, $trait:path, $($n:ident:$t:ty),*)  => {
         affix::paste! {
             #[doc = "Cast a connection into a non-signing trait object"]
-            pub(crate) async fn $fn_name(conn: nomad_xyz_configuration::Connection, _timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
-                let api = match conn {
+            pub(crate) async fn $fn_name(conn: nomad_xyz_configuration::Connection, timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
+                let client = match conn {
                     nomad_xyz_configuration::Connection::Http(url) =>
                         subxt::OnlineClient::<[<$chain_name Config>]>::from_url(url).await?,
                     nomad_xyz_configuration::Connection::Ws(url) =>
                         subxt::OnlineClient::<[<$chain_name Config>]>::from_url(url).await?,
                 };
 
-                Ok(Box::new($abi::<[<$chain_name Config>]>::new(api.into())))
+                let api = NomadOnlineClient::new(client, timelag);
+                Ok(Box::new($abi::<[<$chain_name Config>]>::new(api)))
             }
         }
     }
@@ -65,13 +66,14 @@ macro_rules! boxed_signing_object {
     ($fn_name:ident, $chain_name:ident, $abi:ident, $trait:path, $($n:ident:$t:ty),*)  => {
         affix::paste! {
             #[doc = "Cast a connection into a signing trait object"]
-            pub(crate) async fn $fn_name(conn: nomad_xyz_configuration::Connection, name: &str, domain: u32, submitter_conf: Option<nomad_xyz_configuration::substrate::TxSubmitterConf>, _timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
-                let api = match conn {
+            pub(crate) async fn $fn_name(conn: nomad_xyz_configuration::Connection, name: &str, domain: u32, submitter_conf: Option<nomad_xyz_configuration::substrate::TxSubmitterConf>, timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
+                let client = match conn {
                     nomad_xyz_configuration::Connection::Http(url) =>
                         subxt::OnlineClient::<[<$chain_name Config>]>::from_url(url).await?,
                     nomad_xyz_configuration::Connection::Ws(url) =>
                         subxt::OnlineClient::<[<$chain_name Config>]>::from_url(url).await?,
                 };
+                let api = NomadOnlineClient::new(client, timelag);
 
                 let signer = if let Some(conf) = submitter_conf {
                     use ::nomad_core::FromSignerConf;
@@ -87,7 +89,7 @@ macro_rules! boxed_signing_object {
                 };
 
                 Ok(Box::new($abi::<[<$chain_name Config>]>::new(
-                    api.into(),
+                    api,
                     std::sync::Arc::new(signer),
                     domain,
                     name,

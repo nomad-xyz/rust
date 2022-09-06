@@ -68,8 +68,16 @@ pub struct Chain {
     ethers: ethers::providers::Provider<ethers::providers::Http>,
 }
 
-boxed_indexer!(make_home_indexer, EthereumHomeIndexer, HomeIndexer,);
-boxed_indexer!(make_replica_indexer, EthereumReplicaIndexer, CommonIndexer,);
+boxed_indexer!(
+    make_home_indexer,
+    EthereumHomeIndexer,
+    HomeIndexer<Error = EthereumError>,
+);
+boxed_indexer!(
+    make_replica_indexer,
+    EthereumReplicaIndexer,
+    CommonIndexer<Error = EthereumError>,
+);
 
 boxed_contract!(
     make_home,

@@ -1,33 +1,76 @@
 use crate::configs::avail::avail::home;
+use crate::SubstrateError;
 use color_eyre::Result;
 use ethers_core::types::Signature;
 use nomad_core::{RawCommittedMessage, SignedUpdate, SignedUpdateWithMeta, Update, UpdateMeta};
-use subxt::{Config, OnlineClient};
+use std::convert::TryInto;
+use subxt::ext::sp_runtime::traits::Header;
+use subxt::{
+    dynamic::Value, ext::scale_value::scale::TypeId, storage::DynamicStorageAddress, Config,
+    OnlineClient,
+};
 
 /// Nomad wrapper around `subxt::OnlineClient`
 #[derive(Clone)]
-pub struct NomadOnlineClient<T: Config>(OnlineClient<T>);
+pub struct NomadOnlineClient<T: Config> {
+    client: OnlineClient<T>,
+    timelag: Option<u8>,
+}
 
 impl<T: Config> std::ops::Deref for NomadOnlineClient<T> {
     type Target = OnlineClient<T>;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.client
     }
 }
 
-impl<T: Config> From<OnlineClient<T>> for NomadOnlineClient<T> {
-    fn from(client: OnlineClient<T>) -> Self {
-        Self(client)
+impl<T: Config> NomadOnlineClient<T>
+where
+    <T as Config>::BlockNumber: TryInto<u32>,
+{
+    /// Instantiate a new NomadOnlineClient
+    pub fn new(client: OnlineClient<T>, timelag: Option<u8>) -> Self {
+        Self { client, timelag }
     }
-}
 
-impl<T: Config> NomadOnlineClient<T> {
+    /// Get most recent block number
+    pub async fn get_block_number(&self) -> Result<u32, SubstrateError> {
+        let header = self.rpc().header(None).await?.unwrap();
+        let u32_header = (*header.number()).try_into();
+
+        if let Ok(h) = u32_header {
+            Ok(h)
+        } else {
+            Err(SubstrateError::CustomError(
+                "Couldn't convert block number to u32".into(),
+            ))
+        }
+    }
+
+    /// Fetch value from storage with built-in timelag
+    pub async fn storage_fetch(
+        &self,
+        address: &DynamicStorageAddress<'_, Value>,
+    ) -> Result<Option<Value<TypeId>>, SubstrateError> {
+        let block_number = self.get_block_number().await?;
+        let final_block_number = self
+            .timelag
+            .map_or(block_number, |lag| block_number - lag as u32);
+
+        let opt_block_hash = self
+            .rpc()
+            .block_hash(Some(final_block_number.into()))
+            .await?;
+
+        Ok(self.storage().fetch(address, opt_block_hash).await?)
+    }
+
     /// Fetch ordered signed updates from the specific `block_number`
     pub async fn fetch_sorted_updates_for_block(
         &self,
         block_number: u32,
-    ) -> Result<Vec<SignedUpdateWithMeta>> {
+    ) -> Result<Vec<SignedUpdateWithMeta>, SubstrateError> {
         // Get hash for block number
         let hash = self
             .rpc()
@@ -77,7 +120,7 @@ impl<T: Config> NomadOnlineClient<T> {
     pub async fn fetch_sorted_messages_for_block(
         &self,
         block_number: u32,
-    ) -> Result<Vec<RawCommittedMessage>> {
+    ) -> Result<Vec<RawCommittedMessage>, SubstrateError> {
         // Get hash for block number
         let hash = self
             .rpc()

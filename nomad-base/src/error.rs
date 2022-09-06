@@ -22,7 +22,7 @@ pub enum ChainCommunicationError {
     SubstrateError(SubstrateError),
     /// Mock error
     #[error("{0}")]
-    MockError(#[from] nomad_test::mocks::MockError),
+    MockError(#[from] nomad_test::MockError),
 }
 
 // Catch ethereum-specific reverts

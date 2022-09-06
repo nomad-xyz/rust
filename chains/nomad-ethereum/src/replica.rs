@@ -62,13 +62,24 @@ impl<R> CommonIndexer for EthereumReplicaIndexer<R>
 where
     R: ethers::providers::Middleware + 'static,
 {
+    type Error = EthereumError;
+
     #[instrument(err, skip(self))]
-    async fn get_block_number(&self) -> Result<u32> {
-        Ok(self.provider.get_block_number().await?.as_u32())
+    async fn get_block_number(&self) -> Result<u32, Self::Error> {
+        Ok(self
+            .provider
+            .get_block_number()
+            .await
+            .map_err(|e| EthereumError::MiddlewareError(e.into()))?
+            .as_u32())
     }
 
     #[instrument(err, skip(self))]
-    async fn fetch_sorted_updates(&self, from: u32, to: u32) -> Result<Vec<SignedUpdateWithMeta>> {
+    async fn fetch_sorted_updates(
+        &self,
+        from: u32,
+        to: u32,
+    ) -> Result<Vec<SignedUpdateWithMeta>, Self::Error> {
         let mut events = self
             .contract
             .update_filter()

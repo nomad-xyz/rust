@@ -52,7 +52,7 @@ boxed_indexer!(
     make_avail_home_indexer,
     Avail,
     SubstrateHomeIndexer,
-    HomeIndexer,
+    HomeIndexer<Error = SubstrateError>,
 );
 
 #[derive(Debug, Clone)]
@@ -98,7 +98,7 @@ pub async fn make_home_indexer(
     conn: nomad_xyz_configuration::Connection,
     name: &str,
     timelag: Option<u8>,
-) -> color_eyre::Result<Box<dyn HomeIndexer>> {
+) -> color_eyre::Result<Box<dyn HomeIndexer<Error = SubstrateError>>> {
     let chain: SubstrateChains = name
         .parse()
         .unwrap_or_else(|_| panic!("Unrecognized chain name: {}", name));

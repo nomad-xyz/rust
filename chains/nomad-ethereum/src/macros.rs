@@ -93,7 +93,7 @@ macro_rules! boxed_indexer {
         let provider = Arc::new(ethers::providers::Provider::new(provider));
         boxed_indexer!(@timelag provider, $($tail)*)
     }};
-    ($name:ident, $abi:ident, $trait:ident, $($n:ident:$t:ty),*)  => {
+    ($name:ident, $abi:ident, $trait:path, $($n:ident:$t:ty),*)  => {
         #[doc = "Cast a contract locator to a live contract handle"]
         pub async fn $name(conn: nomad_xyz_configuration::Connection, locator: &ContractLocator, timelag: Option<u8>, $($n:$t),*) -> color_eyre::Result<Box<dyn $trait>> {
             let b: Box<dyn $trait> = match conn {

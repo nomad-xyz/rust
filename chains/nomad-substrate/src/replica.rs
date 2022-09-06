@@ -49,8 +49,10 @@ where
     T: Config + Send + Sync,
     T::BlockNumber: std::convert::TryInto<u32> + Send + Sync,
 {
+    type Error = SubstrateError;
+
     #[tracing::instrument(err, skip(self))]
-    async fn get_block_number(&self) -> Result<u32> {
+    async fn get_block_number(&self) -> Result<u32, Self::Error> {
         unimplemented!("Substrate replica not yet implemented")
     }
 
@@ -59,7 +61,7 @@ where
         &self,
         _from: u32,
         _to: u32,
-    ) -> Result<Vec<SignedUpdateWithMeta>> {
+    ) -> Result<Vec<SignedUpdateWithMeta>, Self::Error> {
         unimplemented!("Substrate replica not yet implemented")
     }
 }

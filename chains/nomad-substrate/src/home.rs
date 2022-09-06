@@ -1,21 +1,19 @@
 use crate::decodings::{NomadBase, NomadLightMerkleWrapper, NomadState};
-use crate::SubstrateError;
-use crate::{report_tx, utils, NomadOnlineClient, SubstrateSigner};
+use crate::{report_tx, utils, NomadOnlineClient, SubstrateError, SubstrateSigner};
 use async_trait::async_trait;
-use color_eyre::{eyre::eyre, Result};
+use color_eyre::Result;
 use ethers_core::types::{H160, H256, U256};
 use futures::{stream::FuturesOrdered, StreamExt};
-use std::sync::Arc;
-use subxt::ext::scale_value::{self, Primitive, Value};
-use subxt::{ext::sp_runtime::traits::Header, tx::ExtrinsicParams};
-use subxt::{Config, OnlineClient};
-use tracing::info;
-
 use nomad_core::{
     accumulator::{Merkle, NomadLightMerkle},
     Common, CommonIndexer, DoubleUpdate, Home, HomeIndexer, Message, RawCommittedMessage,
     SignedUpdate, SignedUpdateWithMeta, State, TxOutcome, Update,
 };
+use std::{convert::TryInto, sync::Arc};
+use subxt::ext::scale_value::{self, Primitive, Value};
+use subxt::tx::ExtrinsicParams;
+use subxt::Config;
+use tracing::info;
 
 /// Substrate home indexer
 #[derive(Clone)]
@@ -35,9 +33,9 @@ impl<T> std::ops::Deref for SubstrateHomeIndexer<T>
 where
     T: Config,
 {
-    type Target = OnlineClient<T>;
+    type Target = NomadOnlineClient<T>;
     fn deref(&self) -> &Self::Target {
-        self.0.deref()
+        &self.0
     }
 }
 
@@ -56,20 +54,19 @@ where
     T: Config + Send + Sync,
     T::BlockNumber: std::convert::TryInto<u32> + Send + Sync,
 {
-    #[tracing::instrument(err, skip(self))]
-    async fn get_block_number(&self) -> Result<u32> {
-        let header = self.rpc().header(None).await?.unwrap();
-        let u32_header = (*header.number()).try_into();
+    type Error = SubstrateError;
 
-        if let Ok(h) = u32_header {
-            Ok(h)
-        } else {
-            Err(eyre!("Failed to convert block number to u32"))
-        }
+    #[tracing::instrument(err, skip(self))]
+    async fn get_block_number(&self) -> Result<u32, Self::Error> {
+        self.0.get_block_number().await
     }
 
     #[tracing::instrument(err, skip(self))]
-    async fn fetch_sorted_updates(&self, from: u32, to: u32) -> Result<Vec<SignedUpdateWithMeta>> {
+    async fn fetch_sorted_updates(
+        &self,
+        from: u32,
+        to: u32,
+    ) -> Result<Vec<SignedUpdateWithMeta>, Self::Error> {
         let mut futs = FuturesOrdered::new();
         for block_number in from..to {
             futs.push(self.0.fetch_sorted_updates_for_block(block_number))
@@ -95,7 +92,11 @@ where
     T::BlockNumber: std::convert::TryInto<u32> + Send + Sync,
 {
     #[tracing::instrument(err, skip(self))]
-    async fn fetch_sorted_messages(&self, from: u32, to: u32) -> Result<Vec<RawCommittedMessage>> {
+    async fn fetch_sorted_messages(
+        &self,
+        from: u32,
+        to: u32,
+    ) -> Result<Vec<RawCommittedMessage>, <Self as CommonIndexer>::Error> {
         let mut futs = FuturesOrdered::new();
         for block_number in from..to {
             futs.push(self.0.fetch_sorted_messages_for_block(block_number))
@@ -126,6 +127,7 @@ pub struct SubstrateHome<T: Config> {
 impl<T> SubstrateHome<T>
 where
     T: Config,
+    <T as Config>::BlockNumber: TryInto<u32>,
 {
     /// Instantiate a new SubstrateHome object
     pub fn new(
@@ -145,14 +147,14 @@ where
     /// Retrieve the home's base object from chain storage
     pub(crate) async fn base(&self) -> Result<NomadBase, SubstrateError> {
         let base_address = subxt::dynamic::storage_root("Home", "Base");
-        let base_value = self.storage().fetch(&base_address, None).await?.unwrap();
+        let base_value = self.storage_fetch(&base_address).await?.unwrap();
         Ok(scale_value::serde::from_value(base_value)?)
     }
 
     /// Retrieve the home's base object from chain storage
     pub async fn tree(&self) -> Result<NomadLightMerkle, SubstrateError> {
         let tree_address = subxt::dynamic::storage_root("Home", "Tree");
-        let tree_value = self.storage().fetch(&tree_address, None).await?.unwrap();
+        let tree_value = self.storage_fetch(&tree_address).await?.unwrap();
         let merkle_wrapper: NomadLightMerkleWrapper = scale_value::serde::from_value(tree_value)?;
         Ok(merkle_wrapper.into())
     }
@@ -162,9 +164,9 @@ impl<T> std::ops::Deref for SubstrateHome<T>
 where
     T: Config,
 {
-    type Target = OnlineClient<T>;
+    type Target = NomadOnlineClient<T>;
     fn deref(&self) -> &Self::Target {
-        self.api.deref()
+        &self.api
     }
 }
 
@@ -204,6 +206,7 @@ where
     >>::OtherParams: std::default::Default + Send + Sync,
     <T as Config>::Extrinsic: Send + Sync,
     <T as Config>::Hash: Into<H256>,
+    <T as Config>::BlockNumber: TryInto<u32>,
 {
     type Error = SubstrateError;
 
@@ -263,6 +266,7 @@ where
     >>::OtherParams: std::default::Default + Send + Sync,
     <T as Config>::Extrinsic: Send + Sync,
     <T as Config>::Hash: Into<H256>,
+    <T as Config>::BlockNumber: TryInto<u32>,
 {
     fn local_domain(&self) -> u32 {
         self.domain
@@ -273,8 +277,7 @@ where
         let nonce_address =
             subxt::dynamic::storage("Home", "Nonces", vec![Value::u128(destination as u128)]);
         let nonce_value = self
-            .storage()
-            .fetch(&nonce_address, None)
+            .storage_fetch(&nonce_address)
             .await?
             .unwrap_or_else(|| panic!("No nonce for destination {}", destination));
         Ok(scale_value::serde::from_value(nonce_value)?)
@@ -309,7 +312,7 @@ where
     async fn queue_contains(&self, root: H256) -> Result<bool, <Self as Common>::Error> {
         let index_address =
             subxt::dynamic::storage("Home", "RootToIndex", vec![Value::from_bytes(&root)]);
-        let index_value = self.storage().fetch(&index_address, None).await?;
+        let index_value = self.storage_fetch(&index_address).await?;
         Ok(index_value.is_some())
     }
 

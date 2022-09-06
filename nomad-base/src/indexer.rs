@@ -4,6 +4,8 @@ use nomad_core::{CommonIndexer, HomeIndexer, RawCommittedMessage, SignedUpdateWi
 use nomad_test::mocks::MockIndexer;
 use std::{ops::Deref, sync::Arc};
 
+use crate::ChainCommunicationError;
+
 #[derive(Debug, Clone)]
 /// Arc wrapper for HomeVariants enum
 pub struct CommonIndexers(Arc<CommonIndexerVariants>);
@@ -38,11 +40,17 @@ impl From<MockIndexer> for CommonIndexers {
 
 #[async_trait]
 impl CommonIndexer for CommonIndexers {
-    async fn get_block_number(&self) -> Result<u32> {
+    type Error = ChainCommunicationError;
+
+    async fn get_block_number(&self) -> Result<u32, Self::Error> {
         self.deref().get_block_number().await
     }
 
-    async fn fetch_sorted_updates(&self, from: u32, to: u32) -> Result<Vec<SignedUpdateWithMeta>> {
+    async fn fetch_sorted_updates(
+        &self,
+        from: u32,
+        to: u32,
+    ) -> Result<Vec<SignedUpdateWithMeta>, Self::Error> {
         self.deref().fetch_sorted_updates(from, to).await
     }
 }
@@ -51,30 +59,34 @@ impl CommonIndexer for CommonIndexers {
 #[derive(Debug)]
 pub enum CommonIndexerVariants {
     /// Ethereum contract indexer
-    Ethereum(Box<dyn CommonIndexer>),
+    Ethereum(Box<dyn CommonIndexer<Error = nomad_ethereum::EthereumError>>),
     /// Mock indexer
-    Mock(Box<dyn CommonIndexer>),
-    /// Other indexer variant
-    Other(Box<dyn CommonIndexer>),
+    Mock(Box<MockIndexer>),
 }
 
 #[async_trait]
 impl CommonIndexer for CommonIndexerVariants {
-    async fn get_block_number(&self) -> Result<u32> {
+    type Error = ChainCommunicationError;
+
+    async fn get_block_number(&self) -> Result<u32, Self::Error> {
         match self {
-            CommonIndexerVariants::Ethereum(indexer) => indexer.get_block_number().await,
-            CommonIndexerVariants::Mock(indexer) => indexer.get_block_number().await,
-            CommonIndexerVariants::Other(indexer) => indexer.get_block_number().await,
+            CommonIndexerVariants::Ethereum(indexer) => Ok(indexer.get_block_number().await?),
+            CommonIndexerVariants::Mock(indexer) => Ok(indexer.get_block_number().await?),
         }
     }
 
-    async fn fetch_sorted_updates(&self, from: u32, to: u32) -> Result<Vec<SignedUpdateWithMeta>> {
+    async fn fetch_sorted_updates(
+        &self,
+        from: u32,
+        to: u32,
+    ) -> Result<Vec<SignedUpdateWithMeta>, Self::Error> {
         match self {
             CommonIndexerVariants::Ethereum(indexer) => {
-                indexer.fetch_sorted_updates(from, to).await
+                Ok(indexer.fetch_sorted_updates(from, to).await?)
             }
-            CommonIndexerVariants::Mock(indexer) => indexer.fetch_sorted_updates(from, to).await,
-            CommonIndexerVariants::Other(indexer) => indexer.fetch_sorted_updates(from, to).await,
+            CommonIndexerVariants::Mock(indexer) => {
+                Ok(indexer.fetch_sorted_updates(from, to).await?)
+            }
         }
     }
 }
@@ -111,18 +123,28 @@ impl From<MockIndexer> for HomeIndexers {
 
 #[async_trait]
 impl CommonIndexer for HomeIndexers {
-    async fn get_block_number(&self) -> Result<u32> {
+    type Error = ChainCommunicationError;
+
+    async fn get_block_number(&self) -> Result<u32, Self::Error> {
         self.deref().get_block_number().await
     }
 
-    async fn fetch_sorted_updates(&self, from: u32, to: u32) -> Result<Vec<SignedUpdateWithMeta>> {
+    async fn fetch_sorted_updates(
+        &self,
+        from: u32,
+        to: u32,
+    ) -> Result<Vec<SignedUpdateWithMeta>, Self::Error> {
         self.deref().fetch_sorted_updates(from, to).await
     }
 }
 
 #[async_trait]
 impl HomeIndexer for HomeIndexers {
-    async fn fetch_sorted_messages(&self, from: u32, to: u32) -> Result<Vec<RawCommittedMessage>> {
+    async fn fetch_sorted_messages(
+        &self,
+        from: u32,
+        to: u32,
+    ) -> Result<Vec<RawCommittedMessage>, <Self as CommonIndexer>::Error> {
         self.deref().fetch_sorted_messages(from, to).await
     }
 }
@@ -131,41 +153,61 @@ impl HomeIndexer for HomeIndexers {
 #[derive(Debug)]
 pub enum HomeIndexerVariants {
     /// Ethereum contract indexer
-    Ethereum(Box<dyn HomeIndexer>),
+    Ethereum(Box<dyn HomeIndexer<Error = nomad_ethereum::EthereumError>>),
     /// Substrate contract indexer
-    Substrate(Box<dyn HomeIndexer>),
+    Substrate(Box<dyn HomeIndexer<Error = nomad_substrate::SubstrateError>>),
     /// Mock indexer
-    Mock(Box<dyn HomeIndexer>),
+    Mock(Box<MockIndexer>),
 }
 
 #[async_trait]
 impl CommonIndexer for HomeIndexerVariants {
-    async fn get_block_number(&self) -> Result<u32> {
+    type Error = ChainCommunicationError;
+
+    async fn get_block_number(&self) -> Result<u32, Self::Error> {
         match self {
-            HomeIndexerVariants::Ethereum(indexer) => indexer.get_block_number().await,
-            HomeIndexerVariants::Substrate(indexer) => indexer.get_block_number().await,
-            HomeIndexerVariants::Mock(indexer) => indexer.get_block_number().await,
+            HomeIndexerVariants::Ethereum(indexer) => Ok(indexer.get_block_number().await?),
+            HomeIndexerVariants::Substrate(indexer) => Ok(indexer.get_block_number().await?),
+            HomeIndexerVariants::Mock(indexer) => Ok(indexer.get_block_number().await?),
         }
     }
 
-    async fn fetch_sorted_updates(&self, from: u32, to: u32) -> Result<Vec<SignedUpdateWithMeta>> {
+    async fn fetch_sorted_updates(
+        &self,
+        from: u32,
+        to: u32,
+    ) -> Result<Vec<SignedUpdateWithMeta>, Self::Error> {
         match self {
-            HomeIndexerVariants::Ethereum(indexer) => indexer.fetch_sorted_updates(from, to).await,
-            HomeIndexerVariants::Substrate(indexer) => indexer.fetch_sorted_updates(from, to).await,
-            HomeIndexerVariants::Mock(indexer) => indexer.fetch_sorted_updates(from, to).await,
+            HomeIndexerVariants::Ethereum(indexer) => {
+                Ok(indexer.fetch_sorted_updates(from, to).await?)
+            }
+            HomeIndexerVariants::Substrate(indexer) => {
+                Ok(indexer.fetch_sorted_updates(from, to).await?)
+            }
+            HomeIndexerVariants::Mock(indexer) => {
+                Ok(indexer.fetch_sorted_updates(from, to).await?)
+            }
         }
     }
 }
 
 #[async_trait]
 impl HomeIndexer for HomeIndexerVariants {
-    async fn fetch_sorted_messages(&self, from: u32, to: u32) -> Result<Vec<RawCommittedMessage>> {
+    async fn fetch_sorted_messages(
+        &self,
+        from: u32,
+        to: u32,
+    ) -> Result<Vec<RawCommittedMessage>, <Self as CommonIndexer>::Error> {
         match self {
-            HomeIndexerVariants::Ethereum(indexer) => indexer.fetch_sorted_messages(from, to).await,
-            HomeIndexerVariants::Substrate(indexer) => {
-                indexer.fetch_sorted_messages(from, to).await
+            HomeIndexerVariants::Ethereum(indexer) => {
+                Ok(indexer.fetch_sorted_messages(from, to).await?)
             }
-            HomeIndexerVariants::Mock(indexer) => indexer.fetch_sorted_messages(from, to).await,
+            HomeIndexerVariants::Substrate(indexer) => {
+                Ok(indexer.fetch_sorted_messages(from, to).await?)
+            }
+            HomeIndexerVariants::Mock(indexer) => {
+                Ok(indexer.fetch_sorted_messages(from, to).await?)
+            }
         }
     }
 }
