@@ -58,14 +58,14 @@ enum ExitCode {
 
 /// Print `Output` to stdout as json
 fn report(message: Message, pretty: bool) {
-    let jsonify = if pretty {
-        serde_json::to_string_pretty
-    } else {
-        serde_json::to_string
-    };
     let command = env::args().collect::<Vec<_>>().join(" ");
     let output = Output { command, message };
-    let json = jsonify(&output).expect("Serialization error. Should never happen");
+    let json = if pretty {
+        serde_json::to_string_pretty(&output)
+    } else {
+        serde_json::to_string(&output)
+    }
+    .expect("Serialization error. Should never happen");
     stdout()
         .lock()
         .write_all(&format!("{}\n", json).into_bytes())
