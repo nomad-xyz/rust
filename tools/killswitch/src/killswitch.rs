@@ -1,6 +1,6 @@
 #![allow(dead_code)] // TODO: Remove me
 
-use crate::{errors::Error, settings::Settings, Args, Result, Message};
+use crate::{errors::Error, settings::Settings, Args, Result};
 use futures_util::future::join_all;
 use nomad_base::{ChainSetup, ChainSetupType, ConnectionManagers, Homes};
 use nomad_core::SignedFailureNotification;
@@ -36,6 +36,7 @@ impl ChannelKiller {
         unimplemented!()
     }
 
+    /// Kill channel
     fn kill(&self) -> Result<()> {
         unimplemented!()
     }
