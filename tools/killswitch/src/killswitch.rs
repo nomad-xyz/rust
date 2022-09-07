@@ -141,9 +141,9 @@ impl KillSwitch {
             Self::make_inbound_channels(&destination_network, all)
         };
         if channels.is_empty() {
-            return Err(Error::NoNetworks(format!(
-                "No available networks in config to disconnect"
-            )));
+            return Err(Error::NoNetworks(
+                "No available networks in config to disconnect".into(),
+            ));
         }
 
         let futs = channels.into_iter().map(|channel| async {
