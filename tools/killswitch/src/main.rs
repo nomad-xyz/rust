@@ -4,6 +4,7 @@ mod output;
 mod settings;
 
 use crate::killswitch::KillSwitch;
+use crate::output::Message;
 use crate::{errors::Error, output::Output, settings::Settings};
 use clap::{ArgGroup, Parser, ValueEnum};
 use std::{
@@ -50,47 +51,47 @@ struct Args {
 }
 
 /// Exit codes as found in <sysexits.h>
-enum ExitCodes {
+enum ExitCode {
     Ok = 0,
     BadConfig = 78,
+}
+
+/// Print `Output` to stdout as json
+fn report(message: Message, pretty: bool) {
+    let jsonify = if pretty {
+        serde_json::to_string_pretty
+    } else {
+        serde_json::to_string
+    };
+    let command = env::args().collect::<Vec<_>>().join(" ");
+    let output = Output { command, message };
+    let json = jsonify(&output).expect("Serialization error. Should never happen");
+    stdout()
+        .lock()
+        .write_all(&format!("{}\n", json).into_bytes())
+        .expect("Write to stdout error. Should never happen");
 }
 
 /// KillSwitch entry point
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
-    let cmd = env::args().collect::<Vec<_>>().join(" ");
     let args = Args::parse();
-    let jsonify = if args.pretty {
-        serde_json::to_string_pretty
-    } else {
-        serde_json::to_string
-    };
+    let pretty = args.pretty;
 
     let settings = Settings::new().await;
-
     if let Err(error) = settings {
-        let output = Output {
-            command: cmd,
-            message: error.into(),
-        };
-        let json = jsonify(&output).expect("Serialization error. Should never happen");
-        stdout()
-            .lock()
-            .write_all(&format!("{}\n", json).into_bytes())
-            .expect("Write to stdout error. Should never happen");
-        exit(ExitCodes::BadConfig as i32)
+        report(error.into(), pretty);
+        exit(ExitCode::BadConfig as i32)
     }
 
     let killswitch = KillSwitch::new(args, settings.unwrap()).await;
-
     if let Err(error) = killswitch {
-        // print output bail
-        unimplemented!()
+        report(error.into(), pretty);
+        exit(ExitCode::BadConfig as i32)
     }
 
-    killswitch.unwrap().run().await;
+    // killswitch.unwrap().run().await;
+    // Report
 
-    // Produce report
-
-    exit(ExitCodes::Ok as i32)
+    exit(ExitCode::Ok as i32)
 }

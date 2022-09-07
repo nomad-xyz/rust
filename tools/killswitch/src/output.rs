@@ -8,7 +8,7 @@ pub(crate) struct Output {
     /// The original command `killswitch` was run with
     pub command: String,
     /// The success / failure message
-    pub message: Option<Message>,
+    pub message: Message,
 }
 
 /// A wrapper for success / failure messages
@@ -20,9 +20,9 @@ pub(crate) enum Message {
     // other ...
 }
 
-impl From<Error> for Option<Message> {
+impl From<Error> for Message {
     /// Convert `KillSwitchError` to `Message`
     fn from(error: Error) -> Self {
-        Some(Message::ErrorMessage(format!("{}", error)))
+        Message::ErrorMessage(format!("{}", error))
     }
 }
