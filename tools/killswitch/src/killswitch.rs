@@ -1,6 +1,6 @@
 #![allow(dead_code)] // TODO: Remove me
 
-use crate::{errors::Error, settings::Settings, Args, Result};
+use crate::{errors::Error, settings::Settings, Args, Result, Message};
 use futures_util::future::join_all;
 use nomad_base::{ChainSetup, ChainSetupType, ConnectionManagers, Homes};
 use nomad_core::SignedFailureNotification;
@@ -28,6 +28,17 @@ struct ChannelKiller {
     home_contract: Result<Homes>,
     /// Connection manager or encountered error
     connection_manager: Result<ConnectionManagers>,
+}
+
+impl ChannelKiller {
+    /// Create a `SignedFailureNotification`
+    async fn create_signed_failure(&self) -> Result<SignedFailureNotification> {
+        unimplemented!()
+    }
+
+    fn kill(&self) -> Result<()> {
+        unimplemented!()
+    }
 }
 
 impl KillSwitch {
@@ -162,11 +173,6 @@ impl KillSwitch {
 
     /// Run `KillSwitch` against configuration
     pub(crate) async fn run(&self) {
-        unimplemented!()
-    }
-
-    /// Create a `SignedFailureNotification`
-    async fn create_signed_failure(&self) -> Result<SignedFailureNotification> {
         unimplemented!()
     }
 }
