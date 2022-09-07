@@ -165,8 +165,6 @@ where
 
                 let sorted_updates = indexer.fetch_sorted_updates(start, end).await?;
 
-                info!("Indexed block heights");
-
                 // If no updates found, update last seen block and next height
                 // and continue
                 if sorted_updates.is_empty() {

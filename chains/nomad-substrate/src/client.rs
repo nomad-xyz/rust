@@ -39,13 +39,8 @@ where
         let header = self.rpc().header(None).await?.unwrap();
         let u32_header = (*header.number()).try_into();
 
-        if let Ok(h) = u32_header {
-            Ok(h)
-        } else {
-            Err(SubstrateError::CustomError(
-                "Couldn't convert block number to u32".into(),
-            ))
-        }
+        u32_header
+            .map_err(|_| SubstrateError::CustomError("Couldn't convert block number to u32".into()))
     }
 
     /// Fetch value from storage with built-in timelag
