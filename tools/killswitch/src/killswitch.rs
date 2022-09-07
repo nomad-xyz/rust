@@ -8,23 +8,27 @@ use nomad_xyz_configuration::AgentSecrets;
 use std::collections::{HashMap, HashSet};
 
 /// Main `KillSwitch` struct
-#[derive(Debug)]
 pub(crate) struct KillSwitch {
-    /// A vector of all channels we intend to kill
-    channels: Vec<Channel>,
+    /// A vector of all `ChannelKiller`
+    channel_killers: Vec<ChannelKiller>,
 }
 
-/// The set of origin->destination networks and contracts
-#[derive(Debug)]
+/// The set of origin->destination networks
 struct Channel {
     /// Origin network
     home: String,
     /// Destination network
     replica: String,
+}
+
+/// The channel and contracts required, or errors encountered
+struct ChannelKiller {
+    /// The channel we want to kill
+    channel: Channel,
     /// Home contract or encountered error
-    home_contract: Option<Result<Homes>>,
+    home_contract: Result<Homes>,
     /// Connection manager or encountered error
-    connection_manager: Option<Result<ConnectionManagers>>,
+    connection_manager: Result<ConnectionManagers>,
 }
 
 impl KillSwitch {
@@ -39,8 +43,6 @@ impl KillSwitch {
                 domain.connections.iter().map(|replica| Channel {
                     home: home.clone(),
                     replica: replica.clone(),
-                    home_contract: None,
-                    connection_manager: None,
                 })
             })
             .collect()
@@ -148,16 +150,15 @@ impl KillSwitch {
         let futs = channels.into_iter().map(|channel| async {
             let home_contract = Self::make_home(&channel, &settings).await;
             let connection_manager = Self::make_connection_manager(&channel, &settings).await;
-            Channel {
-                home: channel.home,
-                replica: channel.replica,
-                home_contract: Some(home_contract),
-                connection_manager: Some(connection_manager),
+            ChannelKiller {
+                channel,
+                home_contract,
+                connection_manager,
             }
         });
-        let channels = join_all(futs).await.into_iter().collect::<Vec<_>>();
+        let channel_killers = join_all(futs).await.into_iter().collect::<Vec<_>>();
 
-        Ok(Self { channels })
+        Ok(Self { channel_killers })
     }
 
     /// Run `KillSwitch` against configuration
