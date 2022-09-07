@@ -2,6 +2,9 @@
 
 ### Unreleased
 
+- fix: SignerConf should not Display or Debug secrets
+- add tests for SignerConf to ensure it does not Display or Debug secrets
+
 ### v1.0.0-rc.1
 
 - feature: add additional config called `configs/testMultiVm.json` which has outbound connections to other chains but no inbound connections (no substrate replica support)
