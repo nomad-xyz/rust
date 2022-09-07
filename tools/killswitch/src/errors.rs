@@ -7,9 +7,7 @@ pub enum Error {
     /// No configuration found
     MissingConfig(String),
     /// Required network not found
-    MissingNetwork(String),
-    /// Required replica not found
-    MissingReplicas(String),
+    NoNetworks(String),
     /// RPC config missing
     MissingRPC(String),
     /// Tx submitter config missing
@@ -28,8 +26,7 @@ impl Display for Error {
         use Error::*;
         match self {
             MissingConfig(msg) => write!(f, "MissingConfig: {}", msg),
-            MissingNetwork(msg) => write!(f, "MissingNetwork: {}", msg),
-            MissingReplicas(msg) => write!(f, "MissingReplicas: {}", msg),
+            NoNetworks(msg) => write!(f, "MissingNetwork: {}", msg),
             _ => unimplemented!(),
         }
     }

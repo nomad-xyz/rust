@@ -81,10 +81,16 @@ async fn main() {
         exit(ExitCodes::BadConfig as i32)
     }
 
-    let _killswitch = KillSwitch::new(args, settings.unwrap()).await;
+    let killswitch = KillSwitch::new(args, settings.unwrap()).await;
 
-    // setup killswitch
-    // run killswitch
+    if let Err(error) = killswitch {
+        // print output bail
+        unimplemented!()
+    }
+
+    killswitch.unwrap().run().await;
+
+    // Produce report
 
     exit(ExitCodes::Ok as i32)
 }
