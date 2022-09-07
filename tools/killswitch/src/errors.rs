@@ -1,3 +1,5 @@
+#![allow(dead_code)] // TODO: Remove me
+
 use nomad_core::ChainCommunicationError;
 use std::fmt::Display;
 

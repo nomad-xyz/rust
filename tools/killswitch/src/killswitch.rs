@@ -3,9 +3,8 @@
 use crate::{errors::Error, settings::Settings, Args, Result};
 use futures_util::future::join_all;
 use nomad_base::{ChainSetup, ChainSetupType, ConnectionManagers, Homes};
-use nomad_core::{ConnectionManager, SignedFailureNotification};
+use nomad_core::SignedFailureNotification;
 use nomad_xyz_configuration::AgentSecrets;
-use std::collections::{HashMap, HashSet};
 
 /// Main `KillSwitch` struct
 pub(crate) struct KillSwitch {
