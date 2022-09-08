@@ -1,5 +1,3 @@
-#![allow(dead_code)] // TODO: Remove me
-
 use crate::{errors::Error, settings::Settings, Args, Result};
 use futures_util::future::join_all;
 use nomad_base::{ChainSetup, ChainSetupType, ConnectionManagers, Homes};

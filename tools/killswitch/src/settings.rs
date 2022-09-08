@@ -1,5 +1,3 @@
-#![allow(dead_code)] // TODO: Remove me
-
 use crate::errors::Error;
 use nomad_xyz_configuration::{agent::SignerConf, ChainConf, NomadConfig, TxSubmitterConf};
 use std::{collections::HashMap, env, result::Result};
