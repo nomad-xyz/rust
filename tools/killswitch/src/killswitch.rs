@@ -151,7 +151,7 @@ impl KillSwitch {
             .map_err(|report| Error::AttestationSignerInit(format!("{:#}", report)))
     }
 
-    /// Build a new `KillSwitch`, configuring best effort and storing, not returning errors
+    /// Build a new `KillSwitch`, configuring best effort and storing, not returning most errors
     pub(crate) async fn new(args: Args, settings: Settings) -> Result<Self> {
         let channels = if args.all {
             Self::make_channels(&settings)
@@ -163,6 +163,7 @@ impl KillSwitch {
             Self::make_inbound_channels(&destination_network, all)
         };
         if channels.is_empty() {
+            // The one error we bail on, since there's nothing else left to do
             return Err(Error::NoNetworks);
         }
 
