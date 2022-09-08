@@ -43,22 +43,22 @@ impl ChannelKiller {
             .updater()
             .await
             .map_err(Error::UpdaterAddress)?;
-        Ok(FailureNotification {
+        FailureNotification {
             home_domain: home_contract.local_domain(),
             updater: updater.into(),
         }
         .sign_with(&signer)
         .await
-        .map_err(Error::AttestationSignerFailed)?)
+        .map_err(Error::AttestationSignerFailed)
     }
 
     /// Kill channel
     async fn kill(&mut self, signed_failure: &SignedFailureNotification) -> Result<TxOutcome> {
         let connection_manager = self.connection_manager.take().unwrap()?;
-        Ok(connection_manager
+        connection_manager
             .unenroll_replica(signed_failure)
             .await
-            .map_err(Error::UnenrollmentFailed)?)
+            .map_err(Error::UnenrollmentFailed)
     }
 }
 
