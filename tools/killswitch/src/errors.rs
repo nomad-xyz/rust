@@ -3,8 +3,9 @@
 use nomad_core::ChainCommunicationError;
 use std::fmt::Display;
 
+// TODO: Use thiserror derive messages?
 /// `Error` for KillSwitch
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Clone, thiserror::Error)]
 pub enum Error {
     /// No configuration found
     MissingConfig(String),
@@ -18,8 +19,8 @@ pub enum Error {
     ConnectionManagerInit(String),
     /// Signer failed to sign
     SignerFailed(String),
-    /// `ChainCommunicationError` from tx submission
-    ChainCommunicationError(#[from] ChainCommunicationError),
+    // /// `ChainCommunicationError` from tx submission
+    // ChainCommunicationError(#[from] ChainCommunicationError),
 }
 
 impl Display for Error {

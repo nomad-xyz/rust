@@ -2,8 +2,13 @@
 
 use crate::{errors::Error, settings::Settings, Args, Result};
 use futures_util::future::join_all;
+use futures_util::FutureExt;
 use nomad_base::{ChainSetup, ChainSetupType, ConnectionManagers, Homes};
-use nomad_core::SignedFailureNotification;
+use nomad_core::{
+    Common, ConnectionManager, FailureNotification, Home, SignedFailureNotification, Signers,
+    TxOutcome,
+};
+use nomad_xyz_configuration::agent::SignerConf;
 use nomad_xyz_configuration::AgentSecrets;
 
 /// Main `KillSwitch` struct
@@ -28,17 +33,48 @@ struct ChannelKiller {
     home_contract: Result<Homes>,
     /// Connection manager or encountered error
     connection_manager: Result<ConnectionManagers>,
+    /// Attestation signer or encountered error
+    attestation_signer: Result<Signers>,
 }
 
 impl ChannelKiller {
     /// Create a `SignedFailureNotification`
     async fn create_signed_failure(&self) -> Result<SignedFailureNotification> {
-        unimplemented!()
+        let home_contract = self.home_contract.as_ref().map_err(Clone::clone)?;
+        let signer = self.attestation_signer.as_ref().map_err(Clone::clone)?;
+        let updater = home_contract.updater().await.map_err(|e| {
+            Error::ConnectionManagerInit(format!(
+                // TODO: Change error
+                "XXXX",
+            ))
+        })?;
+        FailureNotification {
+            home_domain: home_contract.local_domain(),
+            updater: updater.into(),
+        }
+        .sign_with(signer)
+        .await
+        .map_err(|error| {
+            Error::ConnectionManagerInit(format!(
+                // TODO: Change error
+                "XXXX",
+            ))
+        })
     }
 
     /// Kill channel
-    fn kill(&self) -> Result<()> {
-        unimplemented!()
+    async fn kill(&self) -> Result<TxOutcome> {
+        let connection_manager = self.connection_manager.as_ref().map_err(Clone::clone)?;
+        let signed_failure = self.create_signed_failure().await?;
+        connection_manager
+            .unenroll_replica(&signed_failure)
+            .await
+            .map_err(|error| {
+                Error::ConnectionManagerInit(format!(
+                    // TODO: Change error
+                    "XXXX",
+                ))
+            })
     }
 }
 
@@ -141,6 +177,26 @@ impl KillSwitch {
             })
     }
 
+    async fn make_signer(channel: &Channel, settings: &Settings) -> Result<Signers> {
+        let config = settings
+            .attestation_signers
+            .get(&channel.home)
+            .ok_or_else(|| {
+                Error::ConnectionManagerInit(format!(
+                    // TODO: Change error
+                    "XXXX",
+                ))
+            })?;
+        Signers::try_from_signer_conf(config)
+            .await
+            .map_err(|report| {
+                Error::ConnectionManagerInit(format!(
+                    // TODO: Change error
+                    "XXXX",
+                ))
+            })
+    }
+
     /// Build a new `KillSwitch`, configuring best effort and storing, not returning errors
     pub(crate) async fn new(args: Args, settings: Settings) -> Result<Self> {
         let channels = if args.all {
@@ -161,10 +217,12 @@ impl KillSwitch {
         let futs = channels.into_iter().map(|channel| async {
             let home_contract = Self::make_home(&channel, &settings).await;
             let connection_manager = Self::make_connection_manager(&channel, &settings).await;
+            let attestation_signer = Self::make_signer(&channel, &settings).await;
             ChannelKiller {
                 channel,
                 home_contract,
                 connection_manager,
+                attestation_signer,
             }
         });
         let channel_killers = join_all(futs).await.into_iter().collect::<Vec<_>>();
