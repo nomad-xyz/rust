@@ -14,7 +14,7 @@ pub(crate) struct KillSwitch {
 }
 
 /// The set of origin->destination networks
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 struct Channel {
     /// Origin network
     home: String,
@@ -196,8 +196,9 @@ impl KillSwitch {
                 (killer.channel.clone(), futs)
             })
             .collect::<Vec<_>>();
-        let _ = join_all(futs).await.into_iter().collect::<Vec<_>>();
+        let results = join_all(futs).await.into_iter().collect::<Vec<_>>();
 
+        println!("{:?}", results);
         // Build results object
     }
 }
