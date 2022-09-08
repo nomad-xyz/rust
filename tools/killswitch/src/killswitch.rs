@@ -18,6 +18,7 @@ pub(crate) struct KillSwitch {
 }
 
 /// The set of origin->destination networks
+#[derive(Clone)]
 struct Channel {
     /// Origin network
     home: String,
@@ -63,11 +64,10 @@ impl ChannelKiller {
     }
 
     /// Kill channel
-    async fn kill(&self) -> Result<TxOutcome> {
+    async fn kill(&self, signed_failure: &SignedFailureNotification) -> Result<TxOutcome> {
         let connection_manager = self.connection_manager.as_ref().map_err(Clone::clone)?;
-        let signed_failure = self.create_signed_failure().await?;
         connection_manager
-            .unenroll_replica(&signed_failure)
+            .unenroll_replica(signed_failure)
             .await
             .map_err(|error| {
                 Error::ConnectionManagerInit(format!(
@@ -232,6 +232,20 @@ impl KillSwitch {
 
     /// Run `KillSwitch` against configuration
     pub(crate) async fn run(&self) {
-        unimplemented!()
+        let futs = self
+            .channel_killers
+            .iter()
+            .map(|killer| async {
+                let futs = async {
+                    let signed_failure = killer.create_signed_failure().await?;
+                    killer.kill(&signed_failure).await
+                }
+                .await;
+                (killer.channel.clone(), futs)
+            })
+            .collect::<Vec<_>>();
+        let _ = join_all(futs).await.into_iter().collect::<Vec<_>>();
+
+        // Build results object
     }
 }
