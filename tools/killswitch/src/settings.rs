@@ -22,17 +22,14 @@ impl Settings {
     pub(crate) async fn new() -> Result<Self, Error> {
         // Get config
         let config = if let Ok(config_url) = env::var("CONFIG_URL") {
-            NomadConfig::fetch(&config_url).await.map_err(|_| {
-                Error::MissingConfig(format!("Unable to load config from url {}", config_url))
-            })
+            NomadConfig::fetch(&config_url)
+                .await
+                .map_err(|_| Error::BadConfigVar(config_url.clone()))
         } else if let Ok(config_path) = env::var("CONFIG_PATH") {
-            NomadConfig::from_file(&config_path).map_err(|_| {
-                Error::MissingConfig(format!("Unable to load config from path {}", config_path))
-            })
+            NomadConfig::from_file(&config_path)
+                .map_err(|_| Error::BadConfigVar(config_path.clone()))
         } else {
-            Err(Error::MissingConfig(
-                "No configuration found. Set CONFIG_URL or CONFIG_PATH environment variable".into(),
-            ))
+            Err(Error::NoConfigVar)
         };
         let config = config?;
 

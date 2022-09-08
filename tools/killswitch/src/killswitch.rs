@@ -2,13 +2,11 @@
 
 use crate::{errors::Error, settings::Settings, Args, Result};
 use futures_util::future::join_all;
-use futures_util::FutureExt;
 use nomad_base::{ChainSetup, ChainSetupType, ConnectionManagers, Homes};
 use nomad_core::{
     Common, ConnectionManager, FailureNotification, Home, SignedFailureNotification, Signers,
     TxOutcome,
 };
-use nomad_xyz_configuration::agent::SignerConf;
 use nomad_xyz_configuration::AgentSecrets;
 
 /// Main `KillSwitch` struct
@@ -43,38 +41,26 @@ impl ChannelKiller {
     async fn create_signed_failure(&mut self) -> Result<SignedFailureNotification> {
         let home_contract = self.home_contract.take().unwrap()?;
         let signer = self.attestation_signer.take().unwrap()?;
-        let updater = home_contract.updater().await.map_err(|e| {
-            Error::ConnectionManagerInit(format!(
-                // TODO: Change error
-                "XXXX",
-            ))
-        })?;
-        FailureNotification {
+        let updater = home_contract
+            .updater()
+            .await
+            .map_err(Error::UpdaterAddress)?;
+        Ok(FailureNotification {
             home_domain: home_contract.local_domain(),
             updater: updater.into(),
         }
         .sign_with(&signer)
         .await
-        .map_err(|error| {
-            Error::ConnectionManagerInit(format!(
-                // TODO: Change error
-                "XXXX",
-            ))
-        })
+        .map_err(Error::AttestationSignerFailed)?)
     }
 
     /// Kill channel
     async fn kill(&mut self, signed_failure: &SignedFailureNotification) -> Result<TxOutcome> {
         let connection_manager = self.connection_manager.take().unwrap()?;
-        connection_manager
+        Ok(connection_manager
             .unenroll_replica(signed_failure)
             .await
-            .map_err(|error| {
-                Error::ConnectionManagerInit(format!(
-                    // TODO: Change error
-                    "XXXX",
-                ))
-            })
+            .map_err(Error::UnenrollmentFailed)?)
     }
 }
 
@@ -107,10 +93,7 @@ impl KillSwitch {
         settings: &Settings,
     ) -> Result<ChainSetup> {
         if settings.rpcs.get(network).is_none() {
-            return Err(Error::MissingRPC(format!(
-                "No rpc config found for {}",
-                network
-            )));
+            return Err(Error::MissingRPC(network.clone()));
         }
         // We just need the rpc here
         let secrets = AgentSecrets {
@@ -131,21 +114,14 @@ impl KillSwitch {
             home_network: &channel.home,
         };
         let chain_setup = Self::make_chain_setup(&channel.home, setup_type, settings)?;
-        let submitter_config = settings.tx_submitters.get(&channel.home).ok_or_else(|| {
-            Error::MissingTxSubmitter(format!(
-                "No tx submitter config found for {}",
-                &channel.home
-            ))
-        })?;
+        let submitter_config = settings
+            .tx_submitters
+            .get(&channel.home)
+            .ok_or_else(|| Error::MissingTxSubmitterConf(channel.home.clone()))?;
         chain_setup
             .try_into_home(Some(submitter_config.clone()), None, None)
             .await
-            .map_err(|report| {
-                Error::ConnectionManagerInit(format!(
-                    "Connection manager init failed: {:?}",
-                    report
-                ))
-            })
+            .map_err(|report| Error::HomeInit(format!("{:#}", report)))
     }
 
     /// Make `ConnectionManagers` or return error
@@ -160,41 +136,21 @@ impl KillSwitch {
         let submitter_config = settings
             .tx_submitters
             .get(&channel.replica)
-            .ok_or_else(|| {
-                Error::MissingTxSubmitter(format!(
-                    "No tx submitter config found for {}",
-                    &channel.replica
-                ))
-            })?;
+            .ok_or_else(|| Error::MissingTxSubmitterConf(channel.replica.clone()))?;
         chain_setup
             .try_into_connection_manager(Some(submitter_config.clone()), None)
             .await
-            .map_err(|report| {
-                Error::ConnectionManagerInit(format!(
-                    "Connection manager init failed: {:?}",
-                    report
-                ))
-            })
+            .map_err(|report| Error::ConnectionManagerInit(format!("{:#}", report)))
     }
 
     async fn make_signer(channel: &Channel, settings: &Settings) -> Result<Signers> {
         let config = settings
             .attestation_signers
             .get(&channel.home)
-            .ok_or_else(|| {
-                Error::ConnectionManagerInit(format!(
-                    // TODO: Change error
-                    "XXXX",
-                ))
-            })?;
+            .ok_or_else(|| Error::MissingAttestationSignerConf(channel.home.clone()))?;
         Signers::try_from_signer_conf(config)
             .await
-            .map_err(|report| {
-                Error::ConnectionManagerInit(format!(
-                    // TODO: Change error
-                    "XXXX",
-                ))
-            })
+            .map_err(|report| Error::AttestationSignerInit(format!("{:#}", report)))
     }
 
     /// Build a new `KillSwitch`, configuring best effort and storing, not returning errors
@@ -209,9 +165,7 @@ impl KillSwitch {
             Self::make_inbound_channels(&destination_network, all)
         };
         if channels.is_empty() {
-            return Err(Error::NoNetworks(
-                "No available networks in config to disconnect".into(),
-            ));
+            return Err(Error::NoNetworks);
         }
 
         let futs = channels.into_iter().map(|channel| async {
