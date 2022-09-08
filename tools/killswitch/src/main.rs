@@ -90,7 +90,7 @@ async fn main() {
         exit(ExitCode::BadConfig as i32)
     }
 
-    // killswitch.unwrap().run().await;
+    let _ = killswitch.unwrap().run().await;
     // Report
 
     exit(ExitCode::Ok as i32)

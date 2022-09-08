@@ -31,18 +31,18 @@ struct ChannelKiller {
     /// The channel we want to kill
     channel: Channel,
     /// Home contract or encountered error
-    home_contract: Result<Homes>,
+    home_contract: Option<Result<Homes>>,
     /// Connection manager or encountered error
-    connection_manager: Result<ConnectionManagers>,
+    connection_manager: Option<Result<ConnectionManagers>>,
     /// Attestation signer or encountered error
-    attestation_signer: Result<Signers>,
+    attestation_signer: Option<Result<Signers>>,
 }
 
 impl ChannelKiller {
     /// Create a `SignedFailureNotification`
-    async fn create_signed_failure(&self) -> Result<SignedFailureNotification> {
-        let home_contract = self.home_contract.as_ref().map_err(Clone::clone)?;
-        let signer = self.attestation_signer.as_ref().map_err(Clone::clone)?;
+    async fn create_signed_failure(&mut self) -> Result<SignedFailureNotification> {
+        let home_contract = self.home_contract.take().unwrap()?;
+        let signer = self.attestation_signer.take().unwrap()?;
         let updater = home_contract.updater().await.map_err(|e| {
             Error::ConnectionManagerInit(format!(
                 // TODO: Change error
@@ -53,7 +53,7 @@ impl ChannelKiller {
             home_domain: home_contract.local_domain(),
             updater: updater.into(),
         }
-        .sign_with(signer)
+        .sign_with(&signer)
         .await
         .map_err(|error| {
             Error::ConnectionManagerInit(format!(
@@ -64,8 +64,8 @@ impl ChannelKiller {
     }
 
     /// Kill channel
-    async fn kill(&self, signed_failure: &SignedFailureNotification) -> Result<TxOutcome> {
-        let connection_manager = self.connection_manager.as_ref().map_err(Clone::clone)?;
+    async fn kill(&mut self, signed_failure: &SignedFailureNotification) -> Result<TxOutcome> {
+        let connection_manager = self.connection_manager.take().unwrap()?;
         connection_manager
             .unenroll_replica(signed_failure)
             .await
@@ -220,9 +220,9 @@ impl KillSwitch {
             let attestation_signer = Self::make_signer(&channel, &settings).await;
             ChannelKiller {
                 channel,
-                home_contract,
-                connection_manager,
-                attestation_signer,
+                home_contract: Some(home_contract),
+                connection_manager: Some(connection_manager),
+                attestation_signer: Some(attestation_signer),
             }
         });
         let channel_killers = join_all(futs).await.into_iter().collect::<Vec<_>>();
@@ -231,10 +231,10 @@ impl KillSwitch {
     }
 
     /// Run `KillSwitch` against configuration
-    pub(crate) async fn run(&self) {
+    pub(crate) async fn run(&mut self) {
         let futs = self
             .channel_killers
-            .iter()
+            .iter_mut()
             .map(|killer| async {
                 let futs = async {
                     let signed_failure = killer.create_signed_failure().await?;
