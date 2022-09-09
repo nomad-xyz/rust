@@ -246,7 +246,7 @@ impl KillSwitch {
             })
             .collect::<Vec<_>>();
 
-        let results = join_all(futs).await.into_iter().collect::<Vec<_>>();
+        let results = join_all(futs).await;
 
         let (mut _failed, mut _success): (Vec<_>, Vec<_>) =
             results.into_iter().partition(|(_, result)| result.is_err());

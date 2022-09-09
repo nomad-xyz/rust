@@ -96,12 +96,12 @@ async fn main() {
     if let Some(errors) = errors {
         // Stream these blocking errors before running transactions
         // so users can be updated as fast as possible
-        report(errors.into(), pretty);
+        report(errors, pretty);
     }
 
     let results = killswitch.run().await;
     // Give users final results
-    report(results.into(), pretty);
+    report(results, pretty);
 
     exit(ExitCode::Ok as i32)
 }
