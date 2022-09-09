@@ -1,7 +1,7 @@
 use crate::{
     errors::{is_error, take_error, Error},
     settings::Settings,
-    Args, Result,
+    Args, Message, Result,
 };
 use futures_util::future::join_all;
 use nomad_base::{ChainSetup, ChainSetupType, ConnectionManagers, Homes};
@@ -207,37 +207,52 @@ impl KillSwitch {
         Ok(Self { channel_killers })
     }
 
-    /// Run `KillSwitch` against configuration
-    pub(crate) async fn run(&mut self) {
-        // We should return all trivially identifiable errors instead of just the first blocking
-        // one encountered, i.e., if we know we have problems X and Y, report that even though
-        // X is the one that blocked this run. Fixing X may invalidate error Y, but we leave that
-        // choice to the user.
-
-        //
-        // we can do that by checking for stored errors in ChannelKiller
-        // if we find any, we can bail anyway
-
-        let (_failed, maybe_ok): (Vec<_>, Vec<_>) = self
+    /// Collect all blocking errors, returning a `KillSwitch` with a set of channels
+    /// that can actually fire off transactions as well as any errors collected
+    pub(crate) async fn get_blocking_errors(self) -> (Self, Option<Message>) {
+        let (mut failed, maybe_ok): (Vec<_>, Vec<_>) = self
             .channel_killers
-            .iter()
+            .into_iter()
             .partition(|killer| killer.has_errors());
 
-        // let futs = self
-        //     .channel_killers
-        //     .iter_mut()
-        //     .map(|killer| async {
-        //         let futs = async {
-        //             let signed_failure = killer.create_signed_failure().await?;
-        //             killer.kill(&signed_failure).await
-        //         }
-        //         .await;
-        //         (killer.channel.clone(), futs)
-        //     })
-        //     .collect::<Vec<_>>();
-        // let results = join_all(futs).await.into_iter().collect::<Vec<_>>();
-        //
-        // println!("{:?}", results);
-        // // Build results object
+        let _blocking_errors = failed
+            .iter_mut()
+            .map(|killer| (killer.channel.clone(), killer.take_all_errors()))
+            .collect::<Vec<(_, _)>>();
+
+        // Produce errors to stream before running txs
+        let message = None;
+
+        (
+            KillSwitch {
+                channel_killers: maybe_ok,
+            },
+            message,
+        )
+    }
+
+    /// Run `KillSwitch` against remaining, non-blocked channels
+    pub(crate) async fn run(mut self) -> Message {
+        let futs = self
+            .channel_killers
+            .iter_mut()
+            .map(|killer| async {
+                let futs = async {
+                    let signed_failure = killer.create_signed_failure().await?;
+                    killer.kill(&signed_failure).await
+                }
+                .await;
+                (killer.channel.clone(), futs)
+            })
+            .collect::<Vec<_>>();
+
+        let results = join_all(futs).await.into_iter().collect::<Vec<_>>();
+
+        let (mut _failed, mut _success): (Vec<_>, Vec<_>) =
+            results.into_iter().partition(|(_, result)| result.is_err());
+
+        // Build results object
+
+        Message::Results //
     }
 }
