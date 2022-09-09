@@ -15,14 +15,15 @@ pub(crate) struct Output {
 #[derive(Serialize)]
 #[serde(untagged)]
 pub(crate) enum Message {
-    /// An error message wrapper
-    ErrorMessage(String),
-    // other ...
+    /// An wrapper for a single error we bailed on
+    SimpleError(String),
+    /// A complex results object
+    Results, // TODO:
 }
 
 impl From<Error> for Message {
-    /// Convert `KillSwitchError` to `Message`
+    /// Convert a blocking `Error` to `Message`
     fn from(error: Error) -> Self {
-        Message::ErrorMessage(format!("{}", error))
+        Message::SimpleError(format!("{:?}", error))
     }
 }
