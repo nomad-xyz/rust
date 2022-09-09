@@ -80,18 +80,28 @@ async fn main() {
 
     let settings = Settings::new().await;
     if let Err(error) = settings {
+        // We've hit a blocking error, bail
         report(error.into(), pretty);
         exit(ExitCode::BadConfig as i32)
     }
 
     let killswitch = KillSwitch::new(args, settings.unwrap()).await;
     if let Err(error) = killswitch {
+        // We've hit a blocking error, bail
         report(error.into(), pretty);
         exit(ExitCode::BadConfig as i32)
     }
 
-    killswitch.unwrap().run().await;
-    // Report
+    let (killswitch, errors) = killswitch.unwrap().get_blocking_errors().await;
+    if let Some(errors) = errors {
+        // Stream these blocking errors before running transactions
+        // so users can be updated as fast as possible
+        report(errors.into(), pretty);
+    }
+
+    let results = killswitch.run().await;
+    // Give users final results
+    report(results.into(), pretty);
 
     exit(ExitCode::Ok as i32)
 }
