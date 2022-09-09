@@ -40,3 +40,28 @@ pub enum Error {
     #[error("Unenrollment failed: {0}")]
     UnenrollmentFailed(#[source] ChainCommunicationError),
 }
+
+/// Takes a struct member of type Option<Result<V, Error>>
+/// and returns `true` if `is_some() && is_err() == true`
+macro_rules! is_error {
+    ($member:expr) => {{
+        $member
+            .as_ref()
+            .map(|result| result.is_err())
+            .unwrap_or(false)
+    }};
+}
+pub(crate) use is_error;
+
+/// Takes a struct member of type Option<Result<V, Error>>
+/// and returns Some<Error> if `is_some() && is_err() == true`
+macro_rules! take_error {
+    ($member:expr) => {{
+        if is_error!($member) {
+            ::core::option::Option::Some($member.take().unwrap().unwrap_err())
+        } else {
+            ::core::option::Option::None
+        }
+    }};
+}
+pub(crate) use take_error;
