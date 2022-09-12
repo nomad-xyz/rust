@@ -9,6 +9,7 @@
 
 use async_trait::async_trait;
 use color_eyre::Result;
+use std::error::Error as StdError;
 
 use crate::{RawCommittedMessage, SignedUpdateWithMeta};
 
@@ -16,11 +17,18 @@ use crate::{RawCommittedMessage, SignedUpdateWithMeta};
 /// entities to retrieve chain-specific data from a home or replica.
 #[async_trait]
 pub trait CommonIndexer: Send + Sync + std::fmt::Debug {
+    /// Chain-specific error type
+    type Error: StdError + Send + Sync;
+
     /// Get chain's latest block number
-    async fn get_block_number(&self) -> Result<u32>;
+    async fn get_block_number(&self) -> Result<u32, Self::Error>;
 
     /// Fetch sequentially sorted list of updates between blocks `from` and `to`
-    async fn fetch_sorted_updates(&self, from: u32, to: u32) -> Result<Vec<SignedUpdateWithMeta>>;
+    async fn fetch_sorted_updates(
+        &self,
+        from: u32,
+        to: u32,
+    ) -> Result<Vec<SignedUpdateWithMeta>, Self::Error>;
 }
 
 /// Interface for Home contract indexer. Interface for allowing other
@@ -28,6 +36,9 @@ pub trait CommonIndexer: Send + Sync + std::fmt::Debug {
 #[async_trait]
 pub trait HomeIndexer: CommonIndexer + Send + Sync + std::fmt::Debug {
     /// Fetch list of messages between blocks `from` and `to`.
-    async fn fetch_sorted_messages(&self, _from: u32, _to: u32)
-        -> Result<Vec<RawCommittedMessage>>;
+    async fn fetch_sorted_messages(
+        &self,
+        _from: u32,
+        _to: u32,
+    ) -> Result<Vec<RawCommittedMessage>, <Self as CommonIndexer>::Error>;
 }

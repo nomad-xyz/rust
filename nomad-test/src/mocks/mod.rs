@@ -14,3 +14,7 @@ pub use home::MockHomeContract;
 pub use indexer::MockIndexer;
 pub use replica::MockReplicaContract;
 pub use xapp::MockConnectionManagerContract;
+
+#[derive(Debug, thiserror::Error)]
+#[error("Mock error")]
+pub struct MockError;

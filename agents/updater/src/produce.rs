@@ -3,8 +3,8 @@ use prometheus::IntCounter;
 use std::{sync::Arc, time::Duration};
 
 use color_eyre::Result;
-use nomad_base::{CachingHome, NomadDB, UpdaterError};
-use nomad_core::{Common, Home, SignedUpdate, Signers};
+use nomad_base::{AttestationSigner, CachingHome, NomadDB, UpdaterError};
+use nomad_core::{Common, Home, SignedUpdate};
 use tokio::{task::JoinHandle, time::sleep};
 use tracing::{debug, error, info, info_span, instrument::Instrumented, Instrument};
 
@@ -12,7 +12,7 @@ use tracing::{debug, error, info, info_span, instrument::Instrumented, Instrumen
 pub(crate) struct UpdateProducer {
     home: Arc<CachingHome>,
     db: NomadDB,
-    signer: Arc<Signers>,
+    signer: Arc<AttestationSigner>,
     interval_seconds: u64,
     signed_attestation_count: IntCounter,
 }
@@ -21,7 +21,7 @@ impl UpdateProducer {
     pub(crate) fn new(
         home: Arc<CachingHome>,
         db: NomadDB,
-        signer: Arc<Signers>,
+        signer: Arc<AttestationSigner>,
         interval_seconds: u64,
         signed_attestation_count: IntCounter,
     ) -> Self {

@@ -16,7 +16,6 @@ use crate::{
 };
 use color_eyre::{eyre::bail, Result};
 use nomad_core::{db::DB, Common, ContractLocator};
-use nomad_ethereum::{make_home_indexer, make_replica_indexer};
 use nomad_xyz_configuration::{agent::SignerConf, AgentSecrets, TxSubmitterConf};
 use nomad_xyz_configuration::{core::CoreDeploymentInfo, ChainConf, NomadConfig, NomadGasConfig};
 use serde::Deserialize;
@@ -365,19 +364,22 @@ impl Settings {
 
         match &self.home.chain {
             ChainConf::Ethereum(conn) => Ok(HomeIndexerVariants::Ethereum(
-                make_home_indexer(
+                nomad_ethereum::make_home_indexer(
                     conn.clone(),
                     &ContractLocator {
                         name: self.home.name.clone(),
                         domain: self.home.domain,
-                        address: self.home.address,
+                        address: self.home.address.expect("eth ChainSetup missing address"),
                     },
                     timelag,
                 )
                 .await?,
             )
             .into()),
-            ChainConf::Substrate(_) => unimplemented!("Substrate configuration not yet supported"),
+            ChainConf::Substrate(conn) => Ok(HomeIndexerVariants::Substrate(
+                nomad_substrate::make_home_indexer(conn.clone(), &self.home.name, timelag).await?,
+            )
+            .into()),
         }
     }
 
@@ -387,19 +389,19 @@ impl Settings {
     pub async fn try_replica_indexer(&self, setup: &ChainSetup) -> Result<CommonIndexers> {
         match &setup.chain {
             ChainConf::Ethereum(conn) => Ok(CommonIndexerVariants::Ethereum(
-                make_replica_indexer(
+                nomad_ethereum::make_replica_indexer(
                     conn.clone(),
                     &ContractLocator {
                         name: setup.name.clone(),
                         domain: setup.domain,
-                        address: setup.address,
+                        address: setup.address.expect("eth ChainSetup missing address"),
                     },
                     None, // Will never need timelag for replica data/events
                 )
                 .await?,
             )
             .into()),
-            ChainConf::Substrate(_) => unimplemented!("Substrate configuration not yet supported"),
+            ChainConf::Substrate(_) => unimplemented!("Substrate replica not yet implemented"),
         }
     }
 
@@ -541,11 +543,12 @@ impl Settings {
         let config_home_core = config.core().get(home_network).unwrap();
         match config_home_core {
             CoreDeploymentInfo::Ethereum(core) => {
-                assert_eq!(self.home.address, core.home.proxy);
+                assert_eq!(self.home.address.unwrap(), core.home.proxy);
                 assert_eq!(self.home.page_settings.from, core.deploy_height);
             }
-            CoreDeploymentInfo::Substrate(_) => {
-                unimplemented!("Substrate configuration not yet supported")
+            CoreDeploymentInfo::Substrate(core) => {
+                assert_eq!(self.home.address, None);
+                assert_eq!(self.home.page_settings.from, core.deploy_height);
             }
         }
 
@@ -574,13 +577,13 @@ impl Settings {
             match config_replica_core {
                 CoreDeploymentInfo::Ethereum(core) => {
                     assert_eq!(
-                        replica_setup.address,
+                        replica_setup.address.unwrap(),
                         core.replicas.get(home_network).unwrap().proxy
                     );
                     assert_eq!(replica_setup.page_settings.from, core.deploy_height);
                 }
                 CoreDeploymentInfo::Substrate(_) => {
-                    unimplemented!("Substrate configuration not yet supported")
+                    unimplemented!("Substrate replica not yet implemented")
                 }
             }
 

@@ -9,6 +9,7 @@
 
 /// Mock contracts
 pub mod mocks;
+pub use mocks::MockError;
 
 /// Testing utilities
 pub mod test_utils;

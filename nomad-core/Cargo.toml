@@ -10,6 +10,7 @@ edition = "2021"
 ethers = { git = "https://github.com/gakonst/ethers-rs", branch = "master", default-features = false, features = ['legacy'] }
 ethers-signers = { git = "https://github.com/gakonst/ethers-rs", branch = "master", features=["aws"] }
 ethers-providers = { git = "https://github.com/gakonst/ethers-rs", branch = "master", features=["ws", "rustls"] }
+subxt = "0.23.0"
 hex = "0.4.3"
 sha3 = "0.9.1"
 thiserror = "*"

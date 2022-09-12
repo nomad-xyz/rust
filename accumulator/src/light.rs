@@ -3,12 +3,21 @@ use ethers::{core::types::H256, prelude::U256};
 use crate::{
     error::IngestionError, utils::hash_concat, Merkle, MerkleProof, Proof, TREE_DEPTH, ZERO_HASHES,
 };
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy)]
 /// An incremental merkle tree, modeled on the eth2 deposit contract
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct LightMerkle<const N: usize> {
+    #[serde(with = "arrays")]
     branch: [H256; N],
     count: usize,
+}
+
+impl<const N: usize> LightMerkle<N> {
+    /// Instantiate new LightMerkle from branch and count
+    pub fn new(branch: [H256; N], count: usize) -> Self {
+        Self { branch, count }
+    }
 }
 
 impl<const N: usize> Default for LightMerkle<N> {
@@ -103,6 +112,70 @@ impl<const N: usize> LightMerkle<N> {
     /// Verify a incremental merkle proof of inclusion
     pub fn verify(&self, proof: &Proof<N>) -> bool {
         proof.root() == self.root()
+    }
+}
+
+/// Const generic array deserialization
+pub mod arrays {
+    use std::{convert::TryInto, marker::PhantomData};
+
+    use serde::{
+        de::{SeqAccess, Visitor},
+        ser::SerializeTuple,
+        Deserialize, Deserializer, Serialize, Serializer,
+    };
+
+    /// Serialize a const generic array
+    pub fn serialize<S: Serializer, T: Serialize, const N: usize>(
+        data: &[T; N],
+        ser: S,
+    ) -> Result<S::Ok, S::Error> {
+        let mut s = ser.serialize_tuple(N)?;
+        for item in data {
+            s.serialize_element(item)?;
+        }
+        s.end()
+    }
+
+    struct ArrayVisitor<T, const N: usize>(PhantomData<T>);
+
+    impl<'de, T, const N: usize> Visitor<'de> for ArrayVisitor<T, N>
+    where
+        T: Deserialize<'de>,
+    {
+        type Value = [T; N];
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str(&format!("an array of length {}", N))
+        }
+
+        #[inline]
+        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+        where
+            A: SeqAccess<'de>,
+        {
+            // can be optimized using MaybeUninit
+            let mut data = Vec::with_capacity(N);
+            for _ in 0..N {
+                match (seq.next_element())? {
+                    Some(val) => data.push(val),
+                    None => return Err(serde::de::Error::invalid_length(N, &self)),
+                }
+            }
+            match data.try_into() {
+                Ok(arr) => Ok(arr),
+                Err(_) => unreachable!(),
+            }
+        }
+    }
+
+    /// Deserialize a const generic array
+    pub fn deserialize<'de, D, T, const N: usize>(deserializer: D) -> Result<[T; N], D::Error>
+    where
+        D: Deserializer<'de>,
+        T: Deserialize<'de>,
+    {
+        deserializer.deserialize_tuple(N, ArrayVisitor::<T, N>(PhantomData))
     }
 }
 

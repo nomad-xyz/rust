@@ -1,21 +1,18 @@
 use async_trait::async_trait;
-use nomad_core::{
-    ChainCommunicationError, ConnectionManager, NomadIdentifier, SignedFailureNotification,
-    TxOutcome,
-};
+use nomad_core::{ConnectionManager, NomadIdentifier, SignedFailureNotification, TxOutcome};
 
 use nomad_ethereum::EthereumConnectionManager;
 use nomad_test::mocks::MockConnectionManagerContract;
+
+use crate::ChainCommunicationError;
 
 /// Replica type
 #[derive(Debug)]
 pub enum ConnectionManagers {
     /// Ethereum connection manager contract
-    Ethereum(Box<dyn ConnectionManager>),
+    Ethereum(Box<dyn ConnectionManager<Error = nomad_ethereum::EthereumError>>),
     /// Mock connection manager contract
     Mock(Box<MockConnectionManagerContract>),
-    /// Other connection manager variant
-    Other(Box<dyn ConnectionManager>),
 }
 
 impl ConnectionManagers {
@@ -47,32 +44,24 @@ impl From<MockConnectionManagerContract> for ConnectionManagers {
     }
 }
 
-impl From<Box<dyn ConnectionManager>> for ConnectionManagers {
-    fn from(connection_manager: Box<dyn ConnectionManager>) -> Self {
-        ConnectionManagers::Other(connection_manager)
-    }
-}
-
 #[async_trait]
 impl ConnectionManager for ConnectionManagers {
+    type Error = ChainCommunicationError;
+
     fn local_domain(&self) -> u32 {
         match self {
             ConnectionManagers::Ethereum(connection_manager) => connection_manager.local_domain(),
             ConnectionManagers::Mock(connection_manager) => connection_manager.local_domain(),
-            ConnectionManagers::Other(connection_manager) => connection_manager.local_domain(),
         }
     }
 
     async fn is_replica(&self, address: NomadIdentifier) -> Result<bool, ChainCommunicationError> {
         match self {
             ConnectionManagers::Ethereum(connection_manager) => {
-                connection_manager.is_replica(address).await
+                Ok(connection_manager.is_replica(address).await?)
             }
             ConnectionManagers::Mock(connection_manager) => {
-                connection_manager.is_replica(address).await
-            }
-            ConnectionManagers::Other(connection_manager) => {
-                connection_manager.is_replica(address).await
+                Ok(connection_manager.is_replica(address).await?)
             }
         }
     }
@@ -83,15 +72,12 @@ impl ConnectionManager for ConnectionManagers {
         domain: u32,
     ) -> Result<bool, ChainCommunicationError> {
         match self {
-            ConnectionManagers::Ethereum(connection_manager) => {
-                connection_manager.watcher_permission(address, domain).await
-            }
-            ConnectionManagers::Mock(connection_manager) => {
-                connection_manager.watcher_permission(address, domain).await
-            }
-            ConnectionManagers::Other(connection_manager) => {
-                connection_manager.watcher_permission(address, domain).await
-            }
+            ConnectionManagers::Ethereum(connection_manager) => Ok(connection_manager
+                .watcher_permission(address, domain)
+                .await?),
+            ConnectionManagers::Mock(connection_manager) => Ok(connection_manager
+                .watcher_permission(address, domain)
+                .await?),
         }
     }
 
@@ -101,21 +87,12 @@ impl ConnectionManager for ConnectionManagers {
         domain: u32,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
-            ConnectionManagers::Ethereum(connection_manager) => {
-                connection_manager
-                    .owner_enroll_replica(replica, domain)
-                    .await
-            }
-            ConnectionManagers::Mock(connection_manager) => {
-                connection_manager
-                    .owner_enroll_replica(replica, domain)
-                    .await
-            }
-            ConnectionManagers::Other(connection_manager) => {
-                connection_manager
-                    .owner_enroll_replica(replica, domain)
-                    .await
-            }
+            ConnectionManagers::Ethereum(connection_manager) => Ok(connection_manager
+                .owner_enroll_replica(replica, domain)
+                .await?),
+            ConnectionManagers::Mock(connection_manager) => Ok(connection_manager
+                .owner_enroll_replica(replica, domain)
+                .await?),
         }
     }
 
@@ -125,13 +102,10 @@ impl ConnectionManager for ConnectionManagers {
     ) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
             ConnectionManagers::Ethereum(connection_manager) => {
-                connection_manager.owner_unenroll_replica(replica).await
+                Ok(connection_manager.owner_unenroll_replica(replica).await?)
             }
             ConnectionManagers::Mock(connection_manager) => {
-                connection_manager.owner_unenroll_replica(replica).await
-            }
-            ConnectionManagers::Other(connection_manager) => {
-                connection_manager.owner_unenroll_replica(replica).await
+                Ok(connection_manager.owner_unenroll_replica(replica).await?)
             }
         }
     }
@@ -139,11 +113,10 @@ impl ConnectionManager for ConnectionManagers {
     async fn set_home(&self, home: NomadIdentifier) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
             ConnectionManagers::Ethereum(connection_manager) => {
-                connection_manager.set_home(home).await
+                Ok(connection_manager.set_home(home).await?)
             }
-            ConnectionManagers::Mock(connection_manager) => connection_manager.set_home(home).await,
-            ConnectionManagers::Other(connection_manager) => {
-                connection_manager.set_home(home).await
+            ConnectionManagers::Mock(connection_manager) => {
+                Ok(connection_manager.set_home(home).await?)
             }
         }
     }
@@ -155,21 +128,12 @@ impl ConnectionManager for ConnectionManagers {
         access: bool,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
-            ConnectionManagers::Ethereum(connection_manager) => {
-                connection_manager
-                    .set_watcher_permission(watcher, domain, access)
-                    .await
-            }
-            ConnectionManagers::Mock(connection_manager) => {
-                connection_manager
-                    .set_watcher_permission(watcher, domain, access)
-                    .await
-            }
-            ConnectionManagers::Other(connection_manager) => {
-                connection_manager
-                    .set_watcher_permission(watcher, domain, access)
-                    .await
-            }
+            ConnectionManagers::Ethereum(connection_manager) => Ok(connection_manager
+                .set_watcher_permission(watcher, domain, access)
+                .await?),
+            ConnectionManagers::Mock(connection_manager) => Ok(connection_manager
+                .set_watcher_permission(watcher, domain, access)
+                .await?),
         }
     }
 
@@ -179,13 +143,10 @@ impl ConnectionManager for ConnectionManagers {
     ) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
             ConnectionManagers::Ethereum(connection_manager) => {
-                connection_manager.unenroll_replica(signed_failure).await
+                Ok(connection_manager.unenroll_replica(signed_failure).await?)
             }
             ConnectionManagers::Mock(connection_manager) => {
-                connection_manager.unenroll_replica(signed_failure).await
-            }
-            ConnectionManagers::Other(connection_manager) => {
-                connection_manager.unenroll_replica(signed_failure).await
+                Ok(connection_manager.unenroll_replica(signed_failure).await?)
             }
         }
     }

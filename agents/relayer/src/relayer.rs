@@ -193,12 +193,11 @@ impl NomadAgent for Relayer {
 
 #[cfg(test)]
 mod test {
-    use ethers::prelude::{ProviderError, H256};
+    use ethers::prelude::H256;
     use nomad_base::{
         chains::PageSettings, CommonIndexers, ContractSync, ContractSyncMetrics, CoreMetrics,
         HomeIndexers, IndexSettings, NomadDB,
     };
-    use nomad_core::ChainCommunicationError;
     use nomad_test::mocks::{MockHomeContract, MockIndexer, MockReplicaContract};
     use nomad_test::test_utils;
     use std::collections::HashMap;
@@ -261,13 +260,7 @@ mod test {
                 replica_mock
                     .expect__committed_root()
                     .times(..)
-                    .returning(|| {
-                        Err(ChainCommunicationError::ProviderError(
-                            ProviderError::CustomError(
-                                "I am replica and I always throw the error".to_string(),
-                            ),
-                        ))
-                    });
+                    .returning(|| Err(nomad_test::mocks::MockError));
             }
 
             let replica_indexer: Arc<CommonIndexers> = Arc::new(MockIndexer::new().into());

@@ -1,8 +1,8 @@
-use crate::SingleChainGelatoClient;
+use crate::{EthereumError, SingleChainGelatoClient};
 use color_eyre::Result;
 use ethers::prelude::*;
 use ethers::types::transaction::eip2718::TypedTransaction;
-use nomad_core::{ChainCommunicationError, TxOutcome};
+use nomad_core::TxOutcome;
 use std::sync::Arc;
 
 /// Component responsible for submitting transactions to the chain. Can
@@ -49,14 +49,14 @@ where
         domain: u32,
         contract_address: Address,
         tx: impl Into<TypedTransaction>,
-    ) -> Result<TxOutcome, ChainCommunicationError> {
+    ) -> Result<TxOutcome, EthereumError> {
         let tx: TypedTransaction = tx.into();
 
         match &self.client {
-            SubmitterClient::Local(client) => report_tx!(tx, client,).try_into(),
-            SubmitterClient::Gelato(client) => {
-                client.submit_blocking(domain, contract_address, &tx).await
-            }
+            SubmitterClient::Local(client) => report_tx!(tx, client,),
+            SubmitterClient::Gelato(client) => Ok(client
+                .submit_blocking(domain, contract_address, &tx)
+                .await?),
         }
     }
 }

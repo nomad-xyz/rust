@@ -2,11 +2,11 @@ use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use ethers::core::types::H256;
 use nomad_core::{
-    accumulator::NomadProof, db::DbError, ChainCommunicationError, Common, CommonEvents,
-    DoubleUpdate, MessageStatus, NomadMessage, Replica, SignedUpdate, State, TxOutcome,
+    accumulator::NomadProof, db::DbError, Common, CommonEvents, DoubleUpdate, MessageStatus,
+    NomadMessage, Replica, SignedUpdate, State, TxOutcome,
 };
 
-use crate::NomadDB;
+use crate::{ChainCommunicationError, NomadDB};
 
 use nomad_ethereum::EthereumReplica;
 use nomad_test::mocks::MockReplicaContract;
@@ -92,6 +92,8 @@ impl Replica for CachingReplica {
 
 #[async_trait]
 impl Common for CachingReplica {
+    type Error = ChainCommunicationError;
+
     fn name(&self) -> &str {
         self.replica.name()
     }
@@ -181,11 +183,9 @@ impl std::ops::DerefMut for Replicas {
 #[derive(Debug)]
 pub enum ReplicaVariants {
     /// Ethereum replica contract
-    Ethereum(Box<dyn Replica>),
+    Ethereum(Box<dyn Replica<Error = nomad_ethereum::EthereumError>>),
     /// Mock replica contract
     Mock(Box<MockReplicaContract>),
-    /// Other replica variant
-    Other(Box<dyn Replica>),
 }
 
 impl std::fmt::Display for ReplicaVariants {
@@ -195,7 +195,6 @@ impl std::fmt::Display for ReplicaVariants {
                 write!(f, "{}", inner)
             }
             ReplicaVariants::Mock(inner) => write!(f, "{}", inner),
-            ReplicaVariants::Other(inner) => write!(f, "{}", inner),
         }
     }
 }
@@ -229,51 +228,40 @@ impl From<MockReplicaContract> for Replicas {
     }
 }
 
-impl From<Box<dyn Replica>> for Replicas {
-    fn from(replica: Box<dyn Replica>) -> Self {
-        ReplicaVariants::Other(replica).into()
-    }
-}
-
 #[async_trait]
 impl Replica for ReplicaVariants {
     fn local_domain(&self) -> u32 {
         match self {
             ReplicaVariants::Ethereum(replica) => replica.local_domain(),
             ReplicaVariants::Mock(mock_replica) => mock_replica.local_domain(),
-            ReplicaVariants::Other(replica) => replica.local_domain(),
         }
     }
 
     async fn remote_domain(&self) -> Result<u32, ChainCommunicationError> {
         match self {
-            ReplicaVariants::Ethereum(replica) => replica.remote_domain().await,
-            ReplicaVariants::Mock(mock_replica) => mock_replica.remote_domain().await,
-            ReplicaVariants::Other(replica) => replica.remote_domain().await,
+            ReplicaVariants::Ethereum(replica) => Ok(replica.remote_domain().await?),
+            ReplicaVariants::Mock(mock_replica) => Ok(mock_replica.remote_domain().await?),
         }
     }
 
     async fn prove(&self, proof: &NomadProof) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
-            ReplicaVariants::Ethereum(replica) => replica.prove(proof).await,
-            ReplicaVariants::Mock(mock_replica) => mock_replica.prove(proof).await,
-            ReplicaVariants::Other(replica) => replica.prove(proof).await,
+            ReplicaVariants::Ethereum(replica) => Ok(replica.prove(proof).await?),
+            ReplicaVariants::Mock(mock_replica) => Ok(mock_replica.prove(proof).await?),
         }
     }
 
     async fn process(&self, message: &NomadMessage) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
-            ReplicaVariants::Ethereum(replica) => replica.process(message).await,
-            ReplicaVariants::Mock(mock_replica) => mock_replica.process(message).await,
-            ReplicaVariants::Other(replica) => replica.process(message).await,
+            ReplicaVariants::Ethereum(replica) => Ok(replica.process(message).await?),
+            ReplicaVariants::Mock(mock_replica) => Ok(mock_replica.process(message).await?),
         }
     }
 
     async fn message_status(&self, leaf: H256) -> Result<MessageStatus, ChainCommunicationError> {
         match self {
-            ReplicaVariants::Ethereum(replica) => replica.message_status(leaf).await,
-            ReplicaVariants::Mock(mock_replica) => mock_replica.message_status(leaf).await,
-            ReplicaVariants::Other(replica) => replica.message_status(leaf).await,
+            ReplicaVariants::Ethereum(replica) => Ok(replica.message_status(leaf).await?),
+            ReplicaVariants::Mock(mock_replica) => Ok(mock_replica.message_status(leaf).await?),
         }
     }
 
@@ -283,71 +271,67 @@ impl Replica for ReplicaVariants {
         proof: &NomadProof,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
-            ReplicaVariants::Ethereum(replica) => replica.prove_and_process(message, proof).await,
-            ReplicaVariants::Mock(mock_replica) => {
-                mock_replica.prove_and_process(message, proof).await
+            ReplicaVariants::Ethereum(replica) => {
+                Ok(replica.prove_and_process(message, proof).await?)
             }
-            ReplicaVariants::Other(replica) => replica.prove_and_process(message, proof).await,
+            ReplicaVariants::Mock(mock_replica) => {
+                Ok(mock_replica.prove_and_process(message, proof).await?)
+            }
         }
     }
 
     async fn acceptable_root(&self, root: H256) -> Result<bool, ChainCommunicationError> {
         match self {
-            ReplicaVariants::Ethereum(replica) => replica.acceptable_root(root).await,
-            ReplicaVariants::Mock(mock_replica) => mock_replica.acceptable_root(root).await,
-            ReplicaVariants::Other(replica) => replica.acceptable_root(root).await,
+            ReplicaVariants::Ethereum(replica) => Ok(replica.acceptable_root(root).await?),
+            ReplicaVariants::Mock(mock_replica) => Ok(mock_replica.acceptable_root(root).await?),
         }
     }
 }
 
 #[async_trait]
 impl Common for ReplicaVariants {
+    type Error = ChainCommunicationError;
+
     fn name(&self) -> &str {
         match self {
             ReplicaVariants::Ethereum(replica) => replica.name(),
             ReplicaVariants::Mock(mock_replica) => mock_replica.name(),
-            ReplicaVariants::Other(replica) => replica.name(),
         }
     }
 
     async fn status(&self, txid: H256) -> Result<Option<TxOutcome>, ChainCommunicationError> {
         match self {
-            ReplicaVariants::Ethereum(replica) => replica.status(txid).await,
-            ReplicaVariants::Mock(mock_replica) => mock_replica.status(txid).await,
-            ReplicaVariants::Other(replica) => replica.status(txid).await,
+            ReplicaVariants::Ethereum(replica) => Ok(replica.status(txid).await?),
+            ReplicaVariants::Mock(mock_replica) => Ok(mock_replica.status(txid).await?),
         }
     }
 
     async fn updater(&self) -> Result<H256, ChainCommunicationError> {
         match self {
-            ReplicaVariants::Ethereum(replica) => replica.updater().await,
-            ReplicaVariants::Mock(mock_replica) => mock_replica.updater().await,
-            ReplicaVariants::Other(replica) => replica.updater().await,
+            ReplicaVariants::Ethereum(replica) => Ok(replica.updater().await?),
+            ReplicaVariants::Mock(mock_replica) => Ok(mock_replica.updater().await?),
         }
     }
 
     async fn state(&self) -> Result<State, ChainCommunicationError> {
         match self {
-            ReplicaVariants::Ethereum(replica) => replica.state().await,
-            ReplicaVariants::Mock(mock_replica) => mock_replica.state().await,
-            ReplicaVariants::Other(replica) => replica.state().await,
+            ReplicaVariants::Ethereum(replica) => Ok(replica.state().await?),
+            ReplicaVariants::Mock(mock_replica) => Ok(mock_replica.state().await?),
         }
     }
 
     async fn committed_root(&self) -> Result<H256, ChainCommunicationError> {
         match self {
-            ReplicaVariants::Ethereum(replica) => replica.committed_root().await,
-            ReplicaVariants::Mock(mock_replica) => mock_replica.committed_root().await,
-            ReplicaVariants::Other(replica) => replica.committed_root().await,
+            ReplicaVariants::Ethereum(replica) => Ok(replica.committed_root().await?),
+            ReplicaVariants::Mock(mock_replica) => Ok(mock_replica.committed_root().await?),
         }
     }
 
     #[instrument(fields(update = %update.update))]
     async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
-            ReplicaVariants::Ethereum(replica) => replica.update(update).await,
-            ReplicaVariants::Mock(mock_replica) => mock_replica.update(update).await,
-            ReplicaVariants::Other(replica) => replica.update(update).await,
+            ReplicaVariants::Ethereum(replica) => Ok(replica.update(update).await?),
+            ReplicaVariants::Mock(mock_replica) => Ok(mock_replica.update(update).await?),
         }
     }
 
@@ -356,9 +340,8 @@ impl Common for ReplicaVariants {
         double: &DoubleUpdate,
     ) -> Result<TxOutcome, ChainCommunicationError> {
         match self {
-            ReplicaVariants::Ethereum(replica) => replica.double_update(double).await,
-            ReplicaVariants::Mock(mock_replica) => mock_replica.double_update(double).await,
-            ReplicaVariants::Other(replica) => replica.double_update(double).await,
+            ReplicaVariants::Ethereum(replica) => Ok(replica.double_update(double).await?),
+            ReplicaVariants::Mock(mock_replica) => Ok(mock_replica.double_update(double).await?),
         }
     }
 }

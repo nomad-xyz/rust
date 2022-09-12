@@ -1,10 +1,9 @@
 use color_eyre::eyre::{bail, Result};
 use ethers::core::types::H256;
-use nomad_base::NomadDB;
+use nomad_base::{ChainCommunicationError, NomadDB};
 use nomad_core::{
     accumulator::{Merkle, NomadTree, ProvingError},
     db::DbError,
-    ChainCommunicationError,
 };
 use std::{fmt::Display, time::Duration};
 use tokio::{

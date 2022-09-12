@@ -14,12 +14,12 @@ use tracing::{
 };
 
 use nomad_base::{
-    cancel_task, decl_agent, decl_channel, AgentCore, CachingHome, CachingReplica, NomadAgent,
-    NomadDB, ProcessorError,
+    cancel_task, decl_agent, decl_channel, AgentCore, CachingHome, CachingReplica,
+    ChainCommunicationError, NomadAgent, NomadDB, ProcessorError,
 };
 use nomad_core::{
     accumulator::{MerkleProof, NomadProof},
-    ChainCommunicationError, CommittedMessage, Common, Home, HomeEvents, MessageStatus,
+    CommittedMessage, Common, Home, HomeEvents, MessageStatus,
 };
 
 use crate::{prover_sync::ProverSync, push::Pusher, settings::ProcessorSettings as Settings};
@@ -259,7 +259,7 @@ impl Replica {
         // Other errors are bubbled up
         match result {
             Ok(_) => {}
-            Err(ChainCommunicationError::NotExecuted(txid)) => {
+            Err(ChainCommunicationError::TxNotExecuted(txid)) => {
                 warn!(txid = ?txid, "Error in processing. May indicate an internal revert of the handler.");
             }
             Err(e) => {

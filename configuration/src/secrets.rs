@@ -114,7 +114,7 @@ impl AgentSecrets {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{ethereum::GelatoConf, NomadConfig};
+    use crate::ethereum::GelatoConf;
     use nomad_test::test_utils;
 
     #[test]
@@ -146,6 +146,15 @@ mod test {
                 }))
             );
             assert_eq!(
+                *secrets.tx_submitters.get("avail").unwrap(),
+                TxSubmitterConf::Substrate(substrate::TxSubmitterConf::Local(SignerConf::HexKey(
+                    "0x1111111111111111111111111111111111111111111111111111111111111111"
+                        .parse()
+                        .unwrap()
+                )))
+            );
+
+            assert_eq!(
                 *secrets.rpcs.get("moonbeam").unwrap(),
                 ChainConf::Ethereum(Connection::Http("https://rpc.api.moonbeam.network".into()))
             );
@@ -158,6 +167,10 @@ mod test {
             assert_eq!(
                 *secrets.rpcs.get("evmos").unwrap(),
                 ChainConf::Ethereum(Connection::Http("https://eth.bd.evmos.org:8545".into()))
+            );
+            assert_eq!(
+                *secrets.rpcs.get("avail").unwrap(),
+                ChainConf::Substrate(Connection::Http("https://rpc.polkadot.io".into()))
             );
         });
     }
@@ -232,33 +245,6 @@ mod test {
             .expect("Failed to load secrets from file");
         secrets
             .validate("", networks)
-            .expect("Failed to validate secrets");
-    }
-
-    #[test]
-    #[serial_test::serial]
-    fn it_builds_multi_vm_config_from_env() {
-        test_utils::run_test_with_env_sync("../fixtures/env.test-multi-vm", move || {
-            let networks = NomadConfig::from_file("configs/testMultiVm.json")
-                .unwrap()
-                .networks;
-            let secrets =
-                AgentSecrets::from_env(&networks).expect("Failed to load secrets from env");
-            secrets
-                .validate("", &networks)
-                .expect("Failed to validate secrets");
-        });
-    }
-
-    #[test]
-    fn it_builds_multi_vm_config_from_file() {
-        let networks = NomadConfig::from_file("configs/testMultiVm.json")
-            .unwrap()
-            .networks;
-        let secrets = AgentSecrets::from_file("../fixtures/test_multi_vm_secrets.json")
-            .expect("Failed to load secrets from file");
-        secrets
-            .validate("", &networks)
             .expect("Failed to validate secrets");
     }
 }

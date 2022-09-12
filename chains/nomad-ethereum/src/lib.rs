@@ -16,6 +16,10 @@ use std::sync::Arc;
 #[macro_use]
 mod macros;
 
+/// Errors
+mod error;
+pub use error::*;
+
 /// Retrying Provider
 mod retrying;
 pub use retrying::{RetryingProvider, RetryingProviderError};
@@ -27,6 +31,10 @@ pub use gelato::*;
 /// Chain submitter
 mod submitter;
 pub use submitter::*;
+
+/// EthereumSigners
+mod signer;
+pub use signer::*;
 
 /// Contract binding
 #[cfg(not(doctest))]
@@ -47,6 +55,9 @@ mod xapp;
 /// Gas increasing Middleware
 mod gas;
 
+/// Utilities
+mod utils;
+
 #[cfg(not(doctest))]
 pub use crate::{home::*, replica::*, xapp::*};
 
@@ -57,20 +68,33 @@ pub struct Chain {
     ethers: ethers::providers::Provider<ethers::providers::Http>,
 }
 
-boxed_indexer!(make_home_indexer, EthereumHomeIndexer, HomeIndexer,);
-boxed_indexer!(make_replica_indexer, EthereumReplicaIndexer, CommonIndexer,);
+boxed_indexer!(
+    make_home_indexer,
+    EthereumHomeIndexer,
+    HomeIndexer<Error = EthereumError>,
+);
+boxed_indexer!(
+    make_replica_indexer,
+    EthereumReplicaIndexer,
+    CommonIndexer<Error = EthereumError>,
+);
 
-boxed_contract!(make_home, EthereumHome, Home, gas: Option<HomeGasLimits>);
+boxed_contract!(
+    make_home,
+    EthereumHome,
+    Home<Error = EthereumError>,
+    gas: Option<HomeGasLimits>
+);
 boxed_contract!(
     make_replica,
     EthereumReplica,
-    Replica,
+    Replica<Error = EthereumError>,
     gas: Option<ReplicaGasLimits>
 );
 boxed_contract!(
     make_conn_manager,
     EthereumConnectionManager,
-    ConnectionManager,
+    ConnectionManager<Error = EthereumError>,
     gas: Option<ConnectionManagerGasLimits>
 );
 

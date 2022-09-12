@@ -7,6 +7,7 @@
 
 ### v1.0.0-rc.1
 
+- refactor: remove `configs/testMultiVm.json` (and corresponding tests) and unify changes by putting all into `configs/test.json`
 - feature: add additional config called `configs/testMultiVm.json` which has outbound connections to other chains but no inbound connections (no substrate replica support)
 - refactor: change contract info (previously CoreContracts and BridgeContracts) to be CoreDeploymentInfo and BridgeDeploymentInfo, with support for substrate variant (not backwards compatible given core and bridge deploy/contract info is now a union not a struct)
 - feature: update TS definitions for wasm_bindgen with Substrate-related changes

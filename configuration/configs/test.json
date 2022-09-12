@@ -1,11 +1,12 @@
 {
   "version": 0,
   "environment": "test",
-  "networks": ["ethereum", "moonbeam", "evmos"],
+  "networks": ["ethereum", "moonbeam", "evmos", "avail"],
   "rpcs": {
     "moonbeam": ["https://rpc.api.moonbeam.network"],
     "ethereum": ["https://main-light.eth.linkpool.io/"],
-    "evmos": ["https://eth.bd.evmos.org:8545"]
+    "evmos": ["https://eth.bd.evmos.org:8545"],
+    "avail": ["https://rpc.polkadot.io"]
   },
   "protocol": {
     "governor": {
@@ -105,6 +106,33 @@
             }
           ]
         }
+      },
+      "avail": {
+        "name": "avail",
+        "domain": 1702260083,
+        "connections": ["ethereum"],
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "updater": "0x0000000000000000000000000000000000000000",
+          "watchers": ["0x0000000000000000000000000000000000000000"],
+          "governance": {
+            "recoveryManager": "0x0000000000000000000000000000000000000000",
+            "recoveryTimelock": 86400
+          }
+        },
+        "specs": {
+          "chainId": 9001,
+          "blockTime": 6,
+          "finalizationBlocks": 1,
+          "supports1559": true,
+          "confirmations": 5,
+          "blockExplorer": "https://explorer.polkascan.io/polkadot",
+          "indexPageSize": 2000
+        },
+        "bridgeConfiguration": {
+          "weth": "0x0000000000000000000000000000000000000000",
+          "customs": []
+        }
       }
     }
   },
@@ -134,6 +162,11 @@
           "implementation": "0x7f58bb8311db968ab110889f2dfa04ab7e8e831b",
           "proxy": "0x5bae47bf29f4e9b1e275c0b427b84c4daa30033a",
           "beacon": "0x0876dfe4acae0e1c0a43302716483f5752298b71"
+        },
+        "avail": {
+          "implementation": "0x67833a48b3f509d4252ac2c19cd604556ed6c981",
+          "proxy": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "beacon": "0x3009c99d370b780304d2098196f1ebf779a4777a"
         }
       }
     },
@@ -192,6 +225,9 @@
           "beacon": "0x049b51e531fd8f90da6d92ea83dc4125002f20ef"
         }
       }
+    },
+    "avail": {
+      "deployHeight": 0
     }
   },
   "bridge": {
@@ -268,6 +304,9 @@
           }
         }
       ]
+    },
+    "avail": {
+      "deployHeight": 0
     }
   },
   "agent": {
@@ -331,6 +370,35 @@
     },
     "evmos": {
       "rpcStyle": "ethereum",
+      "db": "db",
+      "metrics": 9090,
+      "logging": {
+        "level": "info",
+        "fmt": "json"
+      },
+      "updater": {
+        "interval": 5
+      },
+      "relayer": {
+        "interval": 10
+      },
+      "processor": {
+        "subsidizedRemotes": ["moonbeam"],
+        "interval": 5,
+        "s3": {
+          "bucket": "dummy-bucket",
+          "region": "dummy-region"
+        }
+      },
+      "watcher": {
+        "interval": 10
+      },
+      "kathy": {
+        "interval": 100
+      }
+    },
+    "avail": {
+      "rpcStyle": "substrate",
       "db": "db",
       "metrics": 9090,
       "logging": {
