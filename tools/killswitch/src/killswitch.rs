@@ -1,5 +1,6 @@
 use crate::{
     errors::{is_error, take_error, Error},
+    output::build_output_message,
     settings::Settings,
     Args, Message, Result,
 };
@@ -19,11 +20,11 @@ pub(crate) struct KillSwitch {
 
 /// The set of origin->destination networks
 #[derive(Debug, Clone)]
-struct Channel {
+pub(crate) struct Channel {
     /// Origin network
-    home: String,
+    pub(crate) home: String,
     /// Destination network
-    replica: String,
+    pub(crate) replica: String,
 }
 
 /// The channel and contracts required, or errors encountered
@@ -208,21 +209,25 @@ impl KillSwitch {
     }
 
     /// Collect all blocking errors, returning a `KillSwitch` with a set of channels
-    /// that can actually fire off transactions as well as any errors collected
+    /// that can actually fire off transactions, as well as any errors collected
     pub(crate) async fn get_blocking_errors(self) -> (Self, Option<Message>) {
         let (mut failed, maybe_ok): (Vec<_>, Vec<_>) = self
             .channel_killers
             .into_iter()
             .partition(|killer| killer.has_errors());
 
-        let _blocking_errors = failed
+        // These are blocking errors for each channel
+        let bad = failed
             .iter_mut()
             .map(|killer| (killer.channel.clone(), killer.take_all_errors()))
             .collect::<Vec<(_, _)>>();
 
         // Produce errors to stream before running txs
-        let message = None;
-
+        let message = if bad.is_empty() {
+            None
+        } else {
+            Some(build_output_message(bad, vec![]))
+        };
         (
             KillSwitch {
                 channel_killers: maybe_ok,
@@ -248,11 +253,19 @@ impl KillSwitch {
 
         let results = join_all(futs).await;
 
-        let (mut _failed, mut _success): (Vec<_>, Vec<_>) =
+        let (failed, ok): (Vec<_>, Vec<_>) =
             results.into_iter().partition(|(_, result)| result.is_err());
 
-        // Build results object
+        let bad = failed
+            .into_iter()
+            .map(|(channel, result)| (channel, vec![result.unwrap_err()]))
+            .collect::<Vec<(_, _)>>();
 
-        Message::Results //
+        let good = ok
+            .into_iter()
+            .map(|(channel, result)| (channel, result.unwrap()))
+            .collect::<Vec<(_, _)>>();
+
+        build_output_message(bad, good)
     }
 }
