@@ -16,3 +16,4 @@ ethers = { git = "https://github.com/gakonst/ethers-rs", branch = "master" }
 nomad-core = { path = "../../nomad-core" }
 nomad-base = { path = "../../nomad-base" }
 nomad-xyz-configuration = { path = "../../configuration" }
+nomad-ethereum = { path = "../../chains/nomad-ethereum" }

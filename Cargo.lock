@@ -2638,6 +2638,7 @@ dependencies = [
  "futures-util",
  "nomad-base",
  "nomad-core",
+ "nomad-ethereum",
  "nomad-xyz-configuration",
  "serde 1.0.137",
  "serde_json",

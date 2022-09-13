@@ -5,10 +5,10 @@ use crate::{
     Args, Message, Result,
 };
 use futures_util::future::join_all;
-use nomad_base::{ChainSetup, ChainSetupType, ConnectionManagers, Homes};
+use nomad_base::{AttestationSigner, ChainSetup, ChainSetupType, ConnectionManagers, Homes};
 use nomad_core::{
-    Common, ConnectionManager, FailureNotification, Home, SignedFailureNotification, Signers,
-    TxOutcome,
+    Common, ConnectionManager, FailureNotification, FromSignerConf, Home,
+    SignedFailureNotification, TxOutcome,
 };
 use nomad_xyz_configuration::AgentSecrets;
 
@@ -36,7 +36,7 @@ struct ChannelKiller {
     /// Connection manager or encountered error
     connection_manager: Option<Result<ConnectionManagers>>,
     /// Attestation signer or encountered error
-    attestation_signer: Option<Result<Signers>>,
+    attestation_signer: Option<Result<AttestationSigner>>,
 }
 
 impl ChannelKiller {
@@ -166,12 +166,12 @@ impl KillSwitch {
     }
 
     /// Make `Signers` or return error
-    async fn make_signer(channel: &Channel, settings: &Settings) -> Result<Signers> {
+    async fn make_signer(channel: &Channel, settings: &Settings) -> Result<AttestationSigner> {
         let config = settings
             .attestation_signers
             .get(&channel.home)
             .ok_or_else(|| Error::MissingAttestationSignerConf(channel.home.clone()))?;
-        Signers::try_from_signer_conf(config)
+        AttestationSigner::try_from_signer_conf(config)
             .await
             .map_err(|report| Error::AttestationSignerInit(format!("{:#}", report)))
     }

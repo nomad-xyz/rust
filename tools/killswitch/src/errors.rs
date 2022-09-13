@@ -1,4 +1,5 @@
-use nomad_core::{ChainCommunicationError, SignersError};
+use nomad_base::ChainCommunicationError;
+use nomad_ethereum::EthereumSignersError;
 
 /// `Error` for KillSwitch
 #[derive(Debug, thiserror::Error)]
@@ -37,7 +38,7 @@ pub enum Error {
     UpdaterAddress(#[source] ChainCommunicationError),
     /// Attestation signer failed to sign
     #[error("AttestationSignerFailed: Attestation signer failed: {0}")]
-    AttestationSignerFailed(#[source] SignersError),
+    AttestationSignerFailed(#[source] EthereumSignersError),
     /// Unenrollment failure
     #[error("UnenrollmentFailed: Unenrollment failed: {0}")]
     UnenrollmentFailed(#[source] ChainCommunicationError),
