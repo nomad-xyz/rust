@@ -242,12 +242,12 @@ impl KillSwitch {
             .channel_killers
             .iter_mut()
             .map(|killer| async {
-                let futs = async {
+                let fut = async {
                     let signed_failure = killer.create_signed_failure().await?;
                     killer.kill(&signed_failure).await
                 }
                 .await;
-                (killer.channel.clone(), futs)
+                (killer.channel.clone(), fut)
             })
             .collect::<Vec<_>>();
 
