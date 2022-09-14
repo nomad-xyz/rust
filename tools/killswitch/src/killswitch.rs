@@ -1,8 +1,5 @@
 use crate::{
-    errors::{is_error, take_error, Error},
-    output::build_output_message,
-    settings::Settings,
-    Args, Message, Result,
+    errors::Error, output::build_output_message, settings::Settings, Args, Message, Result,
 };
 use futures_util::future::join_all;
 use nomad_base::{AttestationSigner, ChainSetup, ChainSetupType, ConnectionManagers, Homes};
@@ -28,45 +25,37 @@ pub(crate) struct Channel {
     pub(crate) replica: String,
 }
 
-/// The channel and contracts required, or errors encountered
-/// We use `Option<_>` for members here so we can `take` mutably
-/// https://doc.rust-lang.org/stable/book/ch17-03-oo-design-patterns.html?#defining-post-and-creating-a-new-instance-in-the-draft-state
+/// The channel and contracts required or errors encountered
 #[derive(Debug)]
 struct ChannelKiller {
     /// The channel we want to kill
     channel: Channel,
-    /// Home contract or encountered error
-    home_contract: Option<Result<Homes>>,
-    /// Connection manager or encountered error
-    connection_manager: Option<Result<ConnectionManagers>>,
-    /// Attestation signer or encountered error
-    attestation_signer: Option<Result<AttestationSigner>>,
+    /// Home contract
+    home_contract: Option<Homes>,
+    /// Connection manager
+    connection_manager: Option<ConnectionManagers>,
+    /// Attestation signer
+    attestation_signer: Option<AttestationSigner>,
+    /// Contract init errors we've encountered
+    errors: Vec<Error>,
 }
 
 impl ChannelKiller {
     /// Have we collected *any* errors
     fn has_errors(&self) -> bool {
-        is_error!(self.home_contract)
-            || is_error!(self.connection_manager)
-            || is_error!(self.attestation_signer)
+        !self.errors.is_empty()
     }
 
     /// Take all available errors
     fn take_all_errors(&mut self) -> Vec<Error> {
-        vec![
-            take_error!(self.home_contract),
-            take_error!(self.connection_manager),
-            take_error!(self.attestation_signer),
-        ]
-        .into_iter()
-        .flatten()
-        .collect()
+        self.errors.drain(..).collect()
     }
 
     /// Create a `SignedFailureNotification`
     async fn create_signed_failure(&mut self) -> Result<SignedFailureNotification> {
-        let home_contract = self.home_contract.take().unwrap()?;
-        let signer = self.attestation_signer.take().unwrap()?;
+        // Force unwrap here as we're not calling this on contract with errors
+        let home_contract = self.home_contract.take().unwrap();
+        let signer = self.attestation_signer.take().unwrap();
         let updater = home_contract
             .updater()
             .await
@@ -82,7 +71,8 @@ impl ChannelKiller {
 
     /// Kill channel
     async fn kill(&mut self, signed_failure: &SignedFailureNotification) -> Result<TxOutcome> {
-        let connection_manager = self.connection_manager.take().unwrap()?;
+        // Force unwrap here as we're not calling this on contract with errors
+        let connection_manager = self.connection_manager.take().unwrap();
         connection_manager
             .unenroll_replica(signed_failure)
             .await
@@ -200,15 +190,31 @@ impl KillSwitch {
             let home_contract = Self::make_home(&channel, &settings).await;
             let connection_manager = Self::make_connection_manager(&channel, &settings).await;
             let attestation_signer = Self::make_signer(&channel, &settings).await;
-            ChannelKiller {
+            let mut killer = ChannelKiller {
                 channel,
-                home_contract: Some(home_contract),
-                connection_manager: Some(connection_manager),
-                attestation_signer: Some(attestation_signer),
+                home_contract: None,
+                connection_manager: None,
+                attestation_signer: None,
+                errors: vec![],
+            };
+            if let Err(err) = home_contract {
+                killer.errors.push(err);
+            } else {
+                killer.home_contract = home_contract.ok();
             }
+            if let Err(err) = connection_manager {
+                killer.errors.push(err);
+            } else {
+                killer.connection_manager = connection_manager.ok();
+            }
+            if let Err(err) = attestation_signer {
+                killer.errors.push(err);
+            } else {
+                killer.attestation_signer = attestation_signer.ok();
+            }
+            killer
         });
         let channel_killers = join_all(futs).await.into_iter().collect::<Vec<_>>();
-
         Ok(Self { channel_killers })
     }
 
@@ -280,7 +286,6 @@ impl KillSwitch {
 mod test {
     use super::*;
     use crate::App;
-    use ethers::prelude::Signature;
     use nomad_test::test_utils;
     use nomad_xyz_configuration::{ChainConf, Connection};
     use std::collections::HashMap;
@@ -459,9 +464,13 @@ mod test {
         };
         ChannelKiller {
             channel: channel.clone(),
-            home_contract: Some(Err(Error::MissingTxSubmitterConf(channel.home.clone()))),
-            connection_manager: Some(Err(Error::MissingTxSubmitterConf(channel.replica.clone()))),
+            home_contract: None,
+            connection_manager: None,
             attestation_signer: None,
+            errors: vec![
+                Error::MissingTxSubmitterConf(channel.home.clone()),
+                Error::MissingTxSubmitterConf(channel.replica.clone()),
+            ],
         }
     }
 
@@ -484,40 +493,6 @@ mod test {
             assert_eq!(errors.len(), 2);
             assert_matches!(errors[0], Error::MissingTxSubmitterConf(_));
             assert_matches!(errors[1], Error::MissingTxSubmitterConf(_));
-        })
-        .await
-    }
-
-    #[tokio::test]
-    #[serial_test::serial]
-    async fn it_fails_to_create_signed_failure() {
-        test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
-            let mut killer = make_bad_channel_killer();
-
-            let result = killer.create_signed_failure().await;
-            assert_matches!(result.unwrap_err(), Error::MissingTxSubmitterConf(_));
-        })
-        .await
-    }
-
-    #[tokio::test]
-    #[serial_test::serial]
-    async fn it_fails_to_kill() {
-        test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
-            let mut killer = make_bad_channel_killer();
-            let signed_failure = SignedFailureNotification {
-                notification: FailureNotification {
-                    home_domain: 0,
-                    updater: Default::default(),
-                },
-                signature: Signature {
-                    r: Default::default(),
-                    s: Default::default(),
-                    v: 0,
-                },
-            };
-            let result = killer.kill(&signed_failure).await;
-            assert_matches!(result.unwrap_err(), Error::MissingTxSubmitterConf(_));
         })
         .await
     }
