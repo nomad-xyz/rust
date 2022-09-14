@@ -10,7 +10,7 @@ pub enum Error {
     )]
     NoConfigVar,
     /// Bad configuration env var
-    #[error("BadConfigVar: Unable to load config from {0}")]
+    #[error("BadConfigVar: Unable to load config from: {0}")]
     BadConfigVar(String),
     /// No killable networks found
     #[error("NoNetworks: No available networks in config to kill")]

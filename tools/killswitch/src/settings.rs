@@ -40,6 +40,7 @@ impl Settings {
             .filter_map(|n| ChainConf::from_env(&n.to_uppercase()).map(|conf| (n.clone(), conf)))
             .collect::<HashMap<_, _>>();
 
+        // Load submitter configs for all networks explicitly using the form `<NETWORK>_TXSIGNER_*`
         let tx_submitters = networks
             .iter()
             .filter_map(|n| {
@@ -47,7 +48,7 @@ impl Settings {
             })
             .collect::<HashMap<_, _>>();
 
-        // Load attestation signers for all networks explicitly using the form `<NETWORK>_ATTESTATION_SIGNER_ID`
+        // Load attestation signers for all networks explicitly using the form `<NETWORK>_ATTESTATION_SIGNER_*`
         let attestation_signers = networks
             .iter()
             .filter_map(|n| {
@@ -62,5 +63,45 @@ impl Settings {
             tx_submitters,
             attestation_signers,
         })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use nomad_test::test_utils;
+    use nomad_types::HexString;
+    use nomad_xyz_configuration::{ethereum, Connection};
+    use std::str::FromStr;
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_loads_config() {
+        test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
+
+            let settings = Settings::new().await;
+            assert!(settings.is_ok());
+
+            let settings = settings.unwrap();
+            let networks = settings.config.networks.clone();
+
+            let key = HexString::<64>::from_str(
+                "0x0000000000000000000000000000000000000000000000000000000000000123"
+            ).unwrap();
+
+            for network in networks {
+                let rpc = settings.rpcs.get(&network);
+                assert!(rpc.is_some());
+                assert_matches!(rpc.unwrap(), ChainConf::Ethereum(Connection::Http(_)));
+
+                let tx_submitter = settings.tx_submitters.get(&network);
+                assert!(tx_submitter.is_some());
+                assert_matches!(tx_submitter.unwrap(), TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Local(SignerConf::HexKey(k))) if k == &key);
+
+                let attestation_signer = settings.attestation_signers.get(&network);
+                assert!(attestation_signer.is_some());
+                assert_matches!(attestation_signer.unwrap(), SignerConf::HexKey(k) if k == &key);
+            }
+        }).await
     }
 }

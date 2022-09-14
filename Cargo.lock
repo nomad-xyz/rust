@@ -145,6 +145,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "assert_matches"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
+
+[[package]]
 name = "async-attributes"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2633,15 +2639,19 @@ checksum = "f9b7d56ba4a8344d6be9729995e6b06f928af29998cdf79fe390cbf6b1fee838"
 name = "killswitch"
 version = "0.1.0"
 dependencies = [
+ "assert_matches",
  "clap 3.2.17",
  "ethers",
  "futures-util",
  "nomad-base",
  "nomad-core",
  "nomad-ethereum",
+ "nomad-test",
+ "nomad-types",
  "nomad-xyz-configuration",
  "serde 1.0.137",
  "serde_json",
+ "serial_test",
  "thiserror",
  "tokio",
 ]

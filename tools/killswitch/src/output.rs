@@ -74,6 +74,7 @@ pub(crate) fn build_output_message(
     }
     Message::FullMessage(json!({
         "homes": homes.into_iter().map(|(home, replicas)| {
+            /// report error for *any* errors encountered
             let success = replicas.iter().all(|(s, _)| *s);
             (home, json!({
                 "status": if success { "success" } else { "error" },
@@ -118,11 +119,11 @@ mod test {
         let value: Value = serde_json::from_str(&json).unwrap();
         let ethereum = &value["homes"]["ethereum"];
         let avalanche = &value["homes"]["avalanche"];
-        assert_eq!("error", ethereum["status"]);
-        assert_eq!("error", avalanche["status"]);
+        assert_eq!(ethereum["status"], "error");
+        assert_eq!(avalanche["status"], "error");
         assert_eq!(
-            "MissingTxSubmitterConf: No transaction submitter config found for: ethereum",
-            &avalanche["message"]["replicas"]["ethereum"]["result"]["message"][0]
+            &avalanche["message"]["replicas"]["ethereum"]["result"]["message"][0],
+            "MissingTxSubmitterConf: No transaction submitter config found for: ethereum"
         );
     }
 
@@ -158,11 +159,11 @@ mod test {
         let value: Value = serde_json::from_str(&json).unwrap();
         let ethereum = &value["homes"]["ethereum"];
         let avalanche = &value["homes"]["avalanche"];
-        assert_eq!("success", ethereum["status"]);
-        assert_eq!("success", avalanche["status"]);
+        assert_eq!(ethereum["status"], "success");
+        assert_eq!(avalanche["status"], "success");
         assert_eq!(
-            "0x2222222222222222222222222222222222222222222222222222222222222222",
-            &avalanche["message"]["replicas"]["ethereum"]["result"]["tx_hash"]
+            &avalanche["message"]["replicas"]["ethereum"]["result"]["tx_hash"],
+            "0x2222222222222222222222222222222222222222222222222222222222222222"
         );
     }
 
@@ -194,15 +195,15 @@ mod test {
         let value: Value = serde_json::from_str(&json).unwrap();
         let ethereum = &value["homes"]["ethereum"];
         let avalanche = &value["homes"]["avalanche"];
-        assert_eq!("error", ethereum["status"]);
-        assert_eq!("success", avalanche["status"]);
+        assert_eq!(ethereum["status"], "error");
+        assert_eq!(avalanche["status"], "success");
         assert_eq!(
-            "MissingTxSubmitterConf: No transaction submitter config found for: avalanche",
-            &ethereum["message"]["replicas"]["avalanche"]["result"]["message"][0]
+            &ethereum["message"]["replicas"]["avalanche"]["result"]["message"][0],
+            "MissingTxSubmitterConf: No transaction submitter config found for: avalanche"
         );
         assert_eq!(
-            "0x1111111111111111111111111111111111111111111111111111111111111111",
-            &avalanche["message"]["replicas"]["ethereum"]["result"]["tx_hash"]
+            &avalanche["message"]["replicas"]["ethereum"]["result"]["tx_hash"],
+            "0x1111111111111111111111111111111111111111111111111111111111111111"
         );
     }
 }

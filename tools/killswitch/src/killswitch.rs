@@ -13,6 +13,7 @@ use nomad_core::{
 use nomad_xyz_configuration::AgentSecrets;
 
 /// Main `KillSwitch` struct
+#[derive(Debug)]
 pub(crate) struct KillSwitch {
     /// A vector of all `ChannelKiller`
     channel_killers: Vec<ChannelKiller>,
@@ -28,6 +29,9 @@ pub(crate) struct Channel {
 }
 
 /// The channel and contracts required, or errors encountered
+/// We use `Option<_>` for members here so we can `take` mutably
+/// https://doc.rust-lang.org/stable/book/ch17-03-oo-design-patterns.html?#defining-post-and-creating-a-new-instance-in-the-draft-state
+#[derive(Debug)]
 struct ChannelKiller {
     /// The channel we want to kill
     channel: Channel,
@@ -165,7 +169,7 @@ impl KillSwitch {
             .map_err(|report| Error::ConnectionManagerInit(format!("{:#}", report)))
     }
 
-    /// Make `Signers` or return error
+    /// Make `AttestationSigner` or return error
     async fn make_signer(channel: &Channel, settings: &Settings) -> Result<AttestationSigner> {
         let config = settings
             .attestation_signers
@@ -256,16 +260,265 @@ impl KillSwitch {
         let (failed, ok): (Vec<_>, Vec<_>) =
             results.into_iter().partition(|(_, result)| result.is_err());
 
+        // We encountered errors
         let bad = failed
             .into_iter()
             .map(|(channel, result)| (channel, vec![result.unwrap_err()]))
             .collect::<Vec<(_, _)>>();
 
+        // These were successful
         let good = ok
             .into_iter()
             .map(|(channel, result)| (channel, result.unwrap()))
             .collect::<Vec<(_, _)>>();
 
         build_output_message(bad, good)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::App;
+    use ethers::prelude::Signature;
+    use nomad_test::test_utils;
+    use nomad_xyz_configuration::{ChainConf, Connection};
+    use std::collections::HashMap;
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_makes_all_channels() {
+        test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
+            let settings = Settings::new().await;
+            assert!(settings.is_ok());
+
+            let settings = settings.unwrap();
+            let channels = KillSwitch::make_channels(&settings);
+
+            // Networks are loaded as a HashMap so channels are built non-deterministically
+            // We're just checking that we've created the correct number here
+            assert_eq!(channels.len(), 4 * 3);
+        })
+        .await
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_makes_inbound_channels() {
+        test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
+            let settings = Settings::new().await;
+            assert!(settings.is_ok());
+
+            let inbound: String = "goerli".into();
+            let settings = settings.unwrap();
+            let all_channels = KillSwitch::make_channels(&settings);
+            let channels = KillSwitch::make_inbound_channels(&inbound, all_channels);
+
+            // Inbound should equal all replicas and no homes
+            for channel in &channels {
+                assert_eq!(channel.replica, inbound);
+            }
+            for channel in &channels {
+                assert_ne!(channel.home, inbound);
+            }
+        })
+        .await
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_makes_good_chain_setup() {
+        test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
+            let settings = Settings::new().await;
+            assert!(settings.is_ok());
+
+            let network: String = "goerli".into();
+            let settings = settings.unwrap();
+            let setup_type = ChainSetupType::Home {
+                home_network: &network,
+            };
+
+            let chain_setup = KillSwitch::make_chain_setup(&network, setup_type, &settings);
+            assert!(chain_setup.is_ok());
+            let chain_setup = chain_setup.unwrap();
+
+            assert_eq!(chain_setup.name, network);
+            assert_matches!(chain_setup.chain, ChainConf::Ethereum(Connection::Http(_)));
+        })
+        .await
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_makes_bad_chain_setup() {
+        test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
+            let settings = Settings::new().await;
+            assert!(settings.is_ok());
+
+            let network: String = "goerli".into();
+            let mut settings = settings.unwrap();
+            let setup_type = ChainSetupType::Home {
+                home_network: &network,
+            };
+            settings.rpcs = HashMap::new(); // Bad rpc config
+
+            let chain_setup = KillSwitch::make_chain_setup(&network, setup_type, &settings);
+            assert_matches!(chain_setup.unwrap_err(), Error::MissingRPC(n) if n == network);
+        })
+        .await
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_makes_bad_home() {
+        test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
+            let settings = Settings::new().await;
+            assert!(settings.is_ok());
+
+            let network: String = "goerli".into();
+            let mut settings = settings.unwrap();
+            let channel = Channel {
+                home: network.clone(),
+                replica: "rinkeby".into(),
+            };
+            settings.tx_submitters = HashMap::new(); // Bad tx_submitter config
+
+            let home = KillSwitch::make_home(&channel, &settings).await;
+            assert_matches!(home.unwrap_err(), Error::MissingTxSubmitterConf(n) if n == network);
+        })
+        .await
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_makes_bad_connection_manager() {
+        test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
+            let settings = Settings::new().await;
+            assert!(settings.is_ok());
+
+            let network: String = "goerli".into();
+            let mut settings = settings.unwrap();
+            let channel = Channel {
+                home: "rinkeby".into(),
+                replica: network.clone(),
+            };
+            settings.tx_submitters = HashMap::new(); // Bad tx submitter config
+
+            let xcm = KillSwitch::make_connection_manager(&channel, &settings).await;
+            assert_matches!(xcm.unwrap_err(), Error::MissingTxSubmitterConf(n) if n == network);
+        })
+        .await
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_makes_bad_attestation_signer() {
+        test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
+            let settings = Settings::new().await;
+            assert!(settings.is_ok());
+
+            let network: String = "goerli".into();
+            let mut settings = settings.unwrap();
+            let channel = Channel {
+                home: network.clone(),
+                replica: "rinkeby".into(),
+            };
+            settings.attestation_signers = HashMap::new(); // Bad attestation signer config
+
+            let signer = KillSwitch::make_signer(&channel, &settings).await;
+            assert_matches!(signer.unwrap_err(), Error::MissingAttestationSignerConf(n) if n == network);
+        })
+        .await
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_makes_a_killswitch_with_no_channels() {
+        test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
+            let args = Args {
+                app: App::TokenBridge,
+                all: false,
+                all_inbound: Some("avalanche".into()), // Unused network
+                pretty: false,
+            };
+            let settings = Settings::new().await;
+            assert!(settings.is_ok());
+            let settings = settings.unwrap();
+
+            let killswitch = KillSwitch::new(args, settings).await;
+            assert_matches!(killswitch.unwrap_err(), Error::NoNetworks);
+        })
+        .await
+    }
+
+    /// `ChannelKiller` with errors
+    fn make_bad_channel_killer() -> ChannelKiller {
+        let channel = Channel {
+            home: "goerli".into(),
+            replica: "rinkeby".into(),
+        };
+        ChannelKiller {
+            channel: channel.clone(),
+            home_contract: Some(Err(Error::MissingTxSubmitterConf(channel.home.clone()))),
+            connection_manager: Some(Err(Error::MissingTxSubmitterConf(channel.replica.clone()))),
+            attestation_signer: None,
+        }
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_has_errors() {
+        test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
+            let killer = make_bad_channel_killer();
+            assert!(killer.has_errors());
+        })
+        .await
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_takes_errors() {
+        test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
+            let mut killer = make_bad_channel_killer();
+            let errors = killer.take_all_errors();
+            assert_eq!(errors.len(), 2);
+            assert_matches!(errors[0], Error::MissingTxSubmitterConf(_));
+            assert_matches!(errors[1], Error::MissingTxSubmitterConf(_));
+        })
+        .await
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_fails_to_create_signed_failure() {
+        test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
+            let mut killer = make_bad_channel_killer();
+
+            let result = killer.create_signed_failure().await;
+            assert_matches!(result.unwrap_err(), Error::MissingTxSubmitterConf(_));
+        })
+        .await
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_fails_to_kill() {
+        test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
+            let mut killer = make_bad_channel_killer();
+            let signed_failure = SignedFailureNotification {
+                notification: FailureNotification {
+                    home_domain: 0,
+                    updater: Default::default(),
+                },
+                signature: Signature {
+                    r: Default::default(),
+                    s: Default::default(),
+                    v: 0,
+                },
+            };
+            let result = killer.kill(&signed_failure).await;
+            assert_matches!(result.unwrap_err(), Error::MissingTxSubmitterConf(_));
+        })
+        .await
     }
 }

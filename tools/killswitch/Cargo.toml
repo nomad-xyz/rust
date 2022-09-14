@@ -17,3 +17,9 @@ nomad-core = { path = "../../nomad-core" }
 nomad-base = { path = "../../nomad-base" }
 nomad-xyz-configuration = { path = "../../configuration" }
 nomad-ethereum = { path = "../../chains/nomad-ethereum" }
+
+[dev-dependencies]
+assert_matches = "1.5"
+serial_test = "0.6.0"
+nomad-test = { path = "../../nomad-test" }
+nomad-types = { path = "../../nomad-types" }
