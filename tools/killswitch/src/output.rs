@@ -74,7 +74,7 @@ pub(crate) fn build_output_message(
     }
     Message::FullMessage(json!({
         "homes": homes.into_iter().map(|(home, replicas)| {
-            /// report error for *any* errors encountered
+            // report error for *any* errors encountered
             let success = replicas.iter().all(|(s, _)| *s);
             (home, json!({
                 "status": if success { "success" } else { "error" },
