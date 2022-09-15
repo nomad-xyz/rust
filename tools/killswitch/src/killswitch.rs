@@ -197,16 +197,19 @@ impl KillSwitch {
                 attestation_signer: None,
                 errors: vec![],
             };
+
             if let Err(err) = home_contract {
                 killer.errors.push(err);
             } else {
                 killer.home_contract = home_contract.ok();
             }
+
             if let Err(err) = connection_manager {
                 killer.errors.push(err);
             } else {
                 killer.connection_manager = connection_manager.ok();
             }
+
             if let Err(err) = attestation_signer {
                 killer.errors.push(err);
             } else {
@@ -320,6 +323,7 @@ mod test {
             let channels = KillSwitch::make_inbound_channels(&inbound, all_channels);
 
             // Inbound should equal all replicas and no homes
+            assert_eq!(channels.len(), 3);
             for channel in &channels {
                 assert_eq!(channel.replica, inbound);
             }
@@ -474,26 +478,18 @@ mod test {
         }
     }
 
-    #[tokio::test]
-    #[serial_test::serial]
-    async fn it_has_errors() {
-        test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
-            let killer = make_bad_channel_killer();
-            assert!(killer.has_errors());
-        })
-        .await
+    #[test]
+    fn it_has_errors() {
+        let killer = make_bad_channel_killer();
+        assert!(killer.has_errors());
     }
 
-    #[tokio::test]
-    #[serial_test::serial]
-    async fn it_takes_errors() {
-        test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
-            let mut killer = make_bad_channel_killer();
-            let errors = killer.take_all_errors();
-            assert_eq!(errors.len(), 2);
-            assert_matches!(errors[0], Error::MissingTxSubmitterConf(_));
-            assert_matches!(errors[1], Error::MissingTxSubmitterConf(_));
-        })
-        .await
+    #[test]
+    fn it_takes_errors() {
+        let mut killer = make_bad_channel_killer();
+        let errors = killer.take_all_errors();
+        assert_eq!(errors.len(), 2);
+        assert_matches!(errors[0], Error::MissingTxSubmitterConf(_));
+        assert_matches!(errors[1], Error::MissingTxSubmitterConf(_));
     }
 }

@@ -82,6 +82,7 @@ async fn main() {
     let args = Args::parse();
     let pretty = args.pretty;
 
+    // Try to build `NomadConfig`, exiting immediately if we can't
     let settings = Settings::new().await;
     if let Err(error) = settings {
         // We've hit a blocking error, bail
@@ -89,6 +90,7 @@ async fn main() {
         exit(ExitCode::BadConfig as i32)
     }
 
+    // Try to build `KillSwitch`. If we hit `NoNetworks` error, nothing to do, bail
     let killswitch = KillSwitch::new(args, settings.unwrap()).await;
     if let Err(error) = killswitch {
         // We've hit a blocking error, bail
@@ -96,6 +98,7 @@ async fn main() {
         exit(ExitCode::BadConfig as i32)
     }
 
+    // Get errors that block individual channels, report before proceeding. Do not bail
     let (killswitch, errors) = killswitch.unwrap().get_blocking_errors().await;
     if let Some(errors) = errors {
         // Stream these blocking errors before running transactions
@@ -103,9 +106,10 @@ async fn main() {
         report(errors, pretty);
     }
 
+    // Run all channels that *could* succeed
     let results = killswitch.run().await;
-    // Give users final results
-    report(results, pretty);
 
+    // Give users final results, exit ok
+    report(results, pretty);
     exit(ExitCode::Ok as i32)
 }

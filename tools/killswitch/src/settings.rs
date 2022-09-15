@@ -22,10 +22,14 @@ impl Settings {
         let config = if let Ok(config_url) = env::var("CONFIG_URL") {
             NomadConfig::fetch(&config_url)
                 .await
-                .map_err(|_| Error::BadConfigVar(config_url.clone()))
+                .map_err(|_| Error::BadConfigVar(config_url.to_owned()))
         } else if let Ok(config_path) = env::var("CONFIG_PATH") {
             NomadConfig::from_file(&config_path)
-                .map_err(|_| Error::BadConfigVar(config_path.clone()))
+                .map_err(|_| Error::BadConfigVar(config_path.to_owned()))
+        } else if let Ok(environment) = env::var("RUN_ENV") {
+            nomad_xyz_configuration::get_builtin(&environment)
+                .map(ToOwned::to_owned)
+                .ok_or(Error::BadConfigVar(environment.to_owned()))
         } else {
             Err(Error::NoConfigVar)
         };

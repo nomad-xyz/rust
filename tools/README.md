@@ -25,7 +25,7 @@ OPTIONS:
 
 #### Environment variables
 
-A config file can be specified with `CONFIG_PATH` (local) or `CONFIG_URL` (remote).
+A config file can be specified with `CONFIG_URL` (remote), `CONFIG_PATH` (local) or `RUN_ENV` (local) and are evaluated in that order, the first found being used.
 
 Secrets must be in the explicit form `<NETWORK>_TXSIGNER_{KEY,ID}` and `<NETWORK>_ATTESTATION_SIGNER_{KEY,ID}`.
 
