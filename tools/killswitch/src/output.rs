@@ -27,7 +27,7 @@ pub(crate) enum Message {
 impl From<Error> for Message {
     /// Convert a blocking `Error` to `Message`
     fn from(error: Error) -> Self {
-        Message::SimpleError(format!("{:?}", error))
+        Message::SimpleError(format!("{}", error))
     }
 }
 
