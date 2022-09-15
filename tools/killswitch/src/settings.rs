@@ -29,7 +29,7 @@ impl Settings {
         } else if let Ok(environment) = env::var("RUN_ENV") {
             nomad_xyz_configuration::get_builtin(&environment)
                 .map(ToOwned::to_owned)
-                .ok_or(Error::BadConfigVar(environment.to_owned()))
+                .ok_or_else(|| Error::BadConfigVar(environment.to_owned()))
         } else {
             Err(Error::NoConfigVar)
         };
