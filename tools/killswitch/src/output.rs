@@ -21,7 +21,7 @@ pub(crate) enum Message {
     /// An wrapper for a single error we bailed on
     SimpleError(String),
     /// A full results message
-    FullMessage(Homes),
+    FullMessage(HomesOutput),
 }
 
 impl From<Error> for Message {
@@ -33,31 +33,31 @@ impl From<Error> for Message {
 
 /// Map of homes by name
 #[derive(Debug, Serialize, Deserialize)]
-pub(crate) struct Homes {
+pub(crate) struct HomesOutput {
     /// Homes by name
-    homes: HashMap<String, Home>,
+    homes: HashMap<String, HomeOutput>,
 }
 
 /// Home
 #[derive(Debug, Serialize, Deserialize)]
-pub(crate) struct Home {
+pub(crate) struct HomeOutput {
     /// `Success` if *all* replicas succeeded
     status: Status,
     /// Map of replicas
-    message: Replicas,
+    message: ReplicasOutput,
 }
 
 /// Map of replicas by name
 #[derive(Debug, Serialize, Deserialize)]
-pub(crate) struct Replicas {
+pub(crate) struct ReplicasOutput {
     /// Replica by name
-    replicas: HashMap<String, Replica>,
+    replicas: HashMap<String, ReplicaOutput>,
 }
 
 /// Replica
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-enum Replica {
+enum ReplicaOutput {
     /// Replicas have a result object
     Result {
         /// Replica status
@@ -90,7 +90,7 @@ pub(crate) fn build_output_message(
     let mut replicas = bad
         .into_iter()
         .map(|(channel, errors)| {
-            let replica = Replica::Result {
+            let replica = ReplicaOutput::Result {
                 status: Status::Error,
                 tx_hash: None,
                 message: Some(
@@ -108,7 +108,7 @@ pub(crate) fn build_output_message(
 
     // Successful channels
     replicas.extend(good.into_iter().map(|(channel, tx)| {
-        let replica = Replica::Result {
+        let replica = ReplicaOutput::Result {
             status: Status::Success,
             tx_hash: Some(tx.txid),
             message: None,
@@ -117,7 +117,7 @@ pub(crate) fn build_output_message(
     }));
 
     // Map replicas to homes
-    let mut homes: HashMap<String, Vec<(bool, (String, Replica))>> = HashMap::new();
+    let mut homes: HashMap<String, Vec<(bool, (String, ReplicaOutput))>> = HashMap::new();
     for (channel, (success, replica)) in replicas {
         if let Some(replicas) = homes.get_mut(&channel.home) {
             replicas.push((success, replica));
@@ -127,7 +127,7 @@ pub(crate) fn build_output_message(
     }
 
     // Full output
-    Message::FullMessage(Homes {
+    Message::FullMessage(HomesOutput {
         homes: homes
             .into_iter()
             .map(|(home, replicas)| {
@@ -135,13 +135,13 @@ pub(crate) fn build_output_message(
                 let success = replicas.iter().all(|(s, _)| *s);
                 (
                     home,
-                    Home {
+                    HomeOutput {
                         status: if success {
                             Status::Success
                         } else {
                             Status::Error
                         },
-                        message: Replicas {
+                        message: ReplicasOutput {
                             replicas: replicas.into_iter().map(|(_, replica)| replica).collect(),
                         },
                     },
@@ -180,7 +180,7 @@ mod test {
         };
         let json = serde_json::to_string(&homes).unwrap();
 
-        let result: Homes = serde_json::from_str(&json).unwrap();
+        let result: HomesOutput = serde_json::from_str(&json).unwrap();
         let ethereum = result.homes.get("ethereum").unwrap();
         let avalanche = result.homes.get("avalanche").unwrap();
         let error = format!(
@@ -191,7 +191,7 @@ mod test {
         assert_matches!(avalanche.status, Status::Error);
         assert_matches!(
             avalanche.message.replicas.get("ethereum").unwrap(),
-            Replica::Result {
+            ReplicaOutput::Result {
                 message: Some(errors),
                 ..
             } if errors.first().unwrap() == &error
@@ -227,14 +227,14 @@ mod test {
         };
         let json = serde_json::to_string(&homes).unwrap();
 
-        let result: Homes = serde_json::from_str(&json).unwrap();
+        let result: HomesOutput = serde_json::from_str(&json).unwrap();
         let ethereum = result.homes.get("ethereum").unwrap();
         let avalanche = result.homes.get("avalanche").unwrap();
         assert_matches!(ethereum.status, Status::Success);
         assert_matches!(avalanche.status, Status::Success);
         assert_matches!(
             avalanche.message.replicas.get("ethereum").unwrap(),
-            Replica::Result { tx_hash: Some(tx), .. } if tx == &tx2.txid
+            ReplicaOutput::Result { tx_hash: Some(tx), .. } if tx == &tx2.txid
         );
     }
 
@@ -263,7 +263,7 @@ mod test {
         };
         let json = serde_json::to_string(&homes).unwrap();
 
-        let result: Homes = serde_json::from_str(&json).unwrap();
+        let result: HomesOutput = serde_json::from_str(&json).unwrap();
         let ethereum = result.homes.get("ethereum").unwrap();
         let avalanche = result.homes.get("avalanche").unwrap();
         let error = format!(
@@ -274,11 +274,11 @@ mod test {
         assert_matches!(avalanche.status, Status::Success);
         assert_matches!(
             avalanche.message.replicas.get("ethereum").unwrap(),
-            Replica::Result { tx_hash: Some(t), .. } if t == &tx.txid
+            ReplicaOutput::Result { tx_hash: Some(t), .. } if t == &tx.txid
         );
         assert_matches!(
             ethereum.message.replicas.get("avalanche").unwrap(),
-            Replica::Result {
+            ReplicaOutput::Result {
                 message: Some(errors),
                 ..
             } if errors.first().unwrap() == &error
