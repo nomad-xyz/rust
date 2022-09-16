@@ -76,36 +76,81 @@ mod test {
     use nomad_test::test_utils;
     use nomad_types::HexString;
     use nomad_xyz_configuration::{ethereum, Connection};
-    use std::str::FromStr;
+    use std::{collections::HashSet, str::FromStr};
+
+    fn test_secrets_match_network(settings: &Settings, network: &String, key: &HexString<64>) {
+        let rpc = settings.rpcs.get(network);
+        assert!(rpc.is_some());
+        assert_matches!(rpc.unwrap(), ChainConf::Ethereum(Connection::Http(_)));
+
+        let tx_submitter = settings.tx_submitters.get(network);
+        assert!(tx_submitter.is_some());
+        assert_matches!(
+            tx_submitter.unwrap(),
+            TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Local(SignerConf::HexKey(k))) if k == key
+        );
+
+        let attestation_signer = settings.attestation_signers.get(network);
+        assert!(attestation_signer.is_some());
+        assert_matches!(attestation_signer.unwrap(), SignerConf::HexKey(k) if k == key);
+    }
 
     #[tokio::test]
     #[serial_test::serial]
     async fn it_loads_config() {
         test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
-
             let settings = Settings::new().await;
             assert!(settings.is_ok());
 
             let settings = settings.unwrap();
             let networks = settings.config.networks.clone();
+            let expected = HashSet::from([
+                "evmostestnet".to_string(),
+                "goerli".to_string(),
+                "polygonmumbai".to_string(),
+                "rinkeby".to_string(),
+            ]);
+            assert_eq!(networks, expected);
 
             let key = HexString::<64>::from_str(
-                "0x0000000000000000000000000000000000000000000000000000000000000123"
-            ).unwrap();
-
+                "0x0000000000000000000000000000000000000000000000000000000000000123",
+            )
+            .unwrap();
             for network in networks {
-                let rpc = settings.rpcs.get(&network);
-                assert!(rpc.is_some());
-                assert_matches!(rpc.unwrap(), ChainConf::Ethereum(Connection::Http(_)));
-
-                let tx_submitter = settings.tx_submitters.get(&network);
-                assert!(tx_submitter.is_some());
-                assert_matches!(tx_submitter.unwrap(), TxSubmitterConf::Ethereum(ethereum::TxSubmitterConf::Local(SignerConf::HexKey(k))) if k == &key);
-
-                let attestation_signer = settings.attestation_signers.get(&network);
-                assert!(attestation_signer.is_some());
-                assert_matches!(attestation_signer.unwrap(), SignerConf::HexKey(k) if k == &key);
+                test_secrets_match_network(&settings, &network, &key);
             }
-        }).await
+        })
+        .await
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_loads_builtin_config() {
+        test_utils::run_test_with_env(
+            "../../fixtures/env.test-killswitch-builtin",
+            || async move {
+                let settings = Settings::new().await;
+                assert!(settings.is_ok());
+
+                let settings = settings.unwrap();
+                let networks = settings.config.networks.clone();
+                let expected = HashSet::from([
+                    "ethereum".to_string(),
+                    "avail".to_string(),
+                    "moonbeam".to_string(),
+                    "evmos".to_string(),
+                ]);
+                assert_eq!(networks, expected);
+
+                let key = HexString::<64>::from_str(
+                    "0x0000000000000000000000000000000000000000000000000000000000000123",
+                )
+                .unwrap();
+                for network in networks {
+                    test_secrets_match_network(&settings, &network, &key);
+                }
+            },
+        )
+        .await
     }
 }
