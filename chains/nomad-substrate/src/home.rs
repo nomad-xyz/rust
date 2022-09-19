@@ -333,6 +333,12 @@ where
         let committed_root: H256 = self.base().await?.committed_root.into();
         let new_root = self.tree().await?.root();
 
+        // If tree has no messages, DO NOT produce update with initial root
+        // (will cause failed home)
+        if new_root == NomadLightMerkle::initial_root() {
+            return Ok(None);
+        }
+
         Ok(if committed_root == new_root {
             None
         } else {
