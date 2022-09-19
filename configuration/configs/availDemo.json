@@ -95,7 +95,7 @@
       }
     },
     "avail": {
-      "deployHeight": 5
+      "deployHeight": 3
     }
   },
   "bridgeGui": {},
@@ -116,15 +116,15 @@
         "avail": {
           "beacon": "0x0000000000000000000000000000000000000000",
           "implementation": "0x0000000000000000000000000000000000000000",
-          "proxy": "0x420620f62bcc49005ebd1e2b2dd030bb961d1d17"
+          "proxy": "0x81f47c8bf074d5f639e560421e50d9725166e602"
         }
       },
       "updaterManager": "0x0000000000000000000000000000000000000000",
       "upgradeBeaconController": "0x0000000000000000000000000000000000000000",
-      "xAppConnectionManager": "0x45672bdfdda5959fb3a5d6e75e4eb81a3e06e340"
+      "xAppConnectionManager": "0x2cba7df74984a6f6f14c20386b4c18e8e9adf1e4"
     },
     "avail": {
-      "deployHeight": 5
+      "deployHeight": 3
     }
   },
   "environment": "development",
@@ -185,7 +185,7 @@
         "specs": {
           "chainId": 9001,
           "blockTime": 6,
-          "finalizationBlocks": 5,
+          "finalizationBlocks": 3,
           "supports1559": true,
           "confirmations": 5,
           "blockExplorer": "https://explorer.polkascan.io/polkadot",
