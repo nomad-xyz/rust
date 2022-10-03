@@ -19,7 +19,7 @@ pub(crate) struct Output {
 #[serde(untagged)]
 pub(crate) enum Message {
     /// An wrapper for a single error we bailed on
-    SimpleError(String),
+    SimpleError(SimpleErrorOutput),
     /// A full results message
     FullMessage(HomesOutput),
 }
@@ -27,8 +27,24 @@ pub(crate) enum Message {
 impl From<Error> for Message {
     /// Convert a blocking `Error` to `Message`
     fn from(error: Error) -> Self {
-        Message::SimpleError(format!("{}", error))
+        Message::SimpleError(SimpleErrorOutput::Result {
+            status: Status::Error,
+            message: format!("{}", error),
+        })
     }
+}
+
+/// Simple error output
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) enum SimpleErrorOutput {
+    /// Simple errors have a result object
+    Result {
+        /// Currently, this will always be `Error`
+        status: Status,
+        /// The error message
+        message: String,
+    },
 }
 
 /// Map of homes by name
@@ -156,6 +172,24 @@ mod test {
     use super::*;
     use nomad_core::TxOutcome;
     use std::str::FromStr;
+
+    #[test]
+    fn it_produces_correct_simple_error_output() {
+        let error = Error::BadConfigVar("/bad/path".into());
+        let message: Message = error.into();
+        let simple_error = match message {
+            Message::SimpleError(error) => error,
+            _ => panic!("Match error. Should never happen"),
+        };
+        let json = serde_json::to_string_pretty(&simple_error).unwrap();
+        let simple_error: SimpleErrorOutput = serde_json::from_str(&json).unwrap();
+
+        assert_matches!(
+            simple_error,
+            SimpleErrorOutput::Result { status: Status::Error, message }
+                if message == "BadConfigVar: Unable to load config from: /bad/path"
+        );
+    }
 
     #[test]
     fn it_produces_correct_bad_output() {
