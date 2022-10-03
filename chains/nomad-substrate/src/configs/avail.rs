@@ -17,7 +17,7 @@ use subxt::{
     Config,
 };
 
-#[subxt::subxt(runtime_metadata_path = "metadata/avail.metadata.scale")]
+#[subxt::subxt(runtime_metadata_path = "metadata/avail.dev.metadata.scale")]
 pub mod avail {}
 
 #[derive(Clone, Debug, Default)]

@@ -1,4 +1,4 @@
-use crate::configs::avail::avail::home;
+use crate::configs::avail::avail::nomad_home as home;
 use crate::SubstrateError;
 use color_eyre::Result;
 use ethers_core::types::Signature;
