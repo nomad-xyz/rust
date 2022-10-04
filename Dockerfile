@@ -15,7 +15,8 @@ COPY ${TARGET_DIR}/release/updater \
      ${TARGET_DIR}/release/processor \
      ${TARGET_DIR}/release/kathy \
      ${TARGET_DIR}/release/kms-cli \
-     ${TARGET_DIR}/release/nomad-cli ./
+     ${TARGET_DIR}/release/nomad-cli \
+     ${TARGET_DIR}/release/killswitch ./
 
 USER 1000
 CMD ["./watcher"]
