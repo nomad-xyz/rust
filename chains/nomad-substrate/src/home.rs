@@ -248,7 +248,11 @@ where
     async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, Self::Error> {
         let signed_update_value = utils::format_signed_update_value(update);
         let max_index = Value::u128(UPDATE_MAX_INDEX as u128);
-        let tx_payload = subxt::dynamic::tx(HOME_PALLET_NAME, "update", vec![signed_update_value, max_index]);
+        let tx_payload = subxt::dynamic::tx(
+            HOME_PALLET_NAME,
+            "update",
+            vec![signed_update_value, max_index],
+        );
 
         info!(update = ?update, "Submitting update to chain.");
         report_tx!("update", self.api, self.signer, tx_payload)
@@ -278,8 +282,11 @@ where
 
     #[tracing::instrument(err, skip(self))]
     async fn nonces(&self, destination: u32) -> Result<u32, <Self as Common>::Error> {
-        let nonce_address =
-            subxt::dynamic::storage(HOME_PALLET_NAME, "Nonces", vec![Value::u128(destination as u128)]);
+        let nonce_address = subxt::dynamic::storage(
+            HOME_PALLET_NAME,
+            "Nonces",
+            vec![Value::u128(destination as u128)],
+        );
         let nonce_value = self
             .storage_fetch(&nonce_address)
             .await?
@@ -314,8 +321,11 @@ where
     }
 
     async fn queue_contains(&self, root: H256) -> Result<bool, <Self as Common>::Error> {
-        let index_address =
-            subxt::dynamic::storage(HOME_PALLET_NAME, "RootToIndex", vec![Value::from_bytes(&root)]);
+        let index_address = subxt::dynamic::storage(
+            HOME_PALLET_NAME,
+            "RootToIndex",
+            vec![Value::from_bytes(&root)],
+        );
         let index_value = self.storage_fetch(&index_address).await?;
         Ok(index_value.is_some())
     }
@@ -326,7 +336,11 @@ where
         update: &SignedUpdate,
     ) -> Result<TxOutcome, <Self as Common>::Error> {
         let signed_update_value = utils::format_signed_update_value(update);
-        let tx_payload = subxt::dynamic::tx(HOME_PALLET_NAME, "improper_update", vec![signed_update_value]);
+        let tx_payload = subxt::dynamic::tx(
+            HOME_PALLET_NAME,
+            "improper_update",
+            vec![signed_update_value],
+        );
 
         info!(update = ?update, "Dispatching improper update call to chain.");
         report_tx!("improper_update", self.api, self.signer, tx_payload)
