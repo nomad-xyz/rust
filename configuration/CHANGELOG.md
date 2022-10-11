@@ -2,6 +2,7 @@
 
 ### Unreleased
 
+- Add `availDemo.json` config and test to ensure it builds into `NomadConfig`
 - fix: SignerConf should not Display or Debug secrets
 - add tests for SignerConf to ensure it does not Display or Debug secrets
 
