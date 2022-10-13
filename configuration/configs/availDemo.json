@@ -3,7 +3,7 @@
   "networks": ["goerli", "avail"],
   "agent": {
     "goerli": {
-      "db": "db",
+      "db": "/usr/share/nomad",
       "kathy": {
         "chat": {
           "type": "default"
@@ -38,7 +38,7 @@
       }
     },
     "avail": {
-      "db": "db",
+      "db": "/usr/share/nomad",
       "kathy": {
         "chat": {
           "type": "default"
