@@ -1,2 +1,3 @@
 *.scale
 !avail.metadata.scale
+!avail.dev.metadata.scale

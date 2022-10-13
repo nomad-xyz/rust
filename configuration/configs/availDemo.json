@@ -1,0 +1,209 @@
+{
+  "version": 0,
+  "networks": ["goerli", "avail"],
+  "agent": {
+    "goerli": {
+      "db": "db",
+      "kathy": {
+        "chat": {
+          "type": "default"
+        },
+        "enabled": true,
+        "interval": 500
+      },
+      "logging": {
+        "fmt": "json",
+        "level": "info"
+      },
+      "metrics": 9090,
+      "processor": {
+        "allowed": null,
+        "denied": null,
+        "enabled": true,
+        "interval": 5,
+        "subsidizedRemotes": []
+      },
+      "relayer": {
+        "enabled": true,
+        "interval": 10
+      },
+      "rpcStyle": "ethereum",
+      "updater": {
+        "enabled": true,
+        "interval": 5
+      },
+      "watcher": {
+        "enabled": true,
+        "interval": 5
+      }
+    },
+    "avail": {
+      "db": "db",
+      "kathy": {
+        "chat": {
+          "type": "default"
+        },
+        "enabled": true,
+        "interval": 500
+      },
+      "logging": {
+        "fmt": "json",
+        "level": "info"
+      },
+      "metrics": 9090,
+      "processor": {
+        "allowed": null,
+        "denied": null,
+        "enabled": true,
+        "interval": 5,
+        "subsidizedRemotes": ["goerli"]
+      },
+      "relayer": {
+        "enabled": true,
+        "interval": 10
+      },
+      "rpcStyle": "substrate",
+      "updater": {
+        "enabled": true,
+        "interval": 5
+      },
+      "watcher": {
+        "enabled": true,
+        "interval": 5
+      }
+    }
+  },
+  "bridge": {
+    "goerli": {
+      "bridgeRouter": {
+        "beacon": "0x0000000000000000000000000000000000000000",
+        "implementation": "0x0000000000000000000000000000000000000000",
+        "proxy": "0x0000000000000000000000000000000000000000"
+      },
+      "bridgeToken": {
+        "beacon": "0x0000000000000000000000000000000000000000",
+        "implementation": "0x0000000000000000000000000000000000000000",
+        "proxy": "0x0000000000000000000000000000000000000000"
+      },
+      "customs": [],
+      "deployHeight": 6748625,
+      "ethHelper": "0x0000000000000000000000000000000000000000",
+      "tokenRegistry": {
+        "beacon": "0x0000000000000000000000000000000000000000",
+        "implementation": "0x0000000000000000000000000000000000000000",
+        "proxy": "0x0000000000000000000000000000000000000000"
+      }
+    },
+    "avail": {
+      "deployHeight": 3
+    }
+  },
+  "bridgeGui": {},
+  "core": {
+    "goerli": {
+      "deployHeight": 6748555,
+      "governanceRouter": {
+        "beacon": "0x0000000000000000000000000000000000000000",
+        "implementation": "0x0000000000000000000000000000000000000000",
+        "proxy": "0x0000000000000000000000000000000000000000"
+      },
+      "home": {
+        "beacon": "0x0000000000000000000000000000000000000000",
+        "implementation": "0x0000000000000000000000000000000000000000",
+        "proxy": "0x0000000000000000000000000000000000000000"
+      },
+      "replicas": {
+        "avail": {
+          "beacon": "0x0000000000000000000000000000000000000000",
+          "implementation": "0x0000000000000000000000000000000000000000",
+          "proxy": "0x3b810a4545e4e71b1126df389482eb37c0ae8815"
+        }
+      },
+      "updaterManager": "0x0000000000000000000000000000000000000000",
+      "upgradeBeaconController": "0x0000000000000000000000000000000000000000",
+      "xAppConnectionManager": "0xb48beea9068cf0db176150e834c1bc14d45a4f4c"
+    },
+    "avail": {
+      "deployHeight": 3
+    }
+  },
+  "environment": "development",
+  "gas": {
+    "goerli": "evmDefault"
+  },
+  "protocol": {
+    "governor": {
+      "domain": 1000,
+      "id": "0x0000000000000000000000000000000000000000"
+    },
+    "networks": {
+      "goerli": {
+        "bridgeConfiguration": {
+          "customs": [],
+          "deployGas": 85000000,
+          "mintGas": 20000000,
+          "weth": "0x0bb7509324ce409f7bbc4b701f932eaca9736ab7"
+        },
+        "configuration": {
+          "governance": {
+            "recoveryManager": "0xa4849f1d96b26066f9c631fcdc8f1457d27fb5ec",
+            "recoveryTimelock": 180
+          },
+          "maximumGas": 100000000,
+          "optimisticSeconds": 10,
+          "processGas": 85000000,
+          "reserveGas": 1500000,
+          "updater": "0xd16bdbbc56090156ec609ebebc8bace1240fa22e",
+          "watchers": ["0x69520f1cec6199fe93c6c77881b5de701e0efeff"]
+        },
+        "connections": [],
+        "domain": 1000,
+        "name": "goerli",
+        "specs": {
+          "blockExplorer": "https://goerli.etherscan.io/",
+          "blockTime": 15,
+          "chainId": 5,
+          "confirmations": 4,
+          "finalizationBlocks": 30,
+          "indexPageSize": 2000,
+          "supports1559": true
+        }
+      },
+      "avail": {
+        "name": "avail",
+        "domain": 2000,
+        "connections": ["goerli"],
+        "configuration": {
+          "optimisticSeconds": 1800,
+          "updater": "0x0000000000000000000000000000000000000000",
+          "watchers": ["0x0000000000000000000000000000000000000000"],
+          "governance": {
+            "recoveryManager": "0x0000000000000000000000000000000000000000",
+            "recoveryTimelock": 86400
+          }
+        },
+        "specs": {
+          "chainId": 9001,
+          "blockTime": 6,
+          "finalizationBlocks": 3,
+          "supports1559": true,
+          "confirmations": 5,
+          "blockExplorer": "https://explorer.polkascan.io/polkadot",
+          "indexPageSize": 200
+        },
+        "bridgeConfiguration": {
+          "weth": "0x0000000000000000000000000000000000000000",
+          "customs": []
+        }
+      }
+    }
+  },
+  "rpcs": {
+    "goerli": ["https://goerli-light.eth.linkpool.io"],
+    "avail": ["ws://127.0.0.1:9944"]
+  },
+  "s3": {
+    "bucket": "nomadxyz-development-proofs",
+    "region": "us-west-2"
+  }
+}

@@ -15,6 +15,16 @@ use subxt::tx::ExtrinsicParams;
 use subxt::Config;
 use tracing::info;
 
+const HOME_PALLET_NAME: &str = "NomadHome";
+const BASE_STORAGE_NAME: &str = "Base";
+const TREE_STORAGE_NAME: &str = "Tree";
+const NONCES_STORAGE_NAME: &str = "Nonces";
+const ROOT_TO_INDEX_STORAGE_NAME: &str = "RootToIndex";
+const DISPATCH_CALL_NAME: &str = "dispatch";
+const UPDATE_CALL_NAME: &str = "update";
+const IMPROPER_UPDATE_CALL_NAME: &str = "improper_update";
+const UPDATE_MAX_INDEX: u32 = 1000;
+
 /// Substrate home indexer
 #[derive(Clone)]
 pub struct SubstrateHomeIndexer<T: Config>(NomadOnlineClient<T>);
@@ -146,14 +156,14 @@ where
 
     /// Retrieve the home's base object from chain storage
     pub(crate) async fn base(&self) -> Result<NomadBase, SubstrateError> {
-        let base_address = subxt::dynamic::storage_root("Home", "Base");
+        let base_address = subxt::dynamic::storage_root(HOME_PALLET_NAME, BASE_STORAGE_NAME);
         let base_value = self.storage_fetch(&base_address).await?.unwrap();
         Ok(scale_value::serde::from_value(base_value)?)
     }
 
     /// Retrieve the home's base object from chain storage
     pub async fn tree(&self) -> Result<NomadLightMerkle, SubstrateError> {
-        let tree_address = subxt::dynamic::storage_root("Home", "Tree");
+        let tree_address = subxt::dynamic::storage_root(HOME_PALLET_NAME, TREE_STORAGE_NAME);
         let tree_value = self.storage_fetch(&tree_address).await?.unwrap();
         let merkle_wrapper: NomadLightMerkleWrapper = scale_value::serde::from_value(tree_value)?;
         Ok(merkle_wrapper.into())
@@ -244,10 +254,15 @@ where
     #[tracing::instrument(err, skip(self, update), fields(update = %update))]
     async fn update(&self, update: &SignedUpdate) -> Result<TxOutcome, Self::Error> {
         let signed_update_value = utils::format_signed_update_value(update);
-        let tx_payload = subxt::dynamic::tx("Home", "update", vec![signed_update_value]);
+        let max_index = Value::u128(UPDATE_MAX_INDEX as u128);
+        let tx_payload = subxt::dynamic::tx(
+            HOME_PALLET_NAME,
+            UPDATE_CALL_NAME,
+            vec![signed_update_value, max_index],
+        );
 
         info!(update = ?update, "Submitting update to chain.");
-        report_tx!("update", self.api, self.signer, tx_payload)
+        report_tx!(UPDATE_CALL_NAME, self.api, self.signer, tx_payload)
     }
 
     #[tracing::instrument(err, skip(self))]
@@ -274,8 +289,11 @@ where
 
     #[tracing::instrument(err, skip(self))]
     async fn nonces(&self, destination: u32) -> Result<u32, <Self as Common>::Error> {
-        let nonce_address =
-            subxt::dynamic::storage("Home", "Nonces", vec![Value::u128(destination as u128)]);
+        let nonce_address = subxt::dynamic::storage(
+            HOME_PALLET_NAME,
+            NONCES_STORAGE_NAME,
+            vec![Value::u128(destination as u128)],
+        );
         let nonce_value = self
             .storage_fetch(&nonce_address)
             .await?
@@ -296,13 +314,13 @@ where
         let body_value = Value::from_bytes(body);
 
         let tx_payload = subxt::dynamic::tx(
-            "Home",
-            "dispatch",
+            HOME_PALLET_NAME,
+            DISPATCH_CALL_NAME,
             vec![destination_value, recipient_value, body_value],
         );
 
         info!(message = ?message, "Dispatching message to chain.");
-        report_tx!("dispatch", self.api, self.signer, tx_payload)
+        report_tx!(DISPATCH_CALL_NAME, self.api, self.signer, tx_payload)
     }
 
     async fn queue_length(&self) -> Result<U256, <Self as Common>::Error> {
@@ -310,8 +328,11 @@ where
     }
 
     async fn queue_contains(&self, root: H256) -> Result<bool, <Self as Common>::Error> {
-        let index_address =
-            subxt::dynamic::storage("Home", "RootToIndex", vec![Value::from_bytes(&root)]);
+        let index_address = subxt::dynamic::storage(
+            HOME_PALLET_NAME,
+            ROOT_TO_INDEX_STORAGE_NAME,
+            vec![Value::from_bytes(&root)],
+        );
         let index_value = self.storage_fetch(&index_address).await?;
         Ok(index_value.is_some())
     }
@@ -322,16 +343,26 @@ where
         update: &SignedUpdate,
     ) -> Result<TxOutcome, <Self as Common>::Error> {
         let signed_update_value = utils::format_signed_update_value(update);
-        let tx_payload = subxt::dynamic::tx("Home", "improper_update", vec![signed_update_value]);
+        let tx_payload = subxt::dynamic::tx(
+            HOME_PALLET_NAME,
+            IMPROPER_UPDATE_CALL_NAME,
+            vec![signed_update_value],
+        );
 
         info!(update = ?update, "Dispatching improper update call to chain.");
-        report_tx!("improper_update", self.api, self.signer, tx_payload)
+        report_tx!(IMPROPER_UPDATE_CALL_NAME, self.api, self.signer, tx_payload)
     }
 
     #[tracing::instrument(err, skip(self))]
     async fn produce_update(&self) -> Result<Option<Update>, <Self as Common>::Error> {
         let committed_root: H256 = self.base().await?.committed_root.into();
         let new_root = self.tree().await?.root();
+
+        // If tree has no messages, DO NOT produce update with initial root
+        // (will cause failed home)
+        if new_root == NomadLightMerkle::initial_root() {
+            return Ok(None);
+        }
 
         Ok(if committed_root == new_root {
             None

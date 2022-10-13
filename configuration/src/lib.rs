@@ -407,6 +407,18 @@ mod tests {
     }
 
     #[test]
+    fn it_loads_and_validates_the_avail_demo_config() {
+        let path: PathBuf = env!("CARGO_MANIFEST_DIR")
+            .parse::<PathBuf>()
+            .unwrap()
+            .join("configs/availDemo.json");
+
+        let config: NomadConfig =
+            serde_json::from_reader(std::fs::File::open(path).unwrap()).unwrap();
+        config.validate().expect("Failed to validate config");
+    }
+
+    #[test]
     fn it_allows_default_config() {
         dbg!(NomadConfig::default());
     }
