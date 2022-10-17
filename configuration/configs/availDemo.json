@@ -95,7 +95,7 @@
       }
     },
     "avail": {
-      "deployHeight": 3
+      "deployHeight": 100
     }
   },
   "bridgeGui": {},
@@ -185,11 +185,11 @@
         "specs": {
           "chainId": 9001,
           "blockTime": 6,
-          "finalizationBlocks": 3,
+          "finalizationBlocks": 10,
           "supports1559": true,
           "confirmations": 5,
           "blockExplorer": "https://explorer.polkascan.io/polkadot",
-          "indexPageSize": 200
+          "indexPageSize": 100
         },
         "bridgeConfiguration": {
           "weth": "0x0000000000000000000000000000000000000000",
