@@ -116,12 +116,12 @@
         "avail": {
           "beacon": "0x0000000000000000000000000000000000000000",
           "implementation": "0x0000000000000000000000000000000000000000",
-          "proxy": "0x3b810a4545e4e71b1126df389482eb37c0ae8815"
+          "proxy": "0x59c64bf7bdb80ce1e9bd444a5ce128ee8b90fe2f"
         }
       },
       "updaterManager": "0x0000000000000000000000000000000000000000",
       "upgradeBeaconController": "0x0000000000000000000000000000000000000000",
-      "xAppConnectionManager": "0xb48beea9068cf0db176150e834c1bc14d45a4f4c"
+      "xAppConnectionManager": "0x646c628334ffaffdaa60200010d3425fbe289295"
     },
     "avail": {
       "deployHeight": 3
