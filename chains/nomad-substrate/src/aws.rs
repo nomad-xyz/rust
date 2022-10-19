@@ -1,3 +1,6 @@
+use async_trait::async_trait;
+use color_eyre::Result;
+use ethers_signers::AwsSigner as EthersAwsSigner;
 use subxt::error::SecretStringError;
 use subxt::ext::{
     sp_core::{
@@ -9,12 +12,16 @@ use subxt::ext::{
 
 /// A partially implemented Pair (`subxt::ext::sp_core::Pair`) that
 /// will support a remote AWS signer using ECDSA
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Pair;
 
 impl Pair {
     /// Create a new AWS Pair from an AWS id
-    pub fn new<T: AsRef<str>>(_id: T) -> Self {
+    pub async fn new<T>(id: T) -> Result<Self>
+    where
+        T: AsRef<str> + Send,
+    {
+        // let signer = EthersAwsSigner::new().await?;
         todo!()
     }
 
@@ -24,7 +31,7 @@ impl Pair {
 
     // TODO: Since Pair::sign is infallible, we will have to have a retry count
     // TODO: followed by a panic here if we can't remote sign
-    fn sign_remote(&self, message: &[u8]) -> Signature {
+    fn sign_remote(&self, _message: &[u8]) -> Signature {
         todo!()
     }
 }
@@ -33,19 +40,31 @@ impl Pair {
 /// generic over all `subxt::ext::sp_core::Pair` and `subxt::Config`.
 /// This will be implemented as a noop for `subxt::ext::sp_core::ecdsa::Pair`
 /// and other core implementations
+#[async_trait]
 pub trait FromAwsId {
     /// Create an AWS-compatible signer from an AWS id
-    fn from_aws_id<T: AsRef<str>>(_id: T) -> Self;
+    async fn from_aws_id<T>(id: T) -> Result<Self>
+    where
+        Self: Sized,
+        T: AsRef<str> + Send;
 }
 
+#[async_trait]
 impl FromAwsId for Pair {
-    fn from_aws_id<T: AsRef<str>>(id: T) -> Self {
-        Pair::new(id)
+    async fn from_aws_id<T>(id: T) -> Result<Self>
+    where
+        T: AsRef<str> + Send,
+    {
+        Pair::new(id).await
     }
 }
 
+#[async_trait]
 impl FromAwsId for ecdsa::Pair {
-    fn from_aws_id<T: AsRef<str>>(_id: T) -> Self {
+    async fn from_aws_id<T: AsRef<str>>(_id: T) -> Result<Self>
+    where
+        T: AsRef<str> + Send,
+    {
         unimplemented!("For compatibility only, ecdsa::Pair cannot be created from an AWS id")
     }
 }

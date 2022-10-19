@@ -59,7 +59,7 @@ where
                 Ok(Self::Local(pair_signer))
             }
             SignerConf::Aws { id } => {
-                let pair = P::from_aws_id(id);
+                let pair = P::from_aws_id(id).await?;
                 let pair_signer = PairSigner::<T, _>::new(pair);
                 let account_id = pair_signer.account_id();
                 tracing::info!("Tx signer AccountId: {}", account_id);
