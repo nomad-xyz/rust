@@ -28,9 +28,12 @@ tracing-futures = "0.2.5"
 thiserror = "1.0.30"
 once_cell = "1.8.0"
 primitive-types = { git = "https://github.com/paritytech/parity-common.git", branch = "master", features = ["serde"] }
+rusoto_core = "0.48.0"
+rusoto_kms = "0.48.0"
 
 nomad-xyz-configuration = { path = "../../configuration" }
 nomad-core = { path = "../../nomad-core" }
 nomad-types = { path = "../../nomad-types" }
 
 ethers-core = { git = "https://github.com/gakonst/ethers-rs", branch = "master" }
+ethers-signers = { git = "https://github.com/gakonst/ethers-rs", branch = "master", features = ["aws"] }
