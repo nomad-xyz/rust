@@ -1,20 +1,31 @@
 use async_trait::async_trait;
 use color_eyre::Result;
+use ethers_core::k256::ecdsa::VerifyingKey as EthersVerifyingKey;
 use ethers_signers::AwsSigner as EthersAwsSigner;
 use nomad_core::aws::get_kms_client;
 use subxt::error::SecretStringError;
 use subxt::ext::{
     sp_core::{
-        crypto::{CryptoTypePublicPair, Derive},
+        crypto::{CryptoTypePublicPair, Derive, UncheckedFrom},
         ecdsa, ByteArray, DeriveJunction, Pair as TraitPair, Public as TraitPublic,
     },
     sp_runtime::{CryptoType, MultiSignature, MultiSigner},
 };
 
+#[derive(Debug, thiserror::Error)]
+pub enum AwsPairError {
+    /// Dummy error
+    #[error("Dummy error")]
+    DummyError(),
+}
+
 /// A partially implemented Pair (`subxt::ext::sp_core::Pair`) that
 /// will support a remote AWS signer using ECDSA
 #[derive(Clone)]
-pub struct Pair;
+pub struct Pair {
+    signer: EthersAwsSigner<'static>,
+    pubkey: Public,
+}
 
 impl Pair {
     /// Create a new AWS Pair from an AWS id
@@ -23,12 +34,19 @@ impl Pair {
         T: AsRef<str> + Send + Sync,
     {
         let kms_client = get_kms_client().await;
-        let _signer = EthersAwsSigner::new(kms_client, id, 0).await?;
-        todo!()
+        let signer = EthersAwsSigner::new(kms_client, id, 0)
+            .await
+            .map_err(|_| AwsPairError::DummyError())?;
+        let pubkey = signer
+            .get_pubkey()
+            .await
+            .map_err(|_| AwsPairError::DummyError())?;
+        let pubkey = pubkey.try_into().map_err(|_| AwsPairError::DummyError())?;
+        Ok(Self { signer, pubkey })
     }
 
     fn public_remote(&self) -> Public {
-        todo!()
+        self.pubkey.clone()
     }
 
     // TODO: Since Pair::sign is infallible, we will have to have a retry count
@@ -76,6 +94,12 @@ impl FromAwsId for ecdsa::Pair {
 #[derive(Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash)]
 pub struct Public(pub [u8; 33]);
 
+impl UncheckedFrom<[u8; 33]> for Public {
+    fn unchecked_from(x: [u8; 33]) -> Self {
+        Public(x)
+    }
+}
+
 impl Derive for Public {}
 
 impl CryptoType for Public {
@@ -104,11 +128,25 @@ impl AsMut<[u8]> for Public {
     }
 }
 
+impl TryFrom<EthersVerifyingKey> for Public {
+    type Error = ();
+
+    fn try_from(data: EthersVerifyingKey) -> Result<Self, Self::Error> {
+        let data = data.to_bytes();
+        TryFrom::<&[u8]>::try_from(data.as_slice())
+    }
+}
+
 impl TryFrom<&[u8]> for Public {
     type Error = ();
 
-    fn try_from(_value: &[u8]) -> Result<Self, Self::Error> {
-        todo!()
+    fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
+        if data.len() != Self::LEN {
+            return Err(());
+        }
+        let mut r = [0u8; Self::LEN];
+        r.copy_from_slice(data);
+        Ok(Self::unchecked_from(r))
     }
 }
 
