@@ -17,6 +17,16 @@ impl Pair {
     pub fn new<T: AsRef<str>>(_id: T) -> Self {
         todo!()
     }
+
+    fn public_remote(&self) -> Public {
+        todo!()
+    }
+
+    // TODO: Since Pair::sign is infallible, we will have to have a retry count
+    // TODO: followed by a panic here if we can't remote sign
+    fn sign_remote(&self, message: &[u8]) -> Signature {
+        todo!()
+    }
 }
 
 /// To make `Pair` init from an AWS id while keeping our internal signer
@@ -126,19 +136,12 @@ impl TraitPair for Pair {
 
     /// Our `Public` key
     fn public(&self) -> Self::Public {
-        Public([0; 33])
+        self.public_remote()
     }
 
     /// Sign a message of arbitrary bytes to return a `Signature`
-    fn sign(&self, _message: &[u8]) -> Self::Signature {
-        // let rt = tokio::runtime::Builder::new_current_thread()
-        //     .enable_all()
-        //     .build()
-        //     .expect("TODO");
-        // rt.block_on(async {
-        //     // call async sign
-        // });
-        Signature([0; 65])
+    fn sign(&self, message: &[u8]) -> Self::Signature {
+        self.sign_remote(message)
     }
 
     fn verify<M: AsRef<[u8]>>(_sig: &Self::Signature, _message: M, _pubkey: &Self::Public) -> bool {
