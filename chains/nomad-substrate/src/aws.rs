@@ -12,6 +12,9 @@ use subxt::ext::{
     sp_runtime::{CryptoType, MultiSignature, MultiSigner},
 };
 
+// TODO: Rename things
+
+/// Error types for AWS `Pair`
 #[derive(Debug, thiserror::Error)]
 pub enum AwsPairError {
     /// Dummy error
@@ -23,7 +26,7 @@ pub enum AwsPairError {
 /// will support a remote AWS signer using ECDSA
 #[derive(Clone)]
 pub struct Pair {
-    signer: EthersAwsSigner<'static>,
+    _signer: EthersAwsSigner<'static>,
     pubkey: Public,
 }
 
@@ -42,11 +45,14 @@ impl Pair {
             .await
             .map_err(|_| AwsPairError::DummyError())?;
         let pubkey = pubkey.try_into().map_err(|_| AwsPairError::DummyError())?;
-        Ok(Self { signer, pubkey })
+        Ok(Self {
+            _signer: signer,
+            pubkey,
+        })
     }
 
     fn public_remote(&self) -> Public {
-        self.pubkey.clone()
+        self.pubkey
     }
 
     // TODO: Since Pair::sign is infallible, we will have to have a retry count
