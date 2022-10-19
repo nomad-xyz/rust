@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use color_eyre::Result;
 use ethers_signers::AwsSigner as EthersAwsSigner;
+use nomad_core::aws::get_kms_client;
 use subxt::error::SecretStringError;
 use subxt::ext::{
     sp_core::{
@@ -19,9 +20,10 @@ impl Pair {
     /// Create a new AWS Pair from an AWS id
     pub async fn new<T>(id: T) -> Result<Self>
     where
-        T: AsRef<str> + Send,
+        T: AsRef<str> + Send + Sync,
     {
-        // let signer = EthersAwsSigner::new().await?;
+        let kms_client = get_kms_client().await;
+        let _signer = EthersAwsSigner::new(kms_client, id, 0).await?;
         todo!()
     }
 
@@ -45,15 +47,15 @@ pub trait FromAwsId {
     /// Create an AWS-compatible signer from an AWS id
     async fn from_aws_id<T>(id: T) -> Result<Self>
     where
-        Self: Sized,
-        T: AsRef<str> + Send;
+        T: AsRef<str> + Send + Sync,
+        Self: Sized;
 }
 
 #[async_trait]
 impl FromAwsId for Pair {
     async fn from_aws_id<T>(id: T) -> Result<Self>
     where
-        T: AsRef<str> + Send,
+        T: AsRef<str> + Send + Sync,
     {
         Pair::new(id).await
     }
@@ -63,7 +65,7 @@ impl FromAwsId for Pair {
 impl FromAwsId for ecdsa::Pair {
     async fn from_aws_id<T: AsRef<str>>(_id: T) -> Result<Self>
     where
-        T: AsRef<str> + Send,
+        T: AsRef<str> + Send + Sync,
     {
         unimplemented!("For compatibility only, ecdsa::Pair cannot be created from an AWS id")
     }
