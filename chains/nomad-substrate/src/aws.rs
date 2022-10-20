@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use color_eyre::Result;
 use ethers_core::k256::ecdsa::{Signature as EthersSignature, VerifyingKey as EthersVerifyingKey};
-use ethers_signers::AwsSigner as EthersAwsSigner;
+use ethers_signers::{AwsSigner as EthersAwsSigner, AwsSignerError};
 use nomad_core::aws::get_kms_client;
 use std::time::Duration;
 use subxt::{
@@ -66,19 +66,21 @@ impl Pair {
         self.pubkey
     }
 
-    /// Try to sign `message` using our remote signer. Since we can't recover
-    /// from an error here, we'll discard it in favor of an `Option`
-    async fn try_sign_remote(&self, _message: &[u8], delay: Duration) -> Option<Signature> {
+    /// Try to sign `message` using our remote signer
+    async fn try_sign_remote(
+        &self,
+        _message: &[u8],
+        delay: Duration,
+    ) -> Result<Signature, AwsSignerError> {
         sleep(delay).await;
         let dummy = [0u8; 32]; // TODO:
         self.signer
             .sign_digest(dummy)
             .await
-            .ok()
             .map(Into::<Signature>::into)
     }
 
-    /// Try to sign `message` `max_retries` times with an exponential backoff between tries.
+    /// Try to sign `message` `max_retries` times with an exponential backoff between attempts.
     /// If we hit `max_retries` `panic` since we're unable to return an error here.
     fn sign_remote(&self, message: &[u8]) -> Signature {
         let mut times_attempted = 0;
@@ -90,19 +92,17 @@ impl Pair {
             .block_on(async {
                 loop {
                     match self.try_sign_remote(message, delay).await {
-                        Some(signature) => return signature,
-                        None => {
-                            delay = Duration::from_millis(self.min_retry_ms.pow({
-                                times_attempted += 1;
-                                times_attempted
-                            }))
+                        Ok(signature) => return signature,
+                        Err(error) => {
+                            times_attempted += 1;
+                            delay = Duration::from_millis(self.min_retry_ms.pow(times_attempted));
+                            if times_attempted == self.max_retries {
+                                panic!(
+                                    "giving up after attempting to sign message {} times: {:?}",
+                                    times_attempted, error,
+                                )
+                            }
                         }
-                    }
-                    if times_attempted == self.max_retries {
-                        panic!(
-                            "giving up after attempting to sign message {} times",
-                            times_attempted
-                        )
                     }
                 }
             })
