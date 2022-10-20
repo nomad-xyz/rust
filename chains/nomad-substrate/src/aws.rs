@@ -1,8 +1,9 @@
 use async_trait::async_trait;
 use color_eyre::Result;
-use ethers_core::k256::ecdsa::VerifyingKey as EthersVerifyingKey;
+use ethers_core::k256::ecdsa::{Signature as EthersSignature, VerifyingKey as EthersVerifyingKey};
 use ethers_signers::AwsSigner as EthersAwsSigner;
 use nomad_core::aws::get_kms_client;
+use std::time::Duration;
 use subxt::error::SecretStringError;
 use subxt::ext::{
     sp_core::{
@@ -11,6 +12,7 @@ use subxt::ext::{
     },
     sp_runtime::{CryptoType, MultiSignature, MultiSigner},
 };
+use tokio::time::sleep;
 
 // TODO: Rename things
 
@@ -26,8 +28,10 @@ pub enum AwsPairError {
 /// will support a remote AWS signer using ECDSA
 #[derive(Clone)]
 pub struct Pair {
-    _signer: EthersAwsSigner<'static>,
+    signer: EthersAwsSigner<'static>,
     pubkey: Public,
+    max_retries: u32,
+    min_retry_ms: u64,
 }
 
 impl Pair {
@@ -45,20 +49,61 @@ impl Pair {
             .await
             .map_err(|_| AwsPairError::DummyError())?;
         let pubkey = pubkey.try_into().map_err(|_| AwsPairError::DummyError())?;
+        let max_retries = 5;
+        let min_retry_ms = 1000;
         Ok(Self {
-            _signer: signer,
+            signer,
             pubkey,
+            max_retries,
+            min_retry_ms,
         })
     }
 
+    /// Our `Public` key
     fn public_remote(&self) -> Public {
         self.pubkey
     }
 
-    // TODO: Since Pair::sign is infallible, we will have to have a retry count
-    // TODO: followed by a panic here if we can't remote sign
-    fn sign_remote(&self, _message: &[u8]) -> Signature {
-        todo!()
+    /// Try to sign `message` using our remote signer. Since we can't recover
+    /// from an error here, we'll discard it in favor of an `Option`
+    async fn try_sign_remote(&self, _message: &[u8], delay: Duration) -> Option<Signature> {
+        sleep(delay).await;
+        let dummy = [0u8; 32]; // TODO:
+        self.signer
+            .sign_digest(dummy)
+            .await
+            .ok()
+            .map(Into::<Signature>::into)
+    }
+
+    /// Try to sign `message` `max_retries` times with an exponential backoff between tries.
+    /// If we hit `max_retries` `panic` since we're unable to return an error here.
+    fn sign_remote(&self, message: &[u8]) -> Signature {
+        let mut times_attempted = 0;
+        let mut delay = Duration::from_millis(0);
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("unable to create tokio::runtime (this should never happen)")
+            .block_on(async {
+                loop {
+                    match self.try_sign_remote(message, delay).await {
+                        Some(signature) => return signature,
+                        None => {
+                            delay = Duration::from_millis(self.min_retry_ms.pow({
+                                times_attempted += 1;
+                                times_attempted
+                            }))
+                        }
+                    }
+                    if times_attempted == self.max_retries {
+                        panic!(
+                            "giving up after attempting to sign message {} times",
+                            times_attempted
+                        )
+                    }
+                }
+            })
     }
 }
 
@@ -172,6 +217,12 @@ impl From<Public> for MultiSigner {
 /// and AWS's ECDSA KMS signer
 #[derive(PartialEq, Eq, Hash)]
 pub struct Signature(pub [u8; 65]);
+
+impl From<EthersSignature> for Signature {
+    fn from(_ethers_signature: EthersSignature) -> Self {
+        todo!()
+    }
+}
 
 impl From<Signature> for MultiSignature {
     fn from(_x: Signature) -> Self {
