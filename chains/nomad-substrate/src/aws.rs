@@ -4,13 +4,15 @@ use ethers_core::k256::ecdsa::{Signature as EthersSignature, VerifyingKey as Eth
 use ethers_signers::AwsSigner as EthersAwsSigner;
 use nomad_core::aws::get_kms_client;
 use std::time::Duration;
-use subxt::error::SecretStringError;
-use subxt::ext::{
-    sp_core::{
-        crypto::{CryptoTypePublicPair, Derive, UncheckedFrom},
-        ecdsa, ByteArray, DeriveJunction, Pair as TraitPair, Public as TraitPublic,
+use subxt::{
+    error::SecretStringError,
+    ext::{
+        sp_core::{
+            crypto::{CryptoTypePublicPair, Derive, UncheckedFrom},
+            ecdsa, ByteArray, DeriveJunction, Pair as TraitPair, Public as TraitPublic,
+        },
+        sp_runtime::{CryptoType, MultiSignature, MultiSigner},
     },
-    sp_runtime::{CryptoType, MultiSignature, MultiSigner},
 };
 use tokio::time::sleep;
 
