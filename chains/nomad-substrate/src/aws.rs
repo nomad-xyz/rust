@@ -13,7 +13,7 @@ use subxt::{
             crypto::{CryptoTypePublicPair, Derive, UncheckedFrom},
             ecdsa, ByteArray, DeriveJunction, Pair as TraitPair, Public as TraitPublic,
         },
-        sp_runtime::{CryptoType, MultiSignature, MultiSigner},
+        sp_runtime::{CryptoType, MultiSignature},
     },
 };
 use tokio::time::sleep;
@@ -165,20 +165,20 @@ impl ByteArray for Public {
 }
 
 impl std::fmt::Display for Public {
-    fn fmt(&self, _f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        todo!()
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", hex::encode(self.as_ref()))
     }
 }
 
 impl AsRef<[u8]> for Public {
     fn as_ref(&self) -> &[u8] {
-        todo!()
+        &self.0[..]
     }
 }
 
 impl AsMut<[u8]> for Public {
     fn as_mut(&mut self) -> &mut [u8] {
-        todo!()
+        &mut self.0[..]
     }
 }
 
@@ -206,13 +206,7 @@ impl TryFrom<&[u8]> for Public {
 
 impl TraitPublic for Public {
     fn to_public_crypto_pair(&self) -> CryptoTypePublicPair {
-        todo!()
-    }
-}
-
-impl From<Public> for MultiSigner {
-    fn from(_x: Public) -> Self {
-        todo!()
+        CryptoTypePublicPair(ecdsa::CRYPTO_ID, self.as_ref().to_vec())
     }
 }
 
