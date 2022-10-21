@@ -1,7 +1,9 @@
 use async_trait::async_trait;
 use color_eyre::Result;
-use ethers_core::k256::ecdsa::{Signature as EthersSignature, VerifyingKey as EthersVerifyingKey};
-use ethers_signers::{AwsSigner as EthersAwsSigner, AwsSignerError};
+use ethers_core::{
+    k256::ecdsa::VerifyingKey as EthersVerifyingKey, types::Signature as EthersSignature,
+};
+use ethers_signers::{AwsSigner as EthersAwsSigner, AwsSignerError, Signer};
 use nomad_core::aws::get_kms_client;
 use std::time::Duration;
 use subxt::{
@@ -69,13 +71,12 @@ impl Pair {
     /// Try to sign `message` using our remote signer
     async fn try_sign_remote(
         &self,
-        _message: &[u8],
+        message: &[u8],
         delay: Duration,
     ) -> Result<Signature, AwsSignerError> {
         sleep(delay).await;
-        let dummy = [0u8; 32]; // TODO:
         self.signer
-            .sign_digest(dummy)
+            .sign_message(message)
             .await
             .map(Into::<Signature>::into)
     }
@@ -221,8 +222,8 @@ impl From<Public> for MultiSigner {
 pub struct Signature(pub [u8; 65]);
 
 impl From<EthersSignature> for Signature {
-    fn from(_ethers_signature: EthersSignature) -> Self {
-        todo!()
+    fn from(signature: EthersSignature) -> Self {
+        Signature(signature.into())
     }
 }
 
