@@ -19,7 +19,7 @@ use subxt::{
 use tokio::time::sleep;
 
 const AWS_SIGNER_MAX_RETRIES: u32 = 5;
-const AWS_SINGER_MIN_RETRY_DELAY_MS: u64 = 1000;
+const AWS_SIGNER_MIN_RETRY_DELAY_MS: u64 = 1000;
 
 /// Error types for `AwsPair`
 #[derive(Debug, thiserror::Error)]
@@ -68,7 +68,7 @@ impl AwsPair {
             signer,
             pubkey,
             max_retries: AWS_SIGNER_MAX_RETRIES,
-            min_retry_ms: AWS_SINGER_MIN_RETRY_DELAY_MS,
+            min_retry_ms: AWS_SIGNER_MIN_RETRY_DELAY_MS,
         })
     }
 
