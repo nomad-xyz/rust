@@ -18,9 +18,7 @@ use subxt::{
 };
 use tokio::time::sleep;
 
-// TODO: Rename things
-
-/// Error types for AWS `Pair`
+/// Error types for AwsPair`
 #[derive(Debug, thiserror::Error)]
 pub enum AwsPairError {
     /// Dummy error
@@ -28,18 +26,18 @@ pub enum AwsPairError {
     DummyError(),
 }
 
-/// A partially implemented Pair (`subxt::ext::sp_core::Pair`) that
+/// A partially implemented `subxt::ext::sp_core::Pair` that
 /// will support a remote AWS signer using ECDSA
 #[derive(Clone)]
-pub struct Pair {
+pub struct AwsPair {
     signer: EthersAwsSigner<'static>,
-    pubkey: Public,
+    pubkey: AwsPublic,
     max_retries: u32,
     min_retry_ms: u64,
 }
 
-impl Pair {
-    /// Create a new AWS Pair from an AWS id
+impl AwsPair {
+    /// Create a new `AwsPair` from an AWS id
     pub async fn new<T>(id: T) -> Result<Self>
     where
         T: AsRef<str> + Send + Sync,
@@ -64,7 +62,7 @@ impl Pair {
     }
 
     /// Our `Public` key
-    fn public_remote(&self) -> Public {
+    fn public_remote(&self) -> AwsPublic {
         self.pubkey
     }
 
@@ -73,17 +71,17 @@ impl Pair {
         &self,
         message: &[u8],
         delay: Duration,
-    ) -> Result<Signature, AwsSignerError> {
+    ) -> Result<AwsSignature, AwsSignerError> {
         sleep(delay).await;
         self.signer
             .sign_message(message)
             .await
-            .map(Into::<Signature>::into)
+            .map(Into::<AwsSignature>::into)
     }
 
     /// Try to sign `message` `max_retries` times with an exponential backoff between attempts.
     /// If we hit `max_retries` `panic` since we're unable to return an error here.
-    fn sign_remote(&self, message: &[u8]) -> Signature {
+    fn sign_remote(&self, message: &[u8]) -> AwsSignature {
         let mut times_attempted = 0;
         let mut delay = Duration::from_millis(0);
         tokio::runtime::Builder::new_current_thread()
@@ -110,7 +108,7 @@ impl Pair {
     }
 }
 
-/// To make `Pair` init from an AWS id while keeping our internal signer
+/// To make `AwsPair` init from an AWS id while keeping our internal signer
 /// generic over all `subxt::ext::sp_core::Pair` and `subxt::Config`.
 /// This will be implemented as a noop for `subxt::ext::sp_core::ecdsa::Pair`
 /// and other core implementations
@@ -124,12 +122,12 @@ pub trait FromAwsId {
 }
 
 #[async_trait]
-impl FromAwsId for Pair {
+impl FromAwsId for AwsPair {
     async fn from_aws_id<T>(id: T) -> Result<Self>
     where
         T: AsRef<str> + Send + Sync,
     {
-        Pair::new(id).await
+        AwsPair::new(id).await
     }
 }
 
@@ -143,46 +141,46 @@ impl FromAwsId for ecdsa::Pair {
     }
 }
 
-/// A `Public` key that is compatible with `subxt::ext::sp_core::Pair`
-/// and AWS's ECDSA KMS signer
+/// A `subxt::ext::sp_core::Public` key that is compatible with
+/// `subxt::ext::sp_core::Pair` and AWS's ECDSA KMS signer
 #[derive(Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash)]
-pub struct Public(pub [u8; 33]);
+pub struct AwsPublic(pub [u8; 33]);
 
-impl UncheckedFrom<[u8; 33]> for Public {
+impl UncheckedFrom<[u8; 33]> for AwsPublic {
     fn unchecked_from(x: [u8; 33]) -> Self {
-        Public(x)
+        AwsPublic(x)
     }
 }
 
-impl Derive for Public {}
+impl Derive for AwsPublic {}
 
-impl CryptoType for Public {
-    type Pair = Pair;
+impl CryptoType for AwsPublic {
+    type Pair = AwsPair;
 }
 
-impl ByteArray for Public {
+impl ByteArray for AwsPublic {
     const LEN: usize = 33;
 }
 
-impl std::fmt::Display for Public {
+impl std::fmt::Display for AwsPublic {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", hex::encode(self.as_ref()))
     }
 }
 
-impl AsRef<[u8]> for Public {
+impl AsRef<[u8]> for AwsPublic {
     fn as_ref(&self) -> &[u8] {
         &self.0[..]
     }
 }
 
-impl AsMut<[u8]> for Public {
+impl AsMut<[u8]> for AwsPublic {
     fn as_mut(&mut self) -> &mut [u8] {
         &mut self.0[..]
     }
 }
 
-impl TryFrom<EthersVerifyingKey> for Public {
+impl TryFrom<EthersVerifyingKey> for AwsPublic {
     type Error = ();
 
     fn try_from(data: EthersVerifyingKey) -> Result<Self, Self::Error> {
@@ -191,7 +189,7 @@ impl TryFrom<EthersVerifyingKey> for Public {
     }
 }
 
-impl TryFrom<&[u8]> for Public {
+impl TryFrom<&[u8]> for AwsPublic {
     type Error = ();
 
     fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
@@ -204,7 +202,7 @@ impl TryFrom<&[u8]> for Public {
     }
 }
 
-impl TraitPublic for Public {
+impl TraitPublic for AwsPublic {
     fn to_public_crypto_pair(&self) -> CryptoTypePublicPair {
         CryptoTypePublicPair(ecdsa::CRYPTO_ID, self.as_ref().to_vec())
     }
@@ -213,21 +211,21 @@ impl TraitPublic for Public {
 /// A `Signature` that is compatible with `subxt::ext::sp_core::Pair`
 /// and AWS's ECDSA KMS signer
 #[derive(PartialEq, Eq, Hash)]
-pub struct Signature(pub [u8; 65]);
+pub struct AwsSignature(pub [u8; 65]);
 
-impl From<EthersSignature> for Signature {
+impl From<EthersSignature> for AwsSignature {
     fn from(signature: EthersSignature) -> Self {
-        Signature(signature.into())
+        AwsSignature(signature.into())
     }
 }
 
-impl From<Signature> for MultiSignature {
-    fn from(_x: Signature) -> Self {
+impl From<AwsSignature> for MultiSignature {
+    fn from(_x: AwsSignature) -> Self {
         todo!()
     }
 }
 
-impl AsRef<[u8]> for Signature {
+impl AsRef<[u8]> for AwsSignature {
     fn as_ref(&self) -> &[u8] {
         &self.0[..]
     }
@@ -238,13 +236,13 @@ impl AsRef<[u8]> for Signature {
 type DummySeed = [u8; 0];
 
 /// The trait `subxt::ext::sp_core::Pair` handles signing, verification and the creation
-/// of keypairs form local key material (mnemonics, random bytes, etc.). With a remote
-/// AWS signer keypair creation is handled externally so we will only partially implement
+/// of keypairs from local key material (mnemonics, random bytes, etc.). With a remote
+/// AWS signer, keypair creation is handled externally so we will only partially implement
 /// `Pair` to reflect this.
-impl TraitPair for Pair {
-    type Public = Public;
+impl TraitPair for AwsPair {
+    type Public = AwsPublic;
     type Seed = DummySeed;
-    type Signature = Signature;
+    type Signature = AwsSignature;
     type DeriveError = ();
 
     /// Our `Public` key
@@ -303,6 +301,6 @@ impl TraitPair for Pair {
     }
 }
 
-impl CryptoType for Pair {
-    type Pair = Pair;
+impl CryptoType for AwsPair {
+    type Pair = AwsPair;
 }
