@@ -77,46 +77,34 @@ impl AwsPair {
         self.pubkey
     }
 
-    /// Try to sign `message` using our remote signer. Accept a `delay` so that
-    /// this can be called repeatedly with a backoff
-    async fn try_sign_remote(
-        &self,
-        message: &[u8],
-        delay: Duration,
-    ) -> Result<AwsSignature, AwsSignerError> {
-        sleep(delay).await;
-        // Sign and map between our remote and local 65-byte ECDSA sigs
-        self.signer
-            .sign_message(message)
-            .await
-            .map(Into::<AwsSignature>::into)
-    }
-
     /// Try to sign `message` `max_retries` times with an exponential backoff between attempts.
     /// If we hit `max_retries` `panic` since we're unable to return an error here.
     fn sign_remote(&self, message: &[u8]) -> AwsSignature {
-        let mut times_attempted = 0;
-        let mut delay = Duration::from_millis(0);
         tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .expect("unable to create tokio::runtime (this should never happen)")
             .block_on(async {
-                loop {
-                    match self.try_sign_remote(message, delay).await {
-                        Ok(signature) => return signature,
-                        Err(error) => {
-                            times_attempted += 1;
-                            delay = Duration::from_millis(self.min_retry_ms.pow(times_attempted));
-                            if times_attempted == self.max_retries {
-                                panic!(
-                                    "giving up after attempting to sign message {} times: {:?}",
-                                    times_attempted, error,
-                                )
-                            }
-                        }
-                    }
+                let mut error = None;
+                for i in 0..self.max_retries {
+                    sleep(Duration::from_millis(self.min_retry_ms.pow(i))).await;
+                    error = Some(
+                        match self
+                            .signer
+                            .sign_message(message)
+                            .await
+                            .map(Into::<AwsSignature>::into)
+                        {
+                            Ok(signature) => return signature,
+                            Err(error) => error,
+                        },
+                    );
                 }
+                panic!(
+                    "giving up after attempting to sign message {} times: {:?}",
+                    self.max_retries,
+                    error.unwrap(),
+                );
             })
     }
 }
