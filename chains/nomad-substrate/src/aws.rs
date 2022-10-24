@@ -24,7 +24,7 @@ const AWS_SINGER_MIN_RETRY_DELAY_MS: u64 = 1000;
 /// Error types for `AwsPair`
 #[derive(Debug, thiserror::Error)]
 pub enum AwsPairError {
-    /// AWS Signer Error
+    /// AWS signer error
     #[error("Error from EthersAwsSigner: {0}")]
     AwsSignerError(#[from] AwsSignerError),
     /// Public key length error
@@ -48,14 +48,19 @@ impl AwsPair {
     where
         T: AsRef<str> + Send + Sync,
     {
+        // Shared AWS client
         let kms_client = get_kms_client().await;
+        // Init our remote signer
         let signer = EthersAwsSigner::new(kms_client, id, 0)
             .await
             .map_err(AwsPairError::AwsSignerError)?;
+        // Get the pubkey from our remote keypair
         let pubkey = signer
             .get_pubkey()
             .await
             .map_err(AwsPairError::AwsSignerError)?;
+        // Map our AWS pubkey to our Substrate-compatible one
+        // These are both 33-byte ECDSA Secp256k1 compressed points
         let pubkey = pubkey
             .try_into()
             .map_err(|_| AwsPairError::PubKeyBadLength)?;
@@ -72,13 +77,15 @@ impl AwsPair {
         self.pubkey
     }
 
-    /// Try to sign `message` using our remote signer
+    /// Try to sign `message` using our remote signer. Accept a `delay` so that
+    /// this can be called repeatedly with a backoff
     async fn try_sign_remote(
         &self,
         message: &[u8],
         delay: Duration,
     ) -> Result<AwsSignature, AwsSignerError> {
         sleep(delay).await;
+        // Sign and map between our remote and local 65-byte ECDSA sigs
         self.signer
             .sign_message(message)
             .await
