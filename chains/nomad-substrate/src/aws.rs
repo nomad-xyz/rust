@@ -18,6 +18,9 @@ use subxt::{
 };
 use tokio::time::sleep;
 
+const AWS_SIGNER_MAX_RETRIES: u32 = 5;
+const AWS_SINGER_MIN_RETRY_DELAY_MS: u64 = 1000;
+
 /// Error types for `AwsPair`
 #[derive(Debug, thiserror::Error)]
 pub enum AwsPairError {
@@ -56,13 +59,11 @@ impl AwsPair {
         let pubkey = pubkey
             .try_into()
             .map_err(|_| AwsPairError::PubKeyBadLength)?;
-        let max_retries = 5;
-        let min_retry_ms = 1000;
         Ok(Self {
             signer,
             pubkey,
-            max_retries,
-            min_retry_ms,
+            max_retries: AWS_SIGNER_MAX_RETRIES,
+            min_retry_ms: AWS_SINGER_MIN_RETRY_DELAY_MS,
         })
     }
 
