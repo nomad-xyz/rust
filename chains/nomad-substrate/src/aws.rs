@@ -18,12 +18,15 @@ use subxt::{
 };
 use tokio::time::sleep;
 
-/// Error types for AwsPair`
+/// Error types for `AwsPair`
 #[derive(Debug, thiserror::Error)]
 pub enum AwsPairError {
-    /// Dummy error
-    #[error("Dummy error")]
-    DummyError(),
+    /// AWS Signer Error
+    #[error("Error from EthersAwsSigner: {0}")]
+    AwsSignerError(#[from] AwsSignerError),
+    /// Public key length error
+    #[error("EthersAwsSigner returned a bad public key length")]
+    PubKeyBadLength,
 }
 
 /// A partially implemented `subxt::ext::sp_core::Pair` that
@@ -45,12 +48,14 @@ impl AwsPair {
         let kms_client = get_kms_client().await;
         let signer = EthersAwsSigner::new(kms_client, id, 0)
             .await
-            .map_err(|_| AwsPairError::DummyError())?;
+            .map_err(AwsPairError::AwsSignerError)?;
         let pubkey = signer
             .get_pubkey()
             .await
-            .map_err(|_| AwsPairError::DummyError())?;
-        let pubkey = pubkey.try_into().map_err(|_| AwsPairError::DummyError())?;
+            .map_err(AwsPairError::AwsSignerError)?;
+        let pubkey = pubkey
+            .try_into()
+            .map_err(|_| AwsPairError::PubKeyBadLength)?;
         let max_retries = 5;
         let min_retry_ms = 1000;
         Ok(Self {
@@ -61,7 +66,7 @@ impl AwsPair {
         })
     }
 
-    /// Our `Public` key
+    /// Our `AwsPublic` key
     fn public_remote(&self) -> AwsPublic {
         self.pubkey
     }
