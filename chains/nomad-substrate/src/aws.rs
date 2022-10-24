@@ -16,6 +16,7 @@ use subxt::{
         sp_runtime::{CryptoType, MultiSignature},
     },
 };
+use subxt::ext::sp_runtime::MultiSigner;
 use tokio::time::sleep;
 
 const AWS_SIGNER_MAX_RETRIES: u32 = 5;
@@ -206,6 +207,12 @@ impl TryFrom<&[u8]> for AwsPublic {
 impl TraitPublic for AwsPublic {
     fn to_public_crypto_pair(&self) -> CryptoTypePublicPair {
         CryptoTypePublicPair(ecdsa::CRYPTO_ID, self.as_ref().to_vec())
+    }
+}
+
+impl From<AwsPublic> for MultiSigner {
+    fn from(pubkey: AwsPublic) -> Self {
+        Self::Ecdsa(ecdsa::Public::from_raw(pubkey.0))
     }
 }
 
