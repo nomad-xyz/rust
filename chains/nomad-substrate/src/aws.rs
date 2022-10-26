@@ -5,7 +5,9 @@ use ethers_core::{
 };
 use ethers_signers::{AwsSigner as EthersAwsSigner, AwsSignerError, Signer};
 use nomad_core::aws::get_kms_client;
-use std::time::Duration;
+use rusoto_kms::KmsClient;
+use std::{thread, time::Duration};
+use subxt::ext::sp_runtime::MultiSigner;
 use subxt::{
     error::SecretStringError,
     ext::{
@@ -16,11 +18,9 @@ use subxt::{
         sp_runtime::{CryptoType, MultiSignature},
     },
 };
-use subxt::ext::sp_runtime::MultiSigner;
-use tokio::time::sleep;
+use tokio::{runtime, time::sleep};
 
 const AWS_SIGNER_MAX_RETRIES: u32 = 5;
-const AWS_SIGNER_MIN_RETRY_DELAY_MS: u64 = 1000;
 
 /// Error types for `AwsPair`
 #[derive(Debug, thiserror::Error)]
@@ -40,17 +40,27 @@ pub struct AwsPair {
     signer: EthersAwsSigner<'static>,
     pubkey: AwsPublic,
     max_retries: u32,
-    min_retry_ms: u64,
 }
 
 impl AwsPair {
     /// Create a new `AwsPair` from an AWS id
-    pub async fn new<T>(id: T) -> Result<Self>
+    pub async fn new<T>(id: T) -> Result<Self, AwsPairError>
     where
         T: AsRef<str> + Send + Sync,
     {
         // Shared AWS client
         let kms_client = get_kms_client().await;
+        Self::new_with_client(id, kms_client).await
+    }
+
+    /// Create a new `AwsPair` from a `rusoto_kms::KmsClient` and an AWS id
+    pub async fn new_with_client<T>(
+        id: T,
+        kms_client: &'static KmsClient,
+    ) -> Result<Self, AwsPairError>
+    where
+        T: AsRef<str> + Send + Sync,
+    {
         // Init our remote signer
         let signer = EthersAwsSigner::new(kms_client, id, 0)
             .await
@@ -69,7 +79,6 @@ impl AwsPair {
             signer,
             pubkey,
             max_retries: AWS_SIGNER_MAX_RETRIES,
-            min_retry_ms: AWS_SIGNER_MIN_RETRY_DELAY_MS,
         })
     }
 
@@ -80,19 +89,32 @@ impl AwsPair {
 
     /// Try to sign `message` `max_retries` times with an exponential backoff between attempts.
     /// If we hit `max_retries` `panic` since we're unable to return an error here.
-    fn sign_remote(&self, message: &[u8]) -> AwsSignature {
-        tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .expect("unable to create tokio::runtime (this should never happen)")
-            .block_on(async {
+    fn sign_remote_sync(&self, message: &[u8]) -> AwsSignature {
+        let message = message.to_owned();
+        let Self {
+            signer,
+            max_retries,
+            ..
+        } = self.clone();
+        // We may be running this inside an async func, so we want to grab the current
+        // runtime instead of spawning a new one.
+        let handle = match runtime::Handle::try_current() {
+            Ok(handle) => handle,
+            Err(_) => runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .expect("unable to create new tokio::runtime (this should never happen)")
+                .handle()
+                .clone(),
+        };
+        // We're spawning a new thread here to accommodate `tokio::runtime::Handle::block_on`
+        thread::spawn(move || {
+            handle.block_on(async {
                 let mut error = None;
-                for i in 0..self.max_retries {
-                    sleep(Duration::from_millis(self.min_retry_ms.pow(i))).await;
+                for i in 0..max_retries {
                     error = Some(
-                        match self
-                            .signer
-                            .sign_message(message)
+                        match signer
+                            .sign_message(&message)
                             .await
                             .map(Into::<AwsSignature>::into)
                         {
@@ -100,13 +122,16 @@ impl AwsPair {
                             Err(error) => error,
                         },
                     );
+                    sleep(Duration::from_secs(2u64.pow(i))).await;
                 }
                 panic!(
                     "giving up after attempting to sign message {} times: {:?}",
-                    self.max_retries,
-                    error.unwrap(),
+                    max_retries, error,
                 );
             })
+        })
+        .join()
+        .unwrap() // Let our panic bubble up
     }
 }
 
@@ -117,7 +142,7 @@ impl AwsPair {
 #[async_trait]
 pub trait FromAwsId {
     /// Create an AWS-compatible signer from an AWS id
-    async fn from_aws_id<T>(id: T) -> Result<Self>
+    async fn from_aws_id<T>(id: T) -> Result<Self, AwsPairError>
     where
         T: AsRef<str> + Send + Sync,
         Self: Sized;
@@ -125,7 +150,7 @@ pub trait FromAwsId {
 
 #[async_trait]
 impl FromAwsId for AwsPair {
-    async fn from_aws_id<T>(id: T) -> Result<Self>
+    async fn from_aws_id<T>(id: T) -> Result<Self, AwsPairError>
     where
         T: AsRef<str> + Send + Sync,
     {
@@ -135,7 +160,7 @@ impl FromAwsId for AwsPair {
 
 #[async_trait]
 impl FromAwsId for ecdsa::Pair {
-    async fn from_aws_id<T: AsRef<str>>(_id: T) -> Result<Self>
+    async fn from_aws_id<T: AsRef<str>>(_id: T) -> Result<Self, AwsPairError>
     where
         T: AsRef<str> + Send + Sync,
     {
@@ -260,7 +285,7 @@ impl TraitPair for AwsPair {
 
     /// Sign a message of arbitrary bytes to return a `Signature`
     fn sign(&self, message: &[u8]) -> Self::Signature {
-        self.sign_remote(message)
+        self.sign_remote_sync(message)
     }
 
     fn verify<M: AsRef<[u8]>>(_sig: &Self::Signature, _message: M, _pubkey: &Self::Public) -> bool {
@@ -311,4 +336,68 @@ impl TraitPair for AwsPair {
 
 impl CryptoType for AwsPair {
     type Pair = AwsPair;
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use once_cell::sync::OnceCell;
+    use rusoto_mock::{
+        MockCredentialsProvider, MockRequestDispatcher, MultipleMockRequestDispatcher,
+    };
+
+    static MOCK_KMS_CLIENT: OnceCell<KmsClient> = OnceCell::new();
+
+    fn mock_kms_client() -> &'static KmsClient {
+        MOCK_KMS_CLIENT.get_or_init(|| {
+            // aws kms get-public-key --key-id <key_id>
+            let pubkey_response = r#"{
+                "KeyId": "arn:aws:kms:ap-southeast-1:000000000000:key/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+                "PublicKey": "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEhn6q/sPAS/tU0M49HnbT2N/o2ApVcOxg8RZmtbTrQKUZ8t2s6bi2/AJ+OcVbtavZzqCRttJG6kS/pyEa53AytQ==",
+                "CustomerMasterKeySpec": "ECC_SECG_P256K1",
+                "KeySpec": "ECC_SECG_P256K1",
+                "KeyUsage": "SIGN_VERIFY",
+                "SigningAlgorithms": [
+                    "ECDSA_SHA_256"
+                ]
+            }"#;
+            // aws kms sign --key-id <key_id> --message ZKoCXIP1QLeb/r/mmWQwUS6UHyfxS6KYfu+RJwaRG2c= \
+            // --signing-algorithm ECDSA_SHA_256 --message-type DIGEST
+            // NB: `message` here is `[0u8; 128]` hashed with `ethers_core::utils::hash_message`
+            let sign_response = r#"{
+                "KeyId": "arn:aws:kms:ap-southeast-1:000000000000:key/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+                "Signature": "MEYCIQCzqO4YPbzgw9LlRVB+X040Rb+e7rqNMZf2DqWe5SmY+gIhANi0TTSPDM4FUwrY7hRUZsDcBFHptIdUEak/fOod6UQQ",
+                "SigningAlgorithm": "ECDSA_SHA_256"
+            }"#;
+            let request_dispatcher = MultipleMockRequestDispatcher::new([
+                MockRequestDispatcher::default().with_body(pubkey_response.clone()),
+                MockRequestDispatcher::default().with_body(pubkey_response),
+                MockRequestDispatcher::default().with_body(sign_response),
+            ]);
+            KmsClient::new_with(
+                request_dispatcher,
+                MockCredentialsProvider,
+                Default::default(),
+            )
+        })
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+    async fn it_instantiates_and_signs() {
+        let id = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX";
+        let kms_client = mock_kms_client();
+
+        let signer = AwsPair::new_with_client(id, kms_client).await;
+
+        assert!(signer.is_ok());
+
+        let signer = signer.unwrap();
+        let message = [0u8; 128];
+        let signature = signer.sign(&message);
+
+        assert_eq!(
+            base64::encode(signature),
+            "s6juGD284MPS5UVQfl9ONEW/nu66jTGX9g6lnuUpmPonS7LLcPMx+qz1JxHrq5k93qqK/PrBTCoWkuGiskz9MSM="
+        );
+    }
 }
