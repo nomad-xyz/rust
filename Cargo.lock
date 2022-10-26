@@ -733,6 +733,7 @@ dependencies = [
  "num-integer",
  "num-traits 0.2.15",
  "serde 1.0.137",
+ "time",
  "winapi",
 ]
 
@@ -3331,6 +3332,7 @@ dependencies = [
  "affix",
  "async-std",
  "async-trait",
+ "base64 0.13.0",
  "color-eyre",
  "env_logger",
  "ethers-core",
@@ -3346,6 +3348,7 @@ dependencies = [
  "primitive-types 0.11.1 (git+https://github.com/paritytech/parity-common.git?branch=master)",
  "rusoto_core",
  "rusoto_kms",
+ "rusoto_mock",
  "scale-info",
  "serde 1.0.137",
  "serde_json",
@@ -4582,6 +4585,21 @@ dependencies = [
  "async-trait",
  "bytes",
  "futures",
+ "rusoto_core",
+ "serde 1.0.137",
+ "serde_json",
+]
+
+[[package]]
+name = "rusoto_mock"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a384880f3c6d514e9499e6df75490bef5f6f39237bc24844e3933dfc09e9e55"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "futures",
+ "http",
  "rusoto_core",
  "serde 1.0.137",
  "serde_json",
@@ -5929,6 +5947,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5516c27b78311c50bf42c071425c560ac799b11c30b31f87e3081965fe5e0180"
 dependencies = [
  "once_cell",
+]
+
+[[package]]
+name = "time"
+version = "0.1.43"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca8a50ef2360fbd1eeb0ecd46795a87a19024eb4b53c5dc916ca1fd95fe62438"
+dependencies = [
+ "libc",
+ "winapi",
 ]
 
 [[package]]

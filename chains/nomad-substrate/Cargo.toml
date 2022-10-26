@@ -37,3 +37,7 @@ nomad-types = { path = "../../nomad-types" }
 
 ethers-core = { git = "https://github.com/gakonst/ethers-rs", branch = "master" }
 ethers-signers = { git = "https://github.com/gakonst/ethers-rs", branch = "master", features = ["aws"] }
+
+[dev-dependencies]
+rusoto_mock = "0.48.0"
+base64 = "0.13.0"
