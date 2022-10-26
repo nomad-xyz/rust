@@ -1,4 +1,4 @@
-use crate::aws::FromAwsId;
+use crate::aws::{AwsPairError, FromAwsId};
 use async_trait::async_trait;
 use color_eyre::{eyre::bail, Result};
 use nomad_core::FromSignerConf;
@@ -14,6 +14,9 @@ use subxt::{
 /// Error types for SubstrateSigners
 #[derive(Debug, thiserror::Error)]
 pub enum SubstrateSignersError {
+    /// AWS signer configuration error
+    #[error("Failed to configure AWS signer: {0}")]
+    AwsPairConfiguration(#[from] AwsPairError),
     /// Local signer configuration error
     #[error("Failed to configure local signer from secret: {0:?}")]
     LocalSignerConfiguration(SecretStringError),
@@ -59,7 +62,9 @@ where
                 Ok(Self::Local(pair_signer))
             }
             SignerConf::Aws { id } => {
-                let pair = P::from_aws_id(id).await?;
+                let pair = P::from_aws_id(id)
+                    .await
+                    .map_err(SubstrateSignersError::AwsPairConfiguration)?;
                 let pair_signer = PairSigner::<T, _>::new(pair);
                 let account_id = pair_signer.account_id();
                 tracing::info!("Tx signer AccountId: {}", account_id);
