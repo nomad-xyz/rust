@@ -25,7 +25,7 @@ impl std::fmt::Display for Update {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Update(domain {} moved from {} to {})",
+            "Update(domain {} moved from {:?} to {:?})",
             self.home_domain, self.previous_root, self.new_root
         )
     }
