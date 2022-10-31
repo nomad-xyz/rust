@@ -86,6 +86,7 @@ export interface EthereumBridgeDeploymentInfo {
   bridgeRouter: Proxy;
   tokenRegistry: Proxy;
   bridgeToken: Proxy;
+  accountant?: Proxy;
   ethHelper?: NomadIdentifier;
   customs?: Array<DeployedCustomToken>;
 }
