@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+### v2.0.0
+
 - feature (minor): add accountant to bridge contracts configuration
 - Add `availDemo.json` config and test to ensure it builds into `NomadConfig`
 - fix: SignerConf should not Display or Debug secrets
