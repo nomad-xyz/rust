@@ -38,6 +38,9 @@ pub struct EthereumBridgeDeploymentInfo {
     pub token_registry: Proxy,
     /// Bridge Token proxy
     pub bridge_token: Proxy,
+    /// Accountant (Ethereum only)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub accountant: Option<Proxy>,
     /// Eth Helper address
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub eth_helper: Option<NomadIdentifier>,
