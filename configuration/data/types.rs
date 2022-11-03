@@ -54,6 +54,9 @@ extern "C" {
     #[wasm_bindgen(typescript_type = "CustomTokenSpecifier")]
     pub type CustomTokenSpecifier;
 
+    #[wasm_bindgen(typescript_type = "AccountantInfo")]
+    pub type AccountantInfo;
+
     #[wasm_bindgen(typescript_type = "BridgeConfiguration")]
     pub type BridgeConfiguration;
 

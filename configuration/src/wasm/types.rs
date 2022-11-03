@@ -129,9 +129,15 @@ export interface CustomTokenSpecifier {
   decimals: number;
 }
 
+export interface AccountantInfo {
+  funds_recipient: string;
+  owner: string;
+}
+
 export interface BridgeConfiguration {
   weth?: NomadIdentifier;
   customs?: Array<CustomTokenSpecifier>;
+  accountant?: AccountantInfo;
 }
 
 export interface Domain {
@@ -272,6 +278,9 @@ extern "C" {
 
     #[wasm_bindgen(typescript_type = "CustomTokenSpecifier")]
     pub type CustomTokenSpecifier;
+
+    #[wasm_bindgen(typescript_type = "AccountantInfo")]
+    pub type AccountantInfo;
 
     #[wasm_bindgen(typescript_type = "BridgeConfiguration")]
     pub type BridgeConfiguration;

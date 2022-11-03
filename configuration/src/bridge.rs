@@ -25,6 +25,14 @@ pub struct DeployedCustomToken {
     pub addresses: Proxy,
 }
 
+#[derive(Default, Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+/// Accountant deploy info
+pub struct AccountantInfo {
+    funds_recipient: NomadIdentifier,
+    owner: NomadIdentifier,
+}
+
 /// EVM Bridge Contracts
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -102,4 +110,7 @@ pub struct BridgeConfiguration {
     /// Custom token deployment specifiers
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub customs: Option<HashSet<CustomTokenSpecifier>>,
+    /// Accountant deploy info (if any)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub accountant: Option<AccountantInfo>,
 }
