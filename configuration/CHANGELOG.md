@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+### v2.0.1
+
 - Add Accountant deploy info to bridge configuration
 
 ### v2.0.0
