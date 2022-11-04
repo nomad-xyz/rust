@@ -3395,7 +3395,7 @@ dependencies = [
 
 [[package]]
 name = "nomad-xyz-configuration"
-version = "2.0.1-dev"
+version = "2.0.1"
 dependencies = [
  "affix",
  "dotenv",
