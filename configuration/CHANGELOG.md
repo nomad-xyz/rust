@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- Add Accountant deploy info to bridge configuration
+
 ### v2.0.0
 
 - feature (minor): add accountant to bridge contracts configuration
