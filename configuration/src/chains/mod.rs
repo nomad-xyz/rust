@@ -6,8 +6,6 @@ pub mod substrate;
 
 use std::str::FromStr;
 
-use serde_json::json;
-
 /// Rpc style of chain
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum RpcStyle {

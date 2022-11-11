@@ -2,6 +2,9 @@
 
 ### Unreleased
 
+- refactor: change `ChainConf::from_env` to avoid expensive json, and more
+  verbosely report issues
+
 ### v2.0.1
 
 - Add Accountant deploy info to bridge configuration
