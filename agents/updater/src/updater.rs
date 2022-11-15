@@ -11,7 +11,7 @@ use nomad_base::{AgentCore, AttestationSigner, CachingHome, NomadAgent, NomadDB}
 use nomad_core::{Common, FromSignerConf};
 use prometheus::IntCounter;
 use tokio::task::JoinHandle;
-use tracing::{info, instrument::Instrumented, Instrument};
+use tracing::{info, Instrument};
 
 /// An updater agent
 #[derive(Debug)]
@@ -139,7 +139,7 @@ impl NomadAgent for Updater {
         self.into()
     }
 
-    fn run(channel: Self::Channel) -> Instrumented<JoinHandle<Result<()>>> {
+    fn run(channel: Self::Channel) -> JoinHandle<Result<()>> {
         let home = channel.home.clone();
         let address = channel.signer.address();
         let db = channel.db.clone();
@@ -160,61 +160,65 @@ impl NomadAgent for Updater {
             channel.submitted_update_count,
         );
 
-        tokio::spawn(async move {
-            let expected: Address = home.updater().await?.into();
-            ensure!(
-                expected == address,
-                "Contract updater does not match keys. On-chain: {}. Local: {}",
-                expected,
-                address
-            );
+        tokio::spawn(
+            async move {
+                let expected: Address = home.updater().await?.into();
+                ensure!(
+                    expected == address,
+                    "Contract updater does not match keys. On-chain: {}. Local: {}",
+                    expected,
+                    address
+                );
 
-            // Only spawn updater tasks once syncing has finished
-            info!("Spawning produce and submit tasks...");
-            let produce_task = produce.spawn();
-            let submit_task = submit.spawn();
+                // Only spawn updater tasks once syncing has finished
+                info!("Spawning produce and submit tasks...");
+                let produce_task = produce.spawn();
+                let submit_task = submit.spawn();
 
-            let (res, _, rem) = select_all(vec![produce_task, submit_task]).await;
+                let (res, _, rem) = select_all(vec![produce_task, submit_task]).await;
 
-            for task in rem.into_iter() {
-                task.into_inner().abort();
+                for task in rem.into_iter() {
+                    task.abort();
+                }
+                res?
             }
-            res?
-        })
-        .in_current_span()
+            .in_current_span(),
+        )
     }
 
-    fn run_many(&self, _replicas: &[&str]) -> Instrumented<JoinHandle<Result<()>>> {
+    fn run_many(&self, _replicas: &[&str]) -> JoinHandle<Result<()>> {
         panic!("Updater::run_many should not be called. Always call run_all")
     }
 
-    fn run_all(self) -> Instrumented<JoinHandle<Result<()>>>
+    fn run_all(self) -> JoinHandle<Result<()>>
     where
         Self: Sized + 'static,
     {
-        tokio::spawn(async move {
-            self.assert_home_not_failed().await??;
+        tokio::spawn(
+            async move {
+                self.assert_home_not_failed().await??;
 
-            let home_fail_watch_task = self.watch_home_fail(self.interval_seconds);
+                let home_fail_watch_task = self.watch_home_fail(self.interval_seconds);
 
-            info!("Starting updater sync task...");
-            let sync_task = self.home().sync();
+                info!("Starting updater sync task...");
+                let sync_task = self.home().sync();
 
-            // Run a single error-catching task for producing and submitting
-            // updates. While we use the agent channel pattern, this run task
-            // only operates on the home.
-            info!("Starting updater produce and submit tasks...");
-            let update_task = self.run_report_error("".to_owned());
+                // Run a single error-catching task for producing and submitting
+                // updates. While we use the agent channel pattern, this run task
+                // only operates on the home.
+                info!("Starting updater produce and submit tasks...");
+                let update_task = self.run_report_error("".to_owned());
 
-            let (res, _, rem) =
-                select_all(vec![home_fail_watch_task, sync_task, update_task]).await;
+                let (res, _, rem) =
+                    select_all(vec![home_fail_watch_task, sync_task, update_task]).await;
 
-            for task in rem.into_iter() {
-                task.into_inner().abort();
+                for task in rem.into_iter() {
+                    task.abort();
+                }
+                res?
             }
-            res?
-        })
-        .in_current_span()
+            .in_current_span(),
+        )
     }
 }
 

@@ -3,6 +3,7 @@
 ### Unreleased
 
 - use `std::fmt::Display` to log contracts
+- fix: instrument futures, not joinhandles
 
 ### agents@1.1.0
 
