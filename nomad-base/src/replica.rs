@@ -5,6 +5,7 @@ use nomad_core::{
     accumulator::NomadProof, db::DbError, Common, CommonEvents, DoubleUpdate, MessageStatus,
     NomadMessage, Replica, SignedUpdate, State, TxOutcome,
 };
+use tracing::instrument;
 
 use crate::{ChainCommunicationError, NomadDB};
 
@@ -13,7 +14,6 @@ use nomad_test::mocks::MockReplicaContract;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
-use tracing::{instrument, instrument::Instrumented};
 
 use crate::{CommonIndexers, ContractSync};
 
@@ -57,7 +57,7 @@ impl CachingReplica {
 
     /// Spawn a task that syncs the CachingReplica's db with the on-chain event
     /// data
-    pub fn sync(&self) -> Instrumented<JoinHandle<Result<()>>> {
+    pub fn sync(&self) -> JoinHandle<Result<()>> {
         let sync = self.contract_sync.clone();
         sync.spawn_common()
     }

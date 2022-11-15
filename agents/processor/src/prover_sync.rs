@@ -10,7 +10,7 @@ use tokio::{
     task::JoinHandle,
     time::{sleep, timeout},
 };
-use tracing::{debug, error, info, info_span, instrument, instrument::Instrumented, Instrument};
+use tracing::{debug, error, info, info_span, instrument, Instrument};
 
 /// Struct to sync prover.
 #[derive(Debug)]
@@ -181,59 +181,62 @@ impl ProverSync {
     /// local merkle tree with all leaves between local root and
     /// new root. Use short interval for bootup syncing and longer
     /// interval for regular polling.
-    pub fn spawn(mut self) -> Instrumented<JoinHandle<Result<()>>> {
+    pub fn spawn(mut self) -> JoinHandle<Result<()>> {
         let span = info_span!("ProverSync", self = %self);
-        tokio::spawn(async move {
-            loop {
-                // Try to retrieve new signed update
-                let local_root = self.local_root();
-                let signed_update_opt = self.db.update_by_previous_root(local_root)?;
+        tokio::spawn(
+            async move {
+                loop {
+                    // Try to retrieve new signed update
+                    let local_root = self.local_root();
+                    let signed_update_opt = self.db.update_by_previous_root(local_root)?;
 
-                if let Some(signed_update) = signed_update_opt {
-                    let previous_root = signed_update.update.previous_root;
-                    let new_root = signed_update.update.new_root;
+                    if let Some(signed_update) = signed_update_opt {
+                        let previous_root = signed_update.update.previous_root;
+                        let new_root = signed_update.update.new_root;
 
-                    info!(
-                        previous_root = ?previous_root,
-                        new_root = ?new_root,
-                        "Have signed update from {} to {}",
-                        previous_root,
-                        new_root
-                    );
+                        info!(
+                            previous_root = ?previous_root,
+                            new_root = ?new_root,
+                            "Have signed update from {} to {}",
+                            previous_root,
+                            new_root
+                        );
 
-                    // Update in-memory prover tree until local tree root
-                    // matches newly found new_root
-                    let pre_update_size = self.prover.count();
-                    self.update_prover_tree(new_root).await?;
+                        // Update in-memory prover tree until local tree root
+                        // matches newly found new_root
+                        let pre_update_size = self.prover.count();
+                        self.update_prover_tree(new_root).await?;
 
-                    // Double check that update new root now equals current prover root
-                    let current_root = self.prover.root();
-                    if current_root != new_root {
-                        bail!(ProverSyncError::MismatchedRoots {
-                            local_root: current_root,
-                            new_root,
-                        });
-                    }
-
-                    // Ensure there is a proof in the db for all leaves
-                    for idx in pre_update_size..self.prover.count() {
-                        if self.db.proof_by_leaf_index(idx as u32)?.is_none() {
-                            self.store_proof(idx as u32)?;
+                        // Double check that update new root now equals current prover root
+                        let current_root = self.prover.root();
+                        if current_root != new_root {
+                            bail!(ProverSyncError::MismatchedRoots {
+                                local_root: current_root,
+                                new_root,
+                            });
                         }
+
+                        // Ensure there is a proof in the db for all leaves
+                        for idx in pre_update_size..self.prover.count() {
+                            if self.db.proof_by_leaf_index(idx as u32)?.is_none() {
+                                self.store_proof(idx as u32)?;
+                            }
+                        }
+
+                        // Store latest root for which we know we have all leaves/
+                        // proofs for
+                        self.db.store_prover_latest_committed(new_root)?;
+                    } else if !local_root.is_zero()
+                        && self.db.update_by_new_root(local_root)?.is_none()
+                    {
+                        bail!(ProverSyncError::InvalidLocalRoot { local_root });
                     }
 
-                    // Store latest root for which we know we have all leaves/
-                    // proofs for
-                    self.db.store_prover_latest_committed(new_root)?;
-                } else if !local_root.is_zero() && self.db.update_by_new_root(local_root)?.is_none()
-                {
-                    bail!(ProverSyncError::InvalidLocalRoot { local_root });
+                    // kludge
+                    sleep(Duration::from_millis(100)).await;
                 }
-
-                // kludge
-                sleep(Duration::from_millis(100)).await;
             }
-        })
-        .instrument(span)
+            .instrument(span),
+        )
     }
 }

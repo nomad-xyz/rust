@@ -10,7 +10,7 @@ use nomad_base::NomadDB;
 
 use nomad_core::accumulator::NomadProof;
 use tokio::{task::JoinHandle, time::sleep};
-use tracing::{debug, info, info_span, instrument::Instrumented, Instrument};
+use tracing::{debug, info, info_span, Instrument};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 struct ProvenMessage {
@@ -103,37 +103,39 @@ impl Pusher {
     ///
     /// The pusher task polls the DB for new proofs and attempts to push them
     /// to an S3 bucket
-    pub fn spawn(self) -> Instrumented<JoinHandle<Result<()>>> {
+    pub fn spawn(self) -> JoinHandle<Result<()>> {
         let span = info_span!(
             "ProofPusher",
             bucket = %self.bucket,
             region = self.region.name(),
             home = %self.name,
         );
-        tokio::spawn(async move {
-            let mut index = 0;
-            loop {
-                let proof = self.db.proof_by_leaf_index(index)?;
-                match proof {
-                    Some(proof) => {
-                        let message = self
-                            .db
-                            .message_by_leaf_index(index)?
-                            .map(|message| message.message)
-                            .ok_or_else(|| eyre!("Missing message for known proof"))?;
-                        debug_assert_eq!(keccak256(&message), *proof.leaf.as_fixed_bytes());
-                        let proven = ProvenMessage { proof, message };
-                        // upload if not already present
-                        if !self.already_uploaded(&proven).await? {
-                            self.upload_proof(&proven).await?;
-                        }
+        tokio::spawn(
+            async move {
+                let mut index = 0;
+                loop {
+                    let proof = self.db.proof_by_leaf_index(index)?;
+                    match proof {
+                        Some(proof) => {
+                            let message = self
+                                .db
+                                .message_by_leaf_index(index)?
+                                .map(|message| message.message)
+                                .ok_or_else(|| eyre!("Missing message for known proof"))?;
+                            debug_assert_eq!(keccak256(&message), *proof.leaf.as_fixed_bytes());
+                            let proven = ProvenMessage { proof, message };
+                            // upload if not already present
+                            if !self.already_uploaded(&proven).await? {
+                                self.upload_proof(&proven).await?;
+                            }
 
-                        index += 1;
+                            index += 1;
+                        }
+                        None => sleep(Duration::from_millis(500)).await,
                     }
-                    None => sleep(Duration::from_millis(500)).await,
                 }
             }
-        })
-        .instrument(span)
+            .instrument(span),
+        )
     }
 }

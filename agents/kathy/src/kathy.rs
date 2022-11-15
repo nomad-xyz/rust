@@ -5,7 +5,6 @@ use color_eyre::Result;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use tokio::{sync::Mutex, task::JoinHandle, time::sleep};
-use tracing::instrument::Instrumented;
 use tracing::{info, Instrument};
 
 use ethers::core::types::H256;
@@ -81,51 +80,53 @@ impl NomadAgent for Kathy {
     }
 
     #[tracing::instrument]
-    fn run(channel: Self::Channel) -> Instrumented<JoinHandle<Result<()>>> {
-        tokio::spawn(async move {
-            let home = channel.home();
-            let destination = channel.replica().local_domain();
-            let mut generator = channel.generator;
-            let home_lock = channel.home_lock;
-            let messages_dispatched = channel.messages_dispatched;
-            let interval = channel.interval;
+    fn run(channel: Self::Channel) -> JoinHandle<Result<()>> {
+        tokio::spawn(
+            async move {
+                let home = channel.home();
+                let destination = channel.replica().local_domain();
+                let mut generator = channel.generator;
+                let home_lock = channel.home_lock;
+                let messages_dispatched = channel.messages_dispatched;
+                let interval = channel.interval;
 
-            loop {
-                let msg = generator.gen_chat();
-                let recipient = generator.gen_recipient();
+                loop {
+                    let msg = generator.gen_chat();
+                    let recipient = generator.gen_recipient();
 
-                match msg {
-                    Some(body) => {
-                        let message = Message {
-                            destination,
-                            recipient,
-                            body,
-                        };
-                        info!(
-                            target: "outgoing_messages",
-                            "Enqueuing message of length {} to {}::{}",
-                            length = message.body.len(),
-                            destination = message.destination,
-                            recipient = message.recipient
-                        );
+                    match msg {
+                        Some(body) => {
+                            let message = Message {
+                                destination,
+                                recipient,
+                                body,
+                            };
+                            info!(
+                                target: "outgoing_messages",
+                                "Enqueuing message of length {} to {}::{}",
+                                length = message.body.len(),
+                                destination = message.destination,
+                                recipient = message.recipient
+                            );
 
-                        let guard = home_lock.lock().await;
-                        home.dispatch(&message).await?;
+                            let guard = home_lock.lock().await;
+                            home.dispatch(&message).await?;
 
-                        messages_dispatched.inc();
+                            messages_dispatched.inc();
 
-                        drop(guard);
+                            drop(guard);
+                        }
+                        _ => {
+                            info!("Reached the end of the static message queue. Shutting down.");
+                            return Ok(());
+                        }
                     }
-                    _ => {
-                        info!("Reached the end of the static message queue. Shutting down.");
-                        return Ok(());
-                    }
+
+                    sleep(Duration::from_secs(interval)).await;
                 }
-
-                sleep(Duration::from_secs(interval)).await;
             }
-        })
-        .in_current_span()
+            .in_current_span(),
+        )
     }
 }
 

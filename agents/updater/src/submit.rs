@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use color_eyre::Result;
 use tokio::{task::JoinHandle, time::sleep};
-use tracing::{info, info_span, instrument::Instrumented, Instrument};
+use tracing::{info, info_span, Instrument};
 
 pub(crate) struct UpdateSubmitter {
     home: Arc<CachingHome>,
@@ -34,7 +34,7 @@ impl UpdateSubmitter {
         }
     }
 
-    pub(crate) fn spawn(self) -> Instrumented<JoinHandle<Result<()>>> {
+    pub(crate) fn spawn(self) -> JoinHandle<Result<()>> {
         let span = info_span!("UpdateSubmitter");
 
         tokio::spawn(async move {
@@ -79,7 +79,8 @@ impl UpdateSubmitter {
                     )
                 }
             }
-        })
+        }
         .instrument(span)
+    )
     }
 }

@@ -11,7 +11,7 @@ use nomad_test::mocks::MockHomeContract;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
-use tracing::{instrument, instrument::Instrumented};
+use tracing::instrument;
 
 /// Caching replica type
 #[derive(Debug)]
@@ -49,7 +49,7 @@ impl CachingHome {
 
     /// Spawn a task that syncs the CachingHome's db with the on-chain event
     /// data
-    pub fn sync(&self) -> Instrumented<JoinHandle<Result<()>>> {
+    pub fn sync(&self) -> JoinHandle<Result<()>> {
         let sync = self.contract_sync.clone();
         sync.spawn_home()
     }

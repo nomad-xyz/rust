@@ -3,6 +3,7 @@
 ### Unreleased
 
 - Add English description to XCM error log, change to use `Display`
+- fix: instrument futures, not joinhandles
 
 ### agents@1.1.0
 
