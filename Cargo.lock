@@ -2649,6 +2649,7 @@ dependencies = [
  "nomad-test",
  "nomad-types",
  "nomad-xyz-configuration",
+ "rusoto_core",
  "serde 1.0.137",
  "serde_json",
  "serial_test",

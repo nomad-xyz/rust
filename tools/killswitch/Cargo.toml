@@ -12,6 +12,7 @@ futures-util = "0.3.12"
 thiserror = { version = "1.0.22", default-features = false }
 serde = "1.0.120"
 serde_json = { version = "1.0.61", default-features = false }
+rusoto_core = "0.48.0"
 ethers = { git = "https://github.com/gakonst/ethers-rs", branch = "master" }
 nomad-core = { path = "../../nomad-core" }
 nomad-base = { path = "../../nomad-base" }
