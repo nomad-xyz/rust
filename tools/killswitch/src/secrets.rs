@@ -31,3 +31,20 @@ impl Secrets {
         Ok(serde_yaml::from_slice::<Self>(&bytes[..]).map_err(Error::YamlBadDeser)?)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use nomad_test::test_utils;
+    use std::fs;
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_fetches_and_deserializes_secrets() {
+        let secrets = fs::read_to_string("../../fixtures/killswitch_secrets.testing.yaml").unwrap();
+        test_utils::run_test_with_http_response(secrets, "application/yaml", |url| async move {
+            let secrets = Secrets::fetch(&url).await;
+            assert!(secrets.is_ok())
+        }).await;
+    }
+}
