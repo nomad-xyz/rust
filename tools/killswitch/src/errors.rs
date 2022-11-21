@@ -1,9 +1,13 @@
 use nomad_base::ChainCommunicationError;
 use nomad_ethereum::EthereumSignersError;
+use rusoto_core::credential::CredentialsError;
 
 /// `Error` for KillSwitch
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    /// Cannot find local AWS credentials
+    #[error("CredentialsError: Cannot find AWS credentials: {0}")]
+    CredentialsError(#[source] CredentialsError),
     /// No configuration env var
     #[error(
         "NoConfigVar: No configuration found. Set CONFIG_URL or CONFIG_PATH environment variable"
