@@ -1,7 +1,7 @@
 use crate::{errors::Error, Environment, Result};
 use reqwest;
 use serde_yaml;
-use std::collections::HashMap;
+use std::{collections::HashMap, fs};
 
 /// A model for our remote secrets file
 #[derive(Debug, serde::Deserialize)]
@@ -30,6 +30,12 @@ impl Secrets {
             .map_err(Error::ReqwestError)?;
         Ok(serde_yaml::from_slice::<Self>(&bytes[..]).map_err(Error::YamlBadDeser)?)
     }
+
+    /// Create a `Secrets` by loading a local file. Included for testing only
+    pub(crate) async fn load(path: &str) -> Result<Self> {
+        let secrets = fs::read_to_string(path).unwrap();
+        Ok(serde_yaml::from_slice::<Self>(secrets.as_bytes()).map_err(Error::YamlBadDeser)?)
+    }
 }
 
 #[cfg(test)]
@@ -45,6 +51,7 @@ mod test {
         test_utils::run_test_with_http_response(secrets, "application/yaml", |url| async move {
             let secrets = Secrets::fetch(&url).await;
             assert!(secrets.is_ok())
-        }).await;
+        })
+        .await;
     }
 }
