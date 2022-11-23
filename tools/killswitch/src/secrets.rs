@@ -1,7 +1,14 @@
-use crate::{errors::Error, Environment, Result};
-use reqwest;
+use crate::{errors::Error, Result};
+use rusoto_core::{credential::ProfileProvider, Client, HttpClient, Region};
+use rusoto_s3::{GetObjectRequest, S3Client, S3};
 use serde_yaml;
-use std::{collections::HashMap, fs};
+use std::{
+    collections::HashMap,
+    default::Default,
+    fs,
+    str::FromStr,
+};
+use tokio::io::AsyncReadExt;
 
 /// A model for our remote secrets file
 #[derive(Debug, serde::Deserialize)]
@@ -20,15 +27,42 @@ pub(crate) struct Secrets {
 }
 
 impl Secrets {
-    /// Create a `Secrets` by fetching yaml from a remote URL
-    pub(crate) async fn fetch(url: &str) -> Result<Self> {
-        let bytes = reqwest::get(url)
+    /// Create a `Secrets` by fetching yaml from an S3 bucket
+    pub(crate) async fn fetch(
+        profile: &str,
+        region: &str,
+        bucket: &str,
+        key: &str,
+    ) -> Result<Self> {
+        let credentials_provider =
+            ProfileProvider::with_default_credentials(profile).map_err(Error::CredentialsError)?;
+        let client = Client::new_with(credentials_provider, HttpClient::new().unwrap());
+        let s3_client = S3Client::new_with_client(client, Region::from_str(region).unwrap());
+        Self::fetch_with_client(s3_client, bucket, key).await
+    }
+
+    /// Create a `Secrets` by fetching yaml from an S3 bucket given an `S3Client`
+    pub(crate) async fn fetch_with_client(
+        client: S3Client,
+        bucket: &str,
+        key: &str,
+    ) -> Result<Self> {
+        let mut yaml = String::new();
+        let mut request = GetObjectRequest::default();
+        request.bucket = bucket.into();
+        request.key = key.into();
+        let response = client
+            .get_object(request)
             .await
-            .map_err(Error::ReqwestError)?
-            .bytes()
+            .map_err(Error::RusotoGetObject)?;
+        response
+            .body
+            .unwrap()
+            .into_async_read()
+            .read_to_string(&mut yaml)
             .await
-            .map_err(Error::ReqwestError)?;
-        Ok(serde_yaml::from_slice::<Self>(&bytes[..]).map_err(Error::YamlBadDeser)?)
+            .map_err(Error::BadIO)?;
+        Ok(serde_yaml::from_slice::<Self>(yaml.as_bytes()).map_err(Error::YamlBadDeser)?)
     }
 
     /// Create a `Secrets` by loading a local file. Included for testing only
@@ -41,17 +75,30 @@ impl Secrets {
 #[cfg(test)]
 mod test {
     use super::*;
-    use nomad_test::test_utils;
+    use rusoto_mock::{
+        MockCredentialsProvider, MockRequestDispatcher, MultipleMockRequestDispatcher,
+    };
     use std::fs;
+
+    fn mock_s3_client() -> S3Client {
+        let secrets_response =
+            fs::read_to_string("../../fixtures/killswitch_secrets.testing.yaml").unwrap();
+        let request_dispatcher = MultipleMockRequestDispatcher::new([
+            MockRequestDispatcher::default().with_body(&secrets_response),
+        ]);
+        S3Client::new_with(
+            request_dispatcher,
+            MockCredentialsProvider,
+            Region::default(),
+        )
+    }
 
     #[tokio::test]
     #[serial_test::serial]
-    async fn it_fetches_and_deserializes_secrets() {
-        let secrets = fs::read_to_string("../../fixtures/killswitch_secrets.testing.yaml").unwrap();
-        test_utils::run_test_with_http_response(secrets, "application/yaml", |url| async move {
-            let secrets = Secrets::fetch(&url).await;
-            assert!(secrets.is_ok())
-        })
-        .await;
+    async fn it_fetches_secrets_from_s3() {
+        let s3_client = mock_s3_client();
+        let secrets =
+            Secrets::fetch_with_client(s3_client, "any-bucket", "any-key.yaml").await;
+        assert!(secrets.is_ok());
     }
 }

@@ -14,7 +14,7 @@ serde = "1.0.120"
 serde_json = { version = "1.0.61", default-features = false }
 serde_yaml = "0.9.14"
 rusoto_core = "0.48.0"
-reqwest = "0.11.10"
+rusoto_s3 = "0.48.0"
 ethers = { git = "https://github.com/gakonst/ethers-rs", branch = "master" }
 nomad-core = { path = "../../nomad-core" }
 nomad-base = { path = "../../nomad-base" }
@@ -22,6 +22,7 @@ nomad-xyz-configuration = { path = "../../configuration" }
 nomad-ethereum = { path = "../../chains/nomad-ethereum" }
 
 [dev-dependencies]
+rusoto_mock = "0.48.0"
 assert_matches = "1.5"
 serial_test = "0.6.0"
 nomad-test = { path = "../../nomad-test" }
