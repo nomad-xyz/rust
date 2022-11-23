@@ -1,3 +1,4 @@
+use crate::aws::{AwsPairError, FromAwsId};
 use async_trait::async_trait;
 use color_eyre::{eyre::bail, Result};
 use nomad_core::FromSignerConf;
@@ -10,9 +11,12 @@ use subxt::{
     Config,
 };
 
-/// Error types for EthereumSigners
+/// Error types for SubstrateSigners
 #[derive(Debug, thiserror::Error)]
 pub enum SubstrateSignersError {
+    /// AWS signer configuration error
+    #[error("Failed to configure AWS signer: {0}")]
+    AwsPairConfiguration(#[from] AwsPairError),
     /// Local signer configuration error
     #[error("Failed to configure local signer from secret: {0:?}")]
     LocalSignerConfiguration(SecretStringError),
@@ -25,9 +29,11 @@ impl From<SecretStringError> for SubstrateSignersError {
 }
 
 /// Substrate signer variants
-pub enum SubstrateSigners<T: Config, P: Pair> {
+pub enum SubstrateSigners<T: Config, P: Pair + FromAwsId> {
     /// Local signer, instantiated from local private key
     Local(PairSigner<T, P>),
+    /// A signer using a key stored in AWS KMS
+    Aws(PairSigner<T, P>),
 }
 
 #[async_trait]
@@ -39,7 +45,7 @@ where
     <T as Config>::AccountId: Into<<T as Config>::Address>,
     <T as Config>::Address: std::fmt::Display,
     <T as Config>::AccountId: std::fmt::Display,
-    P: Pair,
+    P: Pair + FromAwsId,
     P::Public: std::fmt::Display,
 {
     async fn try_from_signer_conf(conf: &SignerConf) -> Result<Self> {
@@ -55,13 +61,22 @@ where
 
                 Ok(Self::Local(pair_signer))
             }
-            SignerConf::Aws { .. } => bail!("No AWS signer support"),
+            SignerConf::Aws { id } => {
+                let pair = P::from_aws_id(id)
+                    .await
+                    .map_err(SubstrateSignersError::AwsPairConfiguration)?;
+                let pair_signer = PairSigner::<T, _>::new(pair);
+                let account_id = pair_signer.account_id();
+                tracing::info!("Tx signer AccountId: {}", account_id);
+
+                Ok(Self::Aws(pair_signer))
+            }
             SignerConf::Node => bail!("No node signer support"),
         }
     }
 }
 
-impl<T: Config, P: Pair> Signer<T> for SubstrateSigners<T, P>
+impl<T: Config, P: Pair + FromAwsId> Signer<T> for SubstrateSigners<T, P>
 where
     T: Config,
     T::Signature: From<P::Signature>,
@@ -73,24 +88,28 @@ where
     fn nonce(&self) -> Option<<T as Config>::Index> {
         match self {
             SubstrateSigners::Local(signer) => signer.nonce(),
+            SubstrateSigners::Aws(signer) => signer.nonce(),
         }
     }
 
     fn account_id(&self) -> &<T as Config>::AccountId {
         match self {
             SubstrateSigners::Local(signer) => signer.account_id(),
+            SubstrateSigners::Aws(signer) => signer.account_id(),
         }
     }
 
     fn address(&self) -> <T as Config>::Address {
         match self {
             SubstrateSigners::Local(signer) => signer.address(),
+            SubstrateSigners::Aws(signer) => signer.address(),
         }
     }
 
     fn sign(&self, signer_payload: &[u8]) -> <T as Config>::Signature {
         match self {
             SubstrateSigners::Local(signer) => signer.sign(signer_payload),
+            SubstrateSigners::Aws(signer) => signer.sign(signer_payload),
         }
     }
 }

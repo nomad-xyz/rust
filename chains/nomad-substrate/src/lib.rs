@@ -28,6 +28,9 @@ pub use client::*;
 mod signer;
 pub use signer::*;
 
+mod aws;
+pub use aws::*;
+
 #[macro_use]
 mod macros;
 pub use macros::*;
