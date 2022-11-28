@@ -2,12 +2,7 @@ use crate::{errors::Error, Result};
 use rusoto_core::{credential::ProfileProvider, Client, HttpClient, Region};
 use rusoto_s3::{GetObjectRequest, S3Client, S3};
 use serde_yaml;
-use std::{
-    collections::HashMap,
-    default::Default,
-    fs,
-    str::FromStr,
-};
+use std::{collections::HashMap, default::Default, env, fs, str::FromStr};
 use tokio::io::AsyncReadExt;
 
 /// A model for our remote secrets file
@@ -65,6 +60,30 @@ impl Secrets {
         Ok(serde_yaml::from_slice::<Self>(yaml.as_bytes()).map_err(Error::YamlBadDeser)?)
     }
 
+    /// Set `Secrets` as environment variables so they can be picked up by `Settings`
+    pub(crate) fn set_environment(&self) {
+        // We've included `CONFIG_PATH` for testing and `CONFIG_URL` takes precedence
+        // so force precedence here.
+        if let Some(ref path) = self.config_path {
+            env::set_var("CONFIG_PATH", path);
+        } else {
+            env::set_var("CONFIG_URL", &self.config_url);
+        }
+        // Set everything else
+        for (k, v) in self.connection_urls.iter() {
+            env::set_var(k, v);
+        }
+        for (k, v) in self.txsigner_ids.iter() {
+            env::set_var(k, v);
+        }
+        for (k, v) in self.attestation_signer_ids.iter() {
+            env::set_var(k, v);
+        }
+        // Set constant values that don't need to be in the secrets file
+        env::set_var("DEFAULT_RPCSTYLE", "ethereum");
+        env::set_var("DEFAULT_SUBMITTER_TYPE", "local");
+    }
+
     /// Create a `Secrets` by loading a local file. Included for testing only
     pub(crate) async fn load(path: &str) -> Result<Self> {
         let secrets = fs::read_to_string(path).unwrap();
@@ -97,8 +116,7 @@ mod test {
     #[serial_test::serial]
     async fn it_fetches_secrets_from_s3() {
         let s3_client = mock_s3_client();
-        let secrets =
-            Secrets::fetch_with_client(s3_client, "any-bucket", "any-key.yaml").await;
+        let secrets = Secrets::fetch_with_client(s3_client, "any-bucket", "any-key.yaml").await;
         assert!(secrets.is_ok());
     }
 }
