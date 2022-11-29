@@ -18,11 +18,6 @@ use std::{
 
 const AWS_REGION: &str = "us-west-2";
 const AWS_CREDENTIALS_PROFILE: &str = "nomad-xyz-dev";
-
-const SECRETS_PATH_LOCAL_TESTING: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../fixtures/killswitch_secrets.testing.yaml"
-);
 const SECRETS_S3_BUCKET: &str = "";
 const SECRETS_S3_KEY_TESTING: &str = "";
 const SECRETS_S3_KEY_STAGING: &str = "";
@@ -40,9 +35,6 @@ enum Environment {
     Staging,
     /// The production environment
     Production,
-    /// For local testing only
-    #[clap(hide = true)]
-    LocalTesting,
 }
 
 /// What we're killing, currently only `TokenBridge`
@@ -58,15 +50,24 @@ enum App {
     ArgGroup::new("which_networks")
     .required(true)
     .multiple(false)
-    .args(&["all", "all-inbound"])
+    .args(&["all", "all_inbound"])
 ))]
 struct Args {
     /// Which environment to target
-    #[clap(long, arg_enum)]
-    environment: Environment,
+    #[clap(
+        long,
+        value_enum,
+        required_unless_present = "environment_override",
+        conflicts_with = "environment_override"
+    )]
+    environment: Option<Environment>,
+
+    /// For testing only, read secrets from a local path
+    #[clap(long, hide = true)]
+    environment_override: Option<String>,
 
     /// Which app to kill
-    #[clap(long, arg_enum)]
+    #[clap(long, value_enum)]
     app: App,
 
     /// Kill all available networks
@@ -103,35 +104,39 @@ async fn main() -> Result<()> {
     write_stdout(&format!("Running `{}`\n", command));
 
     write_stdout("Fetching secrets from S3 using local AWS credentials... ");
-    let secrets = match &args.environment {
-        Environment::Testing => {
-            Secrets::fetch(
-                AWS_CREDENTIALS_PROFILE,
-                AWS_REGION,
-                SECRETS_S3_BUCKET,
-                SECRETS_S3_KEY_TESTING,
-            )
-            .await
+    let secrets = if let Some(path) = &args.environment_override {
+        Secrets::load(path).await
+    } else {
+        match &args.environment {
+            Some(Environment::Testing) => {
+                Secrets::fetch(
+                    AWS_CREDENTIALS_PROFILE,
+                    AWS_REGION,
+                    SECRETS_S3_BUCKET,
+                    SECRETS_S3_KEY_TESTING,
+                )
+                .await
+            }
+            Some(Environment::Staging) => {
+                Secrets::fetch(
+                    AWS_CREDENTIALS_PROFILE,
+                    AWS_REGION,
+                    SECRETS_S3_BUCKET,
+                    SECRETS_S3_KEY_STAGING,
+                )
+                .await
+            }
+            Some(Environment::Production) => {
+                Secrets::fetch(
+                    AWS_CREDENTIALS_PROFILE,
+                    AWS_REGION,
+                    SECRETS_S3_BUCKET,
+                    SECRETS_S3_KEY_PRODUCTION,
+                )
+                .await
+            }
+            None => unreachable!(),
         }
-        Environment::Staging => {
-            Secrets::fetch(
-                AWS_CREDENTIALS_PROFILE,
-                AWS_REGION,
-                SECRETS_S3_BUCKET,
-                SECRETS_S3_KEY_STAGING,
-            )
-            .await
-        }
-        Environment::Production => {
-            Secrets::fetch(
-                AWS_CREDENTIALS_PROFILE,
-                AWS_REGION,
-                SECRETS_S3_BUCKET,
-                SECRETS_S3_KEY_PRODUCTION,
-            )
-            .await
-        }
-        Environment::LocalTesting => Secrets::load(SECRETS_PATH_LOCAL_TESTING).await,
     };
     if let Err(error) = secrets {
         write_stdout(&format!("Failed: {}\n", error));
