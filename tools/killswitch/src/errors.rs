@@ -9,8 +9,8 @@ use std::io::Error as IOError;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     /// Cannot find local AWS credentials
-    #[error("CredentialsError: Cannot find AWS credentials: {0}")]
-    CredentialsError(#[source] CredentialsError),
+    #[error("BadCredentials: Cannot find AWS credentials: {0}")]
+    BadCredentials(#[source] CredentialsError),
     /// Yaml ser/de error
     #[error("YamlBadDeser: Error converting to/from yaml: {0}")]
     YamlBadDeser(#[source] YamlError),

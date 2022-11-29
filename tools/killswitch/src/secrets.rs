@@ -1,7 +1,6 @@
 use crate::{errors::Error, Result};
 use rusoto_core::{credential::ProfileProvider, Client, HttpClient, Region};
 use rusoto_s3::{GetObjectRequest, S3Client, S3};
-use serde_yaml;
 use std::{collections::HashMap, default::Default, env, fs, str::FromStr};
 use tokio::io::AsyncReadExt;
 
@@ -30,7 +29,7 @@ impl Secrets {
         key: &str,
     ) -> Result<Self> {
         let credentials_provider =
-            ProfileProvider::with_default_credentials(profile).map_err(Error::CredentialsError)?;
+            ProfileProvider::with_default_credentials(profile).map_err(Error::BadCredentials)?;
         let client = Client::new_with(credentials_provider, HttpClient::new().unwrap());
         let s3_client = S3Client::new_with_client(client, Region::from_str(region).unwrap());
         Self::fetch_with_client(s3_client, bucket, key).await
@@ -43,9 +42,11 @@ impl Secrets {
         key: &str,
     ) -> Result<Self> {
         let mut yaml = String::new();
-        let mut request = GetObjectRequest::default();
-        request.bucket = bucket.into();
-        request.key = key.into();
+        let request = GetObjectRequest {
+            bucket: bucket.into(),
+            key: key.into(),
+            ..Default::default()
+        };
         let response = client
             .get_object(request)
             .await
@@ -57,7 +58,7 @@ impl Secrets {
             .read_to_string(&mut yaml)
             .await
             .map_err(Error::BadIO)?;
-        Ok(serde_yaml::from_slice::<Self>(yaml.as_bytes()).map_err(Error::YamlBadDeser)?)
+        serde_yaml::from_slice::<Self>(yaml.as_bytes()).map_err(Error::YamlBadDeser)
     }
 
     /// Set `Secrets` as environment variables so they can be picked up by `Settings`
@@ -87,7 +88,7 @@ impl Secrets {
     /// Create a `Secrets` by loading a local file. Included for testing only
     pub(crate) async fn load(path: &str) -> Result<Self> {
         let secrets = fs::read_to_string(path).unwrap();
-        Ok(serde_yaml::from_slice::<Self>(secrets.as_bytes()).map_err(Error::YamlBadDeser)?)
+        serde_yaml::from_slice::<Self>(secrets.as_bytes()).map_err(Error::YamlBadDeser)
     }
 }
 
@@ -130,19 +131,58 @@ mod test {
 
         secrets.unwrap().set_environment();
 
-        assert_eq!(env::var("CONFIG_PATH").unwrap(), "fixtures/killswitch_config.json");
-        assert_eq!(env::var("RINKEBY_CONNECTION_URL").unwrap(), "https://rinkeby-light.eth.linkpool.io.bad.url");
-        assert_eq!(env::var("POLYGONMUMBAI_CONNECTION_URL").unwrap(), "https://rpc-mumbai.maticvigil.com.bad.url");
-        assert_eq!(env::var("EVMOSTESTNET_CONNECTION_URL").unwrap(), "https://eth.bd.evmos.dev:8545.bad.url");
-        assert_eq!(env::var("GOERLI_CONNECTION_URL").unwrap(), "https://goerli-light.eth.linkpool.io.bad.url");
-        assert_eq!(env::var("POLYGONMUMBAI_TXSIGNER_ID").unwrap(), "00000000-0000-0000-0000-000000000000");
-        assert_eq!(env::var("GOERLI_TXSIGNER_ID").unwrap(), "00000000-0000-0000-0000-000000000000");
-        assert_eq!(env::var("EVMOSTESTNET_TXSIGNER_ID").unwrap(), "00000000-0000-0000-0000-000000000000");
-        assert_eq!(env::var("RINKEBY_TXSIGNER_ID").unwrap(), "00000000-0000-0000-0000-000000000000");
-        assert_eq!(env::var("EVMOSTESTNET_ATTESTATION_SIGNER_ID").unwrap(), "00000000-0000-0000-0000-000000000000");
-        assert_eq!(env::var("POLYGONMUMBAI_ATTESTATION_SIGNER_ID").unwrap(), "00000000-0000-0000-0000-000000000000");
-        assert_eq!(env::var("RINKEBY_ATTESTATION_SIGNER_ID").unwrap(), "00000000-0000-0000-0000-000000000000");
-        assert_eq!(env::var("GOERLI_ATTESTATION_SIGNER_ID").unwrap(), "00000000-0000-0000-0000-000000000000");
+        assert_eq!(
+            env::var("CONFIG_PATH").unwrap(),
+            "fixtures/killswitch_config.json"
+        );
+        assert_eq!(
+            env::var("RINKEBY_CONNECTION_URL").unwrap(),
+            "https://rinkeby-light.eth.linkpool.io.bad.url"
+        );
+        assert_eq!(
+            env::var("POLYGONMUMBAI_CONNECTION_URL").unwrap(),
+            "https://rpc-mumbai.maticvigil.com.bad.url"
+        );
+        assert_eq!(
+            env::var("EVMOSTESTNET_CONNECTION_URL").unwrap(),
+            "https://eth.bd.evmos.dev:8545.bad.url"
+        );
+        assert_eq!(
+            env::var("GOERLI_CONNECTION_URL").unwrap(),
+            "https://goerli-light.eth.linkpool.io.bad.url"
+        );
+        assert_eq!(
+            env::var("POLYGONMUMBAI_TXSIGNER_ID").unwrap(),
+            "00000000-0000-0000-0000-000000000000"
+        );
+        assert_eq!(
+            env::var("GOERLI_TXSIGNER_ID").unwrap(),
+            "00000000-0000-0000-0000-000000000000"
+        );
+        assert_eq!(
+            env::var("EVMOSTESTNET_TXSIGNER_ID").unwrap(),
+            "00000000-0000-0000-0000-000000000000"
+        );
+        assert_eq!(
+            env::var("RINKEBY_TXSIGNER_ID").unwrap(),
+            "00000000-0000-0000-0000-000000000000"
+        );
+        assert_eq!(
+            env::var("EVMOSTESTNET_ATTESTATION_SIGNER_ID").unwrap(),
+            "00000000-0000-0000-0000-000000000000"
+        );
+        assert_eq!(
+            env::var("POLYGONMUMBAI_ATTESTATION_SIGNER_ID").unwrap(),
+            "00000000-0000-0000-0000-000000000000"
+        );
+        assert_eq!(
+            env::var("RINKEBY_ATTESTATION_SIGNER_ID").unwrap(),
+            "00000000-0000-0000-0000-000000000000"
+        );
+        assert_eq!(
+            env::var("GOERLI_ATTESTATION_SIGNER_ID").unwrap(),
+            "00000000-0000-0000-0000-000000000000"
+        );
         assert_eq!(env::var("DEFAULT_RPCSTYLE").unwrap(), "ethereum");
         assert_eq!(env::var("DEFAULT_SUBMITTER_TYPE").unwrap(), "local");
 
