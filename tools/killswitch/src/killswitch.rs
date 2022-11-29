@@ -1,22 +1,21 @@
-use crate::{
-    errors::Error, output::build_output_message, settings::Settings, Args, Message, Result,
-};
-use futures_util::future::join_all;
+use crate::{errors::Error, settings::Settings, Args, Result};
+use ethers::prelude::H256;
 use nomad_base::{AttestationSigner, ChainSetup, ChainSetupType, ConnectionManagers, Homes};
-use nomad_core::{
-    Common, ConnectionManager, FailureNotification, FromSignerConf, Home,
-    SignedFailureNotification, TxOutcome,
-};
+use nomad_core::{Common, ConnectionManager, FailureNotification, FromSignerConf, Home};
 use nomad_xyz_configuration::AgentSecrets;
+use std::sync::mpsc::Sender;
+use tokio::task::JoinHandle;
 
 /// Main `KillSwitch` struct
 #[derive(Debug)]
 pub(crate) struct KillSwitch {
-    /// A vector of all `ChannelKiller`
-    channel_killers: Vec<ChannelKiller>,
+    /// Our `Settings`
+    settings: Settings,
+    /// A vector of all `Channel`s
+    channels: Vec<Channel>,
 }
 
-/// The set of origin->destination networks
+/// The set of origin -> destination networks
 #[derive(Debug, Clone)]
 pub(crate) struct Channel {
     /// Origin network
@@ -25,62 +24,17 @@ pub(crate) struct Channel {
     pub(crate) replica: String,
 }
 
-/// The channel and contracts required or errors encountered
-#[derive(Debug)]
-struct ChannelKiller {
-    /// The channel we want to kill
-    channel: Channel,
-    /// Home contract
-    home_contract: Option<Homes>,
-    /// Connection manager
-    connection_manager: Option<ConnectionManagers>,
-    /// Attestation signer
-    attestation_signer: Option<AttestationSigner>,
-    /// Contract init errors we've encountered
-    errors: Vec<Error>,
-}
-
-impl ChannelKiller {
-    /// Have we collected *any* errors
-    fn has_errors(&self) -> bool {
-        !self.errors.is_empty()
-    }
-
-    /// Take all available errors
-    fn take_all_errors(&mut self) -> Vec<Error> {
-        self.errors.drain(..).collect()
-    }
-
-    /// Create a `SignedFailureNotification`
-    async fn create_signed_failure(&mut self) -> Result<SignedFailureNotification> {
-        // Force unwrap here as we're not calling this on contract with errors
-        let home_contract = self.home_contract.take().unwrap();
-        let signer = self.attestation_signer.take().unwrap();
-        let updater = home_contract
-            .updater()
-            .await
-            .map_err(Error::UpdaterAddress)?;
-        FailureNotification {
-            home_domain: home_contract.local_domain(),
-            updater: updater.into(),
-        }
-        .sign_with(&signer)
-        .await
-        .map_err(Error::AttestationSignerFailed)
-    }
-
-    /// Kill channel
-    async fn kill(&mut self, signed_failure: &SignedFailureNotification) -> Result<TxOutcome> {
-        // Force unwrap here as we're not calling this on contract with errors
-        let connection_manager = self.connection_manager.take().unwrap();
-        connection_manager
-            .unenroll_replica(signed_failure)
-            .await
-            .map_err(Error::UnenrollmentFailed)
-    }
-}
-
 impl KillSwitch {
+    /// Get a count of the `Channel`s we're configured for
+    pub(crate) fn channel_count(&self) -> usize {
+        self.channels.len()
+    }
+
+    /// Get a copy of the `Channel`s we're configured for
+    pub(crate) fn channels(&self) -> Vec<Channel> {
+        self.channels.clone()
+    }
+
     /// Get all available home->network channels in config
     fn make_channels(settings: &Settings) -> Vec<Channel> {
         settings
@@ -171,12 +125,13 @@ impl KillSwitch {
     }
 
     /// Build a new `KillSwitch`, configuring best effort and storing, not returning most errors
-    pub(crate) async fn new(args: Args, settings: Settings) -> Result<Self> {
+    pub(crate) async fn new(args: &Args, settings: Settings) -> Result<Self> {
         let channels = if args.all {
             Self::make_channels(&settings)
         } else {
             let destination_network = args
                 .all_inbound
+                .clone()
                 .expect("Should not happen. Clap requires this to be present");
             let all = Self::make_channels(&settings);
             Self::make_inbound_channels(&destination_network, all)
@@ -185,110 +140,67 @@ impl KillSwitch {
             // The one error we bail on, since there's nothing else left to do
             return Err(Error::NoNetworks);
         }
-
-        let futs = channels.into_iter().map(|channel| async {
-            let home_contract = Self::make_home(&channel, &settings).await;
-            let connection_manager = Self::make_connection_manager(&channel, &settings).await;
-            let attestation_signer = Self::make_signer(&channel, &settings).await;
-            let mut killer = ChannelKiller {
-                channel,
-                home_contract: None,
-                connection_manager: None,
-                attestation_signer: None,
-                errors: vec![],
-            };
-
-            if let Err(err) = home_contract {
-                killer.errors.push(err);
-            } else {
-                killer.home_contract = home_contract.ok();
-            }
-
-            if let Err(err) = connection_manager {
-                killer.errors.push(err);
-            } else {
-                killer.connection_manager = connection_manager.ok();
-            }
-
-            if let Err(err) = attestation_signer {
-                killer.errors.push(err);
-            } else {
-                killer.attestation_signer = attestation_signer.ok();
-            }
-            killer
-        });
-        let channel_killers = join_all(futs).await.into_iter().collect::<Vec<_>>();
-        Ok(Self { channel_killers })
+        Ok(Self { settings, channels })
     }
 
-    /// Collect all blocking errors, returning a `KillSwitch` with a set of channels
-    /// that can actually fire off transactions, as well as any errors collected
-    pub(crate) async fn get_blocking_errors(self) -> (Self, Option<Message>) {
-        let (mut failed, maybe_ok): (Vec<_>, Vec<_>) = self
-            .channel_killers
-            .into_iter()
-            .partition(|killer| killer.has_errors());
-
-        // These are blocking errors for each channel
-        let bad = failed
-            .iter_mut()
-            .map(|killer| (killer.channel.clone(), killer.take_all_errors()))
-            .collect::<Vec<(_, _)>>();
-
-        // Produce errors to stream before running txs
-        let message = if bad.is_empty() {
-            None
-        } else {
-            Some(build_output_message(bad, vec![]))
-        };
-        (
-            KillSwitch {
-                channel_killers: maybe_ok,
-            },
-            message,
-        )
-    }
-
-    /// Run `KillSwitch` against remaining, non-blocked channels
-    pub(crate) async fn run(mut self) -> Message {
-        let futs = self
-            .channel_killers
-            .iter_mut()
-            .map(|killer| async {
-                let fut = async {
-                    let signed_failure = killer.create_signed_failure().await?;
-                    killer.kill(&signed_failure).await
+    /// Run `KillSwitch` against channels in parallel, sending results back via a `mpsc::channel`
+    pub(crate) fn run(&self, output: Sender<(Channel, Result<H256>)>) -> Vec<JoinHandle<()>> {
+        let mut handles = Vec::new();
+        // Run our channels in parallel
+        for channel in &self.channels {
+            let output = output.clone();
+            let channel = channel.clone();
+            let settings = self.settings.clone();
+            let handle = tokio::spawn(async move {
+                // Build our contracts and signers, if we fail here, bail
+                let setup = tokio::try_join!(
+                    Self::make_home(&channel, &settings),
+                    Self::make_connection_manager(&channel, &settings),
+                    Self::make_signer(&channel, &settings),
+                );
+                // Maybe bail
+                if let Err(error) = setup {
+                    output
+                        .send((channel.clone(), Err(error)))
+                        .expect("Should not happen. Channel should be ok during operation");
+                    return;
                 }
-                .await;
-                (killer.channel.clone(), fut)
-            })
-            .collect::<Vec<_>>();
-
-        let results = join_all(futs).await;
-
-        let (failed, ok): (Vec<_>, Vec<_>) =
-            results.into_iter().partition(|(_, result)| result.is_err());
-
-        // We encountered errors
-        let bad = failed
-            .into_iter()
-            .map(|(channel, result)| (channel, vec![result.unwrap_err()]))
-            .collect::<Vec<(_, _)>>();
-
-        // These were successful
-        let good = ok
-            .into_iter()
-            .map(|(channel, result)| (channel, result.unwrap()))
-            .collect::<Vec<(_, _)>>();
-
-        build_output_message(bad, good)
+                // Create our signed failure notification and attempt to unenroll replica
+                let (home_contract, connection_manager, attestation_signer) = setup.unwrap();
+                let result = async move {
+                    let updater = home_contract
+                        .updater()
+                        .await
+                        .map_err(Error::UpdaterAddress)?;
+                    let failure = FailureNotification {
+                        home_domain: home_contract.local_domain(),
+                        updater: updater.into(),
+                    };
+                    let signed_failure = failure
+                        .sign_with(&attestation_signer)
+                        .await
+                        .map_err(Error::AttestationSignerFailed)?;
+                    connection_manager
+                        .unenroll_replica(&signed_failure)
+                        .await
+                        .map_err(Error::UnenrollmentFailed)
+                }
+                .await
+                .map(|tx_outcome| tx_outcome.txid);
+                output
+                    .send((channel.clone(), result))
+                    .expect("Should not happen. Channel should be ok during operation");
+            });
+            handles.push(handle);
+        }
+        handles
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::App;
+    use crate::{App, Environment};
     use nomad_test::test_utils;
     use nomad_xyz_configuration::{ChainConf, Connection};
     use std::collections::HashMap;
@@ -446,8 +358,10 @@ mod test {
         test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
             let args = Args {
                 app: App::TokenBridge,
+                environment: Environment::Testing,
                 all: false,
                 all_inbound: Some("avalanche".into()), // Unused network
+                dry_run: false,
                 pretty: false,
             };
             let settings = Settings::new().await;
