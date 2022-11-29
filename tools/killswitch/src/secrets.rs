@@ -94,6 +94,7 @@ impl Secrets {
 #[cfg(test)]
 mod test {
     use super::*;
+    use nomad_test::test_utils;
     use rusoto_mock::{
         MockCredentialsProvider, MockRequestDispatcher, MultipleMockRequestDispatcher,
     };
@@ -118,5 +119,33 @@ mod test {
         let s3_client = mock_s3_client();
         let secrets = Secrets::fetch_with_client(s3_client, "any-bucket", "any-key.yaml").await;
         assert!(secrets.is_ok());
+    }
+
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn it_sets_secrets_as_env_vars() {
+        let s3_client = mock_s3_client();
+        let secrets = Secrets::fetch_with_client(s3_client, "any-bucket", "any-key.yaml").await;
+        assert!(secrets.is_ok());
+
+        secrets.unwrap().set_environment();
+
+        assert_eq!(env::var("CONFIG_PATH").unwrap(), "fixtures/killswitch_config.json");
+        assert_eq!(env::var("RINKEBY_CONNECTION_URL").unwrap(), "https://rinkeby-light.eth.linkpool.io.bad.url");
+        assert_eq!(env::var("POLYGONMUMBAI_CONNECTION_URL").unwrap(), "https://rpc-mumbai.maticvigil.com.bad.url");
+        assert_eq!(env::var("EVMOSTESTNET_CONNECTION_URL").unwrap(), "https://eth.bd.evmos.dev:8545.bad.url");
+        assert_eq!(env::var("GOERLI_CONNECTION_URL").unwrap(), "https://goerli-light.eth.linkpool.io.bad.url");
+        assert_eq!(env::var("POLYGONMUMBAI_TXSIGNER_ID").unwrap(), "00000000-0000-0000-0000-000000000000");
+        assert_eq!(env::var("GOERLI_TXSIGNER_ID").unwrap(), "00000000-0000-0000-0000-000000000000");
+        assert_eq!(env::var("EVMOSTESTNET_TXSIGNER_ID").unwrap(), "00000000-0000-0000-0000-000000000000");
+        assert_eq!(env::var("RINKEBY_TXSIGNER_ID").unwrap(), "00000000-0000-0000-0000-000000000000");
+        assert_eq!(env::var("EVMOSTESTNET_ATTESTATION_SIGNER_ID").unwrap(), "00000000-0000-0000-0000-000000000000");
+        assert_eq!(env::var("POLYGONMUMBAI_ATTESTATION_SIGNER_ID").unwrap(), "00000000-0000-0000-0000-000000000000");
+        assert_eq!(env::var("RINKEBY_ATTESTATION_SIGNER_ID").unwrap(), "00000000-0000-0000-0000-000000000000");
+        assert_eq!(env::var("GOERLI_ATTESTATION_SIGNER_ID").unwrap(), "00000000-0000-0000-0000-000000000000");
+        assert_eq!(env::var("DEFAULT_RPCSTYLE").unwrap(), "ethereum");
+        assert_eq!(env::var("DEFAULT_SUBMITTER_TYPE").unwrap(), "local");
+
+        test_utils::clear_env_vars();
     }
 }
