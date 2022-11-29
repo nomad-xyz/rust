@@ -35,7 +35,7 @@ impl KillSwitch {
         self.channels.clone()
     }
 
-    /// Get all available home->network channels in config
+    /// Get all available home->replica channels in config
     fn make_channels(settings: &Settings) -> Vec<Channel> {
         settings
             .config
@@ -124,7 +124,7 @@ impl KillSwitch {
             .map_err(|report| Error::AttestationSignerInit(format!("{:#}", report)))
     }
 
-    /// Build a new `KillSwitch`, configuring best effort and storing, not returning most errors
+    /// Build a new `KillSwitch`
     pub(crate) async fn new(args: &Args, settings: Settings) -> Result<Self> {
         let channels = if args.all {
             Self::make_channels(&settings)
@@ -143,7 +143,7 @@ impl KillSwitch {
         Ok(Self { settings, channels })
     }
 
-    /// Run `KillSwitch` against channels in parallel, sending results back via a `mpsc::channel`
+    /// Run `KillSwitch` against channels in parallel, sending results back via `mpsc::channel`
     pub(crate) fn run(&self, output: Sender<(Channel, Result<H256>)>) -> Vec<JoinHandle<()>> {
         let mut handles = Vec::new();
         // Run our channels in parallel
