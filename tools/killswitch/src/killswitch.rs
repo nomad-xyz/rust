@@ -358,52 +358,18 @@ mod test {
         test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
             let args = Args {
                 app: App::TokenBridge,
-                environment: Environment::Testing,
+                environment: Environment::LocalTesting,
                 all: false,
                 all_inbound: Some("avalanche".into()), // Unused network
-                dry_run: false,
-                pretty: false,
+                force: true,
             };
             let settings = Settings::new().await;
             assert!(settings.is_ok());
             let settings = settings.unwrap();
 
-            let killswitch = KillSwitch::new(args, settings).await;
+            let killswitch = KillSwitch::new(&args, settings).await;
             assert_matches!(killswitch.unwrap_err(), Error::NoNetworks);
         })
         .await
-    }
-
-    /// `ChannelKiller` with errors
-    fn make_bad_channel_killer() -> ChannelKiller {
-        let channel = Channel {
-            home: "goerli".into(),
-            replica: "rinkeby".into(),
-        };
-        ChannelKiller {
-            channel: channel.clone(),
-            home_contract: None,
-            connection_manager: None,
-            attestation_signer: None,
-            errors: vec![
-                Error::MissingTxSubmitterConf(channel.home.clone()),
-                Error::MissingTxSubmitterConf(channel.replica.clone()),
-            ],
-        }
-    }
-
-    #[test]
-    fn it_has_errors() {
-        let killer = make_bad_channel_killer();
-        assert!(killer.has_errors());
-    }
-
-    #[test]
-    fn it_takes_errors() {
-        let mut killer = make_bad_channel_killer();
-        let errors = killer.take_all_errors();
-        assert_eq!(errors.len(), 2);
-        assert_matches!(errors[0], Error::MissingTxSubmitterConf(_));
-        assert_matches!(errors[1], Error::MissingTxSubmitterConf(_));
     }
 }
