@@ -16,6 +16,7 @@ use std::{
     sync::mpsc::channel,
 };
 
+/// AWS settings
 const AWS_REGION: &str = "us-west-2";
 const AWS_CREDENTIALS_PROFILE: &str = "nomad-xyz-dev";
 const SECRETS_S3_BUCKET: &str = "";
@@ -23,11 +24,17 @@ const SECRETS_S3_KEY_TESTING: &str = "";
 const SECRETS_S3_KEY_STAGING: &str = "";
 const SECRETS_S3_KEY_PRODUCTION: &str = "";
 
+/// Local secrets. For testing only
+const SECRETS_PATH_LOCAL_TESTING: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../fixtures/killswitch_secrets.testing.yaml"
+);
+
 /// Result returning KillSwitch `Error`
 pub(crate) type Result<T> = std::result::Result<T, Error>;
 
 /// The environment we're targeting
-#[derive(ValueEnum, Clone, Debug)]
+#[derive(ValueEnum, Clone, Debug, Eq, PartialEq)]
 enum Environment {
     /// The test environment
     Testing,
@@ -35,6 +42,12 @@ enum Environment {
     Staging,
     /// The production environment
     Production,
+    /// Use local secrets. For testing only
+    #[clap(hide = true)]
+    LocalPath,
+    /// Pull all secrets from environment. For testing only
+    #[clap(hide = true)]
+    AlreadySet,
 }
 
 /// What we're killing, currently only `TokenBridge`
@@ -54,17 +67,8 @@ enum App {
 ))]
 struct Args {
     /// Which environment to target
-    #[clap(
-        long,
-        value_enum,
-        required_unless_present = "environment_override",
-        conflicts_with = "environment_override"
-    )]
-    environment: Option<Environment>,
-
-    /// For testing only, read secrets from a local path
-    #[clap(long, hide = true)]
-    environment_override: Option<String>,
+    #[clap(long, value_enum)]
+    environment: Environment,
 
     /// Which app to kill
     #[clap(long, value_enum)]
@@ -103,12 +107,10 @@ async fn main() -> Result<()> {
     write_stdout("\n");
     write_stdout(&format!("Running `{}`\n", command));
 
-    write_stdout("Fetching secrets from S3 using local AWS credentials... ");
-    let secrets = if let Some(path) = &args.environment_override {
-        Secrets::load(path).await
-    } else {
-        match &args.environment {
-            Some(Environment::Testing) => {
+    if Environment::AlreadySet != args.environment {
+        write_stdout("Fetching secrets from S3 using local AWS credentials... ");
+        let secrets = match &args.environment {
+            Environment::Testing => {
                 Secrets::fetch(
                     AWS_CREDENTIALS_PROFILE,
                     AWS_REGION,
@@ -117,7 +119,7 @@ async fn main() -> Result<()> {
                 )
                 .await
             }
-            Some(Environment::Staging) => {
+            Environment::Staging => {
                 Secrets::fetch(
                     AWS_CREDENTIALS_PROFILE,
                     AWS_REGION,
@@ -126,7 +128,7 @@ async fn main() -> Result<()> {
                 )
                 .await
             }
-            Some(Environment::Production) => {
+            Environment::Production => {
                 Secrets::fetch(
                     AWS_CREDENTIALS_PROFILE,
                     AWS_REGION,
@@ -135,17 +137,18 @@ async fn main() -> Result<()> {
                 )
                 .await
             }
-            None => unreachable!(),
+            Environment::LocalPath => Secrets::load(SECRETS_PATH_LOCAL_TESTING).await,
+            Environment::AlreadySet => unreachable!(),
+        };
+        if let Err(error) = secrets {
+            write_stdout(&format!("Failed: {}\n", error));
+            exit(ExitCode::BadConfig as i32)
         }
-    };
-    if let Err(error) = secrets {
-        write_stdout(&format!("Failed: {}\n", error));
-        exit(ExitCode::BadConfig as i32)
-    }
-    write_stdout("Ok\n");
+        write_stdout("Ok\n");
 
-    // Set `Secrets` as environment variables for `Settings` to pick up
-    secrets.unwrap().set_environment();
+        // Set `Secrets` as environment variables for `Settings` to pick up
+        secrets.unwrap().set_environment();
+    }
 
     write_stdout("Building settings from environment... ");
     let settings = Settings::new().await;

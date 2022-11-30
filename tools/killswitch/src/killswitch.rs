@@ -358,8 +358,7 @@ mod test {
         test_utils::run_test_with_env("../../fixtures/env.test-killswitch", || async move {
             let args = Args {
                 app: App::TokenBridge,
-                environment: Some(Environment::Testing),
-                environment_override: None,
+                environment: Environment::LocalPath,
                 all: false,
                 all_inbound: Some("avalanche".into()), // Unused network
                 force: true,
