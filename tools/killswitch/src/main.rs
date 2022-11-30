@@ -201,7 +201,7 @@ async fn main() -> Result<()> {
             match result {
                 Ok(txid) => {
                     write_stdout(&format!(
-                        "[SUCCESS] transaction id for unenrollment: {}\n",
+                        "[SUCCESS] transaction id for unenrollment: {:?}\n",
                         txid
                     ));
                 }
