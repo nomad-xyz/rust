@@ -19,10 +19,9 @@ use std::{
 /// AWS settings
 const AWS_REGION: &str = "us-west-2";
 const AWS_CREDENTIALS_PROFILE: &str = "nomad-xyz-dev";
-const SECRETS_S3_BUCKET: &str = "";
-const SECRETS_S3_KEY_TESTING: &str = "";
-const SECRETS_S3_KEY_STAGING: &str = "";
-const SECRETS_S3_KEY_PRODUCTION: &str = "";
+const SECRETS_S3_BUCKET_DEVELOPMENT: &str = "nomad-killswitch-config-development";
+const SECRETS_S3_BUCKET_PRODUCTION: &str = "nomad-killswitch-config-production";
+const SECRETS_S3_KEY: &str = "config.yaml";
 
 /// Local secrets. For testing only
 const SECRETS_PATH_LOCAL_TESTING: &str = concat!(
@@ -36,10 +35,8 @@ pub(crate) type Result<T> = std::result::Result<T, Error>;
 /// The environment we're targeting
 #[derive(ValueEnum, Clone, Debug, Eq, PartialEq)]
 enum Environment {
-    /// The test environment
-    Testing,
-    /// The staging environment
-    Staging,
+    /// The development environment
+    Development,
     /// The production environment
     Production,
     /// Use local secrets. For testing only
@@ -110,21 +107,12 @@ async fn main() -> Result<()> {
     if Environment::AlreadySet != args.environment {
         write_stdout("Fetching secrets from S3 using local AWS credentials... ");
         let secrets = match &args.environment {
-            Environment::Testing => {
+            Environment::Development => {
                 Secrets::fetch(
                     AWS_CREDENTIALS_PROFILE,
                     AWS_REGION,
-                    SECRETS_S3_BUCKET,
-                    SECRETS_S3_KEY_TESTING,
-                )
-                .await
-            }
-            Environment::Staging => {
-                Secrets::fetch(
-                    AWS_CREDENTIALS_PROFILE,
-                    AWS_REGION,
-                    SECRETS_S3_BUCKET,
-                    SECRETS_S3_KEY_STAGING,
+                    SECRETS_S3_BUCKET_DEVELOPMENT,
+                    SECRETS_S3_KEY,
                 )
                 .await
             }
@@ -132,8 +120,8 @@ async fn main() -> Result<()> {
                 Secrets::fetch(
                     AWS_CREDENTIALS_PROFILE,
                     AWS_REGION,
-                    SECRETS_S3_BUCKET,
-                    SECRETS_S3_KEY_PRODUCTION,
+                    SECRETS_S3_BUCKET_PRODUCTION,
+                    SECRETS_S3_KEY,
                 )
                 .await
             }
