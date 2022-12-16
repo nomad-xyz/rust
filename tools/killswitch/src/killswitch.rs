@@ -131,10 +131,10 @@ impl KillSwitch {
         } else {
             let destination_network = args
                 .all_inbound
-                .clone()
+                .as_ref()
                 .expect("Should not happen. Clap requires this to be present");
             let all = Self::make_channels(&settings);
-            Self::make_inbound_channels(&destination_network, all)
+            Self::make_inbound_channels(destination_network, all)
         };
         if channels.is_empty() {
             // The one error we bail on, since there's nothing else left to do
