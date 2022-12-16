@@ -20,7 +20,7 @@ use std::{
 const AWS_REGION: &str = "us-west-2";
 const AWS_CREDENTIALS_PROFILE: &str = "nomad-xyz-dev";
 const SECRETS_S3_BUCKET_DEVELOPMENT: &str = "nomad-killswitch-config-development";
-const SECRETS_S3_BUCKET_PRODUCTION: &str = "nomad-killswitch-config-production";
+const SECRETS_S3_BUCKET_PRODUCTION: &str = "nomad-killswitch-config-prod";
 const SECRETS_S3_KEY: &str = "config.yaml";
 
 /// Local secrets. For testing only
