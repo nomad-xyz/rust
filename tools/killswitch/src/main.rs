@@ -18,10 +18,11 @@ use std::{
 
 /// AWS settings
 const AWS_REGION: &str = "us-west-2";
-const AWS_CREDENTIALS_PROFILE: &str = "nomad-xyz-dev";
-const SECRETS_S3_BUCKET_DEVELOPMENT: &str = "nomad-killswitch-config-development";
-const SECRETS_S3_BUCKET_PRODUCTION: &str = "nomad-killswitch-config-prod";
-const SECRETS_S3_KEY: &str = "config.yaml";
+const AWS_CREDENTIALS_PROFILE_DEVELOPMENT: &str = "nomad-xyz-dev";
+const AWS_CREDENTIALS_PROFILE_PRODUCTION: &str = "nomad-xyz-prod";
+const CONFIG_S3_BUCKET_DEVELOPMENT: &str = "nomad-killswitch-config-dev";
+const CONFIG_S3_BUCKET_PRODUCTION: &str = "nomad-killswitch-config-prod";
+const CONFIG_S3_KEY: &str = "config.yaml";
 
 /// Local secrets. For testing only
 const SECRETS_PATH_LOCAL_TESTING: &str = concat!(
@@ -109,19 +110,19 @@ async fn main() -> Result<()> {
         let secrets = match &args.environment {
             Environment::Development => {
                 Secrets::fetch(
-                    AWS_CREDENTIALS_PROFILE,
+                    AWS_CREDENTIALS_PROFILE_DEVELOPMENT,
                     AWS_REGION,
-                    SECRETS_S3_BUCKET_DEVELOPMENT,
-                    SECRETS_S3_KEY,
+                    CONFIG_S3_BUCKET_DEVELOPMENT,
+                    CONFIG_S3_KEY,
                 )
                 .await
             }
             Environment::Production => {
                 Secrets::fetch(
-                    AWS_CREDENTIALS_PROFILE,
+                    AWS_CREDENTIALS_PROFILE_PRODUCTION,
                     AWS_REGION,
-                    SECRETS_S3_BUCKET_PRODUCTION,
-                    SECRETS_S3_KEY,
+                    CONFIG_S3_BUCKET_PRODUCTION,
+                    CONFIG_S3_KEY,
                 )
                 .await
             }
