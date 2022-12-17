@@ -3,7 +3,7 @@ use nomad_xyz_configuration::{agent::SignerConf, ChainConf, NomadConfig, TxSubmi
 use std::{collections::HashMap, env, result::Result};
 
 /// KillSwitch `Settings` contains all available configuration for all networks present
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct Settings {
     /// NomadConfig
     pub config: NomadConfig,

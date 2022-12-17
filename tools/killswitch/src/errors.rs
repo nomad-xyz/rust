@@ -1,9 +1,25 @@
 use nomad_base::ChainCommunicationError;
 use nomad_ethereum::EthereumSignersError;
+use rusoto_core::{credential::CredentialsError, RusotoError};
+use rusoto_s3::GetObjectError;
+use serde_yaml::Error as YamlError;
+use std::io::Error as IOError;
 
 /// `Error` for KillSwitch
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    /// Cannot find local AWS credentials
+    #[error("BadCredentials: Cannot find AWS credentials: {0}")]
+    BadCredentials(#[source] CredentialsError),
+    /// Yaml ser/de error
+    #[error("YamlBadDeser: Error converting to/from yaml: {0}")]
+    YamlBadDeser(#[source] YamlError),
+    /// Rusto S3 fetch object error
+    #[error("RusotoGetObject: Error fetching object from AWS S3: {0}")]
+    RusotoGetObject(#[source] RusotoError<GetObjectError>),
+    /// Generic IO error
+    #[error("BadIO: Error reading or writing from stream: {0}")]
+    BadIO(#[source] IOError),
     /// No configuration env var
     #[error(
         "NoConfigVar: No configuration found. Set CONFIG_URL or CONFIG_PATH environment variable"
