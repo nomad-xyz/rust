@@ -112,7 +112,7 @@ impl ChainConf {
             })
             .unwrap_or_else(|_| {
                 tracing::debug!("falling back to ethereum");
-                "etherum".to_owned()
+                "ethereum".to_owned()
             });
 
         let rpc_url: Connection = std::env::var(&format!("{}_CONNECTION_URL", network))
