@@ -1,5 +1,3 @@
-use std::fmt;
-
 use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::core::v1::Pod;
 use kube::api::DeleteParams;
@@ -8,30 +6,18 @@ use kube::{
     api::{Api, ListParams, ResourceExt},
     Client,
 };
+use serde::Serialize;
 
 const ENVIRONMENT: &str = "dev";
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Serialize)]
+#[serde(tag = "status")]
 pub enum ResultPodRestartStatus {
     Deleted,
     Created,
     Running,
     Timeout,
     NotFound,
-    None,
-}
-
-impl fmt::Display for ResultPodRestartStatus {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            ResultPodRestartStatus::Deleted => write!(f, "Deleted"),
-            ResultPodRestartStatus::Created => write!(f, "Created"),
-            ResultPodRestartStatus::Running => write!(f, "Running"),
-            ResultPodRestartStatus::Timeout => write!(f, "Timeout"),
-            ResultPodRestartStatus::NotFound => write!(f, "NotFound"),
-            ResultPodRestartStatus::None => write!(f, "None"),
-        }
-    }
 }
 
 pub struct K8S {
@@ -54,16 +40,13 @@ impl K8S {
         let name = &format!("{}-{}-{}-0", ENVIRONMENT, network, agent_name);
         println!("Supposed to kill this one: {}", name);
 
-        let pod = if let Some(pod) = pods.get_opt(name).await? {
-            pod
+        if let Some(pod) = pods.get_opt(name).await? {
+            println!("Found requested pod: {}!", pod.name_any());
         } else {
             return Ok(ResultPodRestartStatus::NotFound);
         };
 
-        println!("Found! -> {}", pod.name_any());
         pods.delete(name, &DeleteParams::default()).await?;
-
-        let mut latest_status = ResultPodRestartStatus::None;
 
         let lp = ListParams::default()
             .fields(&format!("metadata.name={}", name))
@@ -71,6 +54,7 @@ impl K8S {
         let mut stream = pods.watch(&lp, "0").await?.boxed();
 
         // TODO: clean this \/
+        let mut latest_status = ResultPodRestartStatus::Timeout;
         let mut pod_deleted = false;
         let mut pod_recreated = false;
         let mut pod_running = false;
@@ -92,7 +76,7 @@ impl K8S {
 
                     if pod.status.and_then(|status| status.phase).as_deref() == Some("Running")
                         && (pod_recreated || pod_deleted)
-                    // We probably don't really need `pod_recreated`
+                    // We probably don't really need `pod_recreated`, so I omit the logic for now
                     {
                         pod_running = true;
                         println!("RUNNING!");
@@ -110,9 +94,6 @@ impl K8S {
             };
         }
 
-        if latest_status == ResultPodRestartStatus::None {
-            latest_status = ResultPodRestartStatus::Timeout;
-        }
         println!("Done! -> {}", pod_running);
 
         Ok(latest_status)
