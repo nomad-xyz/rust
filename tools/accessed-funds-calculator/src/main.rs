@@ -7,9 +7,8 @@ mod tokens;
 
 use crate::tokens::{Token, TokenName};
 
-
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {    
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let usdc = Token {
         name: TokenName::USDC,
         id: String::from("usd-coin"),
@@ -22,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         contract_address: String::from("0xD417144312DbF50465b1C641d016962017Ef6240"),
     };
 
-    let usdt = Token{
+    let usdt = Token {
         name: TokenName::WBTC,
         id: String::from("tether"),
         contract_address: String::from("0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"),
@@ -97,38 +96,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let address = "0xa4B86BcbB18639D8e708d6163a0c734aFcDB770c";
 
     let token_vec = vec![
-        usdc,
-        cqt,
-        usdt,
-        wbtc,
-        frax,
-        iag,
-        weth,
-        dai,
-        c3,
-        fxs,
-        cards,
-        hbot,
-        sdl,
-        gero,
+        usdc, cqt, usdt, wbtc, frax, iag, weth, dai, c3, fxs, cards, hbot, sdl, gero,
     ];
 
     for token in token_vec {
         let balance: u128 = get_token_balance(&token, address).await?;
         // let token_price = get_token_price(&token).await?;
-        println!("{:?}",balance);
+        println!("{:?}", balance);
         // println!("{:#?}",token_price);
     }
 
     Ok(())
 }
 
-async fn get_token_balance(token: &Token, address: &str) -> Result<u128, Box<dyn std::error::Error>> {
+async fn get_token_balance(
+    token: &Token,
+    address: &str,
+) -> Result<u128, Box<dyn std::error::Error>> {
     let etherscan_url = "https://api.etherscan.io/api";
     let module = "account";
     let action = "tokenbalance";
     let apiKey = env::var("ETHERSCAN_KEY")?;
-    let request_url = format!("{}?module={}&action={}&contractaddress={}&address={}&apiKey={}", &etherscan_url, &module, &action, &token.contract_address, &address, &apiKey);        
+    let request_url = format!(
+        "{}?module={}&action={}&contractaddress={}&address={}&apiKey={}",
+        &etherscan_url, &module, &action, &token.contract_address, &address, &apiKey
+    );
     let resp = reqwest::get(request_url)
         .await?
         .json::<HashMap<String, String>>()
@@ -142,14 +134,13 @@ async fn get_token_price(token: &Token) -> Result<String, Box<dyn std::error::Er
     let ids = "ethereum";
     let vs_currency = "usd";
 
-    let request_url = format!("{}?ids={}&vs_currencies={}", coingecko_url, ids, vs_currency);
+    let request_url = format!(
+        "{}?ids={}&vs_currencies={}",
+        coingecko_url, ids, vs_currency
+    );
 
-    let resp = reqwest::get(request_url)
-    .await?
-    .json::<String>()
-    .await?;
+    let resp = reqwest::get(request_url).await?.json::<String>().await?;
     let price = resp;
     println!("here");
     Ok(price)
-
 }
