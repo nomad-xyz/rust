@@ -99,29 +99,44 @@ impl Default for ChainConf {
     }
 }
 
+
 impl ChainConf {
     /// Build ChainConf from env vars. Will use default RPCSTYLE if
     /// network-specific not provided.
+    #[tracing::instrument]
     pub fn from_env(network: &str) -> Option<Self> {
-        let mut rpc_style = std::env::var(&format!("{}_RPCSTYLE", network)).ok();
+        let style_key = &format!("{}_RPCSTYLE", network);
+        let default_style_key = "DEFAULT_RPCSTYLE";
+        let rpc_style = std::env::var(&style_key)
+            .or_else(|_| {
+                tracing::debug!("falling back to env default rpc style");
+                std::env::var(default_style_key)
+            })
+            .unwrap_or_else(|_| {
+                tracing::debug!("falling back to ethereum");
+                "etherum".to_owned()
+            });
 
-        if rpc_style.is_none() {
-            rpc_style = std::env::var("DEFAULT_RPCSTYLE").ok();
-        }
+        let rpc_url: Connection = std::env::var(&format!("{}_CONNECTION_URL", network))
+            .map(|url| {
+                tracing::debug!(url, "connection url env var read");
+                url
+            })
+            .ok()?
+            .parse()
+            .map_err(|e: eyre::Report| {
+                tracing::error!(err = e.to_string(), "unable to parse connection url")
+            })
+            .ok()?;
 
-        let rpc_url = std::env::var(&format!("{}_CONNECTION_URL", network)).ok()?;
-
-        let json = json!({
-            "rpcStyle": rpc_style,
-            "connection": rpc_url,
-        });
-
-        Some(
-            serde_json::from_value(json)
-                .unwrap_or_else(|_| panic!("malformed json for {} rpc", network)),
-        )
+        Some(match rpc_style.as_str() {
+            "substrate" => ChainConf::Substrate(rpc_url),
+            "ethereum" => ChainConf::Ethereum(rpc_url),
+            _ => panic!("Invalid rpc style {}", rpc_style),
+        })
     }
 }
+
 
 /// Transaction submssion configuration for some chain.
 #[derive(Clone, Debug, serde::Deserialize, PartialEq)]

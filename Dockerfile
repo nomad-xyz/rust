@@ -18,5 +18,7 @@ COPY ${TARGET_DIR}/release/updater \
      ${TARGET_DIR}/release/nomad-cli \
      ${TARGET_DIR}/release/killswitch ./
 
+RUN ln -s libssl.so.3 libssl.so
+
 USER 1000
 CMD ["./watcher"]
