@@ -3,7 +3,7 @@
   "networks": ["goerli", "avail"],
   "agent": {
     "goerli": {
-      "db": "db",
+      "db": "/usr/share/nomad",
       "kathy": {
         "chat": {
           "type": "default"
@@ -38,7 +38,7 @@
       }
     },
     "avail": {
-      "db": "db",
+      "db": "/usr/share/nomad",
       "kathy": {
         "chat": {
           "type": "default"
@@ -95,7 +95,7 @@
       }
     },
     "avail": {
-      "deployHeight": 3
+      "deployHeight": 100
     }
   },
   "bridgeGui": {},
@@ -116,12 +116,12 @@
         "avail": {
           "beacon": "0x0000000000000000000000000000000000000000",
           "implementation": "0x0000000000000000000000000000000000000000",
-          "proxy": "0x3b810a4545e4e71b1126df389482eb37c0ae8815"
+          "proxy": "0x4218f6faeb1c88786a2023929bb61c46d8a5d6b6"
         }
       },
       "updaterManager": "0x0000000000000000000000000000000000000000",
       "upgradeBeaconController": "0x0000000000000000000000000000000000000000",
-      "xAppConnectionManager": "0xb48beea9068cf0db176150e834c1bc14d45a4f4c"
+      "xAppConnectionManager": "0xa078aed7ff29c125f42d65adb26d6a47f4919a80"
     },
     "avail": {
       "deployHeight": 3
@@ -185,11 +185,11 @@
         "specs": {
           "chainId": 9001,
           "blockTime": 6,
-          "finalizationBlocks": 3,
+          "finalizationBlocks": 10,
           "supports1559": true,
           "confirmations": 5,
           "blockExplorer": "https://explorer.polkascan.io/polkadot",
-          "indexPageSize": 200
+          "indexPageSize": 100
         },
         "bridgeConfiguration": {
           "weth": "0x0000000000000000000000000000000000000000",
