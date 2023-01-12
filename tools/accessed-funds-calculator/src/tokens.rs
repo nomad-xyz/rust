@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub enum TokenName {
     USDC,
     CQT,
@@ -15,7 +16,9 @@ pub enum TokenName {
     GERO,
 }
 
+#[derive(Debug)]
 pub struct Token {
     pub name: TokenName,
+    pub id: String,
     pub contract_address: String,
 }

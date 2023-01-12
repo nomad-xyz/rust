@@ -17,6 +17,7 @@ name = "accessed-funds-calculator"
 version = "0.1.0"
 dependencies = [
  "reqwest",
+ "serde 1.0.147",
  "tokio",
 ]
 
