@@ -21,4 +21,5 @@ members = [
     "tools/nomad-cli",
     "tools/balance-exporter",
     "tools/killswitch",
+    "tools/accessed-funds-calculator",
 ]

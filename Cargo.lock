@@ -13,6 +13,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "accessed-funds-calculator"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "tokio",
+]
+
+[[package]]
 name = "accumulator"
 version = "0.1.0"
 dependencies = [
