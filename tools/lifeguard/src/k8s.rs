@@ -1,5 +1,6 @@
 use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::core::v1::Pod;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::Time;
 use kube::api::DeleteParams;
 use kube::core::WatchEvent;
 use kube::{
@@ -8,7 +9,50 @@ use kube::{
 };
 use serde::Serialize;
 
+use crate::server::params::{Network, RestartableAgent};
+
 const ENVIRONMENT: &str = "dev";
+
+pub struct LifeguardPod {
+    network: Network,
+    agent: RestartableAgent,
+}
+
+impl LifeguardPod {
+    pub fn new(network: Network, agent: RestartableAgent) -> Self {
+        Self {
+            network: network,
+            agent: agent,
+        }
+    }
+}
+
+impl ToString for LifeguardPod {
+    fn to_string(&self) -> String {
+        format!("{}-{}-{}-0", ENVIRONMENT, self.network, self.agent)
+    }
+}
+
+#[derive(Serialize)]
+pub struct PodStatus {
+    start_time: Option<Time>,
+    phase: String,
+}
+
+// use std::{error::Error, fmt};
+
+#[derive(Debug)]
+enum K8sError {
+    Random,
+}
+
+impl std::error::Error for K8sError {}
+
+impl std::fmt::Display for K8sError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Oh no, something bad went down")
+    }
+}
 
 #[derive(PartialEq, Debug, Serialize)]
 #[serde(tag = "status")]
@@ -97,5 +141,37 @@ impl K8S {
         println!("Done! -> {}", pod_running);
 
         Ok(latest_status)
+    }
+
+    pub async fn delete_pod(&self, pod: &LifeguardPod) -> Result<(), Box<dyn std::error::Error>> {
+        let pods: Api<Pod> = Api::default_namespaced(self.client.clone());
+
+        // let name = &format!("{}-{}-{}-0", ENVIRONMENT, network, agent_name);
+        let name = pod.to_string();
+
+        pods.delete(&name, &DeleteParams::default()).await?;
+        println!("Deleted pod: {}", name);
+
+        Ok(())
+    }
+
+    pub async fn status_pod(
+        &self,
+        network: &str,
+        agent_name: &str,
+    ) -> Result<PodStatus, Box<dyn std::error::Error>> {
+        let pods: Api<Pod> = Api::default_namespaced(self.client.clone());
+
+        let name = &format!("{}-{}-{}-0", ENVIRONMENT, network, agent_name);
+
+        if let Some(pod) = pods.get_opt(name).await? {
+            println!("Found requested pod: {}!", pod.name_any());
+            if let Some(status) = pod.status {
+                let start_time = status.start_time;
+                let phase = status.phase.unwrap();
+                return Ok(PodStatus { start_time, phase });
+            }
+        }
+        return Err(Box::new(K8sError::Random));
     }
 }
