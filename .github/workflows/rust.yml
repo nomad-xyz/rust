@@ -32,7 +32,7 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', '**/rust-toolchain') }}
       - name: Build agents
-        run: cargo build --locked --workspace --all-features --verbose
+        run: cargo check --locked --workspace --all-features --verbose
 
   test:
     needs: [build]
