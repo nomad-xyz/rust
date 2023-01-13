@@ -25,7 +25,7 @@ jobs:
           key: 'release'
       
       - name: Build agents (release)
-        run: cargo build --release
+        run: cargo build --release --frozen --workspace --all-features --verbose
       
       - name: Docker metadata
         id: meta
