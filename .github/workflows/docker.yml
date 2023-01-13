@@ -19,10 +19,15 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - uses: Swatinem/rust-cache@v1
+      - uses: actions/cache@v3
         with:
-          # Add a key to prevent rust cache collision with rust.yml workflows
-          key: 'release'
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       
       - name: Build agents (release)
         run: cargo build --release --locked --workspace --all-features --verbose
