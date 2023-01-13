@@ -31,6 +31,10 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', '**/rust-toolchain') }}
+      - name: install sccache
+        run: cargo install sccache
+      - name: get location 
+        run: which sccache
       - name: Build agents
         run: cargo check --locked --workspace --all-features --verbose
 
