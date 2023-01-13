@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       RUSTC_WRAPPER: sccache
-      SCCACHE_CACHE_SIZE: 4G
+      SCCACHE_CACHE_SIZE: 2G
       SCCACHE_DIR: /home/runner/.cargo/bin/sccache
     steps:
       - uses: actions/checkout@v2
@@ -37,7 +37,7 @@ jobs:
           mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       - name: Cache cargo registry
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         continue-on-error: false
         with:
           path: |
@@ -47,7 +47,7 @@ jobs:
           restore-keys: |
                         ${{ runner.os }}-cargo-
       - name: Save sccache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         continue-on-error: false
         with:
           path: /home/runner/.cargo/bin/sccache
