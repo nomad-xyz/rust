@@ -56,7 +56,7 @@ jobs:
                         ${{ runner.os }}-sccache-
       - name: Start sccache server
         run: sccache --start-server
-        - name: Build agents
+      - name: Build agents
         run: cargo check --locked --workspace --all-features --verbose
       - name: Rustfmt
         run: cargo fmt --all -- --check
