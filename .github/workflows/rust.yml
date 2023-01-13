@@ -35,6 +35,7 @@ jobs:
         run: cargo build --locked --workspace --all-features --verbose
 
   test:
+    needs: [build]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
@@ -55,6 +56,7 @@ jobs:
         run: cargo test --locked --workspace --all-features --verbose
 
   lint:
+    needs: [build]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
@@ -78,6 +80,7 @@ jobs:
         run: cargo clippy --workspace --all-features -- -D warnings
 
   wasm-build:
+    needs: [build]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
