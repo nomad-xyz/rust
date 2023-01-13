@@ -28,7 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let usdt = Token {
-        name: TokenName::WBTC,
+        name: TokenName::USDT,
         id: String::from("tether"),
         decimals: 6.0,
         contract_address: String::from("0xdAC17F958D2ee523a2206206994597C13D831ec7"),
