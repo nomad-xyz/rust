@@ -17,11 +17,42 @@ env:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    env:
+      RUSTC_WRAPPER: sccache
+      SCCACHE_CACHE_SIZE: 4G
+      SCCACHE_DIR: /home/runner/.cargo/bin/sccache
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+      - name: install sccache
+        run: |
+          SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
+          mkdir -p $HOME/.local/bin
+          curl -L "$LINK/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
+          mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
+          echo "$HOME/.local/bin" >> $GITHUB_PATH                - name: get location 
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git            
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+                        ${{ runner.os }}-cargo-
+      - name: Save sccache
+        uses: actions/cache@v2
+        continue-on-error: false
+        with:
+          path: /home/runner/.cargo/bin/sccache
+          key: ${{ runner.os }}-sccache-${{ hashFiles('**/Cargo.lock', '**/rust-environment') }}
+          restore-keys: |
+                        ${{ runner.os }}-sccache-
+      - name: Start sccache server
+        run: sccache --start-server
       - uses: actions/cache@v3
         with:
           path: |
@@ -31,77 +62,20 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', '**/rust-toolchain') }}
-      - name: install sccache
-        run: cargo install sccache
-      - name: get location 
-        run: which sccache
       - name: Build agents
         run: cargo check --locked --workspace --all-features --verbose
-
-  test:
-    needs: [build]
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', '**/rust-toolchain') }}
-
-      - name: Run tests
-        run: cargo test --locked --workspace --all-features --verbose
-
-  lint:
-    needs: [build]
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', '**/rust-toolchain') }}
-
       - name: Rustfmt
         run: cargo fmt --all -- --check
-
       - name: Clippy
         run: cargo clippy --workspace --all-features -- -D warnings
-
-  wasm-build:
-    needs: [build]
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', '**/rust-toolchain') }}
+      - name: Run tests
+        run: cargo test --locked --workspace --all-features --verbose
       - uses: jetli/wasm-pack-action@v0.3.0
       - name: wasm-configuration
         run: cd configuration && bash package_it.sh
       - name: wasm-accumulator
         run: cd accumulator && bash package_it.sh
+      - name: Print sccache stats
+        run: sccache --show-stats
+      - name: Stop sccache server
+        run: sccache --stop-server || true
