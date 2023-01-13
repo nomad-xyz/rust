@@ -25,7 +25,7 @@ jobs:
       - uses: Swatinem/rust-cache@v1
 
       - name: Build agents
-        run: cargo build --locked --workspace --all-features --verbose
+        run: cargo build --frozen --workspace --all-features --verbose
 
   test:
     runs-on: ubuntu-22.04
@@ -37,7 +37,7 @@ jobs:
       - uses: Swatinem/rust-cache@v1
 
       - name: Run tests
-        run: cargo test --locked --workspace --all-features --verbose
+        run: cargo test --frozen --workspace --all-features --verbose
 
   lint:
     runs-on: ubuntu-22.04
