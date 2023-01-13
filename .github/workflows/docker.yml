@@ -15,15 +15,15 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           # Add a key to prevent rust cache collision with rust.yml workflows
           key: 'release'
-      
+                  
       - name: Build agents (release)
         run: cargo build --release
       
@@ -43,14 +43,14 @@ jobs:
             type=sha
 
       - name: Login to Docker repository
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: gcr.io
           username: _json_key
           password: ${{ secrets.GCLOUD_SERVICE_KEY }}
 
       - name: Build and push container
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           push: true
