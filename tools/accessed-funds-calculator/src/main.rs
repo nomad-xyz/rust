@@ -130,8 +130,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let balance: f64 = get_token_balance(&token, address).await?;
         let accessed = token.recovered_total - balance;
         let token_price = get_token_price(&token).await?;
-
-        total_accessed_value = total_accessed_value + (accessed * token_price);
+        total_accessed_value += accessed * token_price;
+        
         println!("{}:{} accessed, price: {}", token.id, accessed, token_price);
     }
 
