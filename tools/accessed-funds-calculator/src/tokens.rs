@@ -1,19 +1,19 @@
 #[derive(Debug)]
 pub enum TokenName {
-    USDC,
-    CQT,
-    USDT,
-    FRAX,
-    WBTC,
-    IAG,
-    WETH,
-    DAI,
+    Usdc,
+    Cqt,
+    Usdt,
+    Frax,
+    Wbtc,
+    Iag,
+    Weth,
+    Dai,
     C3,
-    FXS,
-    CARDS,
-    HBOT,
-    SDL,
-    GERO,
+    Fxs,
+    Cards,
+    Hbot,
+    Sdl,
+    Gero,
 }
 
 #[derive(Debug)]
