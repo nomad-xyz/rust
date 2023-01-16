@@ -150,7 +150,7 @@ mod tests {
     }
     #[test]
     fn validate_cqt() {
-        let usdc = Token {
+        let cqt = Token {
             name: TokenName::Cqt,
             id: "covalent".to_string(),
             decimals: 18.0,
@@ -158,13 +158,13 @@ mod tests {
             recovered_total: 34_082_775.751_599_7,
         };
         let test_token = Token::get_instance_of(TokenName::Cqt);
-        assert_eq!(test_token.id, usdc.id);
-        assert_eq!(test_token.decimals, usdc.decimals);
-        assert_eq!(test_token.recovered_total, usdc.recovered_total);
+        assert_eq!(test_token.id, cqt.id);
+        assert_eq!(test_token.decimals, cqt.decimals);
+        assert_eq!(test_token.recovered_total, cqt.recovered_total);
     }
     #[test]
     fn validate_usdt() {
-        let usdc = Token {
+        let usdt = Token {
             name: TokenName::Usdt,
             id: "tether".to_string(),
             decimals: 6.0,
@@ -172,13 +172,13 @@ mod tests {
             recovered_total: 4_673_863.595_197,
         };
         let test_token = Token::get_instance_of(TokenName::Usdt);
-        assert_eq!(test_token.id, usdc.id);
-        assert_eq!(test_token.decimals, usdc.decimals);
-        assert_eq!(test_token.recovered_total, usdc.recovered_total);
+        assert_eq!(test_token.id, usdt.id);
+        assert_eq!(test_token.decimals, usdt.decimals);
+        assert_eq!(test_token.recovered_total, usdt.recovered_total);
     }
     #[test]
     fn validate_frax() {
-        let usdc = Token {
+        let frax = Token {
             name: TokenName::Frax,
             id: "frax".to_string(),
             decimals: 18.0,
@@ -186,13 +186,13 @@ mod tests {
             recovered_total: 2_644_469.918_609_09,
         };
         let test_token = Token::get_instance_of(TokenName::Frax);
-        assert_eq!(test_token.id, usdc.id);
-        assert_eq!(test_token.decimals, usdc.decimals);
-        assert_eq!(test_token.recovered_total, usdc.recovered_total);
+        assert_eq!(test_token.id, frax.id);
+        assert_eq!(test_token.decimals, frax.decimals);
+        assert_eq!(test_token.recovered_total, frax.recovered_total);
     }
     #[test]
     fn validate_wbtc() {
-        let usdc = Token {
+        let wbtc = Token {
             name: TokenName::Wbtc,
             id: "wrapped-bitcoin".to_string(),
             decimals: 8.0,
@@ -200,13 +200,13 @@ mod tests {
             recovered_total: 280.731_173_99,
         };
         let test_token = Token::get_instance_of(TokenName::Wbtc);
-        assert_eq!(test_token.id, usdc.id);
-        assert_eq!(test_token.decimals, usdc.decimals);
-        assert_eq!(test_token.recovered_total, usdc.recovered_total);
+        assert_eq!(test_token.id, wbtc.id);
+        assert_eq!(test_token.decimals, wbtc.decimals);
+        assert_eq!(test_token.recovered_total, wbtc.recovered_total);
     }
     #[test]
     fn validate_iag() {
-        let usdc = Token {
+        let iag = Token {
             name: TokenName::Iag,
             id: "iagon".to_string(),
             decimals: 18.0,
@@ -214,13 +214,13 @@ mod tests {
             recovered_total: 349_507_392.187_402,
         };
         let test_token = Token::get_instance_of(TokenName::Iag);
-        assert_eq!(test_token.id, usdc.id);
-        assert_eq!(test_token.decimals, usdc.decimals);
-        assert_eq!(test_token.recovered_total, usdc.recovered_total);
+        assert_eq!(test_token.id, iag.id);
+        assert_eq!(test_token.decimals, iag.decimals);
+        assert_eq!(test_token.recovered_total, iag.recovered_total);
     }
     #[test]
     fn validate_weth() {
-        let usdc = Token {
+        let weth = Token {
             name: TokenName::Weth,
             id: "weth".to_string(),
             decimals: 18.0,
@@ -228,13 +228,13 @@ mod tests {
             recovered_total: 1_049.635_629_8,
         };
         let test_token = Token::get_instance_of(TokenName::Weth);
-        assert_eq!(test_token.id, usdc.id);
-        assert_eq!(test_token.decimals, usdc.decimals);
-        assert_eq!(test_token.recovered_total, usdc.recovered_total);
+        assert_eq!(test_token.id, weth.id);
+        assert_eq!(test_token.decimals, weth.decimals);
+        assert_eq!(test_token.recovered_total, weth.recovered_total);
     }
     #[test]
     fn validate_dai() {
-        let usdc = Token {
+        let dai = Token {
             name: TokenName::Dai,
             id: "dai".to_string(),
             decimals: 18.0,
@@ -242,9 +242,9 @@ mod tests {
             recovered_total: 866_070.756_876_35,
         };
         let test_token = Token::get_instance_of(TokenName::Dai);
-        assert_eq!(test_token.id, usdc.id);
-        assert_eq!(test_token.decimals, usdc.decimals);
-        assert_eq!(test_token.recovered_total, usdc.recovered_total);
+        assert_eq!(test_token.id, dai.id);
+        assert_eq!(test_token.decimals, dai.decimals);
+        assert_eq!(test_token.recovered_total, dai.recovered_total);
     }
     #[test]
     fn validate_c3() {
