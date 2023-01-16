@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         total_accessed_value += accessed * token_price;
         println!("{}:{} accessed, price: {}", token.id, accessed, token_price);
     }
-    
+
     println!();
     println!("#################################################");
     println!("#################################################");
@@ -51,7 +51,7 @@ async fn get_token_balance(
     address: &str,
 ) -> Result<f64, Box<dyn std::error::Error>> {
     let etherscan_url = "https://api.etherscan.io/api";
-    let module= "account";
+    let module = "account";
     let action = "tokenbalance";
     let api_key = env::var("ETHERSCAN_KEY")?;
     let request_url = format!(
