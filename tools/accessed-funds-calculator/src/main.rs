@@ -122,7 +122,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let address = "0xa4B86BcbB18639D8e708d6163a0c734aFcDB770c";
 
     let token_vec = vec![
-        usdc, cqt, usdt, wbtc, frax, iag, weth, dai, c3, fxs, cards, hbot, sdl, gero
+        usdc, cqt, usdt, wbtc, frax, iag, weth, dai, c3, fxs, cards, hbot, sdl, gero,
     ];
 
     let mut total_accessed_value = 0.0;
