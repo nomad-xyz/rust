@@ -50,7 +50,7 @@ async fn get_token_balance(
     token: &Token,
     address: &str,
 ) -> Result<f64, Box<dyn std::error::Error>> {
-    let etherscan_url = "https://api.etherscan.io/api";
+    let etherscan_url = env::var("ETHERSCAN_API")?;
     let module = "account";
     let action = "tokenbalance";
     let api_key = env::var("ETHERSCAN_KEY")?;
@@ -69,7 +69,7 @@ async fn get_token_balance(
 }
 
 async fn get_token_price(token: &Token) -> Result<f64, Box<dyn std::error::Error>> {
-    let coingecko_url = "https://api.coingecko.com/api/v3/simple/price";
+    let coingecko_url = env::var("PRICING_API")?;
     let vs_currency = "usd";
 
     let request_url = format!(
