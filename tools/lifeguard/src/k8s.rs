@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use chrono::{DateTime, Duration, Utc};
 use k8s_openapi::api::core::v1::Pod;
 use kube::api::DeleteParams;
@@ -9,8 +11,11 @@ use crate::server::backoff::RestartBackoff;
 use crate::server::errors::ServerRejection;
 use crate::server::params::{Network, RestartableAgent};
 
+use tracing::{debug, info, instrument};
+
 const ENVIRONMENT: &str = "dev";
 
+#[derive(Debug)]
 pub struct LifeguardPod {
     network: Network,
     agent: RestartableAgent,
@@ -89,14 +94,18 @@ impl K8S {
         })
     }
 
+    #[instrument]
     pub async fn check_backoff(&self, pod: &LifeguardPod) -> Result<(), K8sError> {
+        info!(pod = ?pod, "Checking backoff");
         if let Some(next_attempt_time) = self.backoff.inc(pod).await {
             return Err(K8sError::TooEarly(next_attempt_time));
         }
         Ok(())
     }
 
+    #[instrument]
     pub async fn check_start_time(&self, pod: &LifeguardPod) -> Result<(), K8sError> {
+        debug!(pod = ?pod, "Checking start time");
         if let PodStatus::Running(start_time) = self.status(pod).await? {
             let target_time = start_time + self.start_time_limit;
             if target_time > Utc::now() {
@@ -107,27 +116,33 @@ impl K8S {
         Ok(())
     }
 
+    #[instrument]
     pub async fn delete_pod(&self, pod: &LifeguardPod) -> Result<(), K8sError> {
+        debug!(pod = ?pod, "Started deleting pod");
         let pods: Api<Pod> = Api::default_namespaced(self.client.clone());
         let pod_name = pod.to_string();
 
         pods.delete(&pod_name, &DeleteParams::default())
             .await
             .map_err(|e| K8sError::Custom(Box::new(e)))?;
-        println!("Deleted pod: {}", pod_name);
+        info!(pod = ?pod, "Deleted pod");
 
         Ok(())
     }
 
+    #[instrument]
     pub async fn drop_pod(&self, pod: &LifeguardPod) -> Result<(), K8sError> {
+        debug!(pod = ?pod, "Starting full deleting pod procedure");
         // Should run in sequence
         self.check_start_time(pod).await?;
         self.check_backoff(pod).await?;
 
         self.delete_pod(pod).await?;
+        debug!(pod = ?pod, "Finished full deleting pod procedure");
         Ok(())
     }
 
+    #[instrument]
     pub async fn status(&self, pod: &LifeguardPod) -> Result<PodStatus, K8sError> {
         let pods: Api<Pod> = Api::default_namespaced(self.client.clone());
 
@@ -138,7 +153,7 @@ impl K8S {
             .await
             .map_err(|e| K8sError::Custom(Box::new(e)))?
         {
-            println!("Found requested pod: {}!", pod.name_any());
+            debug!(pod = ?pod, "Found requested pod");
             if let Some(status) = pod.status {
                 let start_time = status.start_time.ok_or(K8sError::NoStatus)?;
                 let phase = status.phase.ok_or(K8sError::NoStartTime)?;
@@ -150,5 +165,14 @@ impl K8S {
             }
         }
         return Err(K8sError::NoPod);
+    }
+}
+
+impl Debug for K8S {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("K8S")
+            .field("backoff", &self.backoff)
+            .field("start_time_limit", &self.start_time_limit)
+            .finish()
     }
 }

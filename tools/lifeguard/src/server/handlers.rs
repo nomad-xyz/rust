@@ -5,17 +5,18 @@ use k8s_openapi::http::StatusCode;
 use std::convert::Infallible;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tracing::{debug, instrument};
 use warp::reply::with_status;
 use warp::{Rejection, Reply};
 
+#[instrument]
 pub async fn restart_handler(
     network: Network,
     agent: RestartableAgent,
     k8s: Arc<Mutex<K8S>>,
 ) -> Result<impl warp::Reply, Rejection> {
     let pod = LifeguardPod::new(network, agent);
-    println!("RESTART HANDLER");
-
+    debug!(pod = ?pod, "Restart Handler");
     let k8s = k8s.lock().await;
 
     if let Err(error) = k8s.drop_pod(&pod).await.into() {
@@ -26,13 +27,14 @@ pub async fn restart_handler(
     }
 }
 
+#[instrument]
 pub async fn status_handler(
     network: Network,
     agent: RestartableAgent,
     k8s: Arc<Mutex<K8S>>,
 ) -> Result<impl warp::Reply, Rejection> {
-    println!("Status handler");
     let pod = LifeguardPod::new(network, agent);
+    debug!(pod = ?pod, "Status handler");
     let k8s = k8s.lock().await;
     match k8s.status(&pod).await {
         Ok(status) => Ok(with_status(warp::reply::json(&status), StatusCode::OK)),
@@ -42,12 +44,14 @@ pub async fn status_handler(
     }
 }
 
+#[instrument]
 pub async fn healthcheck() -> Result<impl warp::Reply, Rejection> {
     Ok(warp::reply())
 }
 
+#[instrument]
 pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
-    println!("handle err----> {:?}", err);
+    debug!(err = ?err, "Handling rejection");
     if err.is_not_found() {
         Ok(warp::reply::with_status(
             "".to_string(),

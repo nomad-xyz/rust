@@ -18,16 +18,7 @@ const PORT: u16 = 3030;
 fn with_k8s(
     k8s: Arc<Mutex<K8S>>,
 ) -> impl Filter<Extract = (Arc<Mutex<K8S>>,), Error = std::convert::Infallible> + Clone {
-    println!("with_k8s");
     warp::any().map(move || k8s.clone())
-}
-
-fn with_backoff(
-    backoff: Arc<Mutex<RestartBackoff>>,
-) -> impl Filter<Extract = (Arc<Mutex<RestartBackoff>>,), Error = std::convert::Infallible> + Clone
-{
-    println!("with_RestartBackoff");
-    warp::any().map(move || backoff.clone())
 }
 
 pub async fn run_server() -> Result<(), Box<dyn std::error::Error>> {

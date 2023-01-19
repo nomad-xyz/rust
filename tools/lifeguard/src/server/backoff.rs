@@ -5,6 +5,7 @@ use chrono::prelude::*;
 use chrono::Duration;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tracing::{debug, info, instrument};
 
 #[derive(Debug)]
 enum BackoffError {
@@ -23,6 +24,7 @@ impl std::fmt::Display for BackoffError {
     }
 }
 
+#[derive(Debug)]
 pub struct RestartBackoff {
     // Minimum time between each restart
     soft_duration: Duration,
@@ -46,6 +48,7 @@ impl RestartBackoff {
         }
     }
 
+    #[instrument]
     async fn add(&self, pod: &LifeguardPod) {
         let s = pod.to_string();
         let now = Utc::now();
@@ -55,11 +58,14 @@ impl RestartBackoff {
         } else {
             db.insert(s, vec![now]);
         }
+        info!(pod = ?pod, timestamp = ?now, "Added timestamp");
     }
 
     /*
     Returns None if gtg, else Some(time), which is the next earliest
      */
+
+    #[instrument]
     pub async fn inc(&self, pod: &LifeguardPod) -> Option<DateTime<Utc>> {
         let s = pod.to_string();
         let now = Utc::now();
@@ -68,11 +74,14 @@ impl RestartBackoff {
         if let Some(timestamps) = self.db.lock().await.get_mut(&s) {
             timestamps.retain_mut(|x| *x >= latest_relevant);
 
+            debug!(pod = ?pod, timestamps = timestamps.len(), "Found previous timestamps");
+
             if timestamps.len() > 0 {
                 let latest = timestamps.iter().max();
                 if let Some(latest) = latest {
                     let earliest_next_request = *latest + self.soft_duration;
                     if earliest_next_request > now {
+                        info!(pod = ?pod, earliest_next_request = ?earliest_next_request, "Hit soft limit");
                         return Some(earliest_next_request);
                     }
                 }
@@ -82,7 +91,9 @@ impl RestartBackoff {
                 let earliest = timestamps.iter().min();
 
                 if let Some(earliest) = earliest {
-                    return Some(*earliest + self.duration);
+                    let earliest_next_request = *earliest + self.duration;
+                    info!(pod = ?pod, earliest_next_request = ?earliest_next_request, "Hit hard limit");
+                    return Some(earliest_next_request);
                 }
             }
         }

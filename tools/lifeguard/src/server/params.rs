@@ -5,6 +5,7 @@ use std::{
 
 use regex::Regex;
 
+#[derive(Debug)]
 pub enum RestartableAgent {
     Updater,
     Relayer,
@@ -33,6 +34,7 @@ impl Display for RestartableAgent {
     }
 }
 
+#[derive(Debug)]
 pub struct Network(String);
 
 impl FromStr for Network {
