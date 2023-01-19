@@ -46,12 +46,6 @@ impl FromStr for Network {
     }
 }
 
-// impl ToString for Network {
-//     fn to_string(&self) -> String {
-//         self.0.clone()
-//     }
-// }
-
 impl Display for Network {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)

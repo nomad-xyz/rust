@@ -1,10 +1,7 @@
 use crate::k8s::K8S;
-use serde::Serialize;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use warp::Filter;
-
-use warp::http::StatusCode;
 
 use self::backoff::RestartBackoff;
 use self::params::Network;
@@ -35,10 +32,7 @@ fn with_backoff(
 
 pub async fn run_server() -> Result<(), Box<dyn std::error::Error>> {
     let k8s = Arc::new(Mutex::new(K8S::new().await?));
-    let backoff = Arc::new(Mutex::new(RestartBackoff::new(5)?));
 
-    // Get ready for a <=30 sec timeout due to agent restarting.
-    // I keep the connection open, to prevent complex logic for now
     let lifeguard_route = warp::any()
         .and(warp::path("lifeguard"))
         .and(warp::path::param::<Network>())
@@ -50,7 +44,6 @@ pub async fn run_server() -> Result<(), Box<dyn std::error::Error>> {
         .and(warp::post())
         .and(warp::path("restart"))
         .and(warp::path::end())
-        .and(with_backoff(backoff))
         .and_then(restart_handler);
 
     let status_route = lifeguard_route

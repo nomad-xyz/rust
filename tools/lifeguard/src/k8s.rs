@@ -1,14 +1,12 @@
-use futures::{StreamExt, TryStreamExt};
+use chrono::{DateTime, Duration, Utc};
 use k8s_openapi::api::core::v1::Pod;
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::Time;
 use kube::api::DeleteParams;
-use kube::core::WatchEvent;
-use kube::{
-    api::{Api, ListParams, ResourceExt},
-    Client,
-};
+use kube::api::{Api, ResourceExt};
+use kube::Client;
 use serde::Serialize;
 
+use crate::server::backoff::RestartBackoff;
+use crate::server::errors::ServerRejection;
 use crate::server::params::{Network, RestartableAgent};
 
 const ENVIRONMENT: &str = "dev";
@@ -34,144 +32,123 @@ impl ToString for LifeguardPod {
 }
 
 #[derive(Serialize)]
-pub struct PodStatus {
-    start_time: Option<Time>,
-    phase: String,
+pub enum PodStatus {
+    Running(DateTime<Utc>),
+    Phase(String),
 }
 
-// use std::{error::Error, fmt};
-
 #[derive(Debug)]
-enum K8sError {
-    Random,
+pub enum K8sError {
+    TooEarly(DateTime<Utc>),
+    NoPod,
+    NoStatus,
+    NoStartTime,
+    Custom(Box<dyn std::error::Error>),
 }
 
 impl std::error::Error for K8sError {}
 
 impl std::fmt::Display for K8sError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Oh no, something bad went down")
+        match self {
+            Self::TooEarly(t) => write!(f, "{}", t),
+            Self::NoPod => write!(f, "NoPod"),
+            Self::NoStatus => write!(f, "NoStatus"),
+            Self::NoStartTime => write!(f, "NoStartTime"),
+            Self::Custom(e) => write!(f, "Custom Error: {}", e),
+        }
     }
 }
 
-#[derive(PartialEq, Debug, Serialize)]
-#[serde(tag = "status")]
-pub enum ResultPodRestartStatus {
-    Deleted,
-    Created,
-    Running,
-    Timeout,
-    NotFound,
+impl From<K8sError> for ServerRejection {
+    fn from(error: K8sError) -> Self {
+        match error {
+            K8sError::TooEarly(t) => ServerRejection::TooEarly(t),
+            K8sError::NoPod => ServerRejection::InternalError("NoPod".into()),
+            K8sError::NoStatus => ServerRejection::InternalError("NoStatus".into()),
+            K8sError::NoStartTime => ServerRejection::InternalError("NoStartTime".into()),
+            K8sError::Custom(e) => ServerRejection::InternalError(e.to_string()),
+        }
+    }
 }
 
 pub struct K8S {
     client: Client,
+    backoff: RestartBackoff,
+    start_time_limit: Duration,
 }
 
 impl K8S {
     pub async fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let client = Client::try_default().await?;
-        Ok(K8S { client })
+        let backoff = RestartBackoff::new(5)?;
+        Ok(K8S {
+            client,
+            backoff,
+            start_time_limit: Duration::seconds(25), // 1 min
+        })
     }
 
-    pub async fn kill_pod(
-        &self,
-        network: &str,
-        agent_name: &str,
-    ) -> Result<ResultPodRestartStatus, Box<dyn std::error::Error>> {
-        let pods: Api<Pod> = Api::default_namespaced(self.client.clone());
-
-        let name = &format!("{}-{}-{}-0", ENVIRONMENT, network, agent_name);
-        println!("Supposed to kill this one: {}", name);
-
-        if let Some(pod) = pods.get_opt(name).await? {
-            println!("Found requested pod: {}!", pod.name_any());
-        } else {
-            return Ok(ResultPodRestartStatus::NotFound);
-        };
-
-        pods.delete(name, &DeleteParams::default()).await?;
-
-        let lp = ListParams::default()
-            .fields(&format!("metadata.name={}", name))
-            .timeout(30);
-        let mut stream = pods.watch(&lp, "0").await?.boxed();
-
-        // TODO: clean this \/
-        let mut latest_status = ResultPodRestartStatus::Timeout;
-        let mut pod_deleted = false;
-        let mut pod_recreated = false;
-        let mut pod_running = false;
-        while let Some(event) = stream.try_next().await? {
-            match event {
-                WatchEvent::Added(pod) => {
-                    if pod_deleted {
-                        pod_recreated = true;
-                        latest_status = ResultPodRestartStatus::Created;
-                    }
-                    println!("ADDED: {}", pod.name_any())
-                }
-                WatchEvent::Modified(pod) => {
-                    println!(
-                        "UPDATED: {}->{:?}",
-                        pod.name_any(),
-                        pod.status.as_ref().and_then(|s| s.phase.as_ref())
-                    );
-
-                    if pod.status.and_then(|status| status.phase).as_deref() == Some("Running")
-                        && (pod_recreated || pod_deleted)
-                    // We probably don't really need `pod_recreated`, so I omit the logic for now
-                    {
-                        pod_running = true;
-                        println!("RUNNING!");
-                        latest_status = ResultPodRestartStatus::Running;
-                        break;
-                    }
-                }
-                WatchEvent::Deleted(pod) => {
-                    pod_deleted = true;
-                    latest_status = ResultPodRestartStatus::Deleted;
-                    println!("DELETED: {}", pod.name_any())
-                }
-                WatchEvent::Error(e) => println!("ERROR: {} {} ({})", e.code, e.message, e.status),
-                _ => {}
-            };
+    pub async fn check_backoff(&self, pod: &LifeguardPod) -> Result<(), K8sError> {
+        if let Some(next_attempt_time) = self.backoff.inc(pod).await {
+            return Err(K8sError::TooEarly(next_attempt_time));
         }
-
-        println!("Done! -> {}", pod_running);
-
-        Ok(latest_status)
+        Ok(())
     }
 
-    pub async fn delete_pod(&self, pod: &LifeguardPod) -> Result<(), Box<dyn std::error::Error>> {
-        let pods: Api<Pod> = Api::default_namespaced(self.client.clone());
-
-        // let name = &format!("{}-{}-{}-0", ENVIRONMENT, network, agent_name);
-        let name = pod.to_string();
-
-        pods.delete(&name, &DeleteParams::default()).await?;
-        println!("Deleted pod: {}", name);
+    pub async fn check_start_time(&self, pod: &LifeguardPod) -> Result<(), K8sError> {
+        if let PodStatus::Running(start_time) = self.status(pod).await? {
+            let target_time = start_time + self.start_time_limit;
+            if target_time > Utc::now() {
+                return Err(K8sError::TooEarly(target_time));
+            }
+        }
 
         Ok(())
     }
 
-    pub async fn status_pod(
-        &self,
-        network: &str,
-        agent_name: &str,
-    ) -> Result<PodStatus, Box<dyn std::error::Error>> {
+    pub async fn delete_pod(&self, pod: &LifeguardPod) -> Result<(), K8sError> {
+        let pods: Api<Pod> = Api::default_namespaced(self.client.clone());
+        let pod_name = pod.to_string();
+
+        pods.delete(&pod_name, &DeleteParams::default())
+            .await
+            .map_err(|e| K8sError::Custom(Box::new(e)))?;
+        println!("Deleted pod: {}", pod_name);
+
+        Ok(())
+    }
+
+    pub async fn drop_pod(&self, pod: &LifeguardPod) -> Result<(), K8sError> {
+        // Should run in sequence
+        self.check_start_time(pod).await?;
+        self.check_backoff(pod).await?;
+
+        self.delete_pod(pod).await?;
+        Ok(())
+    }
+
+    pub async fn status(&self, pod: &LifeguardPod) -> Result<PodStatus, K8sError> {
         let pods: Api<Pod> = Api::default_namespaced(self.client.clone());
 
-        let name = &format!("{}-{}-{}-0", ENVIRONMENT, network, agent_name);
+        let name = pod.to_string();
 
-        if let Some(pod) = pods.get_opt(name).await? {
+        if let Some(pod) = pods
+            .get_opt(&name)
+            .await
+            .map_err(|e| K8sError::Custom(Box::new(e)))?
+        {
             println!("Found requested pod: {}!", pod.name_any());
             if let Some(status) = pod.status {
-                let start_time = status.start_time;
-                let phase = status.phase.unwrap();
-                return Ok(PodStatus { start_time, phase });
+                let start_time = status.start_time.ok_or(K8sError::NoStatus)?;
+                let phase = status.phase.ok_or(K8sError::NoStartTime)?;
+                if phase == "Running" {
+                    return Ok(PodStatus::Running(start_time.0));
+                } else {
+                    return Ok(PodStatus::Phase(phase));
+                }
             }
         }
-        return Err(Box::new(K8sError::Random));
+        return Err(K8sError::NoPod);
     }
 }
