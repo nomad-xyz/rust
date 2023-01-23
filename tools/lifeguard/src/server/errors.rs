@@ -20,7 +20,7 @@ impl ResponseMessage {
 #[derive(Debug)]
 pub enum ServerRejection {
     InternalError(String),
-    Status(StatusCode),
+    // Status(StatusCode),
     TooEarly(DateTime<Utc>),
 }
 
@@ -32,7 +32,7 @@ impl ServerRejection {
         let mut message = ResponseMessage::new();
         match self {
             Self::InternalError(s) => message.message = Some(s.into()),
-            Self::Status(status_code) => code = *status_code,
+            // Self::Status(status_code) => code = *status_code,
             Self::TooEarly(t) => {
                 code = StatusCode::TOO_MANY_REQUESTS;
                 message.next_attempt = Some(*t);

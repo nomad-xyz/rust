@@ -11,7 +11,7 @@ use crate::server::backoff::RestartBackoff;
 use crate::server::errors::ServerRejection;
 use crate::server::params::{Network, RestartableAgent};
 
-use tracing::{debug, info, instrument};
+use tracing::{debug, error, info, instrument};
 
 const ENVIRONMENT: &str = "dev";
 
@@ -60,7 +60,7 @@ impl std::fmt::Display for K8sError {
             Self::NoPod => write!(f, "NoPod"),
             Self::NoStatus => write!(f, "NoStatus"),
             Self::NoStartTime => write!(f, "NoStartTime"),
-            Self::Custom(e) => write!(f, "Custom Error: {}", e),
+            Self::Custom(e) => write!(f, "K8s Error: {}", e),
         }
     }
 }
@@ -69,9 +69,9 @@ impl From<K8sError> for ServerRejection {
     fn from(error: K8sError) -> Self {
         match error {
             K8sError::TooEarly(t) => ServerRejection::TooEarly(t),
-            K8sError::NoPod => ServerRejection::InternalError("NoPod".into()),
-            K8sError::NoStatus => ServerRejection::InternalError("NoStatus".into()),
-            K8sError::NoStartTime => ServerRejection::InternalError("NoStartTime".into()),
+            K8sError::NoPod => ServerRejection::InternalError(error.to_string()),
+            K8sError::NoStatus => ServerRejection::InternalError(error.to_string()),
+            K8sError::NoStartTime => ServerRejection::InternalError(error.to_string()),
             K8sError::Custom(e) => ServerRejection::InternalError(e.to_string()),
         }
     }
@@ -86,17 +86,17 @@ pub struct K8S {
 impl K8S {
     pub async fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let client = Client::try_default().await?;
-        let backoff = RestartBackoff::new(5)?;
+        let backoff = RestartBackoff::new(5, Some(Duration::seconds(30)), Some(Duration::days(1)))?;
         Ok(K8S {
             client,
             backoff,
-            start_time_limit: Duration::seconds(25), // 1 min
+            start_time_limit: Duration::minutes(1), // 1 min
         })
     }
 
     #[instrument]
     pub async fn check_backoff(&self, pod: &LifeguardPod) -> Result<(), K8sError> {
-        info!(pod = ?pod, "Checking backoff");
+        debug!(pod = ?pod, "Checking backoff");
         if let Some(next_attempt_time) = self.backoff.inc(pod).await {
             return Err(K8sError::TooEarly(next_attempt_time));
         }
@@ -107,9 +107,10 @@ impl K8S {
     pub async fn check_start_time(&self, pod: &LifeguardPod) -> Result<(), K8sError> {
         debug!(pod = ?pod, "Checking start time");
         if let PodStatus::Running(start_time) = self.status(pod).await? {
-            let target_time = start_time + self.start_time_limit;
-            if target_time > Utc::now() {
-                return Err(K8sError::TooEarly(target_time));
+            let next_attempt = start_time + self.start_time_limit;
+            if next_attempt > Utc::now() {
+                error!(pod = ?pod, start_time = ?start_time, next_attempt = ?next_attempt, "Too early for the pod");
+                return Err(K8sError::TooEarly(next_attempt));
             }
         }
 
@@ -148,17 +149,20 @@ impl K8S {
 
         let name = pod.to_string();
 
-        if let Some(pod) = pods
+        if let Some(found_pod) = pods
             .get_opt(&name)
             .await
             .map_err(|e| K8sError::Custom(Box::new(e)))?
         {
             debug!(pod = ?pod, "Found requested pod");
-            if let Some(status) = pod.status {
-                let start_time = status.start_time.ok_or(K8sError::NoStatus)?;
+            if let Some(status) = found_pod.status {
+                let start_time = status.start_time.ok_or(K8sError::NoStatus)?.0;
                 let phase = status.phase.ok_or(K8sError::NoStartTime)?;
+
+                info!(pod = ?pod, phase = phase, start_time = ?start_time, "Got pod's status");
+
                 if phase == "Running" {
-                    return Ok(PodStatus::Running(start_time.0));
+                    return Ok(PodStatus::Running(start_time));
                 } else {
                     return Ok(PodStatus::Phase(phase));
                 }

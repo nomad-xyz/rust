@@ -5,7 +5,7 @@ use chrono::prelude::*;
 use chrono::Duration;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{debug, info, instrument};
+use tracing::{debug, error, instrument};
 
 #[derive(Debug)]
 enum BackoffError {
@@ -27,19 +27,23 @@ impl std::fmt::Display for BackoffError {
 #[derive(Debug)]
 pub struct RestartBackoff {
     // Minimum time between each restart
-    soft_duration: Duration,
+    soft_limit: Duration,
     // Duration which considers max_restarts
-    duration: Duration,
+    hard_limit: Duration,
     max_restarts: u32,
     db: Arc<Mutex<HashMap<String, Vec<DateTime<Utc>>>>>,
 }
 
 impl RestartBackoff {
-    pub fn new(max_restarts: u32) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(
+        max_restarts: u32,
+        soft_limit: Option<Duration>,
+        hard_limit: Option<Duration>,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         if max_restarts > 0 {
             Ok(Self {
-                soft_duration: Duration::seconds(20),
-                duration: Duration::days(1),
+                soft_limit: soft_limit.unwrap_or(Duration::seconds(30)),
+                hard_limit: hard_limit.unwrap_or(Duration::days(1)),
                 max_restarts,
                 db: Arc::new(Mutex::new(HashMap::new())),
             })
@@ -58,7 +62,7 @@ impl RestartBackoff {
         } else {
             db.insert(s, vec![now]);
         }
-        info!(pod = ?pod, timestamp = ?now, "Added timestamp");
+        debug!(pod = ?pod, timestamp = ?now, "Added timestamp");
     }
 
     /*
@@ -69,7 +73,7 @@ impl RestartBackoff {
     pub async fn inc(&self, pod: &LifeguardPod) -> Option<DateTime<Utc>> {
         let s = pod.to_string();
         let now = Utc::now();
-        let latest_relevant = now - self.duration;
+        let latest_relevant = now - self.hard_limit;
 
         if let Some(timestamps) = self.db.lock().await.get_mut(&s) {
             timestamps.retain_mut(|x| *x >= latest_relevant);
@@ -77,23 +81,23 @@ impl RestartBackoff {
             debug!(pod = ?pod, timestamps = timestamps.len(), "Found previous timestamps");
 
             if timestamps.len() > 0 {
-                let latest = timestamps.iter().max();
-                if let Some(latest) = latest {
-                    let earliest_next_request = *latest + self.soft_duration;
-                    if earliest_next_request > now {
-                        info!(pod = ?pod, earliest_next_request = ?earliest_next_request, "Hit soft limit");
-                        return Some(earliest_next_request);
+                let latest_timestamp = timestamps.iter().max();
+                if let Some(latest_timestamp) = latest_timestamp {
+                    let next_attempt = *latest_timestamp + self.soft_limit;
+                    if next_attempt > now {
+                        error!(pod = ?pod, next_attempt = ?next_attempt, "Hit soft limit in backoff");
+                        return Some(next_attempt);
                     }
                 }
             }
 
             if timestamps.len() > self.max_restarts as usize {
-                let earliest = timestamps.iter().min();
+                let oldest_timestamp = timestamps.iter().min();
 
-                if let Some(earliest) = earliest {
-                    let earliest_next_request = *earliest + self.duration;
-                    info!(pod = ?pod, earliest_next_request = ?earliest_next_request, "Hit hard limit");
-                    return Some(earliest_next_request);
+                if let Some(oldest_timestamp) = oldest_timestamp {
+                    let next_attempt = *oldest_timestamp + self.hard_limit;
+                    error!(pod = ?pod, next_attempt = ?next_attempt, "Hit hard limit in backoff");
+                    return Some(next_attempt);
                 }
             }
         }
