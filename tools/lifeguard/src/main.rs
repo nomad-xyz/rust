@@ -1,4 +1,5 @@
 mod k8s;
+mod metrics;
 mod server;
 use tracing_subscriber;
 

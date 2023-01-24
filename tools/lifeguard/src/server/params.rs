@@ -5,13 +5,16 @@ use std::{
 
 use regex::Regex;
 
-#[derive(Debug)]
+/// Enum that is used to store the option of which agent caller wants to restart.
+/// It is also used to capture and filter the parameter in a warp handler
+#[derive(Debug, Clone)]
 pub enum RestartableAgent {
     Updater,
     Relayer,
     Processor,
 }
 
+/// `FromStr` trait implementation, that is mainly used to filter the parameter in a warp handler
 impl FromStr for RestartableAgent {
     type Err = ();
     fn from_str(s: &str) -> Result<RestartableAgent, ()> {
@@ -34,9 +37,12 @@ impl Display for RestartableAgent {
     }
 }
 
-#[derive(Debug)]
+/// Start that is used to store the name of the network that corresponds to an agent that caller wants to restart.
+/// It is also used to capture and filter the parameter in a warp handler
+#[derive(Debug, Clone)]
 pub struct Network(String);
 
+/// `FromStr` trait implementation, that is mainly used to filter the parameter in a warp handler
 impl FromStr for Network {
     type Err = ();
     fn from_str(s: &str) -> Result<Network, ()> {

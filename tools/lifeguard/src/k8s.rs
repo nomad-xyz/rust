@@ -1,53 +1,64 @@
-use std::fmt::Debug;
-
-use chrono::{DateTime, Duration, Utc};
-use k8s_openapi::api::core::v1::Pod;
-use kube::api::DeleteParams;
-use kube::api::{Api, ResourceExt};
-use kube::Client;
-use serde::Serialize;
-
+use crate::metrics::metrics::Metrics;
 use crate::server::backoff::RestartBackoff;
 use crate::server::errors::ServerRejection;
 use crate::server::params::{Network, RestartableAgent};
+
+use std::fmt::Debug;
+use std::sync::Arc;
+
+use chrono::{DateTime, Duration, Utc};
+
+use k8s_openapi::api::core::v1::Pod;
+use kube::api::Api;
+use kube::api::DeleteParams;
+use kube::Client;
+use serde::Serialize;
 
 use tracing::{debug, error, info, instrument};
 
 const ENVIRONMENT: &str = "dev";
 
+/// Structure that represents a pod which a caller refers to to restart or get it's status.
 #[derive(Debug)]
 pub struct LifeguardPod {
-    network: Network,
-    agent: RestartableAgent,
+    pub network: Network,
+    pub agent: RestartableAgent,
 }
 
 impl LifeguardPod {
     pub fn new(network: Network, agent: RestartableAgent) -> Self {
-        Self {
-            network: network,
-            agent: agent,
-        }
+        Self { network, agent }
     }
 }
 
+/// Format the `Lifeguard` into a Nomad's K8s pod name
 impl ToString for LifeguardPod {
     fn to_string(&self) -> String {
         format!("{}-{}-{}-0", ENVIRONMENT, self.network, self.agent)
     }
 }
 
+/// Enum that represents one of the states of a pod:
+///   * `Running` with a start date of the pod
+///   * If the pod is in another phase than "Running", contains the phase as a String
 #[derive(Serialize)]
 pub enum PodStatus {
     Running(DateTime<Utc>),
     Phase(String),
 }
 
+/// Enug that represents several possible errors that could be raised in `K8S` structure
 #[derive(Debug)]
 pub enum K8sError {
+    /// Pod reached a backoff limit
     TooEarly(DateTime<Utc>),
+    /// Pod was not found in K8s
     NoPod,
+    /// Pod has no status when status is requested
     NoStatus,
+    /// Pod has no start time when status is requested
     NoStartTime,
+    /// Some error was raised during a request to K8s
     Custom(Box<dyn std::error::Error>),
 }
 
@@ -77,23 +88,36 @@ impl From<K8sError> for ServerRejection {
     }
 }
 
+/// Main structure that is speaking to K8s.
 pub struct K8S {
     client: Client,
+    /// Main backoff mechanism
     backoff: RestartBackoff,
+    /// Additional backoff limit, that could raise `K8sError::TooEarly`.
+    /// Before the main `RestartBackoff` is checked, `K8S` checks the last restart of a pod.
+    /// If the start time of the pod is higher than `now()` - `start_time_limit`, then backoff is fired.
     start_time_limit: Duration,
+    metrics: Arc<Metrics>,
 }
 
 impl K8S {
-    pub async fn new() -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn new(metrics: Arc<Metrics>) -> Result<Self, Box<dyn std::error::Error>> {
         let client = Client::try_default().await?;
-        let backoff = RestartBackoff::new(5, Some(Duration::seconds(30)), Some(Duration::days(1)))?;
+        let backoff = RestartBackoff::new(
+            5,
+            Some(Duration::seconds(30)),
+            Some(Duration::days(1)),
+            metrics.clone(),
+        );
         Ok(K8S {
             client,
             backoff,
-            start_time_limit: Duration::minutes(1), // 1 min
+            start_time_limit: Duration::minutes(1), // 1 min,
+            metrics,
         })
     }
 
+    /// Method that checks the backoff for the pod
     #[instrument]
     pub async fn check_backoff(&self, pod: &LifeguardPod) -> Result<(), K8sError> {
         debug!(pod = ?pod, "Checking backoff");
@@ -103,6 +127,8 @@ impl K8S {
         Ok(())
     }
 
+    /// Method that checks start time backoff limit.
+    /// If the start time of the pod is higher than `now()` - `start_time_limit`, then backoff is fired.
     #[instrument]
     pub async fn check_start_time(&self, pod: &LifeguardPod) -> Result<(), K8sError> {
         debug!(pod = ?pod, "Checking start time");
@@ -110,6 +136,12 @@ impl K8S {
             let next_attempt = start_time + self.start_time_limit;
             if next_attempt > Utc::now() {
                 error!(pod = ?pod, start_time = ?start_time, next_attempt = ?next_attempt, "Too early for the pod");
+                self.metrics.backoffs_inc(
+                    "start_time",
+                    &pod.network.to_string(),
+                    &pod.agent.to_string(),
+                );
+
                 return Err(K8sError::TooEarly(next_attempt));
             }
         }
@@ -117,6 +149,7 @@ impl K8S {
         Ok(())
     }
 
+    /// Method that actually deletes the pod
     #[instrument]
     pub async fn delete_pod(&self, pod: &LifeguardPod) -> Result<(), K8sError> {
         debug!(pod = ?pod, "Started deleting pod");
@@ -131,9 +164,11 @@ impl K8S {
         Ok(())
     }
 
+    /// Method that deletes the pod, but before hand it checks that all backoff strategies are giving green light
     #[instrument]
-    pub async fn drop_pod(&self, pod: &LifeguardPod) -> Result<(), K8sError> {
+    pub async fn try_delete_pod(&self, pod: &LifeguardPod) -> Result<(), K8sError> {
         debug!(pod = ?pod, "Starting full deleting pod procedure");
+
         // Should run in sequence
         self.check_start_time(pod).await?;
         self.check_backoff(pod).await?;
@@ -143,6 +178,7 @@ impl K8S {
         Ok(())
     }
 
+    /// Method that is used to get a pod status
     #[instrument]
     pub async fn status(&self, pod: &LifeguardPod) -> Result<PodStatus, K8sError> {
         let pods: Api<Pod> = Api::default_namespaced(self.client.clone());
