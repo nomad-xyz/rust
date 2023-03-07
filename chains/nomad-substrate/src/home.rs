@@ -267,7 +267,9 @@ where
 
     #[tracing::instrument(err, skip(self))]
     async fn double_update(&self, _double: &DoubleUpdate) -> Result<TxOutcome, Self::Error> {
-        unimplemented!("Double update deprecated for Substrate implementations")
+        Ok(TxOutcome {
+            txid: Default::default(),
+        })
     }
 }
 
