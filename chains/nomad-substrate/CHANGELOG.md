@@ -2,6 +2,7 @@
 
 ### Unreleased
 
+- Change `double_update` to a NOP
 - Update `update` method with new max index field
 - `produce_update` checks that tree has at least 1 element (bug fix)
 - Add timelag functionality to `NomadOnlineClient` which wraps storage fetches with timelagged fetches
