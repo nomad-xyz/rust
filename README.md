@@ -4,7 +4,7 @@
 
 Nomad is a cross-chain communication standard that supports passing messages between blockchains easily and inexpensively. Like [IBC](https://ibcprotocol.org) light clients and similar systems, Nomad establishes message-passing channels between chains. Once a channel is established, any application on that chain can use it to send messages to others chains.
 
-Nomad is an implementation and extension of the [Optics protocol](https://medium.com/celoorg/announcing-optics-a-gas-efficient-interoperability-standard-for-cross-chain-communication-e597163b2) (**OPT**imistic **I**nterchain **C**ommunication), originally developed at Celo.
+Nomad is an implementation and extension of the [Optics protocol](https://blog.celo.org/announcing-optics-a-gas-efficient-interoperability-standard-for-cross-chain-communication-e597163b2) (**OPT**imistic **I**nterchain **C**ommunication), originally developed at Celo.
 
 Compared to light clients, Nomad has weaker security guarantees and a longer latency period. However, these tradeoffs allow Nomad to be implemented on any smart contract chain without expensive light client development. Unlike light clients, Nomad does not use gas verifying remote chain block headers.
 
